@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-15 10:27+0200\n"
-"PO-Revision-Date: 2012-07-15 10:28+0200\n"
+"POT-Creation-Date: 2012-07-16 10:38+0200\n"
+"PO-Revision-Date: 2012-07-16 10:46+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -235,7 +235,7 @@ msgstr ""
 #: extensions/caldavd.py:529 extensions/caldavd.py:584
 #: extensions/caldavd.py:615 extensions/caldavd.py:649
 #: extensions/caldavd.py:677 extensions/volumes.py:441
-#: extensions/volumes.py:487 core/machines.py:1224 core/_modules.py:653
+#: extensions/volumes.py:487 core/machines.py:1224 core/_modules.py:657
 #: core/configuration.py:1001
 msgid "{0}: {1}"
 msgstr "{0} : {1}"
@@ -374,7 +374,7 @@ msgstr "{0} : non disponible, car"
 
 #: extensions/volumes.py:706
 msgid "{0}: started extension with pyudev v{2} on top of udev v{1}."
-msgstr "{0} : extension démarrée avec pyudev v{2}, pilotant  udev v{1}."
+msgstr "{0} : extension démarrée avec pyudev v{2}, pilotant udev v{1}."
 
 #: extensions/volumes.py:943
 msgid ""
@@ -562,27 +562,27 @@ msgstr "{0} : erreur pendant l'exécution de {1}"
 msgid "RPC %s failed"
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:330
+#: extensions/mylicorn/mylicorn.py:335
 msgid "{0}: reprogramming authentication in {1}."
 msgstr "{0} : re-programmation d'une authentification dans {1}."
 
-#: extensions/mylicorn/mylicorn.py:389
+#: extensions/mylicorn/mylicorn.py:394
 msgid "{0}: failed to disconnect (code: {1}, message: {2})"
 msgstr "{0} : impossible de se déconnecter (code : {1}, message : {2})"
 
-#: extensions/mylicorn/mylicorn.py:396
+#: extensions/mylicorn/mylicorn.py:401
 msgid "{0}: sucessfully disconnected (code: {1}, message: {2})"
 msgstr "{0} : déconnecté avec succès (code : {1}, message : {2})"
 
-#: extensions/mylicorn/mylicorn.py:405
+#: extensions/mylicorn/mylicorn.py:410
 msgid "{0}: already disconnected, not trying again."
 msgstr "{0} : déjà déconnecté, pas la peine de re-tenter."
 
-#: extensions/mylicorn/mylicorn.py:413
+#: extensions/mylicorn/mylicorn.py:418
 msgid "{0}: already connected, not doing it again."
 msgstr "{0} : déjà connecté, pas la peine de re-tenter."
 
-#: extensions/mylicorn/mylicorn.py:418
+#: extensions/mylicorn/mylicorn.py:423
 msgid ""
 "{0}: system UUID not found, aborting. There may be a serious problem "
 "somewhere."
@@ -590,26 +590,26 @@ msgstr ""
 "{0} : UUID système non trouvé, abandon. Il doit y avoir un sacré problème "
 "quelque part, celà ne devrait pas arriver."
 
-#: extensions/mylicorn/mylicorn.py:432
+#: extensions/mylicorn/mylicorn.py:437
 msgid "{0}: failed to authenticate (code: {1}, message: {2})"
 msgstr "{0} : impossible de s'authentifier (code : {1}, message : {2})"
 
-#: extensions/mylicorn/mylicorn.py:438
+#: extensions/mylicorn/mylicorn.py:443
 msgid "{0}: sucessfully authenticated (code: {1}, message: {2})"
 msgstr "{0} : authentifié avec succès (code : {1}, message : {2})"
 
-#: extensions/mylicorn/mylicorn.py:465
+#: extensions/mylicorn/mylicorn.py:470
 msgid "{0}: our reachability state is now {1}."
 msgstr ""
 "{0} : l'accéssibilité de cette machine depuis internet est maintenant {1}."
 
-#: extensions/mylicorn/mylicorn.py:481
+#: extensions/mylicorn/mylicorn.py:486
 msgid "{0}: problem noop()'ing {1} (was: code={2}, message={3})."
 msgstr ""
 "{0} : problème pendant le « noop()'ing » de {1} (erreur : code={2}, message="
 "{3})."
 
-#: extensions/mylicorn/mylicorn.py:496
+#: extensions/mylicorn/mylicorn.py:501
 msgid "{0}: successfully noop()'ed {1}."
 msgstr "{0} : {1} a été « noop()é » avec succès."
 
@@ -779,12 +779,12 @@ msgstr ""
 msgid "{0}: switched long_output status to {1}."
 msgstr "{0} : l'état des sorties longues sur la console est {1}."
 
-#: daemon/base.py:87 interfaces/cli/__init__.py:51 core/_modules.py:674
+#: daemon/base.py:87 interfaces/cli/__init__.py:51 core/_modules.py:678
 msgid "enabled"
 msgstr "activé(e)"
 
 #: daemon/base.py:89 interfaces/cli/argparser.py:944
-#: interfaces/cli/__init__.py:53 core/_modules.py:674
+#: interfaces/cli/__init__.py:53 core/_modules.py:678
 msgid "disabled"
 msgstr "désactivé(e)"
 
@@ -3595,7 +3595,7 @@ msgstr ""
 msgid "{0} user rule that wanted to overwrite system default rule."
 msgstr ""
 
-#: core/_controllers.py:491 core/_modules.py:138 core/_modules.py:340
+#: core/_controllers.py:491 core/_modules.py:138 core/_modules.py:344
 msgid "Skipped"
 msgstr "Ignoré"
 
@@ -3845,108 +3845,108 @@ msgstr "nom de module"
 
 #: core/_modules.py:136
 msgid "{0} unusable {1} {2}, exception at import"
-msgstr ""
+msgstr "{1} {2} {0} car inutilisable, exception lors de l'import"
 
-#: core/_modules.py:213
+#: core/_modules.py:190
+msgid "{0}: disabling dependant {1}(s) {2}."
+msgstr "{0} : désactivation du(es) {1}(s) dépendant(s) {2}."
+
+#: core/_modules.py:225
 msgid ""
 "{0}: will not try to load {1} {2} because one or more of its dependancies "
 "failed to load."
 msgstr ""
+"{0} : éviction de {1} {2} car le chargement d'une ou plusieurs de ses "
+"dépendances a échoué."
 
-#: core/_modules.py:281
-#, fuzzy
-msgid "{0}: Exception in {1} {2} during load"
-msgstr ""
-"{0} : impossible de modifier {1} pour {2} {3}, car il n'a pas été trouvé "
-"dans {4}."
-
-#: core/_modules.py:287
-msgid "Disabling dependant {0}(s) {1} to avoid further problems."
-msgstr ""
+#: core/_modules.py:288
+msgid "{0}: exception in {1} {2} during load"
+msgstr "{0} : exception dans {1} {2} pendant le chargement"
 
 #: core/_modules.py:309
-#, fuzzy
-msgid "cannot disable non-existing {0} {1}."
-msgstr "Le {0} ou {1} \"{2}\" inexistant ou invalide a été ignoré."
+msgid "{0}: cannot disable non-existing {1} {2}."
+msgstr "{0} : impossible de désactiver le {1} {2} inexistant."
 
-#: core/_modules.py:325
+#: core/_modules.py:328
 msgid ""
 "{0} {1} is enabled on the server side but not available locally, probably an "
 "installation problem."
 msgstr ""
+"{0} {1} est activé(e) côté serveur mais non-disponible localement, "
+"probablement un problème d'installation ou de version."
 
-#: core/_modules.py:332
+#: core/_modules.py:335
 msgid ""
 "{0} {1} is enabled on the server side but manually ignored locally in {2}, "
 "please fix the problem before continuing."
 msgstr ""
+"{0} {1} est activé(e) côté serveur mais ignoré(e) manuellement dans {2}. "
+"Corrigez le problème avant de continuer."
 
-#: core/_modules.py:339
-msgid "{0} {1} {2}, manually ignored in {3}."
-msgstr ""
+#: core/_modules.py:342
+msgid "{0}: {1} {2} {3}, manually ignored in {4}."
+msgstr "{0} : {2} {3} {1} car manuellement exclu(e) dans {4}."
 
-#: core/_modules.py:383 core/_modules.py:426
+#: core/_modules.py:387 core/_modules.py:430
 msgid "No {0} by that name \"{1}\"."
 msgstr "Aucun(e) {0} du nom de “{1}”."
 
-#: core/_modules.py:387
+#: core/_modules.py:391
 msgid "{0} {1} already enabled."
 msgstr "{1} {0} déjà activé(e)."
 
-#: core/_modules.py:396
+#: core/_modules.py:400
 msgid "successfully enabled {0} {1}."
 msgstr "{1} {0} activé(e) avec succès."
 
-#: core/_modules.py:401
-#, fuzzy
+#: core/_modules.py:405
 msgid "{0} {1} would not enable itself."
-msgstr "{1} {0} déjà activé(e)."
+msgstr "{0} {1} n'a pas réussi à s'activer."
 
-#: core/_modules.py:406
+#: core/_modules.py:410
 #, fuzzy
 msgid "Exception while enabling {0} {1}."
 msgstr "Exception rencontrée dans {0} : {1}."
 
-#: core/_modules.py:431
+#: core/_modules.py:435
 msgid "{0} {1} already disabled."
 msgstr "{1} {0} déjà désactivé(e)."
 
-#: core/_modules.py:441
+#: core/_modules.py:445
 #, fuzzy
 msgid "Exception while unregistering events handlers/callbacks of {0} {1}"
 msgstr "{0} : erreur à la création des observateurs pour le {1} {2}."
 
-#: core/_modules.py:448
+#: core/_modules.py:452
 msgid "successfully disabled {0} {1}."
 msgstr "{1} {0} désactivé(e) avec succès."
 
-#: core/_modules.py:453
+#: core/_modules.py:457
 #, fuzzy
 msgid "{0} {1} would not disable itself."
 msgstr "{1} {0} déjà désactivé(e)."
 
-#: core/_modules.py:459
+#: core/_modules.py:463
 #, fuzzy
 msgid "Exception while disabling {0} {1}."
 msgstr "Exception rencontrée dans {0} : {1}."
 
-#: core/_modules.py:498
+#: core/_modules.py:502
 #, fuzzy
 msgid "{0}: unhandled exception during {1} {2} check. Disabling it."
 msgstr ""
 "{0} : impossible de modifier {1} pour {2} {3}, car il n'a pas été trouvé "
 "dans {4}."
 
-#: core/_modules.py:521
+#: core/_modules.py:525
 msgid "{0}: global check finished."
-msgstr ""
+msgstr "{0} : vérifications globales terminées."
 
-#: core/_modules.py:529
-#, fuzzy
+#: core/_modules.py:533
 msgid "{0} {1} does not exist or is not enabled."
-msgstr "Le backend %s n'existe pas ou n'est pas activé."
+msgstr "{0} {1} n'existe pas ou n'est pas activé(e)."
 
-#: core/_modules.py:543
+#: core/_modules.py:547
 msgid ""
 "{name}: problem while installing inotifier watches for {type} {module} (was: "
 "{exc})."
@@ -3954,22 +3954,22 @@ msgstr ""
 "{name} : erreur lors de l'installation des observateurs pour {type} {module} "
 "(problème initial : {exc})."
 
-#: core/_modules.py:664
+#: core/_modules.py:668
 msgid ""
 "↳ {0} ({1} {2}):\n"
 "\t{3}\n"
 "{4}"
 msgstr ""
 
-#: core/_modules.py:667
+#: core/_modules.py:671
 msgid "client/server"
 msgstr "client/serveur"
 
-#: core/_modules.py:669
+#: core/_modules.py:673
 msgid "depends on: {0}"
 msgstr "dépend de : {0}"
 
-#: core/_modules.py:670
+#: core/_modules.py:674
 msgid "no dependancies"
 msgstr "aucune dépendance"
 

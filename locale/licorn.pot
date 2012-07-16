@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-15 10:35+0200\n"
+"POT-Creation-Date: 2012-07-16 10:46+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -207,7 +207,7 @@ msgstr ""
 #: extensions/caldavd.py:529 extensions/caldavd.py:584
 #: extensions/caldavd.py:615 extensions/caldavd.py:649
 #: extensions/caldavd.py:677 extensions/volumes.py:441
-#: extensions/volumes.py:487 core/machines.py:1224 core/_modules.py:653
+#: extensions/volumes.py:487 core/machines.py:1224 core/_modules.py:657
 #: core/configuration.py:1001
 msgid "{0}: {1}"
 msgstr ""
@@ -511,49 +511,49 @@ msgstr ""
 msgid "RPC %s failed"
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:330
+#: extensions/mylicorn/mylicorn.py:335
 msgid "{0}: reprogramming authentication in {1}."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:389
+#: extensions/mylicorn/mylicorn.py:394
 msgid "{0}: failed to disconnect (code: {1}, message: {2})"
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:396
+#: extensions/mylicorn/mylicorn.py:401
 msgid "{0}: sucessfully disconnected (code: {1}, message: {2})"
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:405
+#: extensions/mylicorn/mylicorn.py:410
 msgid "{0}: already disconnected, not trying again."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:413
+#: extensions/mylicorn/mylicorn.py:418
 msgid "{0}: already connected, not doing it again."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:418
+#: extensions/mylicorn/mylicorn.py:423
 msgid ""
 "{0}: system UUID not found, aborting. There may be a serious problem "
 "somewhere."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:432
+#: extensions/mylicorn/mylicorn.py:437
 msgid "{0}: failed to authenticate (code: {1}, message: {2})"
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:438
+#: extensions/mylicorn/mylicorn.py:443
 msgid "{0}: sucessfully authenticated (code: {1}, message: {2})"
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:465
+#: extensions/mylicorn/mylicorn.py:470
 msgid "{0}: our reachability state is now {1}."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:481
+#: extensions/mylicorn/mylicorn.py:486
 msgid "{0}: problem noop()'ing {1} (was: code={2}, message={3})."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:496
+#: extensions/mylicorn/mylicorn.py:501
 msgid "{0}: successfully noop()'ed {1}."
 msgstr ""
 
@@ -712,12 +712,12 @@ msgstr ""
 msgid "{0}: switched long_output status to {1}."
 msgstr ""
 
-#: daemon/base.py:87 interfaces/cli/__init__.py:51 core/_modules.py:674
+#: daemon/base.py:87 interfaces/cli/__init__.py:51 core/_modules.py:678
 msgid "enabled"
 msgstr ""
 
 #: daemon/base.py:89 interfaces/cli/argparser.py:944
-#: interfaces/cli/__init__.py:53 core/_modules.py:674
+#: interfaces/cli/__init__.py:53 core/_modules.py:678
 msgid "disabled"
 msgstr ""
 
@@ -3360,7 +3360,7 @@ msgstr ""
 msgid "{0} user rule that wanted to overwrite system default rule."
 msgstr ""
 
-#: core/_controllers.py:491 core/_modules.py:138 core/_modules.py:340
+#: core/_controllers.py:491 core/_modules.py:138 core/_modules.py:344
 msgid "Skipped"
 msgstr ""
 
@@ -3592,114 +3592,114 @@ msgstr ""
 msgid "{0} unusable {1} {2}, exception at import"
 msgstr ""
 
-#: core/_modules.py:213
+#: core/_modules.py:190
+msgid "{0}: disabling dependant {1}(s) {2}."
+msgstr ""
+
+#: core/_modules.py:225
 msgid ""
 "{0}: will not try to load {1} {2} because one or more of its dependancies "
 "failed to load."
 msgstr ""
 
-#: core/_modules.py:281
-msgid "{0}: Exception in {1} {2} during load"
-msgstr ""
-
-#: core/_modules.py:287
-msgid "Disabling dependant {0}(s) {1} to avoid further problems."
+#: core/_modules.py:288
+msgid "{0}: exception in {1} {2} during load"
 msgstr ""
 
 #: core/_modules.py:309
-msgid "cannot disable non-existing {0} {1}."
+msgid "{0}: cannot disable non-existing {1} {2}."
 msgstr ""
 
-#: core/_modules.py:325
+#: core/_modules.py:328
 msgid ""
 "{0} {1} is enabled on the server side but not available locally, probably an "
 "installation problem."
 msgstr ""
 
-#: core/_modules.py:332
+#: core/_modules.py:335
 msgid ""
 "{0} {1} is enabled on the server side but manually ignored locally in {2}, "
 "please fix the problem before continuing."
 msgstr ""
 
-#: core/_modules.py:339
-msgid "{0} {1} {2}, manually ignored in {3}."
+#: core/_modules.py:342
+msgid "{0}: {1} {2} {3}, manually ignored in {4}."
 msgstr ""
 
-#: core/_modules.py:383 core/_modules.py:426
+#: core/_modules.py:387 core/_modules.py:430
 msgid "No {0} by that name \"{1}\"."
 msgstr ""
 
-#: core/_modules.py:387
+#: core/_modules.py:391
 msgid "{0} {1} already enabled."
 msgstr ""
 
-#: core/_modules.py:396
+#: core/_modules.py:400
 msgid "successfully enabled {0} {1}."
 msgstr ""
 
-#: core/_modules.py:401
+#: core/_modules.py:405
 msgid "{0} {1} would not enable itself."
 msgstr ""
 
-#: core/_modules.py:406
+#: core/_modules.py:410
 msgid "Exception while enabling {0} {1}."
 msgstr ""
 
-#: core/_modules.py:431
+#: core/_modules.py:435
 msgid "{0} {1} already disabled."
 msgstr ""
 
-#: core/_modules.py:441
+#: core/_modules.py:445
 msgid "Exception while unregistering events handlers/callbacks of {0} {1}"
 msgstr ""
 
-#: core/_modules.py:448
+#: core/_modules.py:452
 msgid "successfully disabled {0} {1}."
 msgstr ""
 
-#: core/_modules.py:453
+#: core/_modules.py:457
 msgid "{0} {1} would not disable itself."
 msgstr ""
 
-#: core/_modules.py:459
+#: core/_modules.py:463
 msgid "Exception while disabling {0} {1}."
 msgstr ""
 
-#: core/_modules.py:498
+#: core/_modules.py:502
 msgid "{0}: unhandled exception during {1} {2} check. Disabling it."
 msgstr ""
 
-#: core/_modules.py:521
+#: core/_modules.py:525
 msgid "{0}: global check finished."
 msgstr ""
 
-#: core/_modules.py:529
+#: core/_modules.py:533
 msgid "{0} {1} does not exist or is not enabled."
 msgstr ""
 
-#: core/_modules.py:543
+#: core/_modules.py:547
 msgid ""
 "{name}: problem while installing inotifier watches for {type} {module} (was: "
 "{exc})."
 msgstr ""
 
-#: core/_modules.py:664
+#: core/_modules.py:668
 msgid ""
 "↳ {0} ({1} {2}):\n"
 "\t{3}\n"
 "{4}"
 msgstr ""
 
-#: core/_modules.py:667
+#: core/_modules.py:671
 msgid "client/server"
 msgstr ""
 
-#: core/_modules.py:669
+#: core/_modules.py:673
 msgid "depends on: {0}"
 msgstr ""
 
-#: core/_modules.py:670
+#: core/_modules.py:674
 msgid "no dependancies"
 msgstr ""
 
