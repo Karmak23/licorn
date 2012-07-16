@@ -471,7 +471,6 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		# don't use iteritems(), threads are moving targets now and the items
 		# can change very quickly.
 		for tname, thread in self.__threads.items():
-			print "thread = ", thread
 			if hasattr(thread, 'dump_status'):
 				tdata.append(thread.dump_status(long_output, precision, as_string))
 			else:
