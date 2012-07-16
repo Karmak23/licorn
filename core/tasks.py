@@ -252,7 +252,6 @@ class Task(CoreStoredObject):
 
 		self.neg_to_exclude = []
 
-		# TODO : use weakref
 		self.__class__.by_name[self.name] = self.weakref
 
 	def __del__(self):
@@ -260,19 +259,23 @@ class Task(CoreStoredObject):
 			del self.__class__.by_name[self.name]
 
 	def resolve_parameters(self):
-		""" resolve the args and kwargs parameters. """
-		# Never modify 'args' and 'kwargs', use instead 'resolved_args' and
-		#	'resolved_kwargs' in order to be able to resolve them another time
+		""" 
+		Resolve the args and kwargs parameters. 
+
+		Never modify 'args' and 'kwargs', use 'resolved_args' and
+		'resolved_kwargs' in order to be able to resolve them again at another 
+		time.
+		"""
 		_args = []
 		for a in self.args:
 			try:
 				_args.append(eval(a))
 				#lprint("arg {0} has been resolved as {1}".format(a, eval(a)))
 			except KeyError, e:
-				logging.notice(_('{2} : arg {0} has not bee resolved, the object '
-					'referenced by {1} does not exist, you may want to defer '
-					'the action\'s parameters resolution using defer_resolution'
-					' arg'.format(
+				logging.notice(_(u'{2} : arg {0} has not bee resolved, the '
+					u'object referenced by {1} does not exist, you may want to '
+					u'defer the action\'s parameters resolution using '
+					u'defer_resolution arg'.format(
 						stylize(ST_PATH, a), stylize(ST_PATH, e),
 						stylize(ST_NAME, LMC.tasks.name))))
 			except Exception, e:
@@ -282,7 +285,6 @@ class Task(CoreStoredObject):
 		_kwargs = {}
 		for k, v in self.kwargs.iteritems():
 			try:
-				#lprint("{0}:{1}".format(k, v))
 				_kwargs.update({k : eval(v)})
 				#lprint("kwarg {0} has been resolved as {1}".format(k, eval(v)))
 			except Exception, e:
@@ -320,23 +322,23 @@ class Task(CoreStoredObject):
 
 
 		return _(u'''{id}: {name}, {counter}, {next}
-	{action}({args}{comma}{kwargs}) {defer}
-	{time}''').format(
-				id=self.id,
-				name=stylize(ST_NAME, self.name),
-				action=stylize(ST_COMMENT, self.action),
-				args=u', '.join([str(a) for a in self.args ]),
-				comma=u', ' if (self.args != [] and self.kwargs != {}) else u'',
-				kwargs=u', '.join([ u'{0}={1}'.format(k, v)
-					for k, v in self.kwargs.iteritems()]),
-				defer=stylize(ST_EMPTY, _(u' ({0})').format(
-						_(u'with deferred resolution')
-					)) if self.defer_resolution else u'',
-				time=format_time_args(),
-				next=format_next_run(),
-				counter=_(u'ran {0} time(s)').format(
-					stylize(ST_PATH, self.nb_of_run))
-			)
+			{action}({args}{comma}{kwargs}) {defer}
+			{time}''').format(
+						id=self.id,
+						name=stylize(ST_NAME, self.name),
+						action=stylize(ST_COMMENT, self.action),
+						args=u', '.join([str(a) for a in self.args ]),
+						comma=u', ' if (self.args != [] and self.kwargs != {}) else u'',
+						kwargs=u', '.join([ u'{0}={1}'.format(k, v)
+							for k, v in self.kwargs.iteritems()]),
+						defer=stylize(ST_EMPTY, _(u' ({0})').format(
+								_(u'with deferred resolution')
+							)) if self.defer_resolution else u'',
+						time=format_time_args(),
+						next=format_next_run(),
+						counter=_(u'ran {0} time(s)').format(
+							stylize(ST_PATH, self.nb_of_run))
+					)
 
 	def serialize(self, backend_action=None):
 		""" Save task data to backend. """
@@ -618,9 +620,9 @@ class Task(CoreStoredObject):
 			return running_time
 
 		if running_time is None:
-			logging.notice(_("{0} : {1} for task {2}.".format(
+			logging.notice(_(u"{0} : {1} for task {2}.".format(
 				stylize(ST_NAME, LMC.tasks.name),
-				stylize(ST_BAD, "No remaining occurence"),
+				stylize(ST_BAD, _(u"No remaining occurence")),
 				stylize(ST_PATH, self.name))))
 			if LMC.tasks.by_name(self.name) != None:
 				LMC.tasks.del_task(self.id)
@@ -672,10 +674,10 @@ class Task(CoreStoredObject):
   					t=str(t)[1:]
 
   			if int(t) not in ranges[arg]:
-  				raise exceptions.BadArgumentError(_("{1} on task {0} for argument"
-					" {2}={5} : should be between {3} and {4}".format(
+  				raise exceptions.BadArgumentError(_(u"{1} on task {0} for "
+  					u"argument {2}={5} : should be between {3} and {4}".format(
 						stylize(ST_NAME, name),
-						stylize(ST_BAD, 'Not in range'),
+						stylize(ST_BAD, _(u'Not in range')),
 						arg, min(ranges[arg]) if not can_be_neg \
 							else '-{0}'.format(max(ranges[arg])),
 								max(ranges[arg]),
@@ -702,9 +704,10 @@ class Task(CoreStoredObject):
 			if type(_arg) not in (types.StringType, types.NoneType,
 				types.IntType, types.UnicodeType):
 
-				raise exceptions.BadArgumentError(_("{0} on task {1} for argument "
-					"{2}={3} : excepted type are String, Int or None".format(
-						stylize(ST_BAD, "Type error"),
+				raise exceptions.BadArgumentError(_(u"{0} on task {1} for "
+					u"argument {2}={3} : excepted type are String, Int or "
+					u"None".format(
+						stylize(ST_BAD, _(u"Type error")),
 						stylize(ST_PATH, name), arg, _arg)))
 
 			# if temporal arg, check it carefully
@@ -747,35 +750,42 @@ class Task(CoreStoredObject):
 						try:
 							t = int(t)
 						except:
-							raise exceptions.BadArgumentError(_("{0} on task {1} for argument {2}={3} has to "
-								"be an Int".format( stylize(ST_BAD, "Type error"),
+							raise exceptions.BadArgumentError(_(u"{0} on task "
+								u"{1} for argument {2}={3} has to "
+								u"be an Int".format( stylize(ST_BAD, 
+															_(u"Type error")),
 									stylize(ST_PATH, self.name), arg, t)))
 						validate_range(t, arg, can_be_neg=True)
 						if arg=='year':
 							if int(t) < datetime.now().year:
-								raise exceptions.BadArgumentError(_("{0} on task {1} for argument {2}={3} has to "
-										"be > {4}".format( stylize(ST_BAD, "Argument error"),
-											stylize(ST_PATH, self.name), arg, t, datetime.now().year)))
+								raise exceptions.BadArgumentError(_(u"{0} on "
+									u"task {1} for argument {2}={3} has to "
+									u"be > {4}".format( 
+										stylize(ST_BAD,	_(u"Argument error")),
+										stylize(ST_PATH, self.name), arg, t, 
+										datetime.now().year)))
 			# delay_until_* arguments are only int, nothing more
 			elif str(arg).startswith('delay_until_'):
 				try:
 					t = int(_arg)
 				except:
-					raise exceptions.BadArgumentError(_("{1} on task {0} for "
-						"argument {2}={3} : should be transtypable to int".format(
-						name, stylize(ST_BAD, 'Type Error'),
+					raise exceptions.BadArgumentError(_(u"{1} on task {0} for "
+						u"argument {2}={3} : should be transtypable to int".format(
+						name, stylize(ST_BAD, _(u'Type Error')),
 						arg, _arg)))
 
 		# check action
 		if type(self.action) not in (types.UnicodeType, types.StringType):
-			raise exceptions.BadArgumentError(_("{0} on task {1} for argument 'action'={2} has to "
-				"be a String".format( stylize(ST_BAD, "Type error"),
+			raise exceptions.BadArgumentError(_(u"{0} on task {1} for argument "
+				u"'action'={2} has to be a String".format(
+					stylize(ST_BAD, _(u"Type error")),
 					stylize(ST_PATH, self.name), self.action)))
 
 		# check defer_resolution
 		if type(self.defer_resolution) != types.BooleanType:
-			raise exceptions.BadArgumentError(_("{0} on task {1} for argument 'defer_resolution'={2} has to "
-				"be a Boolean".format( stylize(ST_BAD, "Type error"),
+			raise exceptions.BadArgumentError(_(u"{0} on task {1} for argument "
+				u"'defer_resolution'={2} has to be a Boolean".format(
+					stylize(ST_BAD, _(u"Type error")),
 					stylize(ST_PATH, self.name), self.defer_resolution)))
 
 
@@ -784,13 +794,15 @@ class TaskExtinction(Task):
 		super(TaskExtinction, self).validate()
 
 		if self.hour == '*':
-			raise exceptions.BadArgumentError("{0} on extinction task {1} for argument 'hour'={2} has to "
-				"be a Int where 0<=hour<60".format( stylize(ST_BAD, "BadArgumentError"),
-					stylize(ST_PATH, self.name), self.hour))
+			raise exceptions.BadArgumentError(_(u"{0} on extinction task {1} "
+				u"for argument 'hour'={2} has to be a Int where 0<=hour<60".format( 
+					stylize(ST_BAD, _(u"BadArgumentError")),
+					stylize(ST_PATH, self.name), self.hour)))
 		if self.minute == '*':
-			raise exceptions.BadArgumentError("{0} on extinction task {1} for argument 'minute'={2} has to "
-				"be a Int where 0<=minute<60".format( stylize(ST_BAD, "BadArgumentError"),
-					stylize(ST_PATH, self.name), self.minute))
+			raise exceptions.BadArgumentError(_(u"{0} on extinction task {1} "
+				u"for argument 'minute'={2} has to be a Int where 0<=minute<60".format( 
+					stylize(ST_BAD, _(u"BadArgumentError")),
+					stylize(ST_PATH, self.name), self.minute)))
 
 
 		# Extinction Task specific tests :
@@ -831,9 +843,12 @@ class TaskExtinction(Task):
 						_machine = m
 
 					if same_machine and same_hour and same_day:
-						raise exceptions.BadArgumentError(_('Another rule already exists for the '
-												'machine {0} on day {1} at {2}, please delete it first.'
-												.format(_machine, days[str(_day) if _day != '*' else '*'], _hour)))
+						raise exceptions.BadArgumentError(
+							_(u'Another rule already exists for the machine {0} '
+								u'on day {1} at {2}, please delete it first.'.format(
+									_machine, 
+									days[str(_day) if _day != '*' else '*'], 
+									_hour)))
 
 
 class TasksController(DictSingleton, CoreController, SelectableController):
@@ -903,8 +918,8 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				# do not catch the 'unknown file', if there is no config file,
 				# it's ok
 				#if e.errno != errno.ENOENT:
-				logging.exception(_("{0} : Exception while reloading "
-					"tasks".format(stylize(ST_NAME, LMC.tasks.name))))
+				logging.exception(_(u"{0} : Exception while reloading "
+					u"tasks".format(stylize(ST_NAME, LMC.tasks.name))))
 
 	def add_task(self, name, action, year=None, month=None, day=None, hour=None,
 		minute=None, second=None, week_day=None, delay_until_year=None,
@@ -970,25 +985,27 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				task.action_func = pyutils.resolve_attr(task.action,
 						{"LMC" : LMC, "logging": logging})
 			except Exception, e:
-				raise exceptions.BadArgumentError(_("{0} on task {1} : please check the action "
-					"argument".format( stylize(ST_BAD, "Cannot resolve action"),
+				raise exceptions.BadArgumentError(_(u"{0} on task {1} : please "
+					u"check the action argument".format( 
+						stylize(ST_BAD, _(u"Cannot resolve action")),
 						stylize(ST_PATH, self.name))))
 
 			if task.schedule():
 				task.serialize(backend_actions.CREATE)
 
 				task_args = ''
-				for arg in ('year', 'month', 'day', 'hour', 'minute', 'second', 'week_day',
-					'delay_until_year', 'delay_until_month', 'delay_until_day',
-					'delay_until_hour', 'delay_until_minute', 'delay_until_second'):
+				for arg in ('year', 'month', 'day', 'hour', 'minute', 'second', 
+					'week_day', 'delay_until_year', 'delay_until_month', 
+					'delay_until_day', 'delay_until_hour', 'delay_until_minute',
+					'delay_until_second'):
 
 					if getattr(task, arg) != None:
 						task_args += ' {0}={1}'.format(arg, getattr(task, arg))
 
-				logging.notice(_("{0} : scheduling task {1} {2} - {4} - {3}".format(
+				logging.notice(_(u"{0} : scheduling task {1} {2} - {4} - {3}".format(
 					stylize(ST_NAME, LMC.tasks.name),
 					stylize(ST_PATH, task.name),
-					"on {0}".format(stylize(ST_OK, task.next_running_time)),
+					_(u"on {0}".format(stylize(ST_OK, task.next_running_time))),
 					task_args, '{0}({1}, {2})'.format(task.action, task.args,
 					task.kwargs))))
 
@@ -998,10 +1015,10 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				LicornEvent('task_added', task=task).emit(priorities.LOW)
 
 		else:
-			logging.notice(_('{0} : {1} task named {2}, another task with the '
-				'same name already exists'.format(
+			logging.notice(_(u'{0} : {1} task named {2}, another task with the '
+				u'same name already exists'.format(
 					stylize(ST_NAME, LMC.tasks.name),
-					stylize(ST_BAD, "Cannot add"),
+					stylize(ST_BAD, _(u"Cannot add")),
 					stylize(ST_PATH, name))))
 	def get_next_unset_id(self):
 		# TODO : use settings.core.tasks.max_tasks

@@ -172,12 +172,18 @@ def generate_machine_html(mid, minimum=False):
 	else:
 		try:
 			m       = utils.select('machines', [ mid ])[0]
-			machine = { 'mtype': wmi_data.get_host_type_html(m.system_type) if not minimum else '', 
+			machine = { 'mtype': wmi_data.get_host_type_html(m.system_type) \
+														if not minimum else '', 
 						'mname': m.name, 
-						'mstatus': wmi_data.get_host_status_html[int(m.status)]  if not minimum else ''
+						'mstatus': wmi_data.get_host_status_html[int(m.status)]\
+														if not minimum else ''
 					}
 		except:
-			machine = { 'mtype': '', 'mname': mid, 'mstatus': wmi_data.get_host_status_html[host_status.OFFLINE]  if not minimum else '' }
+			machine = { 
+				'mtype': '',
+				'mname': mid, 
+				'mstatus': wmi_data.get_host_status_html[host_status.OFFLINE] \
+														if not minimum else '' }
 			
 	return render_to_string('/energy/machine.html', { 
 		'machine'  : machine,
@@ -186,7 +192,8 @@ def generate_machine_html(mid, minimum=False):
 
 
 def get_machine_list(request):
-	""" return a list of all ACTIVE machines. To be displayed in the machine autocompleter """
+	""" return a list of all ACTIVE machines. 
+		To be displayed in the machine autocompleter """
 	ret = []
 	for m in utils.select('machines', default_selection=host_status.ACTIVE):
 		ret.append({'mid': str(m.mid), 'mname':str(m.name)})
@@ -210,14 +217,21 @@ def get_calendar_data(request, ret=True):
 					continue
 				
 
-				elif str(r['day']) in rule.week_day.split(',') and r['hour'] == rule.hour and r['minute'] == rule.minute:
+				elif str(r['day']) in rule.week_day.split(',') and \
+						r['hour'] == rule.hour and r['minute'] == rule.minute:
+					
 					already_added = True;
 					r['who'] = '{0},{1}'.format(r['who'], rule.args)
 
 			if not already_added:
-				days = rule.week_day.split(',') if rule.week_day != '*' else range(0,7)
+				days = rule.week_day.split(',') if rule.week_day != '*' \
+																else range(0,7)
 				for d in days:
-					data_sep.append({ 'day': d, 'who':rule.args, 'who_html': ', '.join([ generate_machine_html(m, minimum=True) for m in rule.args]),
+					data_sep.append({ 'day': d, 
+						'who':rule.args, 
+						'who_html': ', '.join(
+							[ generate_machine_html(m, minimum=True) \
+														 for m in rule.args]),
 						'hour':rule.hour, 'minute': rule.minute })
 	if ret:
 		return HttpResponse(json.dumps(data_sep))
