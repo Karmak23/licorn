@@ -180,6 +180,18 @@ class ModulesManager(LockedController):
 			assert ltrace(self._trace_name, '| not_manually_ignored(%s) → %s (no match)' % (
 																module_name, True))
 			return True
+		def disable_dependants(module_name):
+			r_depended = [m for m in
+				modules_dependancies.keys()
+					if module_name in modules_dependancies[m]]
+
+			if r_depended:
+				depended_disabled_modules.extend(r_depended)
+				logging.warning(_(u'{0}: disabling dependant {1}(s) '
+									u'{2}.').format(self.pretty_name,
+										self.module_type,
+										', '.join(stylize(ST_NAME, name)
+											for name in r_depended)))
 
 		# We've got to check the server_side_modules argument too, because at
 		# first load of client LMC (first pass), server modules are not known:
@@ -241,20 +253,20 @@ class ModulesManager(LockedController):
 					continue
 
 			# module is not already loaded. Load and sync client/server
+			if not_manually_ignored(module_name):
 
-			assert ltrace(self._trace_name, 'importing %s %s' % (self.module_type,
-				stylize(ST_NAME, module_name)))
+				assert ltrace(self._trace_name, 'importing %s %s' % (
+												self.module_type,
+												stylize(ST_NAME, module_name)))
 
-			# the module instanciation, at last!
-			module = module_class()
+				# the module instanciation, at last!
+				module = module_class()
 
-			assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
-				self.module_type, stylize(ST_NAME, module_name)))
-
-			if not_manually_ignored(module.name):
+				assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
+					self.module_type, stylize(ST_NAME, module_name)))
 
 				LicornEvent('%s_%s_loads' % (
-									self.module_type, module_name),
+								self.module_type, module_name),
 							synchronous=True).emit()
 
 				try:
@@ -265,29 +277,18 @@ class ModulesManager(LockedController):
 					events.collect(module)
 
 					LicornEvent('%s_%s_loaded' % (
-									self.module_type, module_name)).emit()
+									self.module_type, module_name),
+								synchronous=True).emit()
 
-				except Exception, e:
+				except Exception:
 					# an uncatched exception occured, the module is buggy or
 					# doesn't handle a very specific situation. The module
 					# didn't load, we must disable other modules which depend
 					# on it.
-
-					r_depended = [m for m in
-						modules_dependancies.keys()
-							if module_name in modules_dependancies[m]]
-
-					logging.exception(_(u'{0}: Exception in {1} {2} during load'),
+					logging.exception(_(u'{0}: exception in {1} {2} during load'),
 						self.pretty_name, self.module_type, (ST_NAME, module_name))
 
-					if r_depended:
-						depended_disabled_modules.extend(r_depended)
-
-						logging.warning(_(u'Disabling dependant {0}(s) {1} '
-										u'to avoid further problems.').format(
-											self.module_type,
-											', '.join(stylize(ST_NAME, name)
-												for name in r_depended)))
+					disable_dependants(module_name)
 					continue
 
 				if module.available:
@@ -305,8 +306,9 @@ class ModulesManager(LockedController):
 								changed = True
 
 							except exceptions.DoesntExistException, e:
-								logging.warning2(_(u'cannot disable '
-											u'non-existing {0} {1}.').format(
+								logging.warning2(_(u'{0}: cannot disable '
+											u'non-existing {1} {2}.').format(
+												self.pretty_name,
 												self.module_type,
 												stylize(ST_NAME, module.name)))
 					else:
@@ -319,6 +321,8 @@ class ModulesManager(LockedController):
 				else:
 					assert ltrace(self._trace_name, '%s %s NOT available' % (
 						self.module_type, stylize(ST_NAME, module.name)))
+
+					disable_dependants(module_name)
 
 					if is_client and module_name in server_side_modules:
 						raise exceptions.LicornRuntimeError(_(u'{0} {1} is '
@@ -335,12 +339,13 @@ class ModulesManager(LockedController):
 								self.module_type, module_name,
 								stylize(ST_PATH, settings.main_config_file)))
 				else:
-					logging.warning(_(u'{0} {1} {2}, manually ignored in {3}.').format(
-									stylize(ST_DISABLED, _(u'Skipped')),
-									self.module_type,
-									stylize(ST_NAME, module.name),
-									stylize(ST_PATH,
-										settings.main_config_file)))
+					logging.warning(_(u'{0}: {1} {2} {3}, manually ignored '
+									u'in {4}.').format(self.pretty_name,
+										stylize(ST_DISABLED, _(u'Skipped')),
+										self.module_type,
+										stylize(ST_NAME, module_name),
+										stylize(ST_PATH,
+											settings.main_config_file)))
 
 		assert ltrace(self._trace_name, '< load(%s)' % changed)
 		return changed
@@ -789,10 +794,10 @@ class CoreModule(CoreUnitObject, NamedObject):
 		Any configuration file containing these values, will be loaded
 		afterwards and will overwrite these attributes. """
 		pass
-    
+
 def only_if_enabled(func):
 	""" Event decorator. Run the method only if the module is enabled.
-	
+
 		The event can occur even if the extension is disabled, because
 		it is inconditionnaly registered. Avoid false-negatives by not
 		doing anything if it is the case.
@@ -805,7 +810,7 @@ def only_if_enabled(func):
 			return func(self, *args, **kwargs)
 
 	return decorated
-	
-	
+
+
 
 __all__ = ('ModulesManager', 'CoreModule', 'only_if_enabled')

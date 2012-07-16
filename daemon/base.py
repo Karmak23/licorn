@@ -21,7 +21,7 @@ import sys, os, signal, time, re, errno
 from optparse  import OptionParser, SUPPRESS_HELP
 
 from licorn.foundations           import options, settings, logging, exceptions
-from licorn.foundations           import process, pyutils, ttyutils, styles
+from licorn.foundations           import process, pyutils, ttyutils, events, styles
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
@@ -31,6 +31,8 @@ from licorn.foundations.constants import verbose, roles, priorities
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
+
+LicornEvent = events.LicornEvent
 
 from licorn.core import version
 
@@ -836,14 +838,7 @@ class LicornBaseDaemon:
 		#sys.exit(0)
 	def restart(self, signum=None, frame=None):
 
-		try:
-			LicornEvent('daemon_is_restarting').emit(priorities.HIGH)
-
-		except (NameError, TypeError, AttributeError):
-			# the call will fail in any other daemon than the main licornd,
-			# because only this daemon has an event manager and this builtin
-			# function name.
-			pass
+		LicornEvent('daemon_is_restarting').emit(priorities.HIGH)
 
 		assert ltrace(TRACE_DAEMON, '| restart(signum={0}, frame={1})',
 			(ST_UGID, signum), frame)

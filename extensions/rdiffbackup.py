@@ -572,15 +572,37 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 	statistics = compute_statistics
 	@cache.cached(cache.one_day)
 	def compute_total_space(self, *args, **kwargs):
+		""" This method tries to find the space needed to make a full backup,
+			given the full size of the system, and :program:`rdiff-backup`
+			exclusions.
+
+			It computes only an estimation, because it ignores ``**`` entries
+			in the exclusions files. We consider they don't make such a big
+			difference on system with Gb to Tb of data.
+		"""
 
 		exclusions = []
 
 		for config_file in (self.paths.globbing_file_system,
 							self.paths.globbing_file_local):
 			if os.path.exists(config_file):
-				exclusions.extend(x[2:-1]
-									for x in open(config_file).readlines()
-										if x[0] == '-' and '**' not in x)
+				for line in open(config_file).readlines():
+					if line[0] == '-' and '**' not in line:
+						line = line[2:].strip()
+
+						append = True
+
+						for exc in exclusions[:]:
+							if line.startswith(exc):
+								# line is a subdir, skip and stop here.
+								append = False
+								break
+
+							if exc.startswith(line):
+								exclusions.remove(exc)
+
+						if append:
+							exclusions.append(line)
 
 		# TODO: remove local configuration directory sizes.
 		return LMC.extensions.volumes.global_system_size(exclude=exclusions)

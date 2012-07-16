@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-11 10:51+0200\n"
-"PO-Revision-Date: 2012-07-11 10:52+0200\n"
+"POT-Creation-Date: 2012-07-15 10:35+0200\n"
+"PO-Revision-Date: 2012-07-12 10:24+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -187,13 +187,13 @@ msgstr "Volumes re-scannés."
 msgid "member"
 msgstr "membre"
 
-#: groups/event_handlers.py:16 groups/views.py:259 system/views.py:190
+#: groups/event_handlers.py:16 groups/views.py:266 system/views.py:190
 #: system/views.py:326 templates/groups/users_list.html:59
 #: templates/users/groups_list.html:38 users/views.py:398
 msgid "guest"
 msgstr "invité(e)"
 
-#: groups/event_handlers.py:17 groups/views.py:249 system/views.py:178
+#: groups/event_handlers.py:17 groups/views.py:256 system/views.py:178
 #: system/views.py:314 templates/groups/users_list.html:68
 #: templates/users/groups_list.html:47 users/views.py:388
 msgid "responsible"
@@ -273,51 +273,51 @@ msgstr ""
 msgid "Error while modifying group <strong>{0}</strong>"
 msgstr "Erreur pendant la modification du groupe <strong>{0}</strong>"
 
-#: groups/views.py:232
+#: groups/views.py:239
 msgid "Error while adding group <strong>{0}</strong>"
 msgstr "Erreur pendant l'ajout du groupe <strong>{0}</strong>"
 
-#: groups/views.py:248
+#: groups/views.py:255
 msgid "Responsibles"
 msgstr "Responsables"
 
-#: groups/views.py:253 groups/views.py:264
+#: groups/views.py:260 groups/views.py:271
 msgid "Members"
 msgstr "Membres"
 
-#: groups/views.py:254
+#: groups/views.py:261
 msgid "standard"
 msgstr "standard"
 
-#: groups/views.py:258
+#: groups/views.py:265
 msgid "Guests"
 msgstr "Invité(e)s"
 
-#: groups/views.py:308
+#: groups/views.py:315
 msgid "No group by that {0} “<strong>{1}</strong>”."
 msgstr "Aucun groupe portant le {0} « <strong>{1}</strong> »."
 
-#: groups/views.py:310
+#: groups/views.py:317
 msgid "name"
 msgstr "nom"
 
-#: groups/views.py:310 templates/users/view_groups.html:10
+#: groups/views.py:317 templates/users/view_groups.html:10
 msgid "GID"
 msgstr "GID"
 
-#: groups/views.py:320
+#: groups/views.py:327
 msgid "Edit group {0}"
 msgstr "Édition du groupe {0}"
 
-#: groups/views.py:325
+#: groups/views.py:332
 msgid "Add new group"
 msgstr "Ajouter un groupe"
 
-#: groups/views.py:328
+#: groups/views.py:335
 msgid "Standard users"
 msgstr "Utilisateurs standards"
 
-#: groups/views.py:336 templates/users/index.html:47
+#: groups/views.py:343 templates/users/index.html:47
 msgid "System users"
 msgstr "Utilisateurs système"
 
@@ -1179,7 +1179,7 @@ msgstr "Identifiant&nbsp;:"
 msgid "Password:"
 msgstr "Mot de passe&nbsp;:"
 
-#: templates/login.html:97 templates/shares/parts/ask_password.html:51
+#: templates/login.html:97 templates/shares/ask_password.html:51
 msgid "Enter"
 msgstr "Entrer"
 
@@ -1537,6 +1537,23 @@ msgstr "Cliquez pour éditer la machine {0}"
 msgid "Shutdown this machine now."
 msgstr "Éteindre cette machine maintenant."
 
+#: templates/shares/ask_password.html:6
+msgid "Password required for web share {0}"
+msgstr "Mot de passe requis pour le partage web {0}"
+
+#: templates/shares/ask_password.html:17
+msgid "Restricted access"
+msgstr "Accès restreint"
+
+#: templates/shares/ask_password.html:28
+msgid "to access share <strong><em>{0}</em></strong>:"
+msgstr "pour accéder au partage <strong><em>{0}</em></strong> :"
+
+#: templates/shares/ask_password.html:30
+msgid "Please enter the password for share <strong><em>{0}</em></strong>:"
+msgstr ""
+"Merci de saisir le mot de passe du partage <strong><em>{0}</em></strong> :"
+
 #: templates/shares/index.html:6 templates/shares/index_main.html:22
 msgid "My web shares"
 msgstr "Mes partages web"
@@ -1582,7 +1599,7 @@ msgid ""
 msgstr ""
 "Vous n'avez aucun partage pour l'instant. Vous pouvez en démarrer un "
 "simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
-"Public/ » (que vous n'avez qu'à le créer aussi s'il n'existe pas)."
+"Public/ » (que vous n'avez qu'à créer aussi s'il n'existe pas)."
 
 #: templates/shares/index_main.html:52
 msgid ""
@@ -1680,23 +1697,6 @@ msgid ""
 msgstr ""
 "Demandez à la personne qui vous a envoyé(e) à cette adresse de remplir son "
 "répertoire de partage."
-
-#: templates/shares/parts/ask_password.html:6
-msgid "Password required for web share {0}"
-msgstr "Mot de passe requis pour le partage web {0}"
-
-#: templates/shares/parts/ask_password.html:17
-msgid "Restricted access"
-msgstr "Accès restreint"
-
-#: templates/shares/parts/ask_password.html:28
-msgid "to access share <strong><em>{0}</em></strong>:"
-msgstr "pour accéder au partage <strong><em>{0}</em></strong> :"
-
-#: templates/shares/parts/ask_password.html:30
-msgid "Please enter the password for share <strong><em>{0}</em></strong>:"
-msgstr ""
-"Merci de saisir le mot de passe du partage <strong><em>{0}</em></strong> :"
 
 #: templates/shares/parts/disconnected.html:4
 msgid ""
