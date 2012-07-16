@@ -905,7 +905,9 @@ class LicornJobThread(AbstractTimerThread):
 		# a parallel thread that will run the real job, to be able to continue
 		# to countdown the delay while job is running.
 		self.job_runner = None
+
 	def dump_status(self, long_output=False, precision=None, as_string=False):
+		""" get detailled thread status. """
 		if as_string:
 			return '%s%s [%s]' % (
 				stylize(ST_RUNNING
@@ -921,6 +923,12 @@ class LicornJobThread(AbstractTimerThread):
 		else:
 			return dict(next_run=pyutils.format_time_delta(self.remaining_time()),
 				**process.thread_basic_info(self))
+
+
+
+
+
+
 	def run_action_method(self):
 		""" A method that will wrap self.target into a JobRunner simple
 			:class:`~threading.Thread`. """
