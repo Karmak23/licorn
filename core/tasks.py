@@ -804,6 +804,12 @@ class TaskExtinction(Task):
 					stylize(ST_BAD, _(u"BadArgumentError")),
 					stylize(ST_PATH, self.name), self.minute)))
 
+		if self.week_day is None:
+			raise exceptions.BadArgumentError(_(u"{0} on extinction task {1} "
+				u"for argument 'week_day'={2} has to be a Int where 0<=week_day<7".format( 
+					stylize(ST_BAD, _(u"BadArgumentError")),
+					stylize(ST_PATH, self.name), self.week_day)))
+
 
 		# Extinction Task specific tests :
 		# We only need to check that a rule of a speficied machine, is only set once by day and hour.

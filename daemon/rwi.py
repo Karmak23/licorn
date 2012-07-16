@@ -1402,21 +1402,25 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.args == "":
 			task_args = []
 		else:
-			try:
-				if ';' not in opts.args:
-					task_args = [ LMC.machines.guess_one(LMC.machines.word_match(m)).mid for m in opts.args.split(';') ]
-				else:
-					task_args = [ LMC.machines.guess_one(LMC.machines.word_match(opts.args)).mid ]
+			# if the task is an extinction_task, guess machines
+			if task_action == 'LMC.machines.shutdown':
+				try:
+					if ';' in opts.args:
+						task_args = [ LMC.machines.guess_one(LMC.machines.word_match(m)).mid for m in opts.args.split(';') ]
+					else:
+						task_args = [ LMC.machines.guess_one(LMC.machines.word_match(opts.args)).mid ]
 
-			except KeyError, e:
-				logging.exception('unable to recognize machine {0}'.format(e))
-			except:
-				logging.exception("{0} : {3} unpacking args of task {1} "
-					"(args={2}) ".format(
-					stylize(ST_NAME, LMC.tasks.name),
-					opts.name, opts.args, stylize(ST_BAD, "Error while"),
-					to_local=False))
-				return		
+				except KeyError, e:
+					logging.exception('unable to recognize machine {0}'.format(e))
+				except:
+					logging.exception("{0} : {3} unpacking args of task {1} "
+						"(args={2}) ".format(
+						stylize(ST_NAME, LMC.tasks.name),
+						opts.name, opts.args, stylize(ST_BAD, "Error while"),
+						to_local=False))
+					return
+			else:
+				task_args = opts.args.split(';')
 		
 		task_kwargs = {}
 		if opts.kwargs != "":
