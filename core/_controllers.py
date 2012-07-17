@@ -10,28 +10,38 @@ Licorn core controllers
 
 """
 
-import Pyro.core, re, glob, os, posix1e, weakref, time, pyinotify, itertools
+import glob, os, time
 
 from threading import current_thread
 
 
-from licorn.foundations           import settings, exceptions, logging, options
-from licorn.foundations           import hlstr, pyutils, fsapi
-from licorn.foundations.threads    import RLock, Event
+from licorn.foundations           import settings, exceptions, logging
+from licorn.foundations           import fsapi
+from licorn.foundations.threads   import RLock
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import filters, verbose, priorities, roles
+from licorn.foundations.constants import filters
 from licorn.foundations.base      import Enumeration, NamedObject, \
-											MixedDictObject, \
-											pyro_protected_attrs, \
-											LicornConfigObject
+											MixedDictObject
+
 from licorn.core                  import LMC
 
 class SelectableController(NamedObject, dict):
 	""" This class makes the current controller be selectable by
 		`daemon.rwi.select()`. This is used in many places across CLI tools,
 		WMI, and core internals.
+
+		The :class:`SelectableController` inherits :class:`dict` and indexes
+		held :class:`CoreUnitObjects` on their ID.
+
+		.. note:: the only **big** difference with the :class:`dict` behavior
+			is iteration: when you run `for object in controller`, it will
+			**iterate the values**, not the keys. This is the prefered way
+			in Licorn®.
+
+		.. versionadded:: long ago in the past. perhaps Licorn® 1.1 or 1.2, I
+			can't seem to remember.
 	"""
 
 	instances = {}
@@ -46,20 +56,32 @@ class SelectableController(NamedObject, dict):
 		super(SelectableController, self).__init__(*args, **kwargs)
 
 		SelectableController.instances[self.name] = self
-	def guess_one(self, value):
+	def guess_one(self, value, strong=True):
 		""" Try to guess everything of a user from a
-			single and unknonw-typed info. """
-		try:
-			return self.by_id(value)
+			single and unknown-typed info.
 
-		except (TypeError, ValueError, KeyError):
-				return self.by_name(value)
-	def guess_list(self, value_list):
+			:param value: virutally anything that can lead to a core object,
+				like an ID, a name, a login, an hostname, an IP, whatever.
+				The asked controller will try to match core objects it holds
+				against it. Generally speaking, this argument will be a string,
+				but for specific controller it can be the same type of the
+				core object attribute type you want to match.
+
+			:param strong: get a strong reference to the guessed object
+				(default: ``True``) or a weak reference if ``False``.
+
+		"""
+		try:
+			return self.by_id(value, strong=strong)
+
+		except (TypeError, ValueError):
+				return self.by_name(value, strong=strong)
+	def guess_list(self, value_list, strong=False):
 		objs = set()
 
 		for value in value_list:
 			try:
-				objs.add(self.guess_one(value))
+				objs.add(self.guess_one(value, strong=strong))
 
 			except (KeyError, exceptions.DoesntExistException):
 				logging.notice(_(u'Skipped non-existing {0} or {1} {2}.').format(
@@ -72,8 +94,8 @@ class SelectableController(NamedObject, dict):
 		try:
 			return dict.__getitem__(self, attr_name)
 		except KeyError:
-			raise AttributeError(_('"{0}" is neither an attribute nor an '
-								'item of {1}.').format(attr_name, str(self)))
+			raise AttributeError(_(u'"{0}" is neither an attribute nor an '
+								u'item of {1}.').format(attr_name, str(self)))
 class LockedController(SelectableController):
 	""" Thread-safe object, protected by a global :class:`~threading.RLock`,
 		with a :attr:`licornd` property giving access to the Licorn® daemon
@@ -406,6 +428,14 @@ class CoreFSController(CoreController):
 					'core_obj=%s, vars_to_replace=%s)' % (rules_path, object_info,
 					core_obj.name, vars_to_replace))
 
+		def path_to_exclude(dir_info):
+			tmp_path = dir_info.path[:]
+
+			if tmp_path.endswith('/'):
+				tmp_path = tmp_path[:-1]
+
+			return tmp_path.replace('%s%s' % (object_info.home, os.sep), '')
+
 		# load system rules.
 		self.load_system_rules(vars_to_replace=vars_to_replace)
 
@@ -441,7 +471,7 @@ class CoreFSController(CoreController):
 
 				system_special_dirs.append(temp_dir_info)
 
-		default_exclusions = []
+		default_exclusions = set()
 
 		# we need to know if there is a user default rule.
 		user_default = False
@@ -456,9 +486,9 @@ class CoreFSController(CoreController):
 			# if it is a system default rule, and if there is a user default
 			# rule, skip the system one.
 			if dir_info.rule.default and user_default:
-				logging.progress(_(u'%s: System default rule has been '
-									u'overwriten by user rule.') %
-										stylize(ST_BAD, _(u'Skipped')))
+				logging.progress(_(u'{0} user rule that wanted to overwrite '
+									u'system default rule.').format(
+										stylize(ST_BAD, _(u'Skipped'))))
 				continue
 
 			# if there are variables to replace, do it
@@ -493,14 +523,11 @@ class CoreFSController(CoreController):
 									dir_info.rule.line_no))
 			# if the system rule is not in the user rules, add it.
 			else:
-				tmp = dir_info.copy()
 
-				if tmp.path.endswith('/'):
-					tmp.path = tmp.path[:len(tmp.path)-1]
+				tmp_path = path_to_exclude(dir_info)
 
-				tmp.path = tmp.path.replace('%s/' % object_info.home, '')
-
-				default_exclusions.append(tmp.path)
+				if tmp_path != dir_info.path:
+					default_exclusions.add(tmp_path)
 
 				logging.progress(_(u'{0} {1} ACL rule: '
 									u'"{2}" for "{3}".').format(
@@ -520,19 +547,29 @@ class CoreFSController(CoreController):
 				rules.remove(di.name)
 
 			else:
-				tmp = di.copy()
-				if tmp.path.endswith('/'):
-					tmp.path = tmp.path[:len(tmp.path)-1]
-				tmp.path = tmp.path.replace('%s/' % object_info.home, '')
-				default_exclusions.append(tmp.path)
+				tmp_path = path_to_exclude(di)
+
+				# exclude the rule path from the default rule, but only if
+				# it is a sub-sub-dir; because subdirs (only 1 level) will
+				# already be excluded by the next inner loop.
+				if os.sep in tmp_path:
+					default_exclusions.add(tmp_path)
+
+				# Then, exclude the rule path from other "surrounding" rules.
+				# Eg. if we have 2 rules for 'rep1/' and 'rep1/subrep', we
+				# have to exclude 'subrep' from the 'rep1/' rule, else it
+				# will be checked twice.
+				for other_rule in rules:
+					if os.path.dirname(di.path) == other_rule.path:
+						other_rule.exclude.add(os.path.basename(di.path))
 
 		# add dirs/files exclusions to the default rule.
 		try:
-			rules._default.exclude = default_exclusions
+			rules._default.exclude |= default_exclusions
 
-		except AttributeError, e:
+		except AttributeError:
 			raise exceptions.LicornCheckError(_(u'There is no default '
-				u'rule. Check %s.') % stylize(ST_BAD, _(u'aborted')))
+					u'rule. Check %s.') % stylize(ST_BAD, _(u'aborted')))
 
 		assert ltrace(TRACE_CHECKS, '< load_rules()')
 		return rules
@@ -541,6 +578,7 @@ class CoreFSController(CoreController):
 		""" parse a rule from a line to a fsapi.FsapiObject. Returns
 			a single :class:`~licorn.foundations.base.Enumeration`, containing
 			either ONE '~' rule, or a bunch of rules. """
+
 		assert ltrace(TRACE_CHECKS, "> parse_rules(%s, %s, %s)" % (rules_path,
 			object_info, system_wide))
 
@@ -561,12 +599,15 @@ class CoreFSController(CoreController):
 
 				try:
 					# generate rule
-					rule = fsapi.ACLRule(file_name=rules_path, rule_text=line,
-						line_no=line_no, system_wide=system_wide,
-						base_dir=object_info.home
-							if not system_wide else None,
-						object_id=object_info.user_uid if not system_wide else None,
-						controller=self)
+					rule = fsapi.ACLRule(file_name=rules_path,
+										rule_text=line,
+										line_no=line_no,
+										system_wide=system_wide,
+										base_dir=object_info.home
+											if not system_wide else None,
+										object_id=object_info.user_uid
+											if not system_wide else None,
+										controller=self)
 					#logging.notice(">>> rule = %s" % rule.dump_status(True))
 
 				except exceptions.LicornRuntimeException, e:
@@ -587,7 +628,7 @@ class CoreFSController(CoreController):
 
 					logging.progress(_(u'{0} {1} ACL rule {2}: "{3}" for '
 						u'"{4}".').format(stylize(ST_OK,_('Added')),
-							self.name, 
+							self.name,
 							_(u'template') if system_wide else u'',
 							stylize(ST_NAME, rule.acl),
 							stylize(ST_NAME, directory)))
@@ -623,10 +664,9 @@ class CoreFSController(CoreController):
 							vars_to_replace=vars_to_replace)
 
 				except exceptions.LicornSyntaxException, e:
-					logging.warning(_(u'parse_rules(): Exception on {0} '
-						u'(special={1}).').format(stylize(ST_NAME, rule.name),
-							stylize(ST_ATTR, rule.name in special_dirs.keys())))
-					pyutils.print_exception_if_verbose()
+					logging.exception(_(u'parse_rules(): Exception on {0} '
+						u'(special={1}).'), (ST_NAME, rule.name),
+							(ST_ATTR, rule.name in special_dirs.keys()))
 					continue
 
 				if dir_info.name not in special_dirs.keys():
@@ -651,14 +691,16 @@ class CoreFSController(CoreController):
 
 		for obj in self.select(filters.STD):
 			try:
-				obj._inotifier_add_watch(inotifier)
+				# NOTE: if the object is not inotified, it will only install
+				# the configuration file watch, not all the rest.
+				obj._inotifier_add_watch()
 
 			except:
-				logging.warning(_(u'{0}: error on setting inotifier watches '
-					u'for {1} {2}.').format(
-						stylize(ST_NAME, self.name), self.object_type_str,
-						stylize(ST_NAME, obj.name)))
-				pyutils.print_exception_if_verbose()
+				logging.exception(_(u'{0}: exception while installing '
+									u'inotifier watches for {1} {2}'),
+										stylize(ST_NAME, self.name),
+										self.object_type_str,
+										stylize(ST_NAME, obj.name))
 
 	def _expire_events(self):
 		""" iterate all our unit objects and make them verify they expired data. """

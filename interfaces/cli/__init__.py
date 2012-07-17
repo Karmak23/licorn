@@ -105,7 +105,7 @@ class CliInteractor(ttyutils.LicornInteractor):
 						verbose[options.verbose])))
 	lower_verbose_level.__doc__ = _(u'decrease the daemon console verbosity level')
 	def quit_interactor(self):
-		self._stop_event.set()
+		self.stop()
 		# be sure to wake up the select.select() waiting on stdin...
 		# see http://stackoverflow.com/questions/4660756/interrupting-select-to-add-another-socket-to-watch-in-python
 		os.write(self.exit_pipe[1], 'quit')

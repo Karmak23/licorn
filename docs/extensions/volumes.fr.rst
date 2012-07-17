@@ -31,7 +31,7 @@ Tout disque externe que vous voulez utiliser avec Licorn® **doit être préalab
 **Dès que vous connectez le disque externe** sur un des ports USB, eSATA ou FireWire de votre serveur, **il est automatiquement monté** dans :file:`/media` (suivant les cas, cette opération peut prendre quelques secondes à quelques minutes, si la partition doit être vérifiée).
 
 .. note::
-	* Tout disque externe non-formatté ou formatté avec un autre système de fichiers ne sera pas utilisé par Licorn®; Par conséquent **il ne sera pas monté automatiquement**.
+	* Tout disque externe non-formatté ou formatté avec un autre système de fichiers ne sera pas utilisé par Licorn®; Par conséquent **il ne sera pas monté automatiquement** (sauf configuration explicite).
 	* Si la partition montée possède un ``label``, le point de montage l'utilisera (et deviendra :file:`/media/label_de_partition`). Si la partition ne possède pas de label, le point de montage sera quelque chose de plus compliqué (par exemple  :file:`/media/dafd9069-e7de-4f5f-bc09-a7849b2d5389`) : Il sera construit à partir de l'UUID de la partition (un numéro comme ``dafd9069-e7de-4f5f-bc09-a7849b2d5389``, qui identifie la partition de manière unique).
 
 .. _extensions.volumes.usage.fr:
@@ -113,6 +113,14 @@ Comment partionner et formatter un volume ?
 -------------------------------------------
 
 Vous pouvez faire ça sous Linux avec un outil comme :command:`gparted`. Sinon, recherchez plus d'informations sur le site de votre communauté Linux locale.
+
+Directives de configuration
+---------------------------
+
+	**volumes.mount_all_fs**
+		Cette directive permet de faire monter tous les volumes à `licornd`, y compris les volumes non compatibles. Il suffit pour celà de la définir à la valeur ``True``. Ceci permet un certain confort sur les machines qui servent aussi de station de travail (comme `udisks` est inhibé par `licornd`, sans cette directive l'on est obligé de monter les volumes manuellement).
+		.. note:: les volumes non compatibles ne sont pas listés pour autant via la commande `get volumes`.
+
 
 .. seealso::
 

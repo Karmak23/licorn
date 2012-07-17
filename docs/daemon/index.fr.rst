@@ -1,5 +1,5 @@
 
-.. daemon.fr:
+.. _daemon.fr:
 
 .. highlight:: bash
 
@@ -19,26 +19,11 @@ Derrière cette présentation qui semble décrire quelque chose d'énorme et pat
 À tout moment, vous pouvez obtenir des informations sur le daemon actuellement en fonctionnement, avec une commande spécifique::
 
 	get status
-		État du daemon Licorn®: lancé depuis 1 heure 11 mins 32 secs, 16 threads, 11 controlleurs, 3 files, 0/8 Mlocks, 0/373 Ulocks
-		UC: utl 82.0s, sys 75.4s MÉM: rés 1.2e+02Mo prt 0.0Mo upr 0.0Mo pil 0.0Mo
-		Threads:   1/100 networkers     1/50 servicers     1/10 aclcheckers
-		Files d'attente:      serviceQ: 0         aclcheckQ: 0        networkQ: 0
-		DeadThreadCleaner [sleeping, wake up in 4 mins 3 secs]
-		EventManager (19 évènements & 5 callbacks enregistré(s))
-		GQWSchedulerThread for ACLCkeckerThread [1 workers; wake up in 0 sec]
-			ACLCkeckerThread-000 [idle]
-		GQWSchedulerThread for NetworkWorkerThread [1 workers; wake up in 1 secs]
-			NetworkWorkerThread-099& [idle]
-		GQWSchedulerThread for ServiceWorkerThread [1 workers; wake up in 0 sec]
-			ServiceWorkerThread-000 [idle]
-		INotifier (1148 répertoires observés, 11 fichiers de configuration, 0 événements en file d'attente)
-		extensions.volumes.UdevMonitor& (stop=False)
-		CommandListener(139700220770048) alive (21331 loops, 0 wakers)
-			Thread-16&: RWI calls for root(0) @127.0.0.1:49838 (started il y a 1h11m25s)
-			Thread-29&: RWI calls for root(0) @192.168.111.1:35387 (started il y a 1h11m24s)
-			Thread-128&: RWI calls for olive(1000) @127.0.0.1:49917 (started il y a 1s)
-		Thread extensions/Gloop.GobjectMainLooper&: alive, but no more info.
 
+Ce qui donne par exemple sur ma machine:
+
+.. image:: ../screenshots/fr/daemon/daemon0001.png
+   :alt: Get status (ou interface top-like)
 
 
 Démarrage et auto-démarrage
@@ -46,29 +31,27 @@ Démarrage et auto-démarrage
 
 **Dans des conditions normales, le démarrage et l'arrêt du daemon sont complètement automatiques**: ils sont gérés par les scripts de votre distribution GNU/Linux. Par exemple sur Debian et Ubuntu, :program:`licornd` est lancé au démarrage de la machine et stoppé à l'arrêt. Vous pouvez le contrôler ensuite à l'aide de la commande :program:`service` de votre distribution (référez-vous à la documentation spécifique à votre distribution pour plus de détails).
 
-
 Malgré celà, vous pourriez avoir envie ou besoin de gérer tout ça vous même. Vous pouvez de toute manière interférer avec les services système sans problème (:program:`licornd` est assez souple de ce côté là).
 
-Considérant le fait que vous êtes administrateur Licorn® (c'est à dire membre du groupe ``admins`` sur la machine locale ou dans l'annuaire LDAP, si LDAP il y a), **toute tentative d'utiliser un outil CLI lancera automatiquement le daemon**, s'il ne tourne pas déjà. Il lui faudra moins d'une seconde pour être opérationnel et réactif à la commande que vous avez initialement tapée.
+Considérant le fait que vous êtes administrateur Licorn® (c'est à dire membre du groupe ``admins`` sur la machine locale ou dans l'annuaire LDAP, si LDAP il y a), **toute tentative d'utiliser un outil CLI lancera automatiquement le daemon**, s'il ne tourne pas déjà. Il lui faudra un certain temps pour être opérationnel et réactif à la commande que vous avez initialement tapée, suivant votre système.
 
-Si vous devez le lancer à la main pour n'importe quelle raison, la méthode est simple::
+Si vous devez le lancer à la main pour n'importe quelle raison, la méthode est simple ::
 
 	licornd
 
-Si vous voulez qu'il reste accroché à votre terminal et affiche de fabuleux messages d'information::
+Si vous voulez qu'il reste accroché à votre terminal et affiche de fabuleux messages d'information ::
 
 	licornd -vD
 
 	# version longue:
 	licornd --verbose --no-daemon
 
-
-Si un daemon tourne déjà, et que vous voulez *récupérer la main* sur le nouveau daemon que vous lancez depuis votre terminal::
+Si un daemon tourne déjà, et que vous voulez *récupérer la main* sur le nouveau daemon que vous lancez depuis votre terminal ::
 
 	licornd --replace
 
 	# la commande que j'utilise systématiquement pour reprendre
-	# le contrôle sur un daemon déjà lancé, depuis mon terminal:
+	# le contrôle sur un daemon déjà lancé, depuis mon terminal :
 	licornd -rvD
 
 .. note:: l'argument :option:`--replace` n'a aucune conséquence si aucun daemon n'est préalablement lancé.
@@ -84,11 +67,13 @@ Fichiers et configuration
 Sessions intéractives
 =====================
 
-Si vous souhaitez intéragir avec le daemon (Quelque fois, c'est rigolo), démarrez-le avec l'option :option:`-D` (version longue :option:`--no-daemon`)::
+Si vous souhaitez intéragir avec le daemon (Quelque fois c'est simplement rigolo, d'autres fois c'est nécessaire), démarrez-le avec l'option :option:`-D` (version longue :option:`--no-daemon`) ::
 
 	licornd -D
+
 	# ou:
 	licornd -vD
+
 	# et de même avec -vvD et -vvvD pour afficher de plus en plus de messages
 
 Le daemon restera alors attaché à votre terminal. Vous avez alors accès à l' **interface top-like**.
@@ -98,6 +83,9 @@ Le daemon restera alors attaché à votre terminal. Vous avez alors accès à l'
 
 Interface Top-like
 ------------------
+
+.. image:: ../screenshots/fr/daemon/daemon0001.png
+   :alt: Interface top-like (ou sortie de ``get status``)
 
 Les raccourcis claviers suivants sont disponibles:
 

@@ -112,7 +112,15 @@ How-to partition and format a volume?
 
 You can do this using tools like :command:`gparted`. Search for additionnal information on your community's support website.
 
-See also
-========
 
-The :ref:`volumes dedicated developer documentation <extensions.volumes.dev>` can give you additionnal information, if you fit in its audience.
+Configuration directives
+-------------------------
+
+	**volumes.mount_all_fs**
+		This directive — when set to ``True`` — tells `licornd` to mount all volumes, including non-compatible ones. This allows more comfort on systems which are also workstations: as `udisks` is inhibited by `licornd`, non-compatible volumes must be mounted by hand without it.
+		.. note:: non-compatible volumes are not listed via `get volumes`, whatever the value of this directive.
+
+
+.. seealso::
+
+	The :ref:`volumes dedicated developer documentation <extensions.volumes.dev>` can give you additionnal information, if you fit in its audience.

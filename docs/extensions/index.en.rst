@@ -7,6 +7,7 @@ Extensions documentation
 .. toctree::
 	:maxdepth: 1
 
+	mylicorn.en
 	openssh.en
 	volumes.en
 	rdiffbackup.en

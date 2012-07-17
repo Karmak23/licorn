@@ -13,9 +13,9 @@ Licensed under the terms of the GNU GPL version 2.
 import sys, os, Pyro.errors, time
 
 from threading import Thread
-from licorn.foundations.threads import RLock, Event
+from licorn.foundations.threads import RLock
 
-from licorn.foundations    import logging, options, pyutils
+from licorn.foundations    import logging
 from licorn.interfaces.cli import LicornCliApplication, CliInteractor
 from licorn.core           import version, LMC
 
@@ -54,7 +54,6 @@ def get_status(opts, args, listener):
 						LMC.rwi.get_daemon_status(opts, args)
 
 					except Pyro.errors.ConnectionClosedError:
-
 						# wait a little before exiting, in case the daemon
 						# reconnects automatically.
 						if stop_count > 5:
@@ -63,9 +62,8 @@ def get_status(opts, args, listener):
 
 						stop_count += 1
 
-					except Exception, e:
-						logging.warning('exc in get_status_thread: %s.' % e)
-						pyutils.print_exception_if_verbose()
+					except:
+						logging.exception(_(u'Could not get daemon status'))
 						quit_func()
 
 					interval = opts.monitor_interval
@@ -80,22 +78,28 @@ def get_status(opts, args, listener):
 				time.sleep(interval)
 				count += 1
 
-		opts_lock  = RLock()
-
+		opts_lock      = RLock()
 		cli_interactor = CliInteractor(listener, opts, opts_lock)
-		stop_event = cli_interactor._stop_event
-		quit_func = cli_interactor.quit_interactor
-
-		output_thread = Thread(target=get_status_thread,
+		stop_event     = cli_interactor._stop_event
+		quit_func      = cli_interactor.quit_interactor
+		output_thread  = Thread(target=get_status_thread,
 								args=(opts, args, opts_lock, stop_event, quit_func))
 		output_thread.start()
 
 		try:
-			cli_interactor.run()
+			try:
+				cli_interactor.run()
+
+			except KeyboardInterrupt:
+				# This is needed to restore the terminal state.
+				# Relying on the "finally" clause isn't sufficient.
+				cli_interactor.quit_interactor()
+				raise
 
 		finally:
 			if not stop_event.is_set():
 				stop_event.set()
+
 			output_thread.join()
 
 	else:
@@ -104,9 +108,8 @@ def get_status(opts, args, listener):
 		try:
 			LMC.rwi.get_daemon_status(opts, args)
 
-		except Exception, e:
-			logging.warning(e)
-			pyutils.print_exception_if_verbose()
+		except:
+			logging.exception(_(u'Could not obtain daemon status'))
 def get_inside(opts, args, listener):
 
 	import code
@@ -145,7 +148,7 @@ def get_inside(opts, args, listener):
 	history_file = os.path.expanduser('~/.licorn/interactor_history')
 
 	if history_file:
-		history_dir  = os.path.dirname(history_file)
+		history_dir = os.path.dirname(history_file)
 
 		if not os.path.exists(history_dir):
 			os.makedirs(history_dir)
@@ -165,13 +168,22 @@ def get_inside(opts, args, listener):
 
 	try:
 		try:
-			LMC.rwi.console_start()
-			sys.ps1 = u'licornd> '
+			is_tty = sys.stdin.isatty()
 
-			console.interact(banner=_(u'Licorn® {0}, Python {1} '
-							u'on {2}').format(version,
+			LMC.rwi.console_start(is_tty=is_tty)
+
+			if is_tty:
+				sys.ps1 = u'licornd> '
+				banner  =_(u'Licorn® {0}, Python {1} on {2}').format(
+								version,
 								sys.version.replace('\n', ''),
-								sys.platform))
+								sys.platform)
+
+			else:
+				sys.ps1 = u''
+				banner  = u''
+			console.interact(banner=banner)
+
 		except:
 			logging.exception('Error running the remote console!')
 

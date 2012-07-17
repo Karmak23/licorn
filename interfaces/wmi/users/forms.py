@@ -60,15 +60,14 @@ class UserForm(forms.Form):
 		self.fields['shell'] = forms. ChoiceField(
 			choices = [(p, p) for p in LMC.configuration.users.shells ],
 			initial = user_shell)
-
-
-
 class SkelInput(forms.Form):
 	def __init__(self, initial_skel='', class_name='', *args, **kwargs):
 		super(self.__class__, self).__init__(*args, **kwargs)
+
 		self.fields['skel_to_apply'] = forms.ChoiceField(
-				choices = [(s, os.path.basename(s)) for s in LMC.configuration.users.skels ],
-				initial = initial_skel,
+				choices=((s, os.path.basename(s))
+								for s in LMC.configuration.users.skels),
+				initial=initial_skel,
 				label=_('Which skel do you want to apply?'))
 
 

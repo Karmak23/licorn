@@ -44,7 +44,9 @@ binary-install: build
 uninstall:
 	@rm -f "$(DESTDIR)"/usr/bin/{add,mod,del,get,chk}
 	@rm -f "$(DESTDIR)"/usr/sbin/licornd*
-	@rm -rf "$(SHARE_DIR)" "$(CACHE_DIR)" "$(PROJECT_LIB_DIR)" "$(CONF_DIR)"
+	@rm -rf "$(SHARE_DIR)" "$(CACHE_DIR)" "$(PROJECT_LIB_DIR)"
+	# don't delete CONF_DIR !! "$(CONF_DIR)"
+	@rm -rf /usr/lib/python*/{dist,site}-packages/licorn || true
 
 # In developer install, the first 'make lang' will fail because Django
 # is not yet installed. But this will go far enough to compile the PO
@@ -68,12 +70,16 @@ devinstall: devinstall_packages perms
 	@python contrib/dev_install.py --user-post-installation
 	@make lang  >/dev/null 2>&1
 	#
-	# You can play now :-)
+	# You should logout from your session and log back in to
+	# benefit from your new groups. After that you can play :-)
 	#
 
 devuninstall: uninstall
 
 doc:
+	#
+	# Sphinx (python-sphinx) should be installed before continuing.
+	#
 	(cd docs; make html)
 
 installdoc: doc
@@ -89,7 +95,7 @@ localperms:
 
 docsync: doc
 	( cd docs; rsync -av --delete _build/html/ \
-			dev.licorn.org:/home/groups/darcs-Licorn/docs/_build/html )
+			docs.licorn.org:/home/www/docs.licorn.org/ )
 
 clean: cleandoc cleanlang
 	find ./ -type f \( -name '*~' -o -name '.*.swp' \
@@ -113,7 +119,9 @@ i18n: update-po
 			mkdir -p locale/$${lang}/LC_MESSAGES; \
 			msgfmt locale/$${lang}.po -o locale/$${lang}.mo ; \
 			cp locale/$${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
-			(cd interfaces/wmi ; django-admin compilemessages -l $${lang} || django-admin.py compilemessages -l $${lang}) ; \
+			(cd interfaces/wmi ; django-admin compilemessages -l $${lang} \
+				|| django-admin.py compilemessages -l $${lang} \
+				|| true) ; \
 		done ;
 
 update-pot:
@@ -130,8 +138,12 @@ update-po: update-pot
 			touch locale/$${lang}.js.po ; \
 			( \
 				cd interfaces/wmi ; \
-				django-admin makemessages -d django -l $${lang} || django-admin.py makemessages -d django -l $${lang} ; \
-				django-admin makemessages -d djangojs -l $${lang} || django-admin.py makemessages -d djangojs -l $${lang} \
+				django-admin makemessages -d django -l $${lang} \
+					|| django-admin.py makemessages -d django -l $${lang} \
+					|| true; \
+				django-admin makemessages -d djangojs -l $${lang} \
+					|| django-admin.py makemessages -d djangojs -l $${lang} \
+					|| true \
 			) ; \
 		done ;
 

@@ -13,12 +13,12 @@ Licorn core: system - http://docs.licorn.org/core/system.html
 
 """
 
-import sys, os, pwd, Pyro.core
+import os, pwd, Pyro.core
 
 from threading import current_thread
-from licorn.foundations.threads import RLock, Event
+from licorn.foundations.threads import RLock
 
-from licorn.foundations           import logging, options, settings, exceptions
+from licorn.foundations           import logging, settings
 from licorn.foundations           import process, apt, events, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
@@ -26,12 +26,11 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import ObjectSingleton, NamedObject
-from licorn.foundations.messaging import remote_output, ListenerObject
+from licorn.foundations.messaging import ListenerObject
 from licorn.foundations.constants import host_status, host_types, distros, \
 											reasons, conditions, roles, priorities
 
 from licorn.core                import LMC
-from licorn.core.classes        import CoreController
 from licorn.daemon              import client
 
 class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.ObjBase):

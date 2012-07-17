@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Licorn extensions: Dbus - http://docs.licorn.org/extensions/dbus.html
+Licorn extensions: GLoop - http://docs.licorn.org/extensions/gloop
 
 * the first purpose of this extension is to provide a dbus/gobject mainloop
-  outside of the licorn daemon, for enhanced flexibility.
+  outside of the licorn daemon `MainThread`, for enhanced flexibility.
 
 .. note:: This extension is named after 'gloop' because naming it 'dbus'
 	produces awful results and import cycles (conflict with standard dbus
@@ -25,11 +25,13 @@ from licorn.foundations           import exceptions, logging
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import ObjectSingleton
+from licorn.foundations.base      import ObjectSingleton, Enumeration
 from licorn.foundations.constants import services, svccmds, distros
 
 from licorn.core                  import LMC
 from licorn.extensions            import ServiceExtension
+
+dbus_pretty_name = stylize(ST_NAME, 'dbus')
 
 class DbusThread(Thread):
 	""" Run the d-bus main loop (from gobject) in a separate thread, because
@@ -63,14 +65,17 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 
 		.. versionadded:: 1.2.5
 	"""
+
+	_lpickle_ = { 'to_drop' : [ 'dbus' ] }
+
 	def __init__(self):
 		assert ltrace(TRACE_OPENSSH, '| OpensshExtension.__init__()')
 
 		ServiceExtension.__init__(self,
 			name='gloop',
 			service_name='dbus',
-			service_type=services.UPSTART 
-							if LMC.configuration.distro == distros.UBUNTU 
+			service_type=services.UPSTART
+							if LMC.configuration.distro == distros.UBUNTU
 							else services.SYSV
 		)
 
@@ -83,7 +88,7 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 		self.paths.dbus_config = '/etc/dbus-1/system.conf'
 
 		# NOTE: different path on Ubuntu and Debian. Don't know other distros.
-		self.paths.dbus_binary = dbus_binary_paths.get(LMC.configuration.distro, 
+		self.paths.dbus_binary = dbus_binary_paths.get(LMC.configuration.distro,
 									'/distro_not_supported/for_gloop_extension/dbus-daemon')
 
 		# TODO: get this from the config file.
@@ -99,6 +104,8 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 
 		if os.path.exists(self.paths.dbus_binary) \
 				and os.path.exists(self.paths.dbus_config):
+
+			self.__setup_messages_handlers()
 			self.available = True
 
 			# WE do not use the config file yet.
@@ -129,8 +136,32 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 		self.threads.dbus = DbusThread()
 		self.threads.dbus.start()
 
-		logging.info(_(u'{0}: started extension and gobject mainloop '
-			'thread.').format(stylize(ST_NAME, self.name)))
+		try:
+			self.dbus            = Enumeration('dbus')
+			self.dbus.system_bus = dbus.SystemBus()
+
+		except:
+			logging.exception(_(u'{0}: could not acquire {1} system bus, '
+				u'disabling'), self.pretty_name, dbus_pretty_name)
+
+		else:
+			logging.info(_(u'{0}: started extension and gobject mainloop '
+					u'thread.').format(self.pretty_name))
 
 		assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled() → True')
 		return True
+	def dbus_catchall_signal_handler(self, *args, **kwargs):
+		logging.progress(_(u'{0}: DBUS message {1} {2}.').format(
+				self.pretty_name,
+				u', '.join(stylize(ST_NAME, a) for a in args),
+				u', '.join('%s=%s' % (stylize(ST_KEY, k),
+										stylize(ST_VALUE, v))
+					for k,v in kwargs.iteritems())))
+	def __setup_messages_handlers(self):
+		if __debug__:
+			# The dbus catchall
+			self.bus.add_signal_receiver(self.dbus_catchall_signal_handler,
+							interface_keyword='dbus_interface',
+							member_keyword='member')
+
+__all__ = ('GloopExtension', )

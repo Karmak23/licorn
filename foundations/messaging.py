@@ -29,12 +29,14 @@ def remote_output(text_message, clear_terminal=False, *args, **kwargs):
 		reference is stored in :obj:`current_thread().listener`. """
 	try:
 		return current_thread().listener.process(
-			LicornMessage(data=text_message, channel=1,
+			LicornMessage(data=text_message,
+							channel=kwargs.pop('_message_channel_', 1),
 							clear_terminal=clear_terminal, **kwargs),
 			options.msgproc.getProxy())
 	except AttributeError:
-		logging.exception(_(u'{0}.remote_output() aborted (no listener '
-							u'registered).'), current_thread().name)
+		import logging
+		logging.exception(_(u'{0}.remote_output() aborted, no listener '
+							u'registered'), current_thread().name)
 class LicornMessage(Pyro.core.CallbackObjBase):
 	""" Small message object pushed back and forth between Pyro instances on one
 		or more physical machines.
@@ -220,7 +222,7 @@ class ListenerObject(object):
 
 	# ====================================== Licornd remote interactive console
 
-	def console_start(self):
+	def console_start(self, is_tty=True):
 		# we have to import 'logging' not at the top of the module
 		import logging, events
 
@@ -231,9 +233,10 @@ class ListenerObject(object):
 		from licorn.core   import version, LMC
 		from threads       import RLock, Event
 
-		# this is a little too much
+		# This is a little too much
 		#self._console_namespace = sys._getframe(1).f_globals
 
+		self._console_isatty    = is_tty
 		self._console_namespace = {
 				'version'       : version,
 				'daemon'        : self.licornd,
@@ -249,37 +252,50 @@ class ListenerObject(object):
 				'Event'         : Event,
 				'workers'       : workers,
 				'events'        : events,
-				}
-		self._console_interpreter = self.__class__.BufferedInterpreter(self._console_namespace)
+				'LicornEvent'   : events.LicornEvent,
+			}
+
+		self._console_interpreter = self.__class__.BufferedInterpreter(
+														self._console_namespace)
 		self._console_completer   = rlcompleter.Completer(self._console_namespace)
 
 		t = current_thread()
+
 		logging.notice(_(u'{0}: Interactive console requested by {1} '
 			u'from {2}.').format(self.licornd,
 			stylize(ST_NAME, t._licorn_remote_user),
 			stylize(ST_ADDRESS, '%s:%s' % (t._licorn_remote_address,
 											t._licorn_remote_port))),
 											to_listener=False)
-		remote_output(_(u'Welcome into licornd\'s arcanes…') + '\n',
-						clear_terminal=True, char_delay=0.025)
+		if is_tty:
+			remote_output(_(u'Welcome into licornd\'s arcanes…') + '\n',
+									clear_terminal=True, char_delay=0.025)
+		else:
+			remote_output(_(u'>>> Entered batched remote console.') + '\n',
+							_message_channel_=2)
 	def console_stop(self):
-		del self._console_completer
-		del self._console_interpreter
-		del self._console_namespace
-
 		# we have to import 'logging' not at the top of the module
 		import logging
 
 		t = current_thread()
 
 		logging.notice(_(u'{0}: Interactive console terminated by {1} '
-			u'from {2}.').format(self.licornd,
-			stylize(ST_NAME, t._licorn_remote_user),
-			stylize(ST_ADDRESS, '%s:%s' % (t._licorn_remote_address,
+							u'from {2}.').format(self.licornd,
+									stylize(ST_NAME, t._licorn_remote_user),
+									stylize(ST_ADDRESS, '%s:%s' % (
+											t._licorn_remote_address,
 											t._licorn_remote_port))),
 											to_listener=False)
-		# NOTE: there are console NBSPs at some choosen places in the sentences.
-		remote_output(_(u'Welcome back to Real World™. Have a nice day!') + '\n', word_delay=0.25)
+
+		if self._console_isatty:
+			# NOTE: there are console non-breakable spaces at choosen
+			# places in the sentences for enhanced graphical effect.
+			remote_output(_(u'Welcome back to Real World™. Have a nice day!')
+													+ u'\n', word_delay=0.25)
+		else:
+			remote_output(_(u'>>> batched remote console terminated.') + '\n',
+							_message_channel_=2)
+
 	def console_complete(self, phrase, state):
 		return self._console_completer.complete(phrase, state)
 	def console_runsource(self, source, filename=None):
@@ -383,7 +399,7 @@ class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 				if message.word_delay:
 					delay = message.word_delay
 					for word in message.data.split(' '):
-						chan_write(word + ('' if word == '\n' else ' '))
+						chan_write(word + ('' if word.endswith('\n') else ' '))
 						chan_flush()
 						time.sleep(delay)
 

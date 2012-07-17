@@ -24,6 +24,7 @@ TRACE_GC            = _ltrace_level(0x0200000000000000000000000, 'gc')
 TRACE_LOCK          = _ltrace_level(0x0400000000000000000000000, 'locks')
 TRACE_LOCKS         = _ltrace_level(0x0400000000000000000000000, 'locks')
 
+# ================================================================= foundations
 TRACE_FOUNDATIONS   = _ltrace_level(0x000000000000000000000ffff, 'foundations')
 TRACE_LOGGING       = _ltrace_level(0x0000000000000000000000001, 'logging')
 TRACE_BASE          = _ltrace_level(0x0000000000000000000000002, 'base')
@@ -43,8 +44,9 @@ TRACE_PYUTILS       = _ltrace_level(0x0000000000000000000001000, 'pyutils')
 # the next 2 are identical, this is meant to be, for syntaxic eases
 TRACE_EVENT         = _ltrace_level(0x0000000000000000000002000, 'events')
 TRACE_EVENTS        = _ltrace_level(0x0000000000000000000002000, 'events')
+TRACE_CACHE         = _ltrace_level(0x0000000000000000000004000, 'cache')
 
-
+# ======================================================================== core
 TRACE_CORE          = _ltrace_level(0x00000000000000000ffff0000, 'core')
 TRACE_CONFIGURATION = _ltrace_level(0x0000000000000000000010000, 'configuration')
 TRACE_USERS         = _ltrace_level(0x0000000000000000000020000, 'users')
@@ -57,6 +59,7 @@ TRACE_KEYWORDS      = _ltrace_level(0x0000000000000000000800000, 'keywords')
 TRACE_SYSTEM        = _ltrace_level(0x0000000000000000001000000, 'system')
 
 
+# ==================================================================== backends
 TRACE_BACKENDS      = _ltrace_level(0x0000000000000ffff00000000, 'backends')
 TRACE_OPENLDAP      = _ltrace_level(0x0000000000000000100000000, 'openldap')
 TRACE_SHADOW        = _ltrace_level(0x0000000000000000200000000, 'shadow')
@@ -77,13 +80,15 @@ TRACE_RDIFFBACKUP   = _ltrace_level(0x0000000000080000000000000, 'rdiffbackup')
 TRACE_SQUID         = _ltrace_level(0x0000000000100000000000000, 'squid')
 TRACE_POWERMGMT     = _ltrace_level(0x0000000000200000000000000, 'powermgmt')
 TRACE_GLOOP         = _ltrace_level(0x0000000000400000000000000, 'gloop')
+TRACE_MYLICORN      = _ltrace_level(0x0000000000800000000000000, 'mylicorn')
+TRACE_SIMPLESHARING = _ltrace_level(0x0000000001000000000000000, 'simplesharing')
 
 
 TRACE_DAEMON        = _ltrace_level(0x00000ffff0000000000000000, 'daemon')
 TRACE_MASTER        = _ltrace_level(0x0000000010000000000000000, 'master')
 TRACE_INOTIFIER     = _ltrace_level(0x0000000020000000000000000, 'inotifier')
 TRACE_ACLCHECKER    = _ltrace_level(0x0000000040000000000000000, 'aclchecker')
-TRACE_CACHE         = _ltrace_level(0x0000000080000000000000000, 'cache')
+# TRACE_CACHE has been temporarily moved to foundations
 TRACE_CRAWLER       = _ltrace_level(0x0000000100000000000000000, 'crawler')
 TRACE_CMDLISTENER   = _ltrace_level(0x0000000200000000000000000, 'cmdlistener')
 # the next 2 are identical, this is meant to be, for syntaxic eases

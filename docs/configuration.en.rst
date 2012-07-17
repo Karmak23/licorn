@@ -37,7 +37,7 @@ Backup
 Experimental functionnalities
 -----------------------------
 
-.. _experimental.enabled.en:
+.. _settings.experimental.enabled.en:
 
 	**experimental.enabled**
 		turn on experimental features, depending on wich version of Licorn® you have installed. For example, in version 1.2.3, the experimental directive enables the `Machines` tab in the WMI (the wires are already enabled but non-sysadmins don't get the feature).

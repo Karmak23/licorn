@@ -11,10 +11,9 @@ Licorn Shadow backend - http://docs.licorn.org/core/backends/shadow.html
 	better match reality and avoid potential name conflicts.
 """
 
-import os, crypt, tempfile, grp, pyinotify
+import os, crypt, tempfile
 
 from threading  import Timer
-from traceback  import print_exc
 from contextlib import nested
 
 from licorn.foundations           import settings, logging, exceptions
@@ -74,10 +73,10 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		except AttributeError:
 			pass
 		else:
-			logging.warning("%s shadow backend (this is important, "
-				"please don't try to set %s in %s!" % (
-						stylize(ST_IMPORTANT, 'RE-enabled'),
-						stylize(ST_COMMENT, 'backends.shadow.enabled=False'),
+			logging.warning(_(u'{0} shadow backend (this is important, '
+				u'please do not try to set {1} in {2}!').format(
+						stylize(ST_IMPORTANT, _(u'RE-enabled')),
+						stylize(ST_COMMENT, u'backends.shadow.enabled=False'),
 						stylize(ST_PATH, settings.main_config_file)
 					)
 				)
@@ -208,7 +207,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				sentry = [ login, '', '0', '0', '99999', '7', '', '', '' ]
 
 				logging.warning(_(u'{0}: added missing entry for user {1} '
-					'in {2}.').format(str(self), stylize(ST_LOGIN, login),
+					'in {2}.').format(self.pretty_name, stylize(ST_LOGIN, login),
 						stylize(ST_PATH, '/etc/shadow')))
 
 				need_rewriting = True
@@ -235,7 +234,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 
 		if need_rewriting and is_allowed:
 			logging.notice(_(u'{0}: cleaned users data rewrite '
-				'requested in the background.').format(str(self)))
+				'requested in the background.').format(self.pretty_name))
 
 			workers.service_enqueue(priorities.NORMAL,
 											self.save_Users, LMC.users,
@@ -311,6 +310,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 					try:
 						description = extra_entry[1]
 						groupSkel   = extra_entry[2]
+
 					except IndexError, e:
 						raise exceptions.CorruptFileError(
 							settings.backends.shadow.extended_group_file,
@@ -324,6 +324,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				if name ==  gshadow_entry[0]:
 					try:
 						userPassword = gshadow_entry[1]
+
 					except IndexError, e:
 						# TODO: set need_rewriting = True, construct a good
 						# default entry and continue.
@@ -338,7 +339,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				# this happens if debian tools were used between 2 Licorn CLI
 				# calls, or on first call of CLI tools on a Debian system.
 				logging.notice(_(u'{0}: added missing record '
-					'for group {1} in {2}.').format(str(self),
+					'for group {1} in {2}.').format(self.pretty_name,
 						stylize(ST_NAME, name),
 						stylize(ST_PATH, '/etc/gshadow')))
 				need_rewriting = True
@@ -356,7 +357,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 
 		if need_rewriting and is_allowed:
 			logging.notice(_(u'{0}: cleaned groups data rewrite '
-				'requested in the background.').format(str(self)))
+				'requested in the background.').format(self.pretty_name))
 
 			workers.service_enqueue(priorities.NORMAL,
 										self.save_Groups, LMC.groups,
@@ -431,7 +432,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			self.__hint_shw += 1
 			os.rename(fpaths, '/etc/shadow')
 
-		logging.progress(_("{0}: saved users data to disk.").format(str(self)))
+		logging.progress(_(u'{0}: saved users data to disk.').format(self.pretty_name))
 	def save_Groups(self, groups):
 		""" Write the groups data in appropriate system files."""
 
@@ -499,16 +500,16 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			os.close(ftempe)
 			os.rename(fpathe, settings.backends.shadow.extended_group_file)
 
-		logging.progress(_("{0}: saved groups data to disk.").format(str(self)))
+		logging.progress(_(u'{0}: saved groups data to disk.').format(self.pretty_name))
 
 		assert ltrace_func(TRACE_SHADOW, True)
 	def compute_password(self, password, salt=None):
+
 		assert ltrace_func(TRACE_SHADOW)
 
-		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
-			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
-
+		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt()
+												if salt is None else salt)
 	def _inotifier_install_watches(self, inotifier):
 
 		assert ltrace_func(TRACE_SHADOW)
@@ -516,9 +517,9 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		self.__conffiles_threads = {}
 
 		for watched_file, controller, hint, callback_func in (
-				('/etc/passwd', LMC.users,   self.__hint_pwd, self.__event_on_passwd),
-				('/etc/shadow', LMC.users,   self.__hint_shw, self.__event_on_passwd),
-				('/etc/group', LMC.groups,   self.__hint_grp, self.__event_on_group),
+				('/etc/passwd',  LMC.users,  self.__hint_pwd, self.__event_on_passwd),
+				('/etc/shadow',  LMC.users,  self.__hint_shw, self.__event_on_passwd),
+				('/etc/group',   LMC.groups, self.__hint_grp, self.__event_on_group),
 				('/etc/gshadow', LMC.groups, self.__hint_gsh, self.__event_on_group)
 			):
 			inotifier.watch_conf(watched_file, controller, callback_func, hint)
@@ -529,7 +530,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		assert ltrace_func(TRACE_SHADOW)
 
 		logging.notice(_(u'{0}: configuration file {1} changed, '
-			'reloading {2} controller.').format(str(self),
+			'reloading {2} controller.').format(self.pretty_name,
 				stylize(ST_PATH, path),
 				stylize(ST_NAME, controller.name)))
 

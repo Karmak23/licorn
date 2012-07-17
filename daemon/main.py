@@ -23,28 +23,27 @@ This daemon exists:
 import time
 dstart_time = time.time()
 
-import os, sys, signal, resource, gc, re, errno, __builtin__
+import os, sys, signal, resource, gc, __builtin__
 
-from threading  import current_thread, Thread, Event, active_count
-from Queue      import Empty, Queue, PriorityQueue
+from threading  import current_thread, Thread, active_count
 
-from licorn.foundations           import options, settings, logging, exceptions
+from licorn.foundations           import options, settings, logging
 from licorn.foundations           import gettext, process, pyutils, events
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import NamedObject, MixedDictObject, ObjectSingleton
+from licorn.foundations.base      import ObjectSingleton
 from licorn.foundations.constants import priorities, roles
-from licorn.foundations.threads   import _threads, _thcount
+from licorn.foundations.threads   import Event, _threads, _thcount
 from licorn.foundations.workers   import workers
 
-from licorn.core                  import version, LMC
+from licorn.core                  import LMC
 
-from licorn.daemon                import client
+#from licorn.daemon                import client
 from licorn.daemon.base           import LicornDaemonInteractor, \
 											LicornBaseDaemon, \
-											LicornThreads, LicornQueues
+											LicornThreads
 from licorn.daemon.threads        import GQWSchedulerThread, \
 											ServiceWorkerThread, \
 											ACLCkeckerThread, \
@@ -115,7 +114,16 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		# available to LMC, controllers and others if they need to plan
 		# background correction jobs, or the like.
 
-		logging.info(_(u'{0:s}: initializing facilities, backends, '
+		if self.opts.initial_check:
+			# Wait for things to be completed. For now we start
+			# and consider them "not completed"
+			self.initial_check_wait = {
+					'threads'     : False,
+					'wmi'         : False,
+					'cmdlistener' : False
+				}
+
+		logging.info(_(u'{0}: initializing facilities, backends, '
 								u'controllers and extensions.').format(self))
 
 		self.start_servicers()
@@ -128,10 +136,11 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 		# `upgrades` is a collection of handlers/callbacks that will be run on
 		# various `*load*` events, to check that the system verifies some
-		# conditions. They will "repair" it if not.
+		# conditions. They will "repair" it if not. Importing them is
+		# sufficient to make them registered and run by the `EventManager`.
 		from licorn import upgrades
 
-		logging.info(_(u'{0:s}: {1} callbacks collected.').format(self,
+		logging.info(_(u'{0}: {1} callbacks collected.').format(self,
 										stylize(ST_NAME, 'upgrades')))
 
 		# NOTE: the CommandListener must be launched prior to anything, to
@@ -158,7 +167,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# for the user to answer questions he won't see. Load everything in
 			# batch mode for the daemon not to be halted by any question about
 			# configuration alteration. If we need to make a change, Just Do It!
-			LMC.init_server(batch=self.opts.daemon)
+			LMC.init_server(batch=(self.opts.initial_check or self.opts.daemon))
 
 			# start the WMI as soon as possible, to answer HTTP requests
 			self.start_wmi()
@@ -175,7 +184,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		# create the INotifier thread, and map its WatchManager methods to
 		# us, they will be used by controllers, extensions and every single
 		# core object.
-		if self.configuration.inotifier.enabled:
+		if self.configuration.inotifier.enabled and not self.opts.initial_check:
 			ino = self.__threads._inotifier = INotifier(self)
 			ino.start()
 
@@ -186,6 +195,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			__builtin__.__dict__['L_inotifier_watches']        = ino._wm.watches
 			__builtin__.__dict__['L_inotifier_watch_conf']     = ino.inotifier_watch_conf
 			__builtin__.__dict__['L_inotifier_del_conf_watch'] = ino.inotifier_del_conf_watch
+
+			# TODO: make the collection automatic for settings (or
+			# globally for foundations), too.
+			settings._inotifier_install_watches()
 
 			ino.collect()
 
@@ -210,6 +223,27 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				delay=self.configuration.threads.wipe_time
 			))
 
+		if settings.role == roles.SERVER:
+
+			self.collect_and_start_threads()
+
+			workers.service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
+
+			#self.__threads.syncer   = ServerSyncer(self)
+			#self.__threads.searcher = FileSearchServer(self)
+			#self.__threads.cache    = Cache(self, keywords)
+	@events.handler_method
+	def settings_changed(self, event, *args, **kwargs):
+		""" TODO. """
+
+		# TODO: implement inotifier shutdown if settings say it is now.
+		#		- idem for extensions / backends, etc.
+		#	This method can do tricky things, that's why it's not
+		# implemented for now.
+		pass
+
+	@events.callback_method
+	def configuration_loaded(self, event, *args, **kwargs):
 		if settings.role == roles.CLIENT:
 			workers.service_enqueue(priorities.NORMAL,
 						client.client_hello, job_delay=1.0)
@@ -223,36 +257,27 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		else: # roles.SERVER
 			workers.service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
 
-			#self.__threads.syncer   = ServerSyncer(self)
-			#self.__threads.searcher = FileSearchServer(self)
-			#self.__threads.cache    = Cache(self, keywords)
-	def __collect_modules_threads(self):
+
+	def collect_and_start_threads(self, collect_only=False, full_display=True):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
 		"""
 
-		def collect_and_start(thread):
-			self.__threads[thread.name] = thread
-			if not thread.is_alive():
-				thread.start()
-		
-		for controller in (LMC.backends, LMC.extensions, LMC.tasks):
-			if controller == LMC.tasks:
-				threaded_tasks = [ o for o in controller if o.scheduled ]
-				for objekt in threaded_tasks:
-					collect_and_start(objekt.thread)
-							
-			else:
-				for objekt in controller:
-					for thread in objekt.threads:
-						collect_and_start(thread)
-	def __start_threads(self):
-		""" Iterate :attr:`self.__threads` and start
-			all not already started threads. """
+		if full_display:
+			logging.info(_(u'{0}: collecting all threads.').format(self))
+
+		for module_manager in (LMC.backends, LMC.extensions):
+			for module in module_manager:
+				for thread in module.threads:
+					if thread.name not in self.__threads:
+						self.__threads[thread.name] = thread
+
+		if collect_only:
+			return
 
 		# this first message has to come after having daemonized, else it doesn't
 		# show in the log, but on the terminal the daemon was launched.
-		logging.notice(_(u'{0:s}: starting all threads.').format(self))
+		logging.notice(_(u'{0}: starting all threads.').format(self))
 
 		for (thname, th) in self.__threads.items():
 			# Check for non-GenericQueueWorkerThread and non-already-started
@@ -260,32 +285,51 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# to catch early events.
 			if not isinstance(th, GQWSchedulerThread) \
 						and not th.is_alive():
-				assert ltrace(TRACE_DAEMON, 'starting thread %s.' % thname)
-				th.start()
+				try:
+					assert ltrace(TRACE_DAEMON, 'starting thread %s.' % thname)
+					th.start()
+
+				except RuntimeError:
+					logging.exception(_(u'Could not start thread {0}'), th.name)
+
+		LicornEvent('all_thread_started').emit()
 	def __stop_threads(self):
-		logging.progress(_(u'{0:s}: stopping threads.').format(self))
+		logging.progress(_(u'{0}: stopping threads.').format(self))
 
 		# don't use iteritems() in case we stop during start and not all threads
 		# have been added yet.
 		for (thname, th) in self.__threads.items():
 			assert ltrace(TRACE_THREAD, 'stopping thread %s.' % thname)
 			if th.is_alive():
-				th.stop()
+				try:
+					th.stop()
+
+				except AttributeError:
+					try:
+						th.cancel()
+
+					except AttributeError:
+						logging.warning(_(u'{0}: thread {1} has no stop() '
+								u'nor cancel() method! It is probably still '
+								u'running.').format(self, th.name))
 				time.sleep(0.01)
 
-		if '_wmi' in self.__threads.keys():
-			assert ltrace(TRACE_THREAD, 'stopping thread WMI.')
-			if self.__threads._wmi.is_alive():
-				self.__threads._wmi.stop()
-				time.sleep(0.3)
+		if not self.opts.initial_check:
+			# These 2 are not started in initial checks mode.
 
-		if settings.role != roles.CLIENT and self.configuration.inotifier.enabled:
-			assert ltrace(TRACE_THREAD, 'stopping thread INotifier.')
-			if self.__threads._inotifier.is_alive():
-				self.__threads._inotifier.stop()
-				# we need to wait a little more for INotifier, it can take ages
-				# to remove all directory watches.
-				time.sleep(0.3)
+			if '_wmi' in self.__threads.keys():
+				assert ltrace(TRACE_THREAD, 'stopping thread WMI.')
+				if self.__threads._wmi.is_alive():
+					self.__threads._wmi.stop()
+					time.sleep(0.3)
+
+			if settings.role != roles.CLIENT and self.configuration.inotifier.enabled:
+				assert ltrace(TRACE_THREAD, 'stopping thread INotifier.')
+				if self.__threads._inotifier.is_alive():
+					self.__threads._inotifier.stop()
+					# we need to wait a little more for INotifier, it can take ages
+					# to remove all directory watches.
+					time.sleep(0.3)
 
 		events.stop()
 		time.sleep(0.01)
@@ -305,7 +349,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				LicornEvent('wmi_starts').emit()
 
 		else:
-			logging.info(_(u'{0:s}: not starting WMI, disabled on command '
+			logging.info(_(u'{0}: not starting WMI, disabled on command '
 				u'line or by configuration directive.').format(self))
 	@events.callback_method
 	def wmi_starts(self, event, *args, **kwargs):
@@ -314,14 +358,42 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			packages and al.).
 		"""
 
+
+		self.eventually_end_initial_check('wmi')
+
+		if self.opts.initial_check:
+			logging.notice(_(u'{0}: not starting the WMI because initial '
+									u'check in progress.').format(self))
+			return
+
+		# we cannot import this earlier, because we need the `upgrades`
+		# mechanism to install twisted-web if missing.
+		from licorn.daemon.wmi import WebManagementInterface
+
 		self.__threads._wmi = WebManagementInterface().start()
+	@events.callback_method
+	def command_listener_starts(self, event, *args, **kwargs):
+		self.eventually_end_initial_check('cmdlistener')
+	@events.callback_method
+	def all_thread_started(self, event, *args, **kwargs):
+		self.eventually_end_initial_check('threads')
+
+	def eventually_end_initial_check(self, event_waited_name):
+
+		if self.opts.initial_check:
+			self.initial_check_wait[event_waited_name] = True
+
+			if False not in self.initial_check_wait.values():
+				logging.notice(_(u'{0}: initial check finished, '
+									u'terminating.').format(self))
+
+				# we can't call self.terminate(), we are in a worker thread,
+				# this would raise a RuntimeError when blocking on queues.
+				os.kill(self.pid, signal.SIGTERM)
+
 	def run(self):
 
-		assert ltrace(TRACE_DAEMON, '> run()')
-
-		self.refork_if_not_root_or_die()
-
-		self.__setup_threaded_gettext()
+		assert ltrace_func(TRACE_DAEMON)
 
 		# this has to be done before anything else.
 		self.load_settings()
@@ -330,6 +402,13 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.pid_file      = self.configuration.pid_file
 
 		(self.opts, self.args) = self.parse_arguments()
+
+		# setup the Licorn® global options.
+		options.SetFrom(self.opts)
+
+		self.__setup_threaded_gettext()
+
+		self.refork_if_not_root_or_die()
 
 		self.__name = '%s/%s' % (LicornDaemon.dname,
 						roles[settings.role].lower())
@@ -356,12 +435,15 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		# be any of these in its daemon's life.
 		self.opts.batch = True
 
-		# setup the Licorn-global options object.
-		options.SetFrom(self.opts)
-
 		if self.opts.daemon:
 			self.pid = process.daemonize(self.configuration.log_file,
-										process_name=self.name)
+												process_name=self.name)
+
+		if self.opts.initial_check:
+			# disable the LAN scan during the initial check,
+			# without saving the setting for it to be still active
+			# at next launch, whatever the real-on-file-setting is.
+			settings.licornd.network.lan_scan = False
 
 		# if still here (not exited before), its time to signify we are going
 		# to stay: write the pid file.
@@ -387,23 +469,36 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.__start_threads()
 
 		if options.daemon:
-			logging.notice(_(u'{0:s}: all threads started, going to sleep '
-				u'waiting for signals.').format(self))
+			logging.notice(_(u'{0}: all threads started, going to sleep '
+									u'waiting for signals.').format(self))
+
+			# This will trigger a lot of things.
+			LicornEvent('licornd_cruising').emit()
 			signal.pause()
+
+		elif self.opts.initial_check:
+			logging.notice(_(u'{0}: all threads started, waiting for the end '
+											u'of initial check.').format(self))
+			signal.pause()
+
 		else:
-			logging.notice(_(u'{0:s}: all threads started, ready for TTY '
-				u'interaction.').format(self))
+			logging.notice(_(u'{0}: all threads started, ready for TTY '
+											u'interaction.').format(self))
 			# set up the interaction with admin on TTY std*, only if we do not
 			# fork into the background. This is a special thread case, not
 			# handled by the global start / stop mechanism, to be able to start
 			# it before every other thread, and stop it after all other have
 			# been stopped.
+
+			# This will trigger a lot of things. Delay it until interactor is started.
+			LicornEvent('licornd_cruising').emit(delay=5.0)
+
 			self.interactor = LicornDaemonInteractor(daemon=self)
 			self.interactor.run()
 
 		# if we get here (don't know how at all: we should only receive
 		# signals), stop cleanly (as if a signal was received).
-		self.terminate(None, None)
+		self.terminate()
 
 		assert ltrace(TRACE_DAEMON, '< run()')
 	def dump_status(self, long_output=False, precision=None, as_string=True):
@@ -574,7 +669,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				threads_data=tdata,
 			)
 	@events.handler_method
-	def need_restart(self, reason=None, *args, **kwargs):
+	def need_restart(self, *args, **kwargs):
 
 		if self.__restart_event.is_set():
 			# be sure we restart only one time. The Event can be
@@ -584,7 +679,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.__restart_event.set()
 
 		# We've got to be sure everyone is ready to restart !
-		LicornEvent('daemon_will_restart', reason=reason, synchronous=True).emit()
+		LicornEvent('daemon_will_restart', reason=kwargs.get('reason'), synchronous=True).emit()
 
 		# TODO: mark the 'restart' status in LMC.system. This needs
 		# system.status become a property...
@@ -596,7 +691,11 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		t.start()
 	def __setup_threaded_gettext(self):
 		""" Make the gettext language switch be thread-dependant, to have
-			multi-lingual parallel workers ;-) """
+			multi-lingual parallel workers ;-)
+
+			.. note:: it seems `foundations.options` is not yet setup when
+				this method launches. No output
+		"""
 
 		assert ltrace(TRACE_DAEMON, '| __setup_threaded_gettext()')
 
@@ -612,17 +711,39 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 		__builtin__.__dict__['_'] = my_
 
-		fr_lang    = gettext.translation('licorn', languages=['fr'])
-		self.langs = {
-				u'fr_FR.utf8' : fr_lang,
-				u'fr_FR'      : fr_lang,
-				u'fr'         : fr_lang,
+		self.langs = {}
+		langs      = {
+				'fr': (u'fr_FR.utf8', u'fr_FR'),
 			}
+
+		for lang, alternatives in langs.iteritems():
+			try:
+				gtlang = gettext.translation('licorn', languages=[ lang ])
+
+			except (IOError, OSError):
+				if os.geteuid() == 0:
+					# Don't bother when we are not root, the daemon will
+					# refork/re-exec and re-encounter this error anyway.
+					logging.exception(_(u'Could not load gettext translations '
+									u'for language {0}'), (ST_NAME, lang))
+
+			else:
+				logging.progress(_('Successfully loaded gettext translations '
+						u'for language {0}.').format(stylize(ST_NAME, lang)))
+
+				# setup aliases
+				# FIXME: shouldn't we get them from /etc/locale.alias ?
+				for alternative in alternatives:
+					self.langs[alternative] = gtlang
+
+				self.langs[lang] = gtlang
 
 		# make the current thread (MainThread) not trigger the except everytime.
 		current_thread()._ = __builtin__.__dict__['_orig__']
 	def daemon_shutdown(self):
 		""" stop threads and clear pid files. """
+
+		LicornEvent('daemon_shutdown', synchronous=True).emit(priorities.HIGH)
 
 		try:
 			# before stopping threads (notably cmdlistener), we've got to announce
@@ -645,12 +766,12 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# take over a TS backgrounded daemon with -rvD and my attached
 			# daemon gets rekilled immediately by another, launched by the TS.
 			# This is harmless, but annoying.
-			logging.warning(_(u'{0:s}: cannot announce shutdown '
+			logging.warning(_(u'{0}: cannot announce shutdown '
 				u'to remote hosts (was: {1}).').format(self, e))
 
 		self.__stop_threads()
 
-		logging.progress(_(u'{0:s}: joining threads.').format(self))
+		logging.progress(_(u'{0}: joining threads.').format(self))
 
 		threads_pass2 = []
 
@@ -664,7 +785,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			else:
 				assert ltrace(TRACE_THREAD, 'joining %s.' % thname)
 				if th.is_alive():
-					logging.warning(_(u'{0:s}: waiting for thread {1} to '
+					logging.warning(_(u'{0}: waiting for thread {1} to '
 						u'finish{2}.').format(self,
 							stylize(ST_NAME, thname),
 							_(u' (currently working on %s)')
@@ -693,7 +814,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		LMC.terminate()
 
 		# do this last, to keep the interactor usable until the end.
-		if not self.opts.daemon:
+		if not self.opts.daemon and not self.opts.initial_check:
 			self.interactor.stop()
 	def restart_command(self):
 		# even after having reforked (see main.py and foundations.process) with
@@ -708,7 +829,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			cmd.extend([ '--pids-to-wake2', ','.join(str(p)
 						for p in CommandListener.listeners_pids)])
 
-		logging.notice(_(u'{0:s}: restarting{1}.').format(self, self.uptime()))
+		logging.notice(_(u'{0}: restarting{1}.').format(self, self.uptime()))
 
 		self.execvp(cmd)
 	def reload(self):

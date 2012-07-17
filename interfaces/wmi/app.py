@@ -239,6 +239,7 @@ class DataCollectorThread(BaseLicornThread):
 				data = { 'method': meth, 'arguments': args }
 
 				for listener in self.listeners:
+					#assert ltrace(TRACE_WMI, 'push {0} to listener {1}.', (ST_COMMENT, data), (ST_NAME, listener))
 					listener.put(data)
 
 			except Exception, e:
@@ -352,7 +353,7 @@ class WmiEventApplication(ObjectSingleton):
 				if data.name in self.handlers:
 					try:
 						for handler in self.handlers[data.name]:
-							assert ltrace(TRACE_DJANGO, 'yield to user {0}@{1} {2}',
+							assert ltrace(TRACE_WMI, 'yield to user {0}@{1} {2}',
 												request.user.username,
 												request.META['REMOTE_ADDR'],
 												stylize(ST_NAME, handler.__name__))
@@ -365,9 +366,8 @@ class WmiEventApplication(ObjectSingleton):
 											u'handler {0}; continuing.'),
 											stylize(ST_NAME, handler.__name__))
 				else:
-					logging.warning2(_(u'No WMI handler yet for '
-										u'event "{0}".').format(
-											stylize(ST_NAME, data.name)))
+					logging.warning2(_(u'No WMI handler yet for event '
+								u'"{0}".').format(stylize(ST_NAME, data.name)))
 					#yield utils.notify(_(u'No event handler <strong>yet</strong> '
 					#	u'for event « <strong><code>{0}</code></strong> ».').format(data.name))
 
@@ -397,8 +397,7 @@ class WmiEventApplication(ObjectSingleton):
 
 		# hints coming from http://stackoverflow.com/questions/301134/dynamic-module-import-in-python
 
-		dirname  = os.path.dirname(__file__)
-		basename = os.path.dirname(__file__)
+		dirname = os.path.dirname(__file__)
 
 		self.push_permissions = {}
 		self.dynamic_sidebars = {}
@@ -406,10 +405,10 @@ class WmiEventApplication(ObjectSingleton):
 		self.dynamic_infos    = {}
 
 		for entry in os.listdir(dirname):
-			
-			# if is has a 'views', it's a django submodule; it SHOULD have
-			# a `push_permissions` dict defined in __init__.py
-			if os.path.exists(os.path.join(dirname, entry, 'views.py')):
+			# If is has 'views' and 'urls', we consider it a django app;
+			# it SHOULD have a `push_permissions` dict defined in __init__.py
+			if os.path.exists(os.path.join(dirname, entry, 'views.py')) \
+					and os.path.exists(os.path.join(dirname, entry, 'urls.py')):
 				try:
 					module = __import__('licorn.interfaces.wmi.%s' % entry,
 									fromlist=["licorn.interfaces.wmi.%s" % entry])
@@ -538,12 +537,12 @@ class WmiEventApplication(ObjectSingleton):
 				threads[collector_name].add_listener(q)
 
 			except KeyError:
-				logging.warning(_('Cannot setup collector {0}.').format(collector_name))
+				logging.warning(_(u'Cannot setup collector {0}.').format(collector_name))
 
 		if request.session.get('not_yet_welcomed', True):
 			# a kind of welcome message
 			wmi_event_app.queue(request).put(
-				utils.notify(_('Welcome to Licorn® WMI, {0}.').format(
+				utils.notify(_(u'Welcome to Licorn® WMI, {0}.').format(
 										request.user.username)), 3500)
 			request.session['not_yet_welcomed'] = False
 

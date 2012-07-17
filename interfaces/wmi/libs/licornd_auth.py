@@ -4,15 +4,21 @@ from django.contrib.auth.models import User, check_password
 from django.conf                import settings
 
 from licorn.foundations         import logging, settings as licorn_settings
-from licorn.foundations         import pyutils
+from licorn.foundations         import exceptions, pyutils
 from licorn.core                import LMC
 
 class LicorndAuthBackend:
-	""" Authenticate against OpenERP users. """
+	""" Authenticate against Licorn daemon users.
+
+
+		.. note:: no use of core objects here, we just get "logins" and
+			"group names", this avoids the eventual problem of strong / weak
+			references to core objects.
+	"""
 
 	supports_object_permissions = False
-	supports_anonymous_user = False
-	supports_inactive_user = True
+	supports_anonymous_user     = False
+	supports_inactive_user      = True
 
 	def _find_login_for_gecos(self, gecos):
 		for user in LMC.users:
@@ -28,7 +34,8 @@ class LicorndAuthBackend:
 			return False
 	def _user_infos_by_login(self, login):
 		u = LMC.users.by_login(login)
-		return (u.uidNumber, u.login, u.gecos, u.locked, tuple(g.name for g in u.groups))
+		return (u.uidNumber, u.login, u.gecos, u.locked,
+											tuple(g.name for g in u.groups))
 
 	def authenticate(self, username=None, password=None):
 
@@ -65,14 +72,16 @@ class LicorndAuthBackend:
 				django_user.uid          = uid
 				django_user.email	     = login + '@localhost'
 				django_user.is_active    = not locked
-				django_user.is_superuser = (licorn_settings.defaults.admin_group in groups)
-				django_user.is_staff     = (licorn_settings.licornd.wmi.group    in groups)
+				django_user.is_superuser = (licorn_settings.defaults.admin_group
+												in groups)
+				django_user.is_staff     = (django_user.is_superuser or (
+											licorn_settings.licornd.wmi.group
+												in groups))
 
 		except Exception:
-			logging.exception(_(u'Exception while trying to authenticate user {0}'), username)
-
+			logging.exception(_(u'Exception while trying to authenticate '
+														u'user {0}'), username)
 		return django_user
-
 	def get_user(self, user_id):
 		user = None
 

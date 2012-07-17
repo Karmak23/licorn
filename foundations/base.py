@@ -46,8 +46,8 @@ class method_decorator(object):
 	def make_unbound(self, klass):
 		@functools.wraps(self.func)
 		def wrapper(*args, **kwargs):
-			raise TypeError(_(u'Unbound method %s() must be called with %s '
-				u'instance as first argument (got nothing instead)') % (
+			raise TypeError(_(u'Unbound method {0}() must be called with {1} '
+				u'instance as first argument (got nothing instead)').format(
 					self.func.__name__, klass.__name__))
 		return wrapper
 

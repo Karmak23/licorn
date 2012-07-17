@@ -78,9 +78,9 @@ def ltrace_dumpstacks(signal=None, frame=None, thread_ident=None):
     code = []
     for threadId, stack in sys._current_frames().items():
 		if not thread_ident or threadId == thread_ident:
-			code.append(_("\n# Thread: %s(%d)") % (id2name[threadId], threadId))
+			code.append(_("\n# Thread: {0}({1})").format(id2name[threadId], threadId))
 			for filename, lineno, name, line in traceback.extract_stack(stack):
-				code.append(_('	File: "%s", line %d, in %s') % (filename, lineno, name))
+				code.append(_('	File: "{0}", line {1}, in {2}').format(filename, lineno, name))
 				if line:
 					code.append("	  %s" % (line.strip()))
     return highlight("\n".join(code), lexer, formatter)
@@ -148,8 +148,9 @@ def ltrace_frame_informations(with_var_info=False, func=repr, full=False, level=
 			except:
 				length = ''
 
-			return '%s [class=%s%s]' % (stylize(ST_VALUE, func(var)),
-				stylize(ST_ATTR, var.__class__.__name__), length)
+			return '%s [type=%s, class=%s%s]' % (stylize(ST_VALUE, func(var)),
+							stylize(ST_ATTR, type(var).__name__),
+							stylize(ST_ATTR, var.__class__.__name__), length)
 	else:
 		def print_var(var):
 			return func(var)

@@ -35,6 +35,7 @@ regex['ipv6']         = r'''^(?!.*::.*::)(?:(?!:)|:(?=:))(?:[0-9a-f]{0,4}(?:(?<=
 regex['ether_addr']   = '''^([\da-f]+:){5}[\da-f]+$'''
 regex['duration']     = '''^(infinite|\d+[dhms])$'''
 regex['ip_address']   = r'(?:' + regex['ipv4'] + r'|' + regex['ipv6'] + r')'
+regex['api_key']      = '''^[a-z0-9]{32,32}$'''
 
 # precompile all these to gain some time in the licorn daemon.
 cregex = {}
@@ -50,6 +51,7 @@ cregex['ipv6']         = re.compile(regex['ipv6'],         re.IGNORECASE)
 cregex['ip_address']   = re.compile(regex['ip_address'],   re.IGNORECASE)
 cregex['ether_addr']   = re.compile(regex['ether_addr'],   re.IGNORECASE)
 cregex['duration']     = re.compile(regex['duration'],     re.IGNORECASE)
+cregex['api_key']      = re.compile(regex['api_key'],      re.IGNORECASE)
 
 def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.'):
 	""" make a valid login or group name from a random string.
@@ -102,6 +104,7 @@ def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.'):
 	# delete any strange (or forgotten by translation map…) char left
 	if aggressive:
 		s = re.sub('[^.a-z0-9]', '', s)
+
 	else:
 		# keep dashes (or custom characters)
 		s = re.sub('[^%sa-z0-9]' % custom_keep, '', s)
@@ -215,7 +218,12 @@ def word_fuzzy_match(part, word):
 	# matched, this is a success. Announce it.
 	return word
 def word_match(word, valid_words):
-	""" try to find what the user specified on command line. """
+	""" try to find what the user specified on command line.
+
+		:param valid_words: a list (or tuple) of strings or unicode strings.
+			Generators and `itertools.chain()` objects won't work, because
+			this argument is iterated two times.
+	"""
 
 	for a_try in valid_words:
 		if word == a_try:
@@ -270,8 +278,8 @@ def multi_word_match(word, valid_words):
 def statsize2human(size):
 	""" Convert an integer size (coming from a stat object) to a Human readable string.
 
-		TODO: NLS this !
-		TODO: I heard of a python package already doing this. remove this functions when found.
+		.. warning:: this method is only used in the old and non-maintained GTK
+			frontend. Please do not use it. You can use instead :func:`~licorn.foundations.pyutils.bytes_to_human`.
 	"""
 	size *= 1.0
 	unit = 'byte(s)'

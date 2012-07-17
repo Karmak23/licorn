@@ -21,9 +21,6 @@ a backend should implement the following methods:
 	cycle.
 """
 
-import os
-
-from licorn.foundations           import logging, settings
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *

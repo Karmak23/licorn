@@ -59,6 +59,7 @@ if __name__ == "__main__":
 	test_regexes(testsuite)
 	test_short_syntax(testsuite)
 	test_exclusions(testsuite)
+	test_inotifier_exclusions(testsuite)
 
 	# can't be tested any more in background mode, it fails everytime (which
 	# is normal because it contains too much moving data).

@@ -8,7 +8,7 @@ Licorn Daemon base - http://docs.licorn.org/daemon/index.html
 
 """
 
-import sys, os, signal, time, re, errno, atexit
+import sys, os, signal, time, re, errno
 
 #def exitfunc():
 #	print '>> EXIT'
@@ -18,22 +18,23 @@ import sys, os, signal, time, re, errno, atexit
 #if __debug__:
 #	import pycallgraph; pycallgraph.start_trace()
 
-from threading import current_thread, Event
 from optparse  import OptionParser, SUPPRESS_HELP
 
 from licorn.foundations           import options, settings, logging, exceptions
-from licorn.foundations           import process, pyutils, ttyutils, styles
+from licorn.foundations           import process, pyutils, ttyutils, events, styles
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import NamedObject, MixedDictObject, EnumDict, Singleton
-from licorn.foundations.threads   import _threads, _thcount
+from licorn.foundations.base      import MixedDictObject, Singleton
+from licorn.foundations.threads   import _threads, _thcount, Event
 from licorn.foundations.constants import verbose, roles, priorities
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
 
-from licorn.core import LMC, version
+LicornEvent = events.LicornEvent
+
+from licorn.core import version
 
 class LicornThreads(Singleton, MixedDictObject):
 	pass
@@ -258,7 +259,7 @@ class LicornBaseDaemon:
 									settings.licornd.pyro.listen_address.split(':')[1])
 						except (IOError, OSError), e:
 							raise exceptions.BadConfigurationError(_(u'Problem '
-								u'getting interface %s address (was: %s).') % (
+								u'getting interface {0} address (was: {1}).').format(
 								settings.licornd.pyro.listen_address.split(':')[1], e))
 				else:
 					try:
@@ -328,7 +329,7 @@ class LicornBaseDaemon:
 				# trying to find a way to do this cleaner.
 				os.execvp(cmd[1], [cmd[0]] + cmd[2:])
 
-			except (OSError, IOError), e:
+			except (OSError, IOError):
 				logging.exception(_(u'transient process {0}: cannot execvp() {1}.'),
 									os.getpid(), (ST_ATTR, u' '.join(cmd)))
 				if raise_exc:
@@ -414,12 +415,20 @@ class LicornBaseDaemon:
 		# process seems completely stalled and doesn't respond even to SIGKILL.
 		my_process_names = [ self.dname, my_process_name, my_process_name.replace('/', '-')]
 
+		cgroup = process.cgroup
+
 		for entry in os.listdir('/proc'):
 			if entry.isdigit():
 				if int(entry) in exclude:
 					continue
 
 				try:
+					if cgroup and open('/proc/%s/cpuset' % entry).read().strip() != cgroup:
+						logging.progress(_(u'{0}: skipped process @{1} which '
+										u'is not in the same cgroup.').format(
+											self, entry))
+						continue
+
 					try:
 						# linux 3.x only
 						command_line1 = open('/proc/{0}/comm'.format(entry)).read().strip()
@@ -434,7 +443,7 @@ class LicornBaseDaemon:
 							os.kill(int(entry), signal.SIGKILL)
 
 							time.sleep(0.2)
-							logging.notice(_(u'{0:s}: killed aborted '
+							logging.notice(_(u'{0}: killed aborted '
 								u'instance @pid {1}.').format(self, entry))
 
 				except (IOError, OSError), e:
@@ -515,23 +524,30 @@ class LicornBaseDaemon:
 			action="store", type="string", dest="pids_to_wake2", default=None,
 			help=SUPPRESS_HELP)
 
-		parser.add_option("-B", "--no-boot-check",
-			action="store_true", dest="no_boot_check", default=False,
-			help=_(u"Don't run the initial check on all shared directories. This "
-				u"makes daemon be ready faster to answer users legitimate "
-				u"requests, at the cost of consistency of shared data. {0}: don't"
-				u" use this flag at server boot in init scripts. Only on daemon "
-				u"relaunch, on an already running system, for testing or "
-				u"debugging purposes.").format(stylize(ST_IMPORTANT,
-				'EXTREME CAUTION')))
+		parser.add_option("-c", "--initial-check", "--initial-setup",
+			action="store_true", dest="initial_check", default=False,
+			help=_(u'Check the system for compliance with Licorn®. Meant to '
+				u'be used during first installation. The daemon will check, '
+				u'auto-repair and install everything necessary, and give the '
+				u'hand back. {0}; no need to supply "-D". Do not '
+				u'misunderstand that the daemon will {1} run this check '
+				u'in normal conditions; but with this flag it will {2} run '
+				u'the checks and exit immediately after them.').format(
+					stylize(ST_IMPORTANT, _('This option implies that the '
+					u'daemon will not fork into the background')),
+					stylize(ST_IMPORTANT, _(u'always')),
+					stylize(ST_IMPORTANT, _(u'only'))
+					))
 
 		parser.add_option_group(common_behaviour_group(app, parser, 'licornd'))
 
 		opts, args = parser.parse_args()
 
-		if hasattr(opts, 'replace_all') and opts.replace_all:
-			opts.replace = True
-
+		if opts.initial_check and opts.daemon:
+			opts.daemon = False
+			if os.geteuid() == 0:
+				logging.notice(_(u'{0}: running initial checks in the '
+												u'foreground.').format(self))
 		return opts, args
 	def clean_sys_argv(self, for_slaves=False):
 		""" Remove from current command-line arguments the one that we can't keep
@@ -558,7 +574,7 @@ class LicornBaseDaemon:
 				args.append(arg)
 
 		if for_slaves:
-			for arg in ("-W", "--no-wmi", "-B", "--no-boot-check",):
+			for arg in ("-W", "--no-wmi", ):
 				try:
 					args.remove(arg)
 
@@ -597,7 +613,7 @@ class LicornBaseDaemon:
 
 		if process.already_running(self.pid_file):
 			if self.opts.replace or self.opts.shutdown:
-				logging.notice(_(u'{0:s}: trying to {1} existing instance '
+				logging.notice(_(u'{0}: trying to {1} existing instance '
 					u'@pid {2}.').format(self, _(u'replace')
 						if self.opts.replace else _(u'shutdown'), old_pid))
 
@@ -610,7 +626,7 @@ class LicornBaseDaemon:
 					time.sleep(0.1)
 
 					if counter >= 25:
-						logging.notice(_(u'{0:s}: existing instance still '
+						logging.notice(_(u'{0}: existing instance still '
 							u'running, we\'re going to be more incisive in '
 							u'a few seconds.').format(self))
 						break
@@ -633,7 +649,7 @@ class LicornBaseDaemon:
 					time.sleep(0.1)
 
 					if counter >= 25 and not_yet_displayed_one:
-						logging.notice(_(u'{0:s}: re-killing old instance '
+						logging.notice(_(u'{0}: re-killing old instance '
 							u'softly with TERM signal and waiting a little '
 							u'more.').format(self))
 
@@ -650,7 +666,7 @@ class LicornBaseDaemon:
 						not_yet_displayed_one = False
 
 					elif counter >= 50 and not_yet_displayed_two:
-						logging.notice(_(u'{0:s}: old instance has not '
+						logging.notice(_(u'{0}: old instance has not '
 							u'terminated after 8 seconds. Sending '
 							u'KILL signal.').format(self))
 
@@ -678,7 +694,7 @@ class LicornBaseDaemon:
 								open('/proc/%s/status' % old_pid).read())[0])
 
 						if 'sudo' in open('/proc/%s/cmdline' % parent_pid).read():
-							logging.notice(_(u'{0:s}: killing old instance\'s '
+							logging.notice(_(u'{0}: killing old instance\'s '
 								u'father (sudo, pid %s) without any '
 								u'mercy.').format(self, parent_pid))
 
@@ -695,7 +711,7 @@ class LicornBaseDaemon:
 							counter += 2
 
 						else:
-							logging.warning(_(u'{0:s}: old instance has not '
+							logging.warning(_(u'{0}: old instance has not '
 								u'terminated after 9 seconds and cannot '
 								u'be killed. We will not try to kill any other '
 								u'parent than "{1}", you are in a non-trivial '
@@ -706,7 +722,7 @@ class LicornBaseDaemon:
 						not_yet_displayed_three = False
 
 					elif counter >=120:
-						logging.warning(_(u'{0:s}: old instance has not '
+						logging.warning(_(u'{0}: old instance has not '
 							u'terminated after 15 seconds and cannot '
 							u'be killed directly or by killing its direct '
 							u'parent, bailing out. You are in trouble '
@@ -716,13 +732,13 @@ class LicornBaseDaemon:
 
 					counter += 1
 
-				logging.notice(_(u'{0:s}: old instance {1} terminated{2}').format(
+				logging.notice(_(u'{0}: old instance {1} terminated{2}').format(
 						self, _(u'nastily') if killed else _(u'successfully'),
 						_(u', we can play now.')
 									if self.opts.replace else '.'))
 
 			else:
-				logging.notice(_(u'{0:s}: daemon already running (pid {1}), '
+				logging.notice(_(u'{0}: daemon already running (pid {1}), '
 					u'not restarting.').format(self, old_pid))
 				sys.exit(5)
 	def refork_if_not_root_or_die(self):
@@ -736,7 +752,7 @@ class LicornBaseDaemon:
 				process.refork_as_root_or_die(self.dname)
 
 			except exceptions.LicornRuntimeException, e:
-				logging.error(_(u'{0:s}: must be run as {1} '
+				logging.error(_(u'{0}: must be run as {1} '
 								u'(was: {2}).').format(self,
 								stylize(ST_NAME, 'root'), e))
 	def unlink_pid_file(self):
@@ -744,13 +760,13 @@ class LicornBaseDaemon:
 
 		try:
 			if os.path.exists(self.pid_file):
-				logging.progress(_(u'{0:s}: unlinking PID file {1}.').format(
+				logging.progress(_(u'{0}: unlinking PID file {1}.').format(
 										self, stylize(ST_PATH, self.pid_file)))
 				os.unlink(self.pid_file)
 
 		except (OSError, IOError), e:
 			if e.errno != errno.ENOENT:
-				logging.exception(_(u'{0:s}: cannot unlink {1}.').format(
+				logging.exception(_(u'{0}: cannot unlink {1}.').format(
 									self, stylize(ST_PATH, self.pid_file)))
 	def uptime(self):
 
@@ -763,10 +779,10 @@ class LicornBaseDaemon:
 
 		if self.stopping_event.is_set():
 			if signum is None:
-				logging.warning2(_(u'{0:s}: already stopping, ignored '
+				logging.warning2(_(u'{0}: already stopping, ignored '
 								u'another terminate() call.').format(self))
 			else:
-				logging.warning2(_(u'{0:s}: already stopping, ignored '
+				logging.warning2(_(u'{0}: already stopping, ignored '
 								u'signal {1}.').format(self, signum))
 			return
 
@@ -775,10 +791,10 @@ class LicornBaseDaemon:
 		assert ltrace(TRACE_DAEMON, '| terminate({0}, {1})', signum, frame)
 
 		if signum is None:
-			logging.progress(_(u'{0:s}: cleaning up and stopping threads…').format(self))
+			logging.progress(_(u'{0}: cleaning up and stopping threads…').format(self))
 
 		else:
-			logging.notice(_(u'{0:s}: signal {1} received, '
+			logging.notice(_(u'{0}: signal {1} received, '
 							u'shutting down…').format(self, signum))
 
 		if hasattr(self, 'daemon_shutdown'):
@@ -792,9 +808,11 @@ class LicornBaseDaemon:
 
 		self.unlink_pid_file()
 
-		logging.notice(_(u'{0:s}: exiting{1}.').format(self, self.uptime()))
+		logging.progress(_(u'{0}: remaining threads before exit: {1}.').format(
+															self, _threads()))
 
-		print '>>', _threads()
+		logging.notice(_(u'{0}: exiting{1}.').format(self, self.uptime()))
+
 		#if __debug__:
 		#	pycallgraph.make_dot_graph('/home/%s.svg' % self.name, format='svg')
 
@@ -803,23 +821,16 @@ class LicornBaseDaemon:
 		#sys.exit(0)
 	def restart(self, signum=None, frame=None):
 
-		try:
-			LicornEvent('daemon_is_restarting').emit(priorities.HIGH)
-
-		except (NameError, TypeError, AttributeError):
-			# the call will fail in any other daemon than the main licornd,
-			# because only this daemon has an event manager and this builtin
-			# function name.
-			pass
+		LicornEvent('daemon_is_restarting').emit(priorities.HIGH)
 
 		assert ltrace(TRACE_DAEMON, '| restart(signum={0}, frame={1})',
 			(ST_UGID, signum), frame)
 
 		if signum:
-			logging.notice(_(u'{0:s}: SIGUSR1 received, preparing our '
+			logging.notice(_(u'{0}: SIGUSR1 received, preparing our '
 												u'restart.').format(self))
 		else:
-			logging.notice(_(u'{0:s}: restart needed, shutting '
+			logging.notice(_(u'{0}: restart needed, shutting '
 										u'everything down.').format(self))
 
 		if hasattr(self, 'daemon_shutdown'):

@@ -1,9 +1,37 @@
 {%- macro jquery_popover_media() -%}
-	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/jquery.popover.css" />
+	<!--<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/jquery.popover.css" />-->
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/popover.css" />
 	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/ug-popover.css" />
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.popover.js"></script>
 {%- endmacro -%}
 
+{%- macro jquery_checkbox_media() -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/jquery.checkbox.css" />
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.checkbox.js"></script>
+{%- endmacro -%}
+
+{%- macro jquery_dnd_media() -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/jquery.upload_dnd.css" />
+	<script type="text/javascript" src="/media/js/jquery.upload_dnd.js"></script>
+{%- endmacro -%}
+
+
+{# from http://stackoverflow.com/questions/1957466/how-to-create-an-on-off-switch-with-javascript-css #}
+{%- macro icheckbox(check_id, initial_state=False) -%}
+	<input type="checkbox" id="id_checkbox_{{ check_id }}"
+			{{ 'checked="checked"' if initial_state else '' }} />
+	<script language="javascript">
+      $('#id_checkbox_{{ check_id }}').iphoneStyle({
+			checkedLabel  : "{{ _('Yes') }}",
+			uncheckedLabel: "{{ _('No') }}"
+		});
+	</script>
+{%- endmacro -%}
+
+{%- macro textinput(input_id, password=False) -%}
+	<input type="{{ 'password' if password else 'text' }}"
+			id="id_input_{{ input_id}}" name="{{ input_id }}"/>
+{%- endmacro -%}
 
 {%- macro occupied_bar(arg1) -%}
 	<div>{ occupied_bar to be implemented }</div>
@@ -160,7 +188,7 @@
 					<img src="{{ action['icon'] }}"
 						id="{{ name }}_massive_{{ action['action_name'] }}"
 						alt="{{ _('Massive {0} icon').format(action['action_name']) }}"
-						title="{{ _('Selected name massive {0}').format(action['action_name']) }}"/>
+						title="{{ _('Massive {0} on selected rows').format(action['action_name']) }}"/>
 					&nbsp;
 					{%- endfor -%}
 				</div>

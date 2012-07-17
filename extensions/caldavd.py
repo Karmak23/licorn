@@ -24,7 +24,8 @@ from licorn.foundations.base      import ObjectSingleton, MixedDictObject, Licor
 from licorn.foundations.classes   import FileLock
 from licorn.foundations.constants import distros, services, svccmds, priorities
 
-from licorn.core       import LMC
+from licorn.core                  import LMC
+from licorn.core.classes          import only_if_enabled
 
 from licorn.extensions import ServiceExtension
 
@@ -77,9 +78,11 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			try:
 				self.__parse_files()
 				self.available = True
+
 			except ImportError, e:
 				logging.warning2(_(u'{0}: extension not available '
 					'because {1}.').format(stylize(ST_NAME, self.name), e))
+
 			except (IOError, OSError), e:
 				if e.errno == 2:
 					logging.warning2(_(u'{0}: extension not yet available '
@@ -153,8 +156,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 							if os.path.exists(self.paths.pid_file)
 							else stylize(ST_COMMENT, _('Starting up'))))
 
-				events.collect(self)
-
 				return True
 			else:
 				assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled() → True')
@@ -185,7 +186,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			assert ltrace(globals()['TRACE_' + self.name.upper()], '| enable() → True')
 			self.enabled = True
 
-			events.collect(self)
 			return True
 
 		except Exception, e:
@@ -207,7 +207,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			assert ltrace(globals()['TRACE_' + self.name.upper()], '| disable() → True')
 			self.enabled = False
 
-			events.uncollect(self)
 			return True
 
 		except Exception, e:
@@ -405,11 +404,13 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				stylize(ST_PATH, self.paths.accounts)))
 		return False
 	@events.handler_method
+	@only_if_enabled
 	def user_pre_add(self, *args, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()
 		return True
 	@events.handler_method
+	@only_if_enabled
 	def user_post_add(self, *args, **kwargs):
 		""" Create a caldavd user account and the associated calendar resource,
 			then write the configuration and release the associated lock.
@@ -458,6 +459,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			print_exc()
 			return False
 	@events.handler_method
+	@only_if_enabled
 	def user_pre_change_password(self, *args, **kwargs):
 		""" """
 		assert ltrace_func(TRACE_CALDAVD)
@@ -465,6 +467,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		# TODO: return self.locks.accounts.acquire()
 		return True
 	@events.handler_method
+	@only_if_enabled
 	def user_post_change_password(self, *args, **kwargs):
 		""" Update the user's password in caldavd accounts file. """
 
@@ -490,6 +493,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			print_exc()
 			return False
 	@events.handler_method
+	@only_if_enabled
 	def user_pre_del(self, *args, **kwargs):
 		""" delete a user and its resource in the caldavd accounts file, then
 			reload the service. """
@@ -526,11 +530,13 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			print_exc()
 			return False
 	@events.handler_method
+	@only_if_enabled
 	def group_pre_add(self, *args, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()
 		return True
 	@events.handler_method
+	@only_if_enabled
 	def group_post_add(self, *args, **kwargs):
 		""" Create a caldavd group account and the associated calendar resource,
 			then write the configuration and release the associated lock.
@@ -579,6 +585,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			print_exc()
 			return False
 	@events.handler_method
+	@only_if_enabled
 	def group_pre_del(self, *args, **kwargs):
 		""" delete a group and its resource in the caldavd accounts file, then
 			reload the service. """
@@ -610,11 +617,13 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			print_exc()
 			return False
 	@events.handler_method
+	@only_if_enabled
 	def group_pre_add_user(self, *args, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()
 		return True
 	@events.handler_method
+	@only_if_enabled
 	def group_post_add_user(self, *args, **kwargs):
 		""" add a user to the member element of a group in the caldavd
 			accounts file, then reload the service. """
@@ -642,6 +651,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			print_exc()
 			return False
 	@events.handler_method
+	@only_if_enabled
 	def group_pre_del_user(self, *args, **kwargs):
 		""" delete a user from the members element of a group in the caldavd
 			accounts file, then reload the service. """
@@ -669,6 +679,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			print_exc()
 			return False
 	@events.handler_method
+	@only_if_enabled
 	def group_post_del_user(self, *args, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()

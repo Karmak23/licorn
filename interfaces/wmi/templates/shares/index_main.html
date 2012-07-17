@@ -1,0 +1,66 @@
+{#- Copyright 2012 META IT & Olivier Cortès <olive@licorn.org>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{%- from 'widgets/common.html' import textinput -%}
+
+</style>
+	<div style="font-size:120%;
+		text-align: justify; margin-left:10%;
+		margin-right: 10%;">
+
+	{%- if user.accepts_shares -%}
+		{%- if not myext.connected -%}
+			{%- include 'shares/parts/disconnected.html' with context -%}
+
+		{%- elif not myext.reachable -%}
+			{%- include 'shares/parts/unreachable.html' with context -%}
+
+		{%- endif -%}
+
+		{%- set shares = user.list_shares() -%}
+
+		<h1>{{ _('My web shares') }} {{ '({0})'.format(shares|count) }}</h1>
+
+		{%- if shares -%}
+
+			<table class="wmi-table">
+			<tr>
+				<th>{{ _('Name') }}</th>
+				<th class="centered">{{ _('Actual contents') }}</th>
+				<th>{{ _('Writable') }}</th>
+				<th class="centered">{{ _('Short URI') }}</th>
+				<!-- not yet
+				<th>{{ _('Expires') }}</th>
+				-->
+			</tr>
+			{%- for share in shares|sort -%}
+				{%- include 'shares/parts/share-view.html' with context -%}
+
+			{%- endfor -%}
+			</table>
+
+		<p class="grayed_out smaller centered vertical-space-big">{{ _('You can manage files in your shares with your prefered file-manager: <code>Nautilus</code> or <code>Dolphin</code> on Ubuntu, <code>Explorer</code> on Windows and <code>Finder</code> on a Mac.') }}</p>
+
+		{%- else -%}
+
+			<h1>{{ _('No web share') }}</h1>
+
+			<p>{{ _('You do not have any share yet. You can start one easily by making a new directory in "~/Public/" (just create it if it does not exist).') }}</p>
+
+		{%- endif -%}
+
+		<p class="grayed_out smallest centered vertical-space-small">{{ _('You can <a href="{0}">disable web shares</a> for your account at any moment.').format(url_for('wmi.shares.views.disable')) }}</p>
+
+	{%- else -%}
+
+		<h1>{{ _('Web shares turned off') }}</h1>
+		<p>{{ _('You (or someone else) disabled the web sharing feature for your account. You can <a href="{0}">enable them again</a> at any moment.').format(url_for('wmi.shares.views.enable')) }}</p>
+
+		{%- if request.user.is_staff -%}
+
+		<p class="vertical-spaced">{{ _('If you want to manually re-enable them, just remove the file named <code>{0}</code>. This has exactly the same effect.').format(user.shares_disabler) }}</p>
+
+		{%- endif -%}
+
+	{%- endif -%}
+	</div>

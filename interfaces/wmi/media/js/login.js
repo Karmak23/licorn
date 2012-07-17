@@ -20,13 +20,19 @@ $(document).ready(function() {
 
 			$('#logo').delay(500).fadeOut('medium');
 
-			form1 = $('#real_form_wrapper');
-			cur_pos = form1.position().left;
+			// NOTE: we cannot use the #real_form_wrapper position().left,
+			// it is 0 for an unknown reason. It used to work in some past
+			// but no more since version 1.3; thus, we use the table.
+			table   = $('#login_table');
+			cur_pos = table.position().left;
+
+			console.log('cur: ' + cur_pos);
 
 			// we've got to manually set margin-left to the current
 			// position, else it will start sliding from 0px — producing
 			// a visual glitch, because margin-left is currently 'auto'.
-			form1.css('margin-left', cur_pos)
+
+			$('#real_form_wrapper').css('margin-left', cur_pos)
 				.animate({marginLeft: '1000px'}, 'medium')
 				.delay(500, function(){
 					$('#login_form').submit();

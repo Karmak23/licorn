@@ -11,24 +11,13 @@ Licorn Pickle backend - http://docs.licorn.org/core/backends/shadow.html
 	better match reality and avoid potential name conflicts.
 """
 
-import os, crypt, tempfile, grp, pyinotify
-
-from threading  import Timer
-from traceback  import print_exc
-from contextlib import nested
-
-from licorn.foundations           import settings, logging, exceptions
-from licorn.foundations           import readers, hlstr, fsapi
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import Singleton, BasicCounter
-from licorn.foundations.classes   import FileLock
-from licorn.foundations.constants import priorities
-from licorn.core                  import LMC
-from licorn.core.users            import User
-from licorn.core.groups           import Group
+from licorn.foundations.base      import Singleton
 from licorn.core.backends         import UsersBackend, GroupsBackend, MachinesBackend
+
+raise NotImplementedError(_('PickleBackend is not yet implemented.'))
 
 class PickleBackend(Singleton, UsersBackend, GroupsBackend, MachinesBackend):
 	""" A backend to cope with /etc/* UNIX shadow traditionnal files.

@@ -13,23 +13,22 @@ Unified Configuration API for an entire linux server system
 
 """
 
-import sys, os, re, socket, getpass, Pyro.core
+import sys, os, re, dmidecode, uuid, Pyro.core
 from licorn.foundations.threads import RLock
 
-from licorn.foundations           import logging, options, exceptions, settings
+from licorn.foundations           import logging, exceptions, settings
 from licorn.foundations           import readers, fsapi, network, events, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import distros, servers, mailboxes, roles, priorities
+from licorn.foundations.constants import distros, servers, mailboxes
 from licorn.foundations.base      import LicornConfigObject, Singleton, \
-											Enumeration, \
 											MixedDictObject, pyro_protected_attrs
 from licorn.foundations.classes   import FileLock
 
 from licorn.core                import LMC
-from licorn.core.classes        import LockedController, CoreModule
+from licorn.core.classes        import CoreModule
 
 class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	""" Contains all the underlying system configuration as attributes.
@@ -53,12 +52,16 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		Pyro.core.ObjBase.__init__(self)
 		MixedDictObject.__init__(self, name='configuration')
 
-		LicornEvent('configuration_initialises', configuration=self, synchronous=True).emit()
+		LicornEvent('configuration_initialises', configuration=self,
+													synchronous=True).emit()
 
 		self.app_name = 'Licorn®'
 
 		# this lock is used only by inotifier for now.
 		self.lock = RLock()
+
+		# collect events now, we need them to finish the load.
+		events.collect(self)
 
 		self.mta = None
 
@@ -66,6 +69,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# it is a hack to be able to test guis when Licorn is not installed.
 		# → this is for developers only.
 		self.install_path = os.getenv("LICORN_ROOT", "/usr")
+
 		if self.install_path == '.':
 			self.share_data_dir = '.'
 		else:
@@ -83,7 +87,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 			self.FindUserDir()
 
-			LicornEvent('configuration_loads', configuration=self, synchronous=True).emit()
+			LicornEvent('configuration_loads', configuration=self,
+							minimal=minimal, synchronous=True).emit()
 
 			if not minimal:
 				self.load1(batch=batch)
@@ -99,25 +104,24 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if not minimal:
 				self.load3(batch=batch)
 
-			LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
-
 		except exceptions.LicornException, e:
-			raise exceptions.BadConfigurationError(
-				'''Configuration initialization failed: %s''' % e)
+			raise exceptions.BadConfigurationError(_(u'Configuration '
+										u'initialization failed: %s') % e)
 
-		events.collect(self)
+		LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
 
 		LicornConfiguration.init_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
 	def import_settings(self):
-		from licorn.foundations import settings
 		self.settings = settings
+
 	def load(self, batch=False):
 		""" just a compatibility method. """
 		self.load1(batch=batch)
 		self.load2(batch=batch)
 		self.load3(batch=batch)
 	def load1(self, batch=False):
+		self.load_system_uuid()
 		self.LoadManagersConfiguration(batch=batch)
 		self.set_acl_defaults()
 	def load2(self, batch=False):
@@ -128,14 +132,11 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def load3(self, batch=False):
 		self.load_nsswitch()
 	def _inotifier_install_watches(self, inotifier=None):
-		self.__configuration_hint = L_inotifier_watch_conf(settings.main_config_file,
-									self, self.__configuration_file_changed)
+		""" settings watches are setup in foundations.settings. """
+		pass
 	def __configuration_file_changed(self, pathname):
-
-		# it's up to settings to trigger the LicornEvent. It will do it only
-		# if something has really changed. This avoids running callbacks if
-		# no directive changed.
-		self.settings.reload()
+		""" nothing yet. """
+		pass
 	#
 	# make LicornConfiguration object be usable as a context manager.
 	#
@@ -161,14 +162,85 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			shutil.rmtree(self.tmp_dir)
 		except (OSError, IOError), e:
 			if e.errno == 2:
-				logging.warning2('''Temporary directory %s has vanished '''
-					'''during run, or already been wiped by another process.'''
+				logging.warning2(_(u'Temporary directory %s has vanished '
+					u'during run, or already been wiped by another process.')
 					% self.tmp_dir)
 			else:
 				raise e
 
 		LicornConfiguration.del_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< CleanUp()')
+	def load_system_uuid(self):
+		""" Get the hardware system UUID from `dmidecode`, or generate a random
+			new one and store it for future uses. """
+
+		not_found = True
+
+		for root in dmidecode.system().itervalues():
+			try:
+				self.system_uuid = root['data']['UUID'].replace('-', '').lower()
+
+			except:
+				continue
+
+			else:
+				not_found = False
+				break
+
+		# Get warnings here, to avoid them beiing freely printed to console
+		# everywhere, from every call, which is purely annoying. Eg:
+		#
+		# del group 10000
+		# * [2012/01/07 11:57:09.8499] Le groupe ou GID "10000" inexistant ou invalide a été ignoré.
+		#
+		# ** COLLECTED WARNINGS **
+		# /dev/mem: Permission denied
+		# No SMBIOS nor DMI entry point found, sorry.
+		# ** END OF WARNINGS **
+		#
+		# NOTE: there is a similar call in `foundations.bootstrap`
+		try:
+			w = dmidecode.get_warnings()
+
+		except AttributeError:
+			# Old `dmidecode` modules don't have the `*_warnings()` functions.
+			# On Ubuntu 10.04 this is the case. BTW the warning would have
+			# already been printed, so don't bother.
+			pass
+
+		else:
+			if w and os.geteuid() == 0:
+				# remove the last '\n', and add \t to the
+				# others for pretty printing.
+				logging.warning2(w[:-1].replace('\n', '\n\t'))
+				dmidecode.clear_warnings()
+
+		uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
+
+		if not_found:
+			if os.path.exists(uuid_data_file):
+				# fallback to the previously generated UUID.
+
+				self.system_uuid = open(uuid_data_file).read().strip()
+
+			else:
+				# If no previous already exists, create a new one and store it.
+
+				self.system_uuid = uuid.uuid4().hex
+
+				with open(uuid_data_file, 'w') as f:
+					f.write('%s\n' % self.system_uuid)
+
+		else:
+			# If a system UUID exists, be sure any unused file doesn't remain
+			# on disk, this could confuse the user thinking it is used but it
+			# is not.
+			try:
+				os.unlink(uuid_data_file)
+
+			except:
+				pass
+
 	def FindUserDir(self):
 		""" if ~/ is writable, use it as user_dir to store some data, else
 			use a tmp_dir."""
@@ -210,8 +282,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				logging.info("Automatically created %s." % \
 					stylize(ST_PATH, self.user_dir + "[/data]"))
 			except OSError, e:
-				raise exceptions.LicornRuntimeError(
-					'''Can't create / chmod %s[/data]:\n\t%s''' % (
+				raise exceptions.LicornRuntimeError(_(u'Cannot create or '
+					u'change owner of {0}[/data]:\n\t{1}').format(
 						self.user_dir, e))
 	def noop(self):
 		""" No-op function, called when connecting pyro, to check if link
@@ -395,8 +467,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			return
 
 		self.mta = servers.MTA_UNKNOWN
-		logging.progress('''MTA not installed or unsupported, please get in '''
-			'''touch with dev@licorn.org.''')
+		logging.progress(_(u'MTA not installed or unsupported.'))
 	def FindMailboxType(self):
 		"""Find how the underlying system handles Mailboxes
 			(this can be Maidlir, mail spool,
@@ -455,8 +526,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		else:
 			# totally forget about mail things.
 			self.users.mailbox_auto_create = False
-			logging.progress('''Mail{box,dir} system not supported yet. '''
-				'''Please get in touch with dev@licorn.org.''')
+			logging.progress(_(u'Mail{box,dir} system not supported yet. '
+				u'Please get in touch with dev@licorn.org.'))
 	def LoadShells(self):
 		"""Find valid shells on the local system"""
 
@@ -496,12 +567,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						itype=(stat.S_IFDIR,), mindepth=2, maxdepth=2):
 						self.users.skels.append(new_skel)
 				except OSError, e:
-					logging.warning('''Custom skels must have at least %s '''
-						'''perms on dirs and %s on files:\n\t%s''' % (
-							stylize(ST_MODE,
-								"u+rwx,g+rx,o+rx"),
-							stylize(ST_MODE,
-								"u+rw,g+r,o+r"), e))
+					logging.warning(_(u'Custom skels must have at least {0} '
+						u'perms on dirs and {1} on files:\n\t{2}').format(
+							stylize(ST_MODE, u'u+rwx,g+rx,o+rx'),
+							stylize(ST_MODE, u'u+rw,g+r,o+r'), e))
 
 	### Users and Groups ###
 	def LoadManagersConfiguration(self, batch=False, auto_answer=None):
@@ -706,9 +775,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if directive in adduser_dict.keys():
 				if type(value) == type(1):
 					if value > adduser_dict[directive]:
-						logging.warning('''In %s, directive %s should be at '''
-							'''least %s, but it is %s.'''
-							% (stylize(ST_PATH, adduser_conf),
+						logging.warning(_(u'In {0}, directive {1} should be '
+							u'at least {2}, but it is {3}.').format(
+								stylize(ST_PATH, adduser_conf),
 								directive, value, adduser_dict[directive]))
 						adduser_dict[directive] = value
 						adduser_conf_alter      = True
@@ -716,8 +785,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 							r'%s=%s' % (directive, value), adduser_data)
 				else:
 					if value != adduser_dict[directive]:
-						logging.warning('''In %s, directive %s should be set '''
-							'''to %s, but it is %s.''' % (
+						logging.warning(_(u'In {0}, directive {1} should be '
+							u'set to {2}, but it is {3}.').format(
 								stylize(ST_PATH, adduser_conf),
 								directive, value, adduser_dict[directive]))
 						adduser_dict[directive] = value
@@ -750,15 +819,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 				except (IOError, OSError), e:
 					if e.errno == 13:
-						raise exceptions.LicornRuntimeError(
-							'''Insufficient permissions. '''
-							'''Are you root?\n\t%s''' % e)
+						raise exceptions.LicornRuntimeError(_(u'Insufficient '
+							u'permissions. Are you root?\n\t%s') % e)
 					else: raise e
 			else:
-				raise exceptions.LicornRuntimeError('''Modifications in %s '''
-					'''are mandatory for Licorn to work properly with other '''
-					'''system tools (adduser/useradd). Can't continue '''
-					'''without this, sorry!''' % adduser_conf)
+				raise exceptions.LicornRuntimeError(_(u'Modifications in %s '
+					u'are mandatory for Licorn® to work properly with other '
+					u'system tools (adduser/useradd). Cannot continue '
+					u'without this, sorry!') % adduser_conf)
 
 		assert ltrace_func(TRACE_CONFIGURATION, 1)
 
@@ -851,15 +919,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 				except (IOError, OSError), e:
 					if e.errno == 13:
-						raise exceptions.LicornRuntimeError(
-							'''Insufficient permissions. '''
-							'''Are you root?\n\t%s''' % e)
+						raise exceptions.LicornRuntimeError(_(u'Insufficient '
+							u'permissions. Are you root?\n\t%s') % e)
 					else:
 						raise e
 			else:
-				raise exceptions.LicornRuntimeError('''Modifications in %s '''
-					'''are mandatory for Licorn to work properly. Can't '''
-					'''continue without this, sorry!''' % filename)
+				raise exceptions.LicornRuntimeError(_(u'Modifications in %s '
+					u'are mandatory for Licorn® to work properly. Cannot '
+					u'continue without this, sorry!') % filename)
 
 		assert ltrace_func(TRACE_CONFIGURATION, 1)
 	### EXPORTS ###
@@ -1049,35 +1116,41 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 			data += u"\u21b3 %s: " % stylize(ST_ATTR, aname)
 
-			if aname in ('app_name', 'distro_version'):
+			if aname in ('app_name', 'distro_version', 'system_uuid'):
 				data += "%s\n" % stylize(ST_ATTRVALUE, attr)
+
 			elif aname is 'mta':
 				data += "%s\n" % stylize(ST_ATTRVALUE, servers[attr])
+
 			elif aname is 'distro':
-				data += "%s\n" % stylize(ST_ATTRVALUE, distros[attr])
 				# cf http://www.reportlab.com/i18n/python_unicode_tutorial.html
 				# and http://web.linuxfr.org/forums/29/9994.html#599760
 				# and http://evanjones.ca/python-utf8.html
+				data += "%s\n" % stylize(ST_ATTRVALUE, distros[attr])
+
 			elif aname.endswith('_dir') or aname.endswith('_file') \
 				or aname.endswith('_path') :
 				data += "%s\n" % stylize(ST_PATH, attr)
+
 			elif type(attr) == type(LicornConfigObject()):
 				data += "\n%s" % str(attr)
+
 			elif type(attr) in (
 				type([]), type(''), type(()), type({})):
 				data += "\n\t%s\n" % str(attr)
+
 			elif issubclass(attr.__class__, CoreModule):
 				data += "\n%s" % str(attr)
+
 			else:
-				data += ('''%s, to be implemented in '''
-					'''licorn.core.configuration.Export()\n''') % \
+				data += ('%s, to be implemented in '
+					'licorn.core.configuration.Export()\n') % \
 					stylize(ST_IMPORTANT, "UNREPRESENTABLE YET")
 
 		return data
 	def ExportXML(self):
 		""" Export «self» (the system configuration) to XML. """
-		raise NotImplementedError(
-			'''LicornConfig::ExportXML() not yet implemented !''')
+		raise NotImplementedError(u'LicornConfig::ExportXML() not yet implemented !')
 	def network_infos(self):
 		self.network = LicornConfigObject()
 
@@ -1095,9 +1168,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		if not re.compile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
 			re.IGNORECASE).match(new_hostname):
-			raise exceptions.BadArgumentError(
-				'''new hostname must be composed only of letters, digits and '''
-				'''hyphens, but not starting nor ending with an hyphen !''')
+			raise exceptions.BadArgumentError(_(u'New hostname must be '
+				u'composed only of letters, digits and hyphens, but not '
+				u'starting nor ending with an hyphen !'))
 
 		logging.progress("Doing preliminary checks…")
 		self.CheckHostname()
@@ -1107,9 +1180,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			etc_hostname.write(new_hostname)
 			etc_hostname.close()
 		except (IOError, OSError), e:
-			raise exceptions.LicornRuntimeError(
-				'''can't modify /etc/hostname, verify the file is still '''
-				'''clean:\n\t%s)''' % e)
+			raise exceptions.LicornRuntimeError(_(u'Cannot modify '
+				u'/etc/hostname, verify the file is still clean:\n\t%s)') % e)
 
 	### CHECKS ###
 	def check(self, minimal=True, batch=False, auto_answer=None):
@@ -1209,9 +1281,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				# config load of first licorn command). Try to make the error
 				# message kind of explicit and clear, to let administrator know
 				# he/she should mount the partition with 'acl' option.
-				raise exceptions.LicornRuntimeError(
-					'''Filesystem must be mounted with 'acl' option:\n\t%s''' \
-						% e)
+				raise exceptions.LicornRuntimeError(_(u'Filesystem must be '
+					u'mounted with "acl" option:\n\t%s') % e)
 			else:
 				raise
 		except TypeError:
@@ -1254,9 +1325,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					'the subdir you specified is not inside %s, skipped.' %
 						styles.stylize(styles.ST_PATH, settings.home_archive_dir))
 				subdir=False
-
-		assert ltrace(TRACE_CONFIGURATION, ''''< check_archive_dir(return '''
-			'''fsapi.check_dirs_and_contents_perms_and_acls(…))''')
 
 		try:
 			for ignored_event in fsapi.check_dirs_and_contents_perms_and_acls_new(
@@ -1307,13 +1375,11 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 															desired_gid=gid)
 					del gid
 				else:
-					raise exceptions.LicornRuntimeError(
-						'''The system group « %s » is mandatory but doesn't '''
-						''' exist on your system !\nUse « licorn-check '''
-						'''config --yes » or « licorn-add group --system '''
-						'''--name "%s" » to solve the problem.''' % (
-							group, group)
-						)
+					raise exceptions.LicornRuntimeError(_(u'The system group '
+						u'"{0}" is mandatory but does not exist on your '
+						u'system !\nUse "chk config" or "add group --system '
+						u'--name {0}" to fix the problem before '
+						u'continuing.').format(group))
 
 		assert ltrace_func(TRACE_CONFIGURATION, 1)
 	@events.handler_method
@@ -1345,14 +1411,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			# nsswitch will fail to resolve localhost/127.0.0.1 if
 			# /etc/hosts don't have sufficient permissions.
 			#
-			raise exceptions.BadConfigurationError(
-				'''/etc/hosts must have at least o+r permissions.''')
+			raise exceptions.BadConfigurationError(_(u'/etc/hosts must have '
+				u'at least o+r permissions.'))
 
 		line = open("/etc/hostname").readline()
 
 		if line[:-1] != self.mCurrentHostname:
-			raise exceptions.BadConfigurationError(
-				'''current hostname and /etc/hostname are not in sync !''')
+			raise exceptions.BadConfigurationError(_(u'Current hostname '
+				u'and /etc/hostname are not in sync!'))
 
 		import socket
 
@@ -1360,10 +1426,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		hostname_ip = socket.gethostbyname(self.mCurrentHostname)
 
 		if hostname_ip != '127.0.0.1':
-			raise exceptions.BadConfigurationError(
-				'''hostname %s doesn't resolve to 127.0.0.1 but to %s, '''
-				'''please check /etc/hosts !''' % (
-					self.mCurrentHostname, hostname_ip) )
+			raise exceptions.BadConfigurationError(_(u'Hostname {0} does not '
+				u'resolve to 127.0.0.1 but to {1}, please check '
+				u'/etc/hosts!').format(self.mCurrentHostname, hostname_ip))
 
 		# reverse DNS check for localhost. We use gethostbyaddr() to allow
 		# the hostname to be in the aliases (this is often the case for
@@ -1372,9 +1437,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		if not ( self.mCurrentHostname == localhost_data[0]
 				or self.mCurrentHostname in localhost_data[1] ):
-			raise exceptions.BadConfigurationError(
-				'''127.0.0.1 doesn't resolve back to hostname %s, please '''
-				'''check /etc/hosts and/or DNS !''' % self.mCurrentHostname)
+			raise exceptions.BadConfigurationError(_(u'127.0.0.1 does not '
+				u'resolve back to hostname %s, please check /etc/hosts '
+				u'and/or DNS !') % self.mCurrentHostname)
 
 		import licorn.tools.network as network
 
@@ -1416,23 +1481,22 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				# an Licorn server), we must verify.
 				#
 				if '127.0.0.1' in dns:
-					raise exceptions.BadConfigurationError('''can't resolve '''
-						'''%s (%s), is the dns server running on 127.0.0.1? '''
-						'''Else check DNS files syntax !''' % (
-							eth0_ip, e.args[1]))
+					raise exceptions.BadConfigurationError(_(u'Cannot resolve '
+						u'{0} ({1}), is the DNS server running on 127.0.0.1? '
+						u'Else check DNS files syntax !').format(eth0_ip,
+							e.args[1]))
+
 				elif eth0_ip in dns:
 					# FIXME put 127.0.0.1 automatically in configuration ?
-					raise exceptions.BadConfigurationError(
-						'''127.0.0.1 *must* be in /etc/resolv.conf on an '''
-						'''Licorn server.''')
+					raise exceptions.BadConfigurationError(_(u'127.0.0.1 '
+						u'*must* be in /etc/resolv.conf on a Licorn® server.'))
 				#
 				# if we reach here, this is the end of the function.
 				#
 		except Exception, e:
-			raise exceptions.BadConfigurationError(
-				'''Problem while resolving %s, please check '''
-				'''configuration:\n\terrno %d, %s''' % (
-					eth0_ip, e.args[0], e.args[1]))
+			raise exceptions.BadConfigurationError(_(u'Problem while '
+				u'resolving {0}, please check your configuration:\n\terrno '
+				u'{1}, {2}').format(eth0_ip, e.args[0], e.args[1]))
 
 		else:
 
@@ -1445,25 +1509,26 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if eth0_reversed_ip != eth0_ip:
 				if eth0_ip in dns:
 					# FIXME put 127.0.0.1 automatically in configuration ?
-					raise exceptions.BadConfigurationError(
-						'''127.0.0.1 *must* be the only nameserver in '''
-						'''/etc/resolv.conf on an Licorn server.''')
+					raise exceptions.BadConfigurationError(_(u'127.0.0.1 '
+						u'*must* be the only nameserver in /etc/resolv.conf '
+						u'on a Licorn® server.'))
+
 				elif '127.0.0.1' in dns:
-					raise exceptions.BadConfigurationError(
-						'''DNS seems not properly configured (%s doesn't '''
-						'''resolve back to itself).''' % eth0_ip)
+					raise exceptions.BadConfigurationError(_(u'DNS does not '
+						u'seem properly configured (%s does not resolve '
+						u'back to itself).') % eth0_ip)
+
 				else:
-					logging.warning(
-						'''DNS not properly configured (%s doesn't resolve '''
-						'''to %, but to %s)''' % (
+					logging.warning(_(u'DNS is not properly configured ({0} '
+						u'does not resolve to {1}, but to {2}).').format(
 							eth0_hostname, eth0_ip, eth0_reversed_ip))
 
 			# everything worked, but it is safer to have 127.0.0.1 as the
 			# nameserver, inform administrator.
 			if eth0_ip in dns or '127.0.0.1':
 				# FIXME put 127.0.0.1 automatically in configuration ?
-				logging.warning('''127.0.0.1 should be the only nameserver '''
-					'''in /etc/resolv.conf on an Licorn server.''')
+				logging.warning(_(u'127.0.0.1 should be the only nameserver '
+					u'in /etc/resolv.conf on a Licorn® server.'))
 
 		# FIXME: vérifier que l'ip d'eth0 et son nom ne sont pas codés en dur
 		# dans /etc/hosts, la série de tests sur eth0 aurait pu marcher grâce

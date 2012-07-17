@@ -11,7 +11,7 @@ Licorn Foundations - http://dev.licorn.org/documentation/foundations
 	* GNU GPL version 2
 """
 
-import re, math, functools
+import re, math, uuid, functools
 from traceback import print_exc
 
 # WARNING: don't import anything from the core here.
@@ -188,8 +188,8 @@ def bytes_to_human(bytes, as_string=True, binary=True):
 	else:
 		return size_val
 def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
-														big_precision=False):
-	""" Build a time-related human readable string from a time given in seconds.
+													big_precision=False):
+	""" build a time-related human readable string from a time given in seconds.
 		How the delta is used is function of the arguments (it can be a time in
 		the past or in the future). """
 
@@ -208,7 +208,7 @@ def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
 		sep1            = ', '
 		sep2            = ' '
 		year_text       = _('{0} year{1}')
-		month_text      = _('{0}m{1}')
+		month_text      = _('{0} month{1}')
 		day_text        = _('{0} day{1}')
 		hour_text       = _('{0} hour{1}')
 		min_text        = _('{0} min{1}')
@@ -430,6 +430,11 @@ def expand_vars_and_tilde(text, uid=None):
 			'~', user_home).replace(
 			'$HOME', user_home).replace(
 			user_home, '')
+def unique_hash(replacement=None):
+	""" Just returns `uuid.uuid4().hex`, with '-' replaced (or not if ``None``).
+		Used in `WMI` and `My`. """
+
+	return str(uuid.uuid4().hex).replace('-', replacement or '-')
 def warn_exception(message, *args):
 	logging.warning(message.format(*args))
 	print_exception_if_verbose()

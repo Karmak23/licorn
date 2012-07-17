@@ -8,7 +8,7 @@ var hover_timeout;
 
 function init_users_events(list_name, uid, login, identifier) {
 	/* initialize user row events */
-	me = $('#'+list_name+'_list').find('.row').filter("#"+uid+"");
+	me = $('#'+list_name+'_list').find('.row').filter("#"+uid);
 
 	// hide the navigation
 	me.find('.item_menu').hide();
@@ -24,12 +24,12 @@ function init_users_events(list_name, uid, login, identifier) {
 
 	// click event
 	my_user_lock.click(function() {
-		login = me.find('.'+list_name+'_login').text();
+		//login = me.find('.'+list_name+'_login').text();
 
 		if ($(this).hasClass('is_locked')) {
 
 			unlock_dialog = new dialog(gettext("Unlock confirmation"),
-				strargs(gettext("Do you really want to unlock user account “%1”?"), [login]),
+				strargs(gettext("Do you really want to unlock user account <strong>%1</strong>?"), [login]),
 				true, function() {
 					page_url = "/users/mod/" + $.URLEncode(uid) + "/unlock/";
 					$.get(page_url);
@@ -38,7 +38,8 @@ function init_users_events(list_name, uid, login, identifier) {
 
 		} else {
 			$.get('/users/message/lock/'+uid, function(lock_dialog_content) {
-				lock_dialog = new dialog(gettext("Lock confirmation"), lock_dialog_content,
+				lock_dialog = new dialog(gettext("Lock confirmation"),
+					lock_dialog_content,
 					true, function() {
 						page_url = "/users/mod/" + $.URLEncode(uid) + "/lock/";
 						$.get(page_url)
@@ -54,10 +55,16 @@ function init_users_events(list_name, uid, login, identifier) {
 		delete_user_dialog_title = gettext("Removal confirmation");
 
 		$.get('/users/message/delete/'+uid, function(delete_user_dialog_content) {
-			delete_user_dialog = new dialog(delete_user_dialog_title, delete_user_dialog_content,
+			delete_user_dialog = new dialog(delete_user_dialog_title,
+				delete_user_dialog_content,
 				true, function() {
-					if ($("#delete_user_no_archive").attr('checked')) { no_archive = 'True'; }
-					else { no_archive = ''; }
+					if ($("#delete_user_no_archive").attr('checked')){
+						no_archive = 'True';
+
+					} else {
+						no_archive = '';
+
+					}
 
 					page_url = "/users/delete/" + $.URLEncode(uid) + "/" + no_archive;
 					clear_sub_content_with_id(uid)
@@ -73,7 +80,7 @@ function init_users_events(list_name, uid, login, identifier) {
 
 		reapply_skel_user_dialog_title = gettext("Skeleton reapplying confirmation");
 
-		reapply_skel_user_dialog_content = strargs(gettext("Are you sure you want to reapply skeleton to user account “%1”?"), [uid]);
+		reapply_skel_user_dialog_content = strargs(gettext("Are you sure you want to reapply skeleton to user account <strong>%1</strong>?"), [uid]);
 
 		$.get('/users/message/skel/'+uid, function(html) {
 			reapply_skel_user_dialog_content += html;
@@ -118,7 +125,7 @@ function init_users_events(list_name, uid, login, identifier) {
 		if (is_sub_content_locked() && $('#sub_content').attr('value') == $(this).parent().attr('id')) {
 			unlock_sub_content();
 			unselect_row();
-			reload_div('#sub_content', "")
+			reload_div('#sub_content', '')
 		}
 
 		else {

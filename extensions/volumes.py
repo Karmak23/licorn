@@ -8,21 +8,18 @@ Licorn extensions: volumes - http://docs.licorn.org/extensions/volumes.html
 
 """
 
-import os, dbus, pyudev, select, re, errno, functools
+import os, dbus, pyudev, select, re, errno, functools, itertools
 
-from threading   import current_thread
 from collections import deque
 
-from licorn.foundations           import logging, exceptions, settings
-from licorn.foundations           import process, pyutils
-from licorn.foundations.threads   import RLock, Event
+from licorn.foundations           import logging, exceptions
+from licorn.foundations           import process, pyutils, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.base      import DictSingleton, MixedDictObject, Enumeration
 from licorn.foundations.classes   import PicklableObject, SharedResource
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import priorities
 
 from licorn.core                import LMC
 from licorn.core.classes        import SelectableController
@@ -175,6 +172,7 @@ class UdevMonitorThread(LicornBasicThread):
 
 				elif action == 'remove':
 					LMC.extensions.volumes.del_volume_from_device(device)
+
 				else:
 					logging.progress(_(u'{0}: unknown action {1} for '
 						u'device {2} ({3}).').format(
@@ -241,8 +239,7 @@ class Volume(PicklableObject, SharedResource):
 
 		super(Volume, self).__init__()
 
-		self.name        = kernel_device
-		self.device      = self.name
+		self.device      = kernel_device
 		self.label       = label
 		self.fstype      = fstype
 		self.guid        = guid
@@ -258,6 +255,15 @@ class Volume(PicklableObject, SharedResource):
 
 		assert ltrace(TRACE_VOLUMES, '| Volume.__init__(%s, %s, enabled=%s)' % (
 			self.name, self.mount_point, self.enabled))
+	@property
+	def name(self):
+		""" Sometimes, a volume doesn't have a label.
+			In this case we return the guid. """
+
+		if self.label != '':
+			return self.label
+
+		return self.guid
 	def __str__(self):
 		return _(u'volume {0}[{1}]{2}').format(
 					stylize(ST_DEVICE, self.device),
@@ -561,9 +567,25 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		# and is often a string.
 		return self.volumes[device]
 	# the generic way (called from RWI)
-	by_key = by_device
-	by_id  = by_device
+	by_key  = by_device
+	by_id   = by_device
+	by_name = by_device
+
 	# end `RWI.select()`
+	def guess_one(self, thing):
+		try:
+			return SelectableController.guess_one(self, thing)
+
+		except KeyError:
+			for vol in self:
+				if vol.label == thing or vol.mount_point == thing or vol.guid == thing:
+					return vol
+
+			raise KeyError(_(u'No Volume by that device name, label, mount_point nor GUID "{0}"!').format(thing))
+
+	def word_match(self, word):
+		return hlstr.word_match(word, tuple(itertools.chain(*[
+						(vol.device, vol.label, vol.guid) for vol in self])))
 
 	def __init__(self):
 		assert ltrace(TRACE_VOLUMES, '| VolumesExtension.__init__()')
@@ -603,12 +625,17 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		#~ none on /proc/fs/vmblock/mountPoint
 		#
 		self.excluded_mounts = ('/boot', '/home', '/var', '/tmp',
-								'/var/tmp')
+								'/var/tmp',)
+		self.excluded_size_mnts = ( '/proc', '/sysfs', '/selinux',
+								'/dev', '/sys', '/media', '/mnt', '/srv',)
+		self.excluded_devices = ('rootfs', 'none', 'binfmt_misc', 'fusectl',
+								'udev', 'gvfs-fuse-daemon', 'devpts', 'sysfs',
+								'cgroup', 'proc', 'tmpfs',)
 
 		# accepted FS must implement posix1e ACLs and user_xattr.
 		# 'vfat' doesn't, 'fuseblk' can be too much things.
 		self.accepted_fs = ('ext2', 'ext3', 'ext4', 'btrfs', 'xfs', 'jfs',
-			'reiserfs')
+																'reiserfs',)
 
 		# TODO: implement LVM2 handlers...
 		self.container_fs = ('LVM2_member')
@@ -628,16 +655,16 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		assert ltrace(self._trace_name, '> initialize()')
 
 		self.cache  = Enumeration('cache')
-		self.dbus   = Enumeration('dbus')
 		self.udisks = Enumeration('udisks')
 
 		# we need the thread to be created to eventually add udisks-related
 		# methods a little later.
 		self.threads.udevmonitor = UdevMonitorThread()
 
+		system_bus = LMC.extensions.gloop.dbus.system_bus
+
 		try:
-			self.dbus.system_bus      = dbus.SystemBus()
-			self.udisks.udisks_object = self.system_bus.get_object(
+			self.udisks.obj = system_bus.get_object(
 									"org.freedesktop.UDisks",
 									"/org/freedesktop/UDisks")
 		except:
@@ -664,10 +691,8 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 			# we are always available, because only relying on udev.
 			self.available = True
 
-		except Exception, e:
-			pyutils.print_exception_if_verbose()
-			logging.warning2(_(u'{0}: not available because {1}.').format(
-				stylize(ST_NAME, self.name), e))
+		except Exception:
+			logging.exception(_(u'{0}: not available because'), (ST_NAME, self.name))
 			self.available = False
 
 		assert ltrace(self._trace_name, '< initialize(%s)' % self.available)
@@ -844,7 +869,6 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		import platform
 
 		if platform.system() == 'Linux':
-
 			self.__update_cache_informations()
 
 			the_total = 0.0
@@ -852,10 +876,14 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 			# First, sum up the used size of all mounted partitions, except
 			# the ones that are directly or indirectly excluded.
 			for device, mount_point in self.cache.proc_mounts.iteritems():
-				# NOTE: we skip 'rootfs' because the real device is already
-				# present later in the /proc/mounts, and this is easier to match.
-				if device in ('rootfs', 'none', 'binfmt_misc', 'fusectl',
-							'gvfs-fuse-daemon') or device in self:
+
+				# Exclude external volumes, they should never be
+				# included in the backups, they *are* the backup :-)
+				# Also exclude cryptfs volumes, they are the same size
+				# as their holding device, but don't occupy this space.
+				if device in self.excluded_devices \
+					or device in self \
+					or device.endswith('/.Private'):
 					continue
 
 				skip_it = False
@@ -889,7 +917,7 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 			# without them, we will get a fairly good result.
 			for excluded in exclude:
 
-				if excluded in ('/media', '/mnt', '/srv'):
+				if excluded in self.excluded_size_mnts:
 					# don't take any time to `du` these: they contain only
 					# mount_points (no local directory nor file), and `du`
 					# mounted file-system will be very-time consuming and
@@ -907,7 +935,8 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 
 				the_total -= du_excl
 
-			assert ltrace(TRACE_VOLUMES, ' | global_system_size(): %s' % pyutils.bytes_to_human(the_total))
+			assert ltrace(TRACE_VOLUMES, ' | global_system_size(): %s'
+											% pyutils.bytes_to_human(the_total))
 			return the_total
 
 		else:
@@ -1207,3 +1236,5 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 	def __getitem__(self, key):
 		with self.locks._global:
 			return self.volumes[key]
+
+__all__ = ('Volume', 'VolumesExtension', 'VolumeException', )

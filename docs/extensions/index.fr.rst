@@ -7,6 +7,7 @@ Documentation des extensions
 .. toctree::
 	:maxdepth: 1
 
+	mylicorn.fr
 	openssh.fr
 	volumes.fr
 	rdiffbackup.fr

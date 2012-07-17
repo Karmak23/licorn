@@ -10,25 +10,26 @@ Licorn core: users - http://docs.licorn.org/core/users.html
 :license: GNU GPL version 2
 """
 
-import os, sys, time, re, weakref, gc
+import os, sys, time, re, gc, weakref
 
-from threading  import current_thread, Event
 from operator   import attrgetter
+from traceback  import print_exc
 
 from licorn.foundations           import logging, exceptions, hlstr, settings
 from licorn.foundations           import pyutils, fsapi, process
+from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import DictSingleton, Enumeration
-from licorn.foundations.constants import filters, backend_actions, distros, priorities, roles, relation
+from licorn.foundations.constants import filters, backend_actions, distros, \
+											priorities, relation
 
 from licorn.core                import LMC
 from licorn.core.groups         import Group
 from licorn.core.classes        import SelectableController, CoreFSController, \
 										CoreStoredObject, CoreFSUnitObject
-from licorn.foundations.events import LicornEvent
 
 import types
 
@@ -159,6 +160,10 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		if type(group) == types.IntType:
 			group = LMC.groups.by_gid(group)
 
+		# We need the real object, else 'group in ...' doesn't work.
+		if type(group) in weakref.ProxyTypes:
+			group = group.weakref()
+
 		if group in self.groups:
 			return relation.MEMBER
 
@@ -175,7 +180,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		gidNumber=None, gecos=None, homeDirectory=None, loginShell=None,
 		shadowLastChange=None, shadowInactive=None, shadowWarning=None,
 		shadowExpire=None, shadowMin=None, shadowMax=None, shadowFlag=None,
-		initialyLocked=False, backend=None,
+		initialyLocked=False, backend=None, inotified=None,
 		# this one is used only in creation mode, to speed up links between
 		# Licorn® objects.
 		primaryGroup=None):
@@ -230,6 +235,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		super(User, self).__init__(
 				controller=LMC.users,
 				backend=backend,
+				inotified=inotified,
 				check_file='%s/%s' % (self.__homeDirectory,
 					LMC.configuration.users.check_config_file),
 				object_info=Enumeration(
@@ -346,7 +352,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.__primaryGroup = group.weakref
 			group.link_gidMember(self)
 
-			LicornEvent('user_primaryGroup_changed', user=self).emit(priorities.LOW)
+			LicornEvent('user_primaryGroup_changed', user=self.proxy).emit(priorities.LOW)
 		else:
 			raise exceptions.LicornRuntimeError(_(u'{0}: tried to set {1} '
 				'as {2} primary group, whose GID is not the same '
@@ -391,7 +397,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.serialize()
 			self._cli_invalidate()
 
-			LicornEvent('user_gecos_changed', user=self).emit(priorities.LOW)
+			LicornEvent('user_gecos_changed', user=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Changed user {0} gecos '
 				'to "{1}".').format(stylize(ST_NAME, self.__login),
@@ -418,7 +424,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.__loginShell = shell
 			self.serialize()
 
-			LicornEvent('user_loginShell_changed', user=self).emit(priorities.LOW)
+			LicornEvent('user_loginShell_changed', user=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Changed user {0} shell to {1}.').format(
 				stylize(ST_NAME, self.__login), stylize(ST_COMMENT, shell)))
@@ -460,7 +466,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		with self.lock:
 			if self.__already_created:
-				LicornEvent('user_pre_change_password', user=self, password=password, synchronous=True).emit()
+				LicornEvent('user_pre_change_password', user=self.proxy, password=password, synchronous=True).emit()
 
 			prefix = '!' if self.__locked else ''
 
@@ -475,12 +481,12 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			if self.__already_created:
 				self.serialize()
-				LicornEvent('user_post_change_password', user=self, password=password, synchronous=True).emit()
+				LicornEvent('user_post_change_password', user=self.proxy, password=password, synchronous=True).emit()
 
 				if self.__already_created:
 					# don't forward this event on user creation, because we
 					# already have the "user_added" for this case.
-					LicornEvent('user_userPassword_changed', user=self).emit(priorities.LOW)
+					LicornEvent('user_userPassword_changed', user=self.proxy).emit(priorities.LOW)
 
 			if display:
 				logging.notice(_(u'Set password for user {0} to {1}.').format(
@@ -566,11 +572,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 											stylize(ST_NAME, self.__login)))
 					return
 				else:
-					LicornEvent('user_pre_lock', user=self, synchronous=True).emit()
+					LicornEvent('user_pre_lock', user=self.proxy, synchronous=True).emit()
 
 					self.__userPassword = '!' + self.__userPassword
 
-					LicornEvent('user_post_lock', user=self, synchronous=True).emit()
+					LicornEvent('user_post_lock', user=self.proxy, synchronous=True).emit()
 
 					logging.notice(_(u'Locked user account {0}.').format(
 											stylize(ST_LOGIN, self.__login)))
@@ -579,11 +585,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			else:
 				if self.__locked:
 
-					LicornEvent('user_pre_unlock', user=self, synchronous=True).emit()
+					LicornEvent('user_pre_unlock', user=self.proxy, synchronous=True).emit()
 
 					self.__userPassword = self.__userPassword[1:]
 
-					LicornEvent('user_post_unlock', user=self, synchronous=True).emit()
+					LicornEvent('user_post_unlock', user=self.proxy, synchronous=True).emit()
 
 					logging.notice(_(u'Unlocked user account {0}.').format(
 											stylize(ST_LOGIN, self.__login)))
@@ -597,7 +603,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.__locked = lock
 			self.serialize()
 
-			LicornEvent('user_locked_changed', user=self).emit(priorities.LOW)
+			LicornEvent('user_locked_changed', user=self.proxy).emit(priorities.LOW)
 	@property
 	def homeDirectory(self):
 		""" Read-write attribute, the path to the home directory of a standard
@@ -799,9 +805,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		if skel is None or skel not in LMC.configuration.users.skels:
 			raise exceptions.BadArgumentError(_(u'Invalid skel "{0}". '
-				'Valid skels are {1}.').format(stylize(ST_BAD, skel),
-					', '.join(stylize(ST_COMMENT, skel)
-						for skel in LMC.configuration.users.skels)))
+				'Valid skels are {1}.').format(skel,
+					', '.join(LMC.configuration.users.skels)))
 
 		with self.lock:
 			self._checking.set()
@@ -837,7 +842,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			self._checking.clear()
 
-			LicornEvent('user_skel_applyed', user=self).emit(priorities.LOW)
+			LicornEvent('user_skel_applyed', user=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Applyed skel {0} for user {1}').format(
 										skel, stylize(ST_LOGIN, self.__login)))
@@ -862,8 +867,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		self.__groups[:] = []
 	def _build_standard_home(self):
-		return '%s/%s' % (LMC.configuration.users.base_path,
-							self.__login)
+		return '%s/%s' % (LMC.configuration.users.base_path, self.__login)
 	def _build_system_home(self, directory):
 		""" A system user has a home, which can be anywhere. """
 		return directory
@@ -874,12 +878,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				return True
 
 		return False
-
-	def check(self, minimal=True, batch=False, auto_answer=None,
-														full_display=True):
+	def check(self, initial=False, minimal=True, skel_to_apply=None, batch=False,
+										auto_answer=None, full_display=True):
 		"""Check current user account data consistency."""
 
-		assert ltrace(TRACE_USERS, '> %s.check()' % self.__login)
+		assert ltrace_func(TRACE_CHECKS)
 
 		with self.lock:
 			# Refering to #322, we should avoid checking system users under uid
@@ -894,19 +897,29 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			# system uids.
 			if self.is_system_unrestricted:
 				return self.__check_unrestricted_system_user(batch=batch,
-							auto_answer=auto_answer, full_display=full_display)
+												skel_to_apply=skel_to_apply,
+												auto_answer=auto_answer,
+												full_display=full_display,
+												initial=initial)
 
 			elif self.is_standard:
-				return self.__check_standard_user(minimal=minimal, batch=batch,
-							auto_answer=auto_answer, full_display=full_display)
+				return self.__check_standard_user(minimal=minimal,
+												skel_to_apply=skel_to_apply,
+												batch=batch, initial=initial,
+												auto_answer=auto_answer,
+												full_display=full_display)
 			else:
 				return self.__check_restricted_system_user(batch=batch,
-							auto_answer=auto_answer, full_display=full_display)
+													auto_answer=auto_answer,
+													full_display=full_display,
+													initial=initial)
 
 	# aliases to CoreFSUnitObject methods
 	__check_standard_user = CoreFSUnitObject._standard_check
-	def __check_common_system_user(self, minimal=True, batch=False,
+	def __check_common_system_user(self, initial=False, minimal=True, batch=False,
 										auto_answer=None, full_display=True):
+
+		assert ltrace_func(TRACE_CHECKS)
 
 		my_gecos = self.__gecos
 
@@ -931,8 +944,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		if something_done:
 			logging.notice(_(u"Auto-cleaned {0}'s gecos to \"{1}\".").format(
-				stylize(ST_LOGIN, self.__login),
-				stylize(ST_COMMENT, my_gecos)))
+								stylize(ST_LOGIN, self.__login),
+								stylize(ST_COMMENT, my_gecos)))
 
 		for login, meaningless_gecoses, replacement_gecos in (
 					('backup', ('backup'), _(u'%s Automatic Backup System') % distros[LMC.configuration.distro].title()),
@@ -984,8 +997,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			if my_gecos != self.__gecos:
 				self.gecos = my_gecos
-	def __check_unrestricted_system_user(self, minimal=True, batch=False, auto_answer=None,
-														full_display=True):
+	def __check_unrestricted_system_user(self, initial=False, minimal=True, skel_to_apply=None,
+							batch=False, auto_answer=None, full_display=True):
 		""" Check the home dir and its contents, if it exists (this is not
 			mandatory for a system account). If it does not exist, it will not
 			be created. """
@@ -993,13 +1006,18 @@ class User(CoreStoredObject, CoreFSUnitObject):
 											stylize(ST_NAME, self.__login))
 
 		if self._checking.is_set():
-			logging.warning(_(u'account {0} already beiing ckecked, '
-				'aborting.').format(stylize(ST_LOGIN, self.__login)))
+			logging.warning(_(u'Account {0} already beiing ckecked, '
+							u'aborting.').format(stylize(ST_LOGIN, self.__login)))
 			return
 
 		with self.lock:
 
 			self._checking.set()
+
+			result = self.__check_common_system_user(minimal=minimal,
+													batch=batch,
+													auto_answer=auto_answer,
+													full_display=full_display)
 
 			if os.path.exists(self.__homeDirectory):
 
@@ -1024,23 +1042,30 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				del checked
 
 			self._checking.clear()
-	def __check_restricted_system_user(self, minimal=True, batch=False, auto_answer=None,
-														full_display=True):
+
+			return result
+	def __check_restricted_system_user(self, initial=False, minimal=True, batch=False,
+										auto_answer=None, full_display=True):
 		""" Check the home dir and its contents, if it exists (this is not
 			mandatory for a system account). If it does not exist, it will not
 			be created. """
+
+		assert ltrace_func(TRACE_CHECKS)
+
 		logging.progress(_(u'Checking restricted system account %s…') %
 											stylize(ST_NAME, self.__login))
 
 		if self._checking.is_set():
 			logging.warning(_(u'account {0} already beiing ckecked, '
-				'aborting.').format(stylize(ST_LOGIN, self.__login)))
+							u'aborting.').format(stylize(ST_LOGIN, self.__login)))
 			return
 
 		with self.lock:
 			self._checking.set()
-			result = self.__check_common_system_user(batch=batch,
-						auto_answer=auto_answer, full_display=full_display)
+			result = self.__check_common_system_user(minimal=minimal,
+													batch=batch,
+													auto_answer=auto_answer,
+													full_display=full_display)
 			self._checking.clear()
 			return result
 	def _cli_get(self, long_output=False, no_colors=False):
@@ -1056,20 +1081,23 @@ class User(CoreStoredObject, CoreFSUnitObject):
 								- len(self.__primaryGroup().name)
 								- len(str(self.__gidNumber)))
 
-			accountdata = [ '{login}: ✎{uid} ✐{pri_group} '
-							'{backend}	{gecos}'.format(
+			accountdata = [ u'{login}: ✎{uid} ✐{pri_group} '
+							u'{backend}	{gecos} {inotified}'.format(
 								login=stylize(
 									_locked_colors[self.__locked],
 									(self.__login).rjust(label_width)),
 								#id_type=_(u'uid'),
 								uid=stylize(ST_UGID, self.__uidNumber)
-										+ ' ' * uid_label_rest,
-								pri_group='%s%s' % (
+										+ u' ' * uid_label_rest,
+								pri_group=u'%s%s' % (
 										self.__primaryGroup()._cli_get_small(),
-										' ' * gid_label_rest),
+										u' ' * gid_label_rest),
 								backend=stylize(ST_BACKEND, self.backend.name),
 								gecos=stylize(ST_COMMENT,
-									self.__gecos) if self.__gecos != '' else '') ]
+									self.__gecos) if self.__gecos != '' else u'',
+								inotified=u'' if self.is_system or self.inotified
+												else stylize(ST_BAD,
+													_(u'(not watched)'))) ]
 
 			if len(self.__groups) > 0:
 
@@ -1101,6 +1129,18 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		return self.__is_system
 
 	def to_XML(self):
+		""" return user as xml data
+		minimum : login;uid;prigroup;gecos;memberships;backend """
+
+		groups = []
+		for g in self.groups:
+			if g.is_responsible:
+				groups.append(LMC.configuration.groups.resp_prefix + g.name)
+			elif g.is_guest:
+				groups.append(LMC.configuration.groups.guest_prefix + g.name)
+			else:
+				groups.append(g.name)
+
 
 		return '''		<user>
 			<login>%s</login>
@@ -1110,6 +1150,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			<homeDirectory>%s</homeDirectory>
 			<loginShell>%s</loginShell>
 			<backend>%s</backend>
+			<groups>%s</groups>
 		</user>''' % (
 						self.__login,
 						self.__uidNumber,
@@ -1117,7 +1158,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 						self.__gecos,
 						self.__homeDirectory,
 						self.__loginShell,
-						self.backend.name
+						self.backend.name,
+						','.join([group.name for group in self.groups])
 					)
 	def to_WMI(self):
 		""" A simplified version of the current object, suitable to be
@@ -1154,13 +1196,19 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		return 'login'
 
 	# local and specific implementations of SelectableController methods.
-	def by_uid(self, uid):
+	def by_uid(self, uid, strong=True):
 		# we need to be sure we get an int(), because the 'uid' comes from RWI
 		# and is often a string.
-		return self[int(uid)]
-	def by_login(self, login):
+		if strong:
+			return self[int(uid)]
+		else:
+			return self[int(uid)].proxy
+	def by_login(self, login, strong=True):
 		# Call the thing before returning it, because it's a weakref.
-		return User.by_login[login]()
+		if strong:
+			return User.by_login[login]()
+		else:
+			return User.by_login[login]().proxy
 
 	# the generic way (called by SelectableController)
 	by_key  = by_uid
@@ -1235,7 +1283,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				self[uid] = user
 				loaded.append(uid)
 
-				LicornEvent('user_changed', user=user).emit(priorities.LOW)
+				LicornEvent('user_changed', user=user.proxy).emit(priorities.LOW)
 
 			for uid, user in self.items():
 				if user.backend.name == backend.name:
@@ -1290,11 +1338,20 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			elif type(filter_string) == type(1):
 				filtered_users = []
 
-				if filter_string & filters.NOT_SYSTEM \
+				if filters.WATCHED == filter_string:
+					filtered_users.extend(user for user in self
+														if user.inotified)
+
+				elif filters.NOT_WATCHED == filter_string:
+					filtered_users.extend(user for user in self
+														if user.is_standard and not user.inotified)
+
+
+				elif filter_string & filters.NOT_SYSTEM \
 						or filter_string & filters.STANDARD:
 					filtered_users.extend(user for user in self if user.is_standard)
 
-				if filters.SYSTEM == filter_string:
+				elif filters.SYSTEM == filter_string:
 					filtered_users.extend(user for user in self if user.is_system)
 
 				elif filters.SYSTEM_RESTRICTED & filter_string:
@@ -1302,6 +1359,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 				elif filters.SYSTEM_UNRESTRICTED & filter_string:
 					filtered_users.extend(user for user in self if user.is_system_unrestricted)
+
 			else:
 					uid_re = re.compile("^uid=(?P<uid>\d+)")
 					uid = uid_re.match(filter_string)
@@ -1311,6 +1369,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 						else:
 							raise exceptions.DoesntExistException(
 								_(u'UID {0} does not exist.').format(uid))
+
 			return filtered_users
 	def __validate_home_dir(self, home, login, system, force):
 		""" Do some basic but sane tests on the home dir provided. """
@@ -1525,7 +1584,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 	def add_User(self, login=None, system=False, password=None, gecos=None,
 		desired_uid=None, primary_group=None, profile=None, backend=None,
 		skel=None, shell=None, home=None, lastname=None, firstname=None,
-		in_groups=None, batch=False, force=False):
+		in_groups=None, inotified=True, batch=False, force=False):
 		"""Add a user and return his/her (uid, login, pass)."""
 
 		assert ltrace(TRACE_USERS, '''> add_User(login=%s, system=%s, pass=%s, '''
@@ -1533,8 +1592,6 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			'''last=%s, home=%s, shell=%s, in_groups=%s)''' % (login, system, password,
 			desired_uid, repr(primary_group), repr(profile),
 			skel, gecos, firstname, lastname, home, shell, in_groups))
-
-		assert type(in_groups) == type([])
 
 		login, firstname, lastname, gecos, shell, skel = \
 			self.__validate_basic_fields(login, firstname, lastname,
@@ -1548,7 +1605,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			LicornEvent('user_pre_add', uid=uid, login=login,
 								system=system, password=password, synchronous=True).emit()
 
-			groups_to_add_user_to = in_groups
+			groups_to_add_user_to = in_groups or []
 
 			skel_to_apply = LMC.configuration.users.default_skel or None
 			homeDirectory = self.__validate_home_dir(home, login, system, force)
@@ -1563,14 +1620,19 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				primary_group = profile.group
 
 				groups_to_add_user_to.extend(profile.groups)
+
 			else:
 				logging.warning2('>> FIXME: UsersController.add_User: skel for '
 					'standard group ? system group ?', to_listener=False, to_local=True)
 
 				loginShell = LMC.configuration.users.default_shell
 
-				if primary_group and primary_group.is_standard:
-					skel_to_apply = primary_group.groupSkel
+				if primary_group:
+					if primary_group.is_standard:
+						skel_to_apply = primary_group.groupSkel
+
+					# implicit: else: primary_group is system
+					# no default skel to apply
 
 				else:
 					# get the primary group real object anyway, we need to
@@ -1585,15 +1647,6 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			if skel is not None:
 				skel_to_apply = skel
 
-			# create home directory and apply skel
-			if os.path.exists(homeDirectory):
-				logging.info(_(u'Home directory {0} already exists.').format(
-											stylize(ST_PATH, homeDirectory)))
-			else:
-				os.makedirs(homeDirectory)
-				logging.info(_(u'Created home directory {0}.').format(
-											stylize(ST_PATH, homeDirectory)))
-
 			# Autogenerate password if not given.
 			# NOTE: this must be done *HERE*, and not in the User class,
 			# else we can't forward the cleartext password to extensions,
@@ -1601,7 +1654,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			if password is None:
 				# TODO: call cracklib2 to verify passwd strenght.
 				password = hlstr.generate_password(
-				LMC.configuration.users.min_passwd_size)
+									LMC.configuration.users.min_passwd_size)
 				gen_pass = True
 			else:
 				gen_pass = False
@@ -1614,6 +1667,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 								password=password,
 								loginShell=loginShell,
 								homeDirectory=homeDirectory,
+								inotified=inotified,
 								backend=self._prefered_backend
 									if backend is None else backend,
 								initialyLocked=False)
@@ -1625,28 +1679,27 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			# thus, DO NOT UNCOMMENT -- if not batch:
 			user.serialize(backend_actions.CREATE)
 
-			LicornEvent('user_post_add', user=user, password=password, synchronous=True).emit()
-
-			# NOTE: don't forward the "user_added" event here,
-			# this is too early (see later).
-
-			user.apply_skel(skel_to_apply)
-
 			# this will implicitely load the check_rules for the user.
-			user.check(minimal=True, batch=True)
+			user.check(initial=True, minimal=True, skel_to_apply=skel_to_apply,
+																	batch=True)
 
-			if user.is_standard:
-				user._inotifier_add_watch(self.licornd)
+			# This event is fired after the check: some extensions need
+			# the HOME to be created before operating.
+			LicornEvent('user_post_add', user=user.proxy,
+												password=password,
+												synchronous=True).emit()
 
 		# we needed to delay this display until *after* account creation, to
 		# know the login (it could have been autogenerated by the User class).
 		if gen_pass:
 			logging.notice(_(u'Autogenerated password for user {0} '
-					'(uid={1}): {2}.').format(
-						stylize(ST_LOGIN, user.login),
-						stylize(ST_UGID, user.uidNumber),
-						stylize(ST_SECRET, password)),
-					to_local=False)
+								u'(uid={1}): {2}.').format(
+								stylize(ST_LOGIN, user.login),
+								stylize(ST_UGID, user.uidNumber),
+								stylize(ST_SECRET, password)),
+							# avoid printing the password in clear-text in
+							# the daemon's log... This would be dumb.
+							to_local=False)
 
 		logging.notice(_(u'Created {accttype} user {login} (uid={uid}).').format(
 			accttype=_(u'system') if system else _(u'standard'),
@@ -1670,15 +1723,21 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			# (the quota is etablished) !
 			pass
 
-		# Now that the user is OK and member of its groups,
-		# forward the good news to everyone.
-		LicornEvent('user_added', user=user).emit(priorities.LOW)
+		# Now that the user is created and member of its initial groups,
+		# it's time to advertise the good news to everyone. Do not emit()
+		# this event too early in the method, other parts of Licorn® assume
+		# the home dir created and groups to be already setup when they
+		# receive this event.
+		LicornEvent('user_added', user=user.proxy).emit(priorities.LOW)
 
 		assert ltrace(TRACE_USERS, '< add_User(%r)' % user)
 
 		# We *need* to return the password, in case it was autogenerated.
 		# This is the only way we can know it, in massive imports.
-		return user, password
+		#
+		# we always return a `proxy`, not the real object, to avoid too many
+		# strong references anywhere, which produce strange things like #769.
+		return user.proxy, password
 	def del_User(self, user, no_archive=False, force=False, batch=False):
 		""" Delete a user. """
 
@@ -1686,6 +1745,10 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 		if type(user) == types.IntType:
 			user = self.by_uid(user)
+
+		# we need a strong reference during deletion.
+		if type(user) in weakref.ProxyTypes:
+			user = user.weakref()
 
 		if user.is_system_restricted and not force:
 			raise exceptions.BadArgumentError(_(u'Cannot delete '
@@ -1699,31 +1762,38 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		for group in user.groups[:]:
 			group.del_Users([ user ], batch=True, emit_event=False)
 
-		LicornEvent('user_pre_del', user=user, synchronous=True).emit()
+		LicornEvent('user_pre_del', user=user.proxy, synchronous=True).emit()
 
 		# keep the homedir path, to backup it if requested.
 		homedir = user.homeDirectory
 		# keep infos to use them in deletion notice
 		login   = user.login
 		uid     = user.uidNumber
+		system  = user.is_system
 
 		with self.lock:
+			# WARNING: delete the group from the controller before the backend
+			# serialization, else lazy backends (like shadow) will pick it up
+			# again and it will be present at next daemon (re-)start.
 			if uid in self:
 				del self[uid]
+
 			else:
 				logging.warning2(_(u'{0}: account {1} already not referenced in '
-					'controller!').format(stylize(ST_NAME, self.name),
-						stylize(ST_LOGIN, login)))
+							u'controller!').format(stylize(ST_NAME, self.name),
+								stylize(ST_LOGIN, login)))
 
 			# forward the bad news to anyone interested.
-			LicornEvent('user_deleted', user=user).emit(priorities.LOW)
+			LicornEvent('user_deleted', login=login, uid=uid,
+											system=system).emit()
 
 			if user.is_standard:
-				user._inotifier_del_watch(self.licornd)
+				# serialize=False because we don't want the user's home
+				# to remain in nowatch.conf after the deletion.
+				user.inotified_toggle(False, full_display=False, serialize=False)
 
-			# NOTE: this must be done *after* having deleted the data from self,
-			# else mono-maniac backends (like shadow) don't see the change and
-			# save everything, including the user we want to delete.
+			# NOTE: the backend deletion must be done *after* having deleted
+			# the object from the controller. See above WARNING.
 			user.backend.delete_User(user)
 
 			assert ltrace(TRACE_GC, '  user ref count before del: %d %s' % (
@@ -1731,7 +1801,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			del user
 
-		# checkpoint, needed for multi-delete (users-groups-profile) operation,
+		# Checkpoint, needed for multi-delete (users-groups-profile) operations,
 		# to avoid collecting the deleted users at the end of the run, making
 		# throw false-negative operation about non-existing groups.
 		gc.collect()
@@ -1739,13 +1809,17 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		logging.notice(_(u'Deleted user account {0}.').format(
 			stylize(ST_LOGIN, login)))
 
-		LicornEvent('user_post_del', uid=uid, login=login,
+		LicornEvent('user_post_del', uid=uid, login=login, system=system,
 						no_archive=no_archive, synchronous=True).emit()
 
-		# user is now wiped out from the system.
+		# The user account is now wiped out from the system.
 		# Last thing to do is to delete or archive the HOME dir.
+		# NOTE: altering homeDir while inotifier is removing watches can
+		# produce warnings on the inotify side ("vanished directory ...").
+		# These warnings are harmless.
 		if no_archive:
 			workers.service_enqueue(priorities.LOW, fsapi.remove_directory, homedir)
+
 		else:
 			workers.service_enqueue(priorities.LOW, fsapi.archive_directory, homedir, login)
 	def dump(self):
@@ -1777,6 +1851,34 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				)
 
 			return data
+	def get_CSV_data(self, selected=None, long_output=False):
+		""" return the user accounts list ready to be parsed by python csv module.
+			login;uid;prigroup;gecos;memberships;backend
+		"""
+
+		with self.lock:
+			csv_data = []
+			for user in [ u for u in self if u.uid in selected]:
+				groups = []
+				for g in user.groups:
+					if g.is_responsible:
+						groups.append(LMC.configuration.groups.resp_prefix + g.name)
+					elif g.is_guest:
+						groups.append(LMC.configuration.groups.guest_prefix + g.name)
+					else:
+						groups.append(g.name)
+
+
+				csv_data.append([
+					user.login,
+					user.uid,
+					user.primary_group,
+					user.gecos,
+					','.join(groups),
+					user.backend.name
+				])
+
+			return csv_data
 	def ExportCSV(self, selected=None, long_output=False):
 		""" Export the user accounts list to CSV. """
 
@@ -1792,11 +1894,11 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			def build_csv_output_licorn(uid):
 				return ';'.join(
 					[
-						self.users[uid]['gecos'],
-						self.users[uid]['login'],
-						str(self.users[uid]['gidNumber']),
-						','.join(self.users[uid]['groups']),
-						self.users[uid]['backend']
+						self[uid].gecos,
+						self[uid].login,
+						str(self[uid].gidNumber),
+						','.join([ g.name for g in self[uid].groups]),
+						self[uid].backend.name
 					]
 					)
 
@@ -1832,7 +1934,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			return '[ %s ]' % ','.join(user.to_JSON() for user in users)
 	def chk_Users(self, users_to_check=[], minimal=True, batch=False,
-		auto_answer=None):
+														auto_answer=None):
 		"""Check user accounts and account data consistency."""
 
 		assert ltrace(TRACE_USERS, '> chk_Users(%r)' % users_to_check)
@@ -1842,35 +1944,36 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 		# dependancy: base dirs must be OK before checking users's homes.
 		LMC.configuration.check_base_dirs(minimal=minimal,
-			batch=batch, auto_answer=auto_answer)
+										batch=batch, auto_answer=auto_answer)
 
-		def my_check_user(user, minimal=minimal,
-					batch=batch, auto_answer=auto_answer):
-			return user.check(minimal, batch, auto_answer)
+		def my_check_user(user, minimal=minimal, batch=batch, auto_answer=auto_answer):
+			return user.check(minimal=minimal, batch=batch, auto_answer=auto_answer)
 
-		all_went_ok=reduce(pyutils.keep_false, map(my_check_user, users_to_check))
+		all_went_ok = reduce(pyutils.keep_false, map(my_check_user, users_to_check))
 
 		if all_went_ok is False:
 			# NOTICE: don't test just "if reduce():", the result could be None
 			# and everything is OK when None…
 			raise exceptions.LicornCheckError(_(u'Some user(s) check(s) did '
-				'not pass, or were not corrected.'))
+										u'not pass, or were not corrected.'))
 
 		assert ltrace(TRACE_USERS, '< chk_Users(%s)' % all_went_ok)
 		return all_went_ok
 	def exists(self, uid=None, login=None):
 		if uid:
 			return uid in self.iterkeys()
+
 		if login:
 			return login in self.logins
 
 		raise exceptions.BadArgumentError(_(u'You must specify an UID or a '
-			'login to test existence of.'))
+											u'login to test existence of.'))
 	def login_to_uid(self, login):
 		""" Return the uid of the user 'login' """
 		try:
 			# use the cache, Luke !
 			return self.by_login(login).uid
+
 		except KeyError:
 			raise exceptions.DoesntExistException(_(u'User %s does not exist')
 																	% login)

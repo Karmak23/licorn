@@ -18,23 +18,25 @@ from base       import EnumDict
 stylize = styles.stylize
 
 roles = EnumDict('roles', from_dict={
-		'UNSET':  1,
+		'UNSET' : 1,
 		'SERVER': 2,
-		'CLIENT': 3
+		'CLIENT': 3,
 	})
 
 priorities = EnumDict('service_priorities', from_dict={
-		'LOW':  20,
-		'NORMAL': 10,
-		'HIGH': 0
+		'LOW'    : 20,
+		'NORMAL' : 10,
+		'HIGH'   : 0,
 	})
 
-#relationships
+# relationships between users and groups
 relation = EnumDict('relation')
 relation.NO_MEMBERSHIP = 0
 relation.GUEST         = 1
 relation.MEMBER        = 2
 relation.RESPONSIBLE   = 3
+relation.PRIVILEGE     = 4
+relation.SYSMEMBER     = 5
 
 # verbose levels for options and logging.*
 verbose = EnumDict('verbose')
@@ -45,7 +47,7 @@ verbose.PROGRESS = 3
 verbose.DEBUG    = 4
 verbose.DEBUG2   = 5
 
-#filters for users/groups/profiles and al.
+# filters for users/groups/profiles and al.
 filters = EnumDict('filters')
 filters.NONE                = 0x00000000
 filters.ALL                 = 0xffffffff
@@ -74,6 +76,12 @@ filters.NOT_RSP             = filters.NOT_RESPONSIBLE
 filters.NOT_SYSTEM          = filters.ALL - filters.SYSTEM
 filters.NOT_SYS             = filters.NOT_SYSTEM
 
+filters.WATCHED             = 0x00000800
+filters.INOTIFIED           = filters.WATCHED
+
+filters.NOT_WATCHED         = filters.STANDARD - filters.WATCHED
+filters.NOT_INOTIFIED       = filters.NOT_WATCHED
+
 filters.EXTINCTION_TASK     = 0x00010000
 
 filters.EMPTY               = 0x00ff0000
@@ -84,7 +92,10 @@ host_status.UNKNOWN        = -0x00000001
 host_status.NONE           =  0x00000000
 host_status.ALL            =  0xffffffff
 host_status.OFFLINE        =  0x000000ff
+# The following 2 are the same
 host_status.GOING_TO_SLEEP =  0x00000001
+host_status.SLEEPING       =  0x00000001
+
 host_status.ASLEEP         =  0x00000002
 host_status.SHUTTING_DOWN  =  0x00000004
 host_status.PYRO_SHUTDOWN  =  0x00000008
@@ -191,8 +202,11 @@ backend_actions.DELETE = 3
 backend_actions.RENAME = 4
 
 reasons = EnumDict('reasons')
+reasons.UNKNOWN             = 0
 reasons.BACKENDS_CHANGED    = 1
 reasons.REMOTE_SYSTEM_ASKED = 2
+reasons.INTERNAL_LEAK       = 99
+
 
 conditions = EnumDict('conditions')
 conditions.WAIT_FOR_ME_BACK_ONLINE = 1

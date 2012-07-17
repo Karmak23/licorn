@@ -83,12 +83,18 @@ function setup_ajaxized_confirms(selector) {
     });
 }
 function setup_ajaxized_location_loaders(selector) {
+
+	//console.log(selector);
+
 	$(selector).each(function() {
 
 		//console.log($(this).attr('target'));
 
 		if ($(this).attr('target') == undefined){
+
 	        $(this).click(function() {
+
+				//console.log($(this));
 
 				next_location = this.href;
 
@@ -100,11 +106,20 @@ function setup_ajaxized_location_loaders(selector) {
 				// close the push stream.
 				//stream_close();
 
-				$('.menu-current')
-					.parent().parent().parent()
-					.find(".menu-content").slideUp(function() {
-						head_over_to(next_location);
-					});
+				current = $('.menu-current');
+
+				if (current.length) {
+						current.parent().parent().parent()
+							.find(".menu-content").slideUp(function() {
+								head_over_to(next_location);
+							});
+				} else {
+					// jQuery returned no selection. We could be in the 404
+					// template, where there can be no current menu if the
+					// address is really bad. We should JUST MOVE!
+
+					head_over_to(next_location);
+				}
 
 				return false;
 			});
@@ -202,5 +217,7 @@ $(document).ready(function() {
 	//'click' must be defined before 'confirm'.
 	setup_ajaxized_confirms('.ajax-sidebar-menuitem-confirm');
 
-	setup_ajaxized_dialogs('.ajax-sidebar-menuitem-dialog')
+	setup_ajaxized_dialogs('.ajax-sidebar-menuitem-dialog');
+
+	//console.log('Menu links setup OK');
 });

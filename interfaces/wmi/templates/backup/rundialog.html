@@ -1,22 +1,23 @@
+{#- Copyright 2011 META IT & Olivier Cortès <olive@licorn.org>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
 <div><!-- We need this surrounding empty dir,
 		else $(...).find(...) won't find anything :-( -->
 	<div class="dialog_title">{{ _('Run an incremental backup?') }}</div>
 	<div class="dialog_content">
 		{%- if volume == None -%}
 			{% set volume = enabled_volumes[0] %}
-			<div style="text-align: center; margin: 15px;">{{
-				_('The volume <strong>{0}</strong> has been auto-selected for this backup.').format(
-					volume.label) }}</div>
+			<div style="text-align: center; margin: 15px;">{{ _('The volume <strong>{0}</strong> has been auto-selected for this backup.').format(volume.label) }}</div>
 
 		{%- endif -%}
 
 		<div style="margin: 15px;">
-		{% if last_backup_time < backup_interval %}
+		{%- if last_backup_time < backup_interval -%}
 			<form id="dialog_form">
 				{{ form }}
-				{% csrf_token %}
+				{%- csrf_token -%}
 			</form>
-		{% endif %}
+		{%- endif -%}
 		</div>
 	</div>
 </div>

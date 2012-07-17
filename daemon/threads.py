@@ -147,7 +147,9 @@ class LicornBasicThread(BaseLicornThread):
 		.. versionadded:: a long while ago, I can't even remember when. Before
 			version 1.2, this is sure.
 	"""
-
+	@property
+	def pretty_name(self):
+		return stylize(ST_NAME, self.name)
 	def __init__(self, tname=None, licornd=None):
 		BaseLicornThread.__init__(self)
 
@@ -266,7 +268,7 @@ class GQWSchedulerThread(BaseLicornThread):
 	def dump_status(self, long_output=False, precision=None, as_string=False):
 
 		if as_string:
-			return _('%s%s for %s [%s workers; wake up in %s]\n%s') % (
+			return _('{0}{1} for {2} [{3} workers; wake up in {4}]\n{5}').format(
 				stylize(ST_RUNNING if self.is_alive() else ST_STOPPED,
 						self.__class__.__name__),
 				'&' if self.daemon else '',

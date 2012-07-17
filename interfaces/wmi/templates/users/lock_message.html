@@ -1,9 +1,8 @@
-{{ _("Do you really want to lock user %(user_login)s ?") % {'user_login': user_login} }}<br/><br/>
-{{ _("This will prevent user to connect to network clients (thin ones, and Windows&reg;, %(acr_gnu)s/Linux &reg; and Macintosh&reg; ones).") % {'user_login': user_login, 'acr_gnu': gnu_acr} }}
+{{ _("Do you really want to lock user account <strong>{0}</strong>?<br/><br/>This will prevent the user to connect to the WMI and servers and network clients (thin one, Windows&reg;, {0}/Linux &reg; and Macintosh&reg; ones).").format(user_login, gnu_acr) }}
 
 {%- if is_member_remote -%}
 	<br /><br />
-	
+
 	{{ _('But this will not block incoming %(ssh_acr)s network connections, if the user uses %(rsa_acr)s or %(dsa_acr)s public/private keys. To block ANY access to the system, <strong>remove him/her from %(remote_group)s group </strong>.') %
 			{ 'ssh_acr': ssh_acr,
 			'rsa_acr': rsa_acr,

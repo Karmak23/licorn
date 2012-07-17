@@ -54,7 +54,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 							else services.SYSV
 		)
 		assert ltrace_func(TRACE_EXTENSIONS)
-		self.server_only=False
+		self.server_only = False
 
 		# no particular controller for this extension, it is a
 		# standalone one (no data, just configuration).
@@ -152,7 +152,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 		conf_dict = Enumeration()
 		conf_dict['port']            = '3128'
 		conf_dict['client_file']     = '/etc/environment'
-		conf_dict['apt_conf']        = '/etc/apt/apt.conf.d/00-proxy'
+		conf_dict['apt_conf']        = '/etc/apt/apt.conf.d/00proxy'
 		conf_dict['client_cmd_http'] = 'http_proxy'
 		conf_dict['client_cmd_ftp']  = 'ftp_proxy'
 
@@ -174,12 +174,13 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 		else:
 			conf_dict['host'] = LMC.configuration.server_main_address
 
-		conf_dict['client_cmd_value_http'] = '"http://%s:%s/"' % (
+		conf_dict['client_cmd_value_http'] = 'http://%s:%s/' % (
 			conf_dict['host'], conf_dict['port'])
 
-		conf_dict['client_cmd_value_ftp'] = '"ftp://%s:%s/"' % (
+		conf_dict['client_cmd_value_ftp'] = 'ftp://%s:%s/' % (
 			conf_dict['host'], conf_dict['port'])
 
+		# APT configuration needs the double-quotes
 		conf_dict['apt_cmd_http'] = 'Acquire::http::Proxy'
 		conf_dict['apt_cmd_http_value'] = '"http://%s:%s/";' % (
 			conf_dict['host'], conf_dict['port'])
@@ -288,16 +289,17 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 				(self.defaults_conf.client_cmd_ftp,
 				self.defaults_conf.client_cmd_value_ftp)):
 
+				# HEADS UP: we enclose the value in double quotes.
 				if env_file.has('export ' + cmd):
 					if env_file['export ' + cmd] != value:
 
 						env_need_rewrite = True
 						env_file.add(key='export ' + cmd,
-							value=value, replace=True)
+							value='"%s"' % value, replace=True)
 				else:
 					env_need_rewrite = True
 					env_file.add(key='export ' + cmd,
-						value=value)
+						value='"%s"' % value)
 
 			if env_need_rewrite:
 				env_file.backup_and_save(batch=batch, auto_answer=auto_answer)

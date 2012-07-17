@@ -10,7 +10,6 @@ import os, fcntl, struct, socket, platform, re, netifaces
 import icmp, ip, time, select
 
 from ping      import PingSocket
-from threading import current_thread
 
 # other foundations imports.
 import logging, process, exceptions
@@ -284,12 +283,20 @@ def get_local_hostname_Linux():
 		interface, else return only the IP address if the hostname cannot be
 		determined.
 	"""
-	try:
-		ip_addr = find_first_local_ip_address_Linux()
-		return socket.gethostbyaddr(ip_addr)[0]
 
-	except socket.herror:
-		return ip_addr
+	try:
+		return socket.getfqdn()
+
+	except:
+		try:
+			return socket.gethostname()
+
+		except:
+			# Is this really a sane fallback, or should we let the
+			# exception raise, to make the administrator something's
+			# not configured correctly?
+			return 'localhost.misconfigured.local'
+
 get_local_hostname = get_local_hostname_Linux
 class Pinger:
 	""" This is a rewrite of pyip.Pinger, to:

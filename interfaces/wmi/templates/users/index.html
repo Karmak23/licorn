@@ -8,6 +8,7 @@
 {%- block extended_media -%}
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/list.css" />
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/users.css" />
+	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/table_view.css" />
 	{{ jquery_popover_media() }}
 	<script language="javascript" type="text/javascript" src="/media/js/list.js"></script>
 	<script language="javascript" type="text/javascript" src="/media/js/users.js"></script>
@@ -24,8 +25,8 @@
 	{%- set main_column = "login" -%}
 	{%- set title = _('Users') -%}
 	{%- set massive_actions = [ { "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
-								{ "action_name" : "skel", "icon" : "/media/images/24x24/mass_skel.png"}, ] -%}
-								{# { "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"} ] -%} #}
+								{ "action_name" : "skel", "icon" : "/media/images/24x24/mass_skel.png"}, 
+							    { "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"} ] -%}
 	{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'users_massive_select\'>", "sortable" : False},
 						{ "name" : "locked", "content" : "<img src=\'/media/images/24x24/locked_header.png\'/>", "sortable" : True, "default_sort" : False},
 						{ "name" : "login", "content" : _('Login'), "sortable" : True, "default_sort" : True},
@@ -86,6 +87,7 @@
 			});
 
 			$("#search_box").focus();
+
 		});
 	</script>
 

@@ -11,7 +11,7 @@ Barely compatible with gnome-system-tools profiles
 :license: GNU GPL version 2
 """
 
-import sys, gc, os, re, shutil, weakref, itertools
+import sys, gc, os, re, shutil, itertools
 
 from contextlib  import nested
 from operator    import attrgetter
@@ -20,13 +20,13 @@ from xml         import dom as xmldom
 from xml.parsers import expat
 
 from licorn.foundations           import settings, exceptions, logging
-from licorn.foundations           import fsapi, hlstr, readers, pyutils
+from licorn.foundations           import fsapi, hlstr, pyutils
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import DictSingleton, Enumeration
-from licorn.foundations.constants import filters, priorities, roles
+from licorn.foundations.constants import filters, priorities
 
 from licorn.core         import LMC
 from licorn.core.groups  import Group
@@ -163,8 +163,12 @@ class Profile(CoreStoredObject):
 
 		assert ltrace_func(TRACE_GC)
 
-		if self.__pickled:
-			return
+		try:
+			if self.__pickled:
+				return
+		except AttributeError:
+			# no __pickled attribute
+			pass
 
 		del self.__group
 
@@ -423,7 +427,7 @@ class Profile(CoreStoredObject):
 					group.link_Profile(self)
 					something_done = True
 
-					logging.info(_(u'Added group {0} to profile {1}.{2}').format(
+					logging.notice(_(u'Added group {0} to profile {1}. {2}').format(
 							stylize(ST_NAME, group.name),
 							stylize(ST_NAME, self.__name),
 							stylize(ST_EMPTY,
@@ -460,7 +464,7 @@ class Profile(CoreStoredObject):
 					self.__groups.remove(group.weakref)
 
 					logging.notice(_(u'Deleted group {0} '
-						'from profile {1}.{2}').format(
+						'from profile {1}. {2}').format(
 							stylize(ST_NAME, group.name),
 							stylize(ST_NAME, self.__name),
 							stylize(ST_EMPTY,
@@ -956,6 +960,8 @@ class ProfilesController(DictSingleton, CoreController):
 				sys.getrefcount(profile), gc.get_referrers(profile)))
 			# delete the hopefully last reference to the object. This will
 			# delete it from the reverse mapping caches too.
+			import weakref
+			print weakref.getweakrefs(profile)
 			del profile
 
 		# checkpoint, needed for multi-delete (users-groups-profile) operation,

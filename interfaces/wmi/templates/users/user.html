@@ -59,13 +59,24 @@
 		var passwords_match = false;
 		var check_user_pwd;
 		
+		// from main.js
 		password_helpers(content)
 
 		$('.click_item').each(function() {
 			// display only relevant groups
 			rel = $(this).attr('value');
 			$(this).find('.rel_'+rel).hide();
-			$(this).popover({content: $(this).find('.group_popover_content')});
+
+			var popover_content = $(this).find('.popover')
+			$(this).popover({
+				title : null,
+				content:  popover_content,
+				trigger: 'click',
+				position: 'top',	
+			});
+
+
+			//$(this).popover({content: $(this).find('.group_popover_content') });
 		});
 
 		$('.popover_item').click(function() {
@@ -83,7 +94,7 @@
 			{%- endif -%}
 
 			//close the popover
-			$(document).trigger('hideOpenPopover');
+			$('.click_item#'+group_id).popover('hide');
 		});
 
 		{%- if action == 'edit' -%}
@@ -99,7 +110,7 @@
 			lock_sub_content();
 
 			function post_form() {
-				if (passwords_match) {
+				if ($('#id_password').val() == $('#id_password_confim').val()) {
 					if ($('#id_login').val() == '' && $('#id_gecos').val() == "") {
 						show_message_through_notification('Login and gecos cannot be both empty, impossible to save user')
 					}

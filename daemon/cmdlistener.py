@@ -14,7 +14,8 @@ from threading import Thread, Timer, current_thread
 from licorn.foundations.threads import RLock
 
 from licorn.foundations           import logging, settings, exceptions
-from licorn.foundations           import process, network, pyutils
+from licorn.foundations           import process, network, pyutils, events
+from licorn.foundations.events    import LicornEvent
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
@@ -407,6 +408,13 @@ class CommandListener(LicornBasicThread):
 	def run(self):
 		assert ltrace(TRACE_THREAD, '%s running' % self.name)
 
+		LicornEvent('command_listener_starts').emit()
+
+		if self.licornd.opts.initial_check:
+			logging.notice(_(u'{0}: not starting because initial '
+							u'check in progress.').format(self.pretty_name))
+			return
+
 		Pyro.core.initServer()
 		Pyro.config.PYRO_PORT=settings.pyro.port
 
@@ -416,7 +424,7 @@ class CommandListener(LicornBasicThread):
 			try:
 				# by default Pyro listens on all interfaces, no need to refine.
 				self.pyro_daemon=Pyro.core.Daemon(norange=1,
-					port=settings.pyro.port)
+												port=settings.pyro.port)
 				break
 			except Pyro.core.DaemonError, e:
 				logging.warning('''%s: %s. '''
@@ -467,9 +475,10 @@ class CommandListener(LicornBasicThread):
 		self.uris['msgproc'] = self.pyro_daemon.connect(
 					LMC.msgproc, 'msgproc')
 
-		logging.info("%s: %s to answer requests at address %s." % (
-			self.name, stylize(ST_OK, "ready"),
-			stylize(ST_URL, 'pyro://*:%s' % self.pyro_daemon.port)))
+		logging.info(_(u'{0}: {1} to answer requests at {2}.').format(
+								self.name, stylize(ST_OK, _(u'ready')),
+								stylize(ST_URL, u'pyro://*:%s'
+									% self.pyro_daemon.port)))
 
 		def wake_pid(pid, wake_signal):
 			try:

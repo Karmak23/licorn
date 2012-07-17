@@ -9,36 +9,30 @@ WMI means "Web Management Interface".
 :license: GNU GPL version 2
 """
 
-import sys, os, re, mimetypes, urlparse, posixpath, base64
-import Pyro, urllib, socket, errno
+import sys, socket
 
 try:
 	# http://twistedmatrix.com/documents/current/web/howto/web-in-60/wsgi.html
-	from twisted.web import version
+	from twisted.web import version; del version
 
 except ImportError:
 	sys.stderr.write(u'Please install the Twisted Web Python package before starting the WMI.')
 	raise SystemExit(911)
 
 from socket    import error
-from threading import Event, Thread, current_thread
+from threading import current_thread
 
 from django.core.handlers.wsgi    import WSGIHandler
 
-from licorn.foundations           import options, settings, logging, exceptions
-from licorn.foundations           import pyutils, process, styles
-from licorn.foundations.workers   import workers
+from licorn.foundations           import options, settings, logging
+from licorn.foundations           import styles
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import LicornConfigObject, ObjectSingleton
-from licorn.foundations.constants import verbose
+from licorn.foundations.threads   import Event
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
-
-from licorn.core                import LMC, version
-from licorn.foundations.events  import LicornEvent
 
 from licorn.daemon.threads      import BaseLicornThread
 from licorn.interfaces.wmi      import django_setup, wmi_event_app
@@ -103,7 +97,7 @@ class WebManagementInterface(BaseLicornThread):
 		# http://www.robgolding.com/blog/2011/02/05/django-on-twistd-web-wsgi-issue-workaround/
 		# for details). NOTE: everything goes like a breeze if we don't
 		# daemonize the WMI.
-		from twisted.web      import server, resource
+		from twisted.web      import server
 		from twisted.web.wsgi import WSGIResource
 		from twisted.internet import reactor, ssl
 

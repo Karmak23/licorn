@@ -15,7 +15,7 @@ from functools import wraps
 
 
 # ============================================================== licorn imports
-import styles
+import styles, hlstr
 from base    import ObjectSingleton
 from styles  import *
 from ltrace  import *
@@ -55,11 +55,15 @@ class LicornCache(ObjectSingleton):
 	def get(self, key):
 		value, expire_time = self.data[key]
 
+		assert ltrace_func(TRACE_CACHE)
+
 		if time.time() > expire_time:
 			raise KeyError(_('Key %s expired!') % key)
 
 		return value
 	def set(self, key, value, expire_time=None):
+
+		assert ltrace_func(TRACE_CACHE)
 
 		if expire_time is None:
 			expire_time = time.time() + default_expire_time
@@ -69,6 +73,9 @@ class LicornCache(ObjectSingleton):
 
 		self.data[key] = (value, expire_time)
 	def delete(self, key):
+
+		assert ltrace_func(TRACE_CACHE)
+
 		try:
 			del self.data[key]
 
@@ -92,7 +99,13 @@ def cached(expire_time=None):
 
 			force_expire = kwargs.pop('cache_force_expire', False)
 
-			key = '_%s%s%s' % (func.__name__, ''.join(str(x) for x in args),
+			# NOTE: We need the ID, not only the `__name__`, else we get
+			# collisions: in `wmi/*/dynamics.py` there are many cached
+			# functions with the same name and no arguments.
+			# And even with the ID, I fear that we can still have collisions
+			# sooner or later, if the GC collects enough objects and creates
+			# new ones at the place of olds.
+			key = '_%s%s%s%s' % (func.__name__, id(func), ''.join(str(x) for x in args),
 								''.join(str(v) for v in kwargs.itervalues()))
 
 			if force_expire:

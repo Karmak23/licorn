@@ -6,7 +6,7 @@ Copyright (C) 2011 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import sys, os, getpass
+import os, getpass, errno
 
 # ================================================= Licorn® foundations imports
 import logging, styles, events
@@ -14,8 +14,9 @@ import logging, styles, events
 from ltrace    import *
 from ltraces   import *
 from styles    import *
-from base      import ObjectSingleton, NamedObject, LicornConfigObject
-from constants import roles, priorities
+from threads   import RLock
+from base      import ObjectSingleton, NamedObject, LicornConfigObject, BasicCounter
+from constants import roles
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
@@ -52,18 +53,33 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		# TODO: autodetect this & see if it not autodetected elsewhere.
 		#self.defaults.quota_device = "/dev/hda1"
 
-		self.config_dir           = u'/etc/licorn'
-		self.check_config_dir     = self.config_dir + u'/check.d'
-		self.main_config_file     = self.config_dir + u'/licorn.conf'
-
+		self.config_dir              = u'/etc/licorn'
+		self.data_dir                = u'/var/lib/licorn'
+		self.cache_dir               = u'/var/cache/licorn'
+		self.check_config_dir        = self.config_dir + u'/check.d'
+		self.main_config_file        = self.config_dir + u'/licorn.conf'
+		self.inotifier_exclude_file  = self.config_dir + u'/nowatch.conf'
 		self.home_backup_dir         = self.defaults.home_base_path + u'/backup'
 		self.home_archive_dir        = self.defaults.home_base_path + u'/archives'
+
+		# the inotifier wants a lock. We don't use it internally otherwise.
+		self.lock = RLock()
+
+		# hints for inotified files.
+		self.__hint_main    = BasicCounter(1)
+		self.__hint_nowatch = BasicCounter(1)
 
 		self.__load_factory_settings()
 
 		# on first load, we don't emit the "settings_changed" event.
 		# This would be like a false-positive.
 		self.reload(emit_event=False)
+
+		if self.experimental.enabled and os.geteuid() == 0:
+			logging.warning(stylize(ST_ATTR, _(u'Experimental features '
+												u'enabled. Have fun, and '
+												u'hope it does not break '
+												u'anything.')))
 
 		events.collect(self)
 	def __str__(self):
@@ -84,7 +100,12 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		self.merge_settings({
 			'role'                         : roles.UNSET,
 			'pyro.port'                    : int(os.getenv('PYRO_PORT', 299)),
-			'backup.interval'              : 86400,   # one day between backups.
+
+			# timeout for CLI connect; in seconds.
+			'connect.timeout'              : 30,
+
+			# one day between backups.
+			'backup.interval'              : 86400,
 			'experimental.enabled'         : self.experimental_should_be_enabled,
 
 			# TODO: move the following directives to where they belong.
@@ -130,9 +151,9 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		assert ltrace_func(TRACE_SETTINGS)
 
 		if self.role == roles.UNSET or self.role not in roles:
-			raise exceptions.BadConfigurationError(_(u'%s is currently '
-				u'unset or invalid in %s. Please set it to either %s or '
-				u'%s and retry.') % (
+			raise exceptions.BadConfigurationError(_(u'{0} is currently '
+				u'unset or invalid in {1}. Please set it to either {2} or '
+				u'{3} and retry.').format(
 					stylize(ST_SPECIAL, 'role'),
 					stylize(ST_PATH, self.main_config_file),
 					stylize(ST_COMMENT, 'SERVER'),
@@ -159,9 +180,9 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 
 		if self.backup.interval < 3600 or self.backup.interval > 604800:
 			raise exceptions.BadConfigurationError(_(
-				u'\n\tinvalid value %s for configuration '
-				u'directive %s: must be an integer between '
-				u'%s (one hour) and %s (one week).') % (
+				u'\n\tinvalid value {0} for configuration '
+				u'directive {1}: must be an integer between '
+				u'{2} (one hour) and {3} (one week).').format(
 					stylize(ST_BAD, self.backup.interval),
 					stylize(ST_COMMENT, 'backup.interval'),
 					stylize(ST_COMMENT, '3600'), stylize(ST_COMMENT, '604800')))
@@ -229,22 +250,80 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 				raise e
 
 		assert ltrace_func(TRACE_SETTINGS, 1)
-	def reload(self, emit_event=True):
+	@property
+	def inotifier_exclusions(self):
+		return self.__nowatch
+	def __load_inotifier_exclusions(self, emit_event=True):
+
+		if not hasattr(self, '__nowatch'):
+			self.__nowatch = set()
+
+		try:
+			oldset = self.__nowatch.copy()
+
+			self.__nowatch |= set(s.strip() for s in open(self.inotifier_exclude_file).readlines() if s[0] == '/')
+
+		except (OSError, IOError), e:
+			if e.errno != errno.ENOENT:
+				logging.exception(_(u'Exception while loading {0}; no '
+									u'exclusions defined'),
+									(ST_PATH, self.inotifier_exclude_file))
+
+			# no read, no contents, reset the exclusions.
+			self.__nowatch = set()
+
+		if oldset != self.__nowatch and emit_event:
+			from licorn.foundations.events import LicornEvent
+			LicornEvent('settings_inotifier_exclusions_changed').emit()
+	def add_inotifier_exclusion(self, path):
+
+		if path in self.__nowatch:
+			return
+
+		self.__nowatch.add(path)
+		self.__save_inotifier_exclusions()
+	def del_inotifier_exclusion(self, path):
+		try:
+			self.__nowatch.remove(path)
+
+		except:
+			logging.exception(_(u'Unable to remove {0} from inotifier exclusions'), (ST_PATH, path))
+
+		else:
+			self.__save_inotifier_exclusions()
+	def __save_inotifier_exclusions(self):
+
+		# don't save an empty file.
+		if self.__nowatch != []:
+			try:
+				# prevent inotifier false-positive event.
+				self.__hint_nowatch += 2
+
+				open(self.inotifier_exclude_file, 'wb').write('\n'.join(self.__nowatch))
+
+			except:
+				logging.exception(_(u'Exception while saving {0}!'), (ST_PATH, self.inotifier_exclude_file))
+	def _inotifier_install_watches(self, **kwargs):
+		""" We watch 2 files and use the same trigger function, it reloads
+			only if things really changed. """
+
+		self.__hint_main    = L_inotifier_watch_conf(
+									settings.main_config_file,
+									self, self.reload)
+		self.__hint_nowatch = L_inotifier_watch_conf(
+									settings.inotifier_exclude_file,
+									self, self.reload)
+	def reload(self, emit_event=True, **kwargs):
+
 		self.__load_main_config_file(emit_event)
 
 		# TODO:
 		#self.__load_config_directory()
 
 		self.__convert_settings_values()
-		self.check()
 
-		if self.experimental.enabled and os.geteuid() == 0:
-			logging.notice(stylize(ST_ATTR, _(u'Experimental features enabled. '
-				u'Have fun, but do not break anything%s.') % (
-					stylize(ST_IMPORTANT, _(u' (hear me Nibor?)'))
-						if getpass.getuser() in ('robin', 'robin2', 'nibor', 'nibor2',
-							'lucbernet', 'rlucbernet', 'r.lucbernet', 'robin.lucbernet',
-							'tenrebcul', 'ntenrebcul', 'n.tenrebcul', 'nibor.tenrebcul')
-						else u'')))
+		self.__load_inotifier_exclusions(emit_event)
+
+		self.check()
 
 settings = LicornSettings()

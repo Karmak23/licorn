@@ -11,27 +11,26 @@ Licorn core: groups - http://docs.licorn.org/core/groups.html
 
 """
 
-import sys, os, stat, posix1e, re, time, weakref, gc, types
+import sys, os, stat, posix1e, re, gc, types, weakref
 
 from traceback  import print_exc
-from threading  import current_thread, Event
 from contextlib import nested
 from operator   import attrgetter
 
-from licorn.foundations           import logging, exceptions, settings
+from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils, hlstr
+from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import DictSingleton, Enumeration
 from licorn.foundations.constants import filters, backend_actions, \
-											distros, priorities, roles, relation
+											distros, priorities, relation
 
 from licorn.core                import LMC
 from licorn.core.classes        import CoreFSController, CoreStoredObject, CoreFSUnitObject
 #from licorn.core.users          import User
-from licorn.foundations.events import LicornEvent
 
 class Group(CoreStoredObject, CoreFSUnitObject):
 	""" a Licorn® group object.
@@ -179,6 +178,10 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		if type(user) == types.IntType:
 			user = LMC.users.by_uid(user)
 
+		# We need the real object, else 'user in ...' doesn't work.
+		if type(user) in weakref.ProxyTypes:
+			user = user.weakref()
+
 		if self.is_standard:
 			if user in self.guest_group.members:
 				return relation.GUEST
@@ -207,7 +210,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				return relation.NO_MEMBERSHIP
 	def __init__(self, gidNumber, name, memberUid=None,
 		homeDirectory=None, permissive=None, description=None,
-		groupSkel=None, userPassword=None, backend=None):
+		groupSkel=None, userPassword=None, inotified=None, backend=None):
 
 		assert ltrace_func(TRACE_OBJECTS)
 
@@ -217,9 +220,6 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		self.__description  = description
 		self.__groupSkel    = groupSkel
 		self.__userPassword = userPassword
-
-		# The weakref is used to link me to other core objects. My Controller
-		# will get a real reference anyway.
 
 		if memberUid:
 			# Transient variable that will be wiped by _setup_initial_links()
@@ -279,15 +279,10 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		self.__responsible_group = None
 		self.__guest_group       = None
 
-		# update arguments for underlying classes
-		kwargs = {
-
-			}
-
 		super(Group, self).__init__(
 				controller=LMC.groups,
 				backend=backend,
-
+				inotified=inotified,
 				# There is no '/', this is intentionnal, because the check_file
 				# is stored outside of the group directory.
 				check_file='%s%s' % (self.__homeDirectory,
@@ -423,7 +418,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		if profile.gidNumber == self.__gidNumber:
 			self.__profile = profile.weakref
 
-			LicornEvent('group_profile_changed', group=self).emit(priorities.LOW)
+			LicornEvent('group_profile_changed', group=self.proxy
+														).emit(priorities.LOW)
 
 		else:
 			raise exceptions.LicornRuntimeError(_(u'group {0}: Cannot set a '
@@ -459,11 +455,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		with self.lock:
 
 			if permissive:
-				qualif = ''
 				value  = _(u'activated')
 				color  = ST_OK
 			else:
-				qualif = _(u'not ')
 				value  = _(u'deactivated')
 				color  = ST_BAD
 
@@ -475,7 +469,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			# auto-apply the new permissiveness
 			workers.service_enqueue(priorities.HIGH, self.check, batch=True)
 
-			LicornEvent('group_permissive_state_changed', group=self).emit(priorities.LOW)
+			LicornEvent('group_permissive_state_changed',
+								group=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Switched group {0} permissive '
 							u'state to {1} (Shared content permissions are '
@@ -508,7 +503,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.__description = description
 			self.serialize()
 
-			LicornEvent('group_description_changed', group=self).emit(priorities.LOW)
+			LicornEvent('group_description_changed',
+								group=self.proxy).emit(priorities.LOW)
 
 			self._cli_invalidate()
 
@@ -535,7 +531,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.__groupSkel = groupSkel
 			self.serialize()
 
-			LicornEvent('group_groupSkel_changed', group=self).emit(priorities.LOW)
+			LicornEvent('group_groupSkel_changed',
+								group=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Changed group {0} skel to {1}.').format(
 					stylize(ST_NAME, self.name),
@@ -601,9 +598,13 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 	@is_privilege.setter
 	def is_privilege(self, is_privilege):
 		self.__is_privilege = is_privilege
+
 		# wipe the cache to force recomputation
-		try: del self.__cg_precalc_small
-		except: pass
+		self._cli_invalidate()
+
+		for user in self.__members:
+			user()._cli_invalidate()
+
 	@property
 	def gidMembers(self):
 		# turn the weakrefs into real objects before returning them.
@@ -750,7 +751,6 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		self.backend.save_Group(self, backend_action)
 	def add_Users(self, users_to_add=None, force=False, batch=False, emit_event=True):
 		""" Add a user list in the group 'name'. """
-		caller = current_thread().name
 
 		assert ltrace_func(TRACE_GROUPS)
 
@@ -801,7 +801,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 							LMC.configuration.users.group]().add_Users(
 								[ user ], batch=True)
 
-					LicornEvent('group_pre_add_user', group=self, user=user, synchronous=True).emit()
+					LicornEvent('group_pre_add_user', group=self.proxy,
+									user=user.proxy, synchronous=True).emit()
 
 					# the ADD operation, per se.
 					self.__members.append(user.weakref)
@@ -827,10 +828,12 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					else:
 						self.serialize()
 
-					LicornEvent('group_post_add_user', group=self, user=user, synchronous=True).emit()
+					LicornEvent('group_post_add_user', group=self.proxy,
+									user=user.proxy, synchronous=True).emit()
 
 					if emit_event:
-						LicornEvent('group_member_added', group=self, user=user).emit(priorities.LOW)
+						LicornEvent('group_member_added', group=self.proxy,
+										user=user.proxy).emit(priorities.LOW)
 
 					# THINKING: shouldn't we turn this into an extension?
 					workers.service_enqueue(priorities.LOW,
@@ -849,7 +852,6 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 	def del_Users(self, users_to_del=None, batch=False, emit_event=True):
 		""" Delete a users list from the current group. """
-		caller = current_thread().name
 
 		assert ltrace_func(TRACE_GROUPS)
 
@@ -869,7 +871,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 				if user.weakref in self.__members:
 
-					LicornEvent('group_pre_del_user', group=self, user=user, synchronous=True).emit()
+					LicornEvent('group_pre_del_user', group=self.proxy,
+									user=user.proxy, synchronous=True).emit()
 
 					self.__members.remove(user.weakref)
 
@@ -891,11 +894,12 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					else:
 						self.serialize()
 
-					LicornEvent('group_post_del_user', group=self, user=user, synchronous=True).emit()
+					LicornEvent('group_post_del_user', group=self.proxy,
+									user=user.proxy, synchronous=True).emit()
 
 					if emit_event:
-						LicornEvent('group_member_deleted',
-								group=self, user=user).emit(priorities.LOW)
+						LicornEvent('group_member_deleted', group=self.proxy,
+										user=user.proxy).emit(priorities.LOW)
 
 					# THINKING: shouldn't we turn this into an extension?
 					workers.service_enqueue(priorities.LOW,
@@ -954,7 +958,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			logging.info(_(u'Skipped move of group {0}, '
 				u'already stored in backend {1}.').format(
 					stylize(ST_NAME, self.name),
-					stylize(ST_NAME, new_backend)))
+					new_backend.pretty_name))
 			return True
 
 		if self.__is_system_restricted and not force:
@@ -977,7 +981,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 													internal_operation=True):
 				logging.warning(_(u'Skipped move of group {0} to backend {1} '
 					u'because move of associated responsible system group '
-					u'failed.').format(self.name, new_backend))
+					u'failed.').format(self.name, new_backend.pretty_name))
 				return
 
 			if not self.guest_group.move_to_backend(new_backend,
@@ -990,18 +994,20 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 				logging.warning(_(u'Skipped move of group {0} to backend {1} '
 					u'because move of associated system guest group '
-					u'failed.').format(self.name, new_backend))
+					u'failed.').format(self.name, new_backend.pretty_name))
 				return
 
+		self.backend = new_backend
+
 		try:
-			self.backend = new_backend
 			self.serialize(backend_actions.CREATE)
 
-		except Exception, e:
-			logging.warning(_(u'Exception {0} happened while trying to '
-				u'move group {1} from {2} to {3}, aborting (group left '
-				u'unchanged).').format(e, self.name, old_backend, new_backend))
-			pyutils.print_exception_if_verbose()
+		except:
+			logging.exception(_(u'Exception happened while trying to '
+								u'move group {0} from {1} to {2}, aborting '
+								u'(group left unchanged)'), self.name,
+									old_backend.pretty_name,
+									new_backend.pretty_name)
 
 			try:
 				# try to restore old situation as much as possible.
@@ -1019,25 +1025,29 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				self.guest_group.move_to_backend(old_backend,
 													internal_operation=True)
 
-			except Exception, e:
-				logging.warning(_(u'Exception {0} happened while trying to '
-					u'restore a stable situation during group {1} move, we '
-					u'could be in big trouble.').format(e, self.name))
-				print_exc()
+			except:
+				logging.exception(_(u'An error occured while trying to '
+					u'restore a stable situation during group {0} move, we '
+					u'could be in big trouble.'), (ST_NAME, self.name))
 
 			return False
+
 		else:
 			# the copy operation is successfull, make it a real move.
-			old_backend.delete_Group(self.name)
+			old_backend.delete_Group(self)
 
-			LicornEvent('group_moved_backend', group=self).emit(priorities.LOW)
+			LicornEvent('group_moved_backend', group=self.proxy
+													).emit(priorities.LOW)
 
 			logging.notice(_(u'Moved group {0} from {1} to {2}.').format(
 												stylize(ST_NAME, self.name),
-												stylize(ST_NAME, old_backend),
-												stylize(ST_NAME, new_backend)))
+												old_backend.pretty_name,
+												new_backend.pretty_name))
+
+			self._cli_invalidate()
 			return True
-	def check(self, minimal=True, force=False, batch=False, auto_answer=None, full_display=True):
+	def check(self, initial=False, minimal=True, force=False, batch=False,
+										auto_answer=None, full_display=True):
 		""" Check a group.
 			Will verify the various needed
 			conditions for a Licorn® group to be valid, and then check all
@@ -1060,11 +1070,15 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		#NOTE: don't self.lock here, it would block the inotifier event dispatcher.
 
 		if self.is_system:
-			return self.__check_system_group(minimal, force,
-											batch, auto_answer, full_display)
+			return self.__check_system_group(minimal=minimal, force=force,
+												batch=batch, initial=initial,
+												auto_answer=auto_answer,
+												full_display=full_display)
 		else:
-			return self.__check_standard_group(minimal, force,
-											batch, auto_answer, full_display)
+			return self.__check_standard_group(minimal=minimal, force=force,
+													batch=batch, initial=initial,
+													auto_answer=auto_answer,
+													full_display=full_display)
 	def check_symlinks(self, oldname=None, delete=False,
 						batch=False, auto_answer=None, *args, **kwargs):
 		""" For each member of a group, verify member has a symlink to the
@@ -1260,7 +1274,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		"""
 
 		if self.__is_system:
-			# system groups don't handle the permisse attribute.
+			# system groups don't handle the permissive attribute.
 			return None
 
 		try:
@@ -1489,13 +1503,11 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.__guest_group().responsible_group = self.__responsible_group()
 
 		return all_went_ok
-	def __check_system_group(self, minimal=True, force=False,
+	def __check_system_group(self, initial=False, minimal=True, force=False,
 							batch=False, auto_answer=None, full_display=True):
 		""" Check superflous and mandatory attributes of a system group. """
 
 		assert ltrace_func(TRACE_GROUPS)
-
-		all_went_ok = True
 
 		logging.progress(_(u'Checking system specific attributes '
 				u'for group {0}…').format(stylize(ST_NAME, self.name))
@@ -1610,6 +1622,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		""" FIXME: make long_output a dedicated precalc variable... """
 		try:
 			return self.__cg_precalc_full
+
 		except AttributeError:
 
 			# NOTE: 5 = len(str(65535)) == len(max_uid) == len(max_gid)
@@ -1617,8 +1630,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			align_space    = ' ' * (label_width + 2)
 			gid_label_rest = 5 - len(str(self.__gidNumber))
 
-			accountdata = [ '{group_name}: ✎{gid} {backend}	'
-								'{descr}'.format(
+			accountdata = [ u'{group_name}: ✎{gid} {backend}	'
+								u'{descr} {inotified}'.format(
 								group_name=stylize(
 									Group._permissive_colors[self.__is_permissive]
 										if self.__is_standard
@@ -1627,12 +1640,15 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 											else ST_NAME),
 									self.__name.rjust(label_width)),
 								#id_type=_(u'gid='),
-								gid='%s%s' % (
+								gid=u'%s%s' % (
 									stylize(ST_UGID, self.__gidNumber),
-									' ' * gid_label_rest),
+									u' ' * gid_label_rest),
 								backend=stylize(ST_BACKEND, self.backend.name),
 								descr= stylize(ST_COMMENT, self.__description)
-									if self.__description != '' else '') ]
+									if self.__description != '' else u'',
+								inotified=u'' if self.is_system or self.inotified
+												else stylize(ST_BAD,
+													_(u'(not watched)'))) ]
 
 			if long_output:
 				if hasattr(self, '__userPassword'):
@@ -1740,8 +1756,11 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						, '%s%s' % ('⚑' if is_priv else '', self.__name)),
 					stylize(ST_UGID, self.__gidNumber))
 			return self.__cg_precalc_small
+
 	def to_XML(self, selected=None, long_output=False):
-		""" Export the groups list to XML. """
+		""" Export the groups list to XML.
+			minimun : name;gid;desc;members;backend;permissive
+		"""
 
 		with self.lock:
 			return '''		<group>
@@ -1814,17 +1833,23 @@ class GroupsController(DictSingleton, CoreFSController):
 
 		GroupsController.init_ok = True
 		assert ltrace_func(TRACE_GROUPS, True)
-	def by_name(self, name):
-		return Group.by_name[name]()
 	@property
 	def names(self):
 		return (name for name in Group.by_name)
 	def word_match(self, word):
 		return hlstr.multi_word_match(word, self.names)
-	def by_gid(self, gid):
+	def by_name(self, name, strong=False):
+		if strong:
+			return Group.by_name[name]()
+		else:
+			return Group.by_name[name]().proxy
+	def by_gid(self, gid, strong=False):
 		# we need to be sure we get an int(), because the 'gid' comes from RWI
 		# and is often a string.
-		return self[int(gid)]
+		if strong:
+			return self[int(gid)]
+		else:
+			return self[int(gid)].proxy
 	# the generic way (called from RWI)
 	by_key = by_gid
 	by_id  = by_gid
@@ -1885,7 +1910,7 @@ class GroupsController(DictSingleton, CoreFSController):
 				self[gid] = group
 				loaded.append(gid)
 
-				LicornEvent('group_changed', group=group).emit(priorities.LOW)
+				LicornEvent('group_changed', group=group.proxy).emit(priorities.LOW)
 
 			for gid, group in self.items():
 				if group.backend.name == backend.name:
@@ -1992,14 +2017,23 @@ class GroupsController(DictSingleton, CoreFSController):
 
 				filtered_groups = self.values()
 
+			elif filters.WATCHED == filter_string:
+				assert ltrace(TRACE_GROUPS, '> Select(INO:%s/%s)' % (
+					filters.NOT_WATCHED, filter_string))
+				filtered_groups.extend(group for group in self
+														if group.inotified)
+
+			elif filters.NOT_WATCHED == filter_string:
+				assert ltrace(TRACE_GROUPS, '> Select(UNW:%s/%s)' % (
+					filters.NOT_WATCHED, filter_string))
+				filtered_groups.extend(group for group in self
+														if group.is_standard and not group.inotified)
+
 			elif filters.STANDARD == filter_string:
 				assert ltrace(TRACE_GROUPS, '> Select(STD:%s/%s)' % (
 					filters.STD, filter_string))
-				try:
-					filtered_groups.extend(group for group in self
+				filtered_groups.extend(group for group in self
 														if group.is_standard)
-				except AttributeError, e:
-					print [ '%s, %s' % (x, type(x)) for x in self ]
 
 			elif filters.EMPTY == filter_string:
 				assert ltrace(TRACE_GROUPS, '> Select(EMPTY:%s/%s)' % (
@@ -2112,6 +2146,10 @@ class GroupsController(DictSingleton, CoreFSController):
 				groups = self
 			else:
 				groups = selected
+				for g in groups:
+					if not g.is_system:
+						groups.append(g.responsible_group)
+						groups.append(g.guest_group)
 
 			assert ltrace(TRACE_GROUPS, '| to_XML(%s)' % ','.join(
 											group.name for group in groups))
@@ -2121,8 +2159,42 @@ class GroupsController(DictSingleton, CoreFSController):
 				u'%s\n'
 				u'</groups-list>\n') % u'\n'.join(
 						group.to_XML() for group in groups)
+
+
+	def get_CSV_data(self, selected=None, long_output=False):
+		""" return the group accounts list ready to be parsed by python csv module.
+			name;gid;desc;members;backend;permissive
+		"""
+
+		with self.lock:
+			csv_data = []
+			for group in [ g for g in self if g.gid in selected]:
+				if group.is_system:
+					csv_data.append([
+						group.name,
+						group.gid,
+						group.description,
+						','.join([u.login for u in g.members]),
+						group.backend.name,
+						None
+					])
+				else:
+					# export the group and its helpers
+					groups = [ group, group.responsible_group, group.guest_group ]
+					for g in groups:
+						csv_data.append([
+							g.name,
+							g.gid,
+							g.description,
+							','.join([u.login for u in g.members]),
+							g.backend.name,
+							g.permissive
+						])
+
+			return csv_data
+
 	def to_JSON(self, selected=None):
-		""" Export the user accounts list to XML. """
+		""" Export the user accounts list to JSON. """
 
 		with self.lock:
 			if selected is None:
@@ -2174,7 +2246,8 @@ class GroupsController(DictSingleton, CoreFSController):
 											backend=None, members_to_add=None,
 											responsibles_to_add=None,
 											guests_to_add=None, batch=False,
-											force=False, async=True):
+											force=False, async=True,
+											inotified=True):
 		""" Add a Licorn group (the group + the guest/responsible group +
 			the shared dir + permissions (ACL)). """
 
@@ -2194,6 +2267,7 @@ class GroupsController(DictSingleton, CoreFSController):
 					description=description,
 					groupSkel=groupSkel,
 					permissive=permissive,
+					inotified=inotified,
 					backend=backend, batch=batch, force=force)
 
 			except exceptions.AlreadyExistsException, e:
@@ -2229,7 +2303,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			# the same when the group is deleted, only the standard group
 			# deletion gets "evented".
 			if not group.is_helper:
-				LicornEvent('group_added', group=group).emit()
+				LicornEvent('group_added', group=group.proxy).emit()
 
 			assert ltrace_func(TRACE_GROUPS, True)
 
@@ -2238,11 +2312,9 @@ class GroupsController(DictSingleton, CoreFSController):
 			return group
 
 		# This will create shared group directory.
-		group.check(minimal=True, batch=True, force=force)
+		group.check(initial=True, minimal=True, batch=True, force=force, full_display=False)
 
 		if not_already_exists:
-			group._inotifier_add_watch(self.licornd)
-
 			logging.notice(_(u'Created {0} group {1} (gid={2}).').format(
 								stylize(ST_OK, _(u'permissive'))
 								if permissive else
@@ -2250,7 +2322,7 @@ class GroupsController(DictSingleton, CoreFSController):
 								stylize(ST_NAME, group.name),
 								stylize(ST_UGID, group.gid)))
 
-			LicornEvent('group_added', group=group).emit()
+			LicornEvent('group_added', group=group.proxy).emit()
 
 		if members_to_add:
 			group.add_Users(members_to_add)
@@ -2264,10 +2336,10 @@ class GroupsController(DictSingleton, CoreFSController):
 			group.responsible_group.add_Users(responsibles_to_add)
 
 		assert ltrace_func(TRACE_GROUPS, True)
-		return group
+		return group.proxy
 	def __add_group(self, name, manual_gid=None, system=False, description=None,
 						groupSkel=None, permissive=None, backend=None,
-						batch=False, force=False):
+						inotified=True, batch=False, force=False):
 		""" Add a POSIX group, write the system data files.
 			Return the gid of the group created. """
 
@@ -2373,6 +2445,7 @@ class GroupsController(DictSingleton, CoreFSController):
 										if system else groupSkel,
 									permissive=permissive,
 									userPassword='x',
+									inotified=inotified,
 									backend=self._prefered_backend
 										if backend is None else backend)
 
@@ -2389,7 +2462,7 @@ class GroupsController(DictSingleton, CoreFSController):
 		# DO NOT UNCOMMENT: -- if not batch:
 		group.serialize(backend_actions.CREATE)
 
-		LicornEvent('group_post_add', group=group, synchronous=True).emit()
+		LicornEvent('group_post_add', group=group.proxy, synchronous=True).emit()
 
 		assert ltrace_func(TRACE_GROUPS, True)
 		return group
@@ -2403,6 +2476,10 @@ class GroupsController(DictSingleton, CoreFSController):
 		# WMI resolver
 		if type(group) == types.IntType:
 			group = LMC.groups.by_gid(group)
+
+		# we need a strong reference during deletion.
+		if type(group) in weakref.ProxyTypes:
+			group = group.weakref()
 
 		# lock everything we *eventually* need, to be sure there are no errors.
 		with nested(self.lock, LMC.privileges.lock, LMC.users.lock):
@@ -2452,7 +2529,8 @@ class GroupsController(DictSingleton, CoreFSController):
 					# the profile.del_Groups() will call self.unlink_Profile()
 					profile.del_Groups([ group ])
 
-				LicornEvent('group_deleted', group=group).emit()
+				LicornEvent('group_deleted', name=group.name, gid=group.gid,
+											system=True).emit()
 
 				# NOTE: no need to wipe cross-references in auxilliary members,
 				# this is done in the Group.__del__ method.
@@ -2461,7 +2539,7 @@ class GroupsController(DictSingleton, CoreFSController):
 				# delete its internal data and exit.
 				self.__delete_group(group)
 
-				# checkpoint, needed for multi-delete (users-groups-profile) operation,
+				# Checkpoint, needed for multi-delete (users-groups-profile) operation,
 				# to avoid collecting the deleted users at the end of the run, making
 				# throw false-negative operation about non-existing groups.
 				gc.collect()
@@ -2469,11 +2547,10 @@ class GroupsController(DictSingleton, CoreFSController):
 				assert ltrace_func(TRACE_GROUPS, True)
 				return
 
-			# remove the inotifier watch before deleting the group, else
-			# the call will fail, and before archiving group shared
-			# data, else it will leave ghost notifies in our Inotifier thread,
-			# which doesn't need that.
-			group._inotifier_del_watch(self.licornd)
+			# Remove the inotifier watches before deleting the group.
+			# ``serialize=False`` because we don't want the group home
+			# to remain in nowatch.conf after the deletion.
+			group.inotified_toggle(False, full_display=False, serialize=False)
 
 			# For a standard group, there are a few steps more :
 			# 	- delete the responsible and guest groups (if exists),
@@ -2495,12 +2572,13 @@ class GroupsController(DictSingleton, CoreFSController):
 			home = group.homeDirectory
 			name = group.name
 
-			LicornEvent('group_deleted', group=group).emit()
+			LicornEvent('group_deleted', name=group.name, gid=group.gid,
+											system=False).emit()
 
 			# finally, delete the group.
 			self.__delete_group(group)
 
-		# checkpoint, needed for multi-delete (users-groups-profile) operation,
+		# Checkpoint, needed for multi-delete (users-groups-profile) operations,
 		# to avoid collecting the deleted users at the end of the run, making
 		# throw false-negative operation about non-existing groups.
 		gc.collect()
@@ -2510,10 +2588,13 @@ class GroupsController(DictSingleton, CoreFSController):
 		# can be very long, releasing the locks is good idea.
 		assert ltrace_locks(self.lock, LMC.privileges.lock, LMC.users.lock)
 
-		# the group information has been wiped out, remove or archive the shared
+		# The group information has been wiped out, remove or archive the shared
 		# directory. If anything fails now, this is not a real problem, because
 		# the system configuration data is safe. At worst, there is an orphaned
 		# directory remaining in the arbo, which is harmless.
+		#
+		# NOTE: harmless warnings can occur if the group directory is
+		# moved/archived before all inotifier watches are removed.
 		if no_archive:
 			workers.service_enqueue(priorities.LOW, fsapi.remove_directory, home)
 
@@ -2531,24 +2612,25 @@ class GroupsController(DictSingleton, CoreFSController):
 		assert ltrace_func(TRACE_GROUPS)
 
 		# keep informations for post-deletion hook
-		backend = group.backend
 		system  = group.is_system
 		gid     = group.gidNumber
 		name    = group.name
 
-		LicornEvent('group_pre_del', group=group, synchronous=True).emit()
-
+		# WARNING: delete the group from the controller before the backend
+		# serialization, else lazy backends (like shadow) will pick it up
+		# again and it will be present at next daemon (re-)start.
 		if gid in self:
 			del self[gid]
+
 		else:
 			logging.warning2(_(u'{0}: group {1} already not referenced in '
 				u'controller!').format(stylize(ST_NAME, self.name),
 					stylize(ST_NAME, name)))
 
-		# FIXME: this is not very smart.
-		# NOTE: this must be done *after* having deleted the data from self,
-		# else mono-maniac backends (like shadow) don't see the change and
-		# save everything, including the group we want to delete.
+		LicornEvent('group_pre_del', group=group.proxy, synchronous=True).emit()
+
+		# NOTE: the backend deletion must be done *after* having deleted
+		# the object from the controller. See above WARNING.
 		group.backend.delete_Group(group)
 
 		if group.is_helper:
@@ -2570,7 +2652,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			_(u'system ') if system else '', stylize(ST_NAME, name)))
 
 		assert ltrace_func(TRACE_GROUPS, True)
-	def check_groups(self, groups_to_check=None, minimal=True, force=False,
+	def chk_Groups(self, groups_to_check=None, minimal=True, force=False,
 											batch=False, auto_answer=None):
 		""" Check a list of groups. All other parameters are forwarded to
 			:meth:`Group.check` without any modification and are not used here.
@@ -2582,13 +2664,14 @@ class GroupsController(DictSingleton, CoreFSController):
 
 		if groups_to_check is None:
 			# we have to duplicate the values, in case the check adds/remove
-			# groups. Else, this will raise a RuntimeError.
+			# groups. Else, this will raise a RuntimeError in the loop.
 			groups_to_check = self.values()
 
 		for group in groups_to_check:
-			group.check(minimal, force, batch, auto_answer)
+			group.check(minimal=minimal, force=force, batch=batch, auto_answer=auto_answer)
 
 		del groups_to_check
+
 		self.licornd.clean_objects()
 	def __connect_groups(self):
 		""" Iterate all groups and connect standard/guest/responsible if they
@@ -2647,7 +2730,7 @@ class GroupsController(DictSingleton, CoreFSController):
 				u'Automatic check requested in the background.') %
 					stylize(ST_NAME, self.name))
 			workers.service_enqueue(priorities.HIGH,
-						self.check_groups, batch=True, job_delay=5.0)
+						self.chk_Groups, batch=True, job_delay=5.0)
 
 		if resps != [] or guests != []:
 			logging.warning(_(u'%s: dangling helper group(s) detected. '
@@ -2707,42 +2790,12 @@ class GroupsController(DictSingleton, CoreFSController):
 								for user in missing_gids))))
 
 		del missing_gids
-	def guess_one(self, value):
-		""" Try to guess everything of a group from a
-			single and unknonw-typed info. """
-		try:
-			group = self.by_gid(int(value))
-
-		except (TypeError, ValueError):
-				group = self.by_name(value)
-
-		return group
-	def guess_list(self, value_list):
-		""" yield valid groups, given a list of 'things'
-		 to validate existence of (can be GIDs or names). """
-		groups = []
-
-		for value in value_list:
-			try:
-				group = self.guess_one(value)
-
-			except (KeyError, exceptions.DoesntExistException):
-				logging.info(_(u'Skipped non-existing group name or GID %s.') %
-					stylize(ST_NAME,value))
-			else:
-				if group in groups:
-					pass
-				else:
-					groups.append(group)
-
-		return groups
 	def exists(self, gid=None, name=None):
 		"""Return true if the group or gid exists on the system. """
 
 		assert ltrace_func(TRACE_GROUPS)
 
 		if name:
-			#print name in Group.by_name
 			return name in Group.by_name
 
 		if gid:

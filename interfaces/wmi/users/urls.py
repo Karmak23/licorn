@@ -11,14 +11,14 @@ urlpatterns = patterns('users.views',
     (r'^new/?$', 'user', { 'action': 'new' }),
 
     (r'^edit/(?P<uid>\d+)/?$', 'user',  { 'action': 'edit' }),
-    (r'^edit/(?P<login>%s)/?$' % hlstr.regex['login'][1:-1]  , 'user', {'action': 'edit'}),
+    (r'^(?i)edit/(?P<login>%s)/?$' % hlstr.regex['login'][1:-1]  , 'user', {'action': 'edit'}),
 
     (r'^create/?$', 'create'),
 
     (r'^delete/(?P<uid>\d+)/(?P<no_archive>.*)/?$', 'delete'),
 
     (r'^view/(?P<uid>\d+)/?$', 'view'),
-    (r'^view/(?P<login>%s)/?$' % hlstr.regex['login'][1:-1]  , 'view', {'semantic': True}),
+    (r'^(?i)view/(?P<login>%s)/?$' % hlstr.regex['login'][1:-1]  , 'view', {'semantic': True}),
 
 	# consider this one as a replacement for mod* and use only the 'value' argument
 	#     (r'^mod/(?P<uid>\d+)/(?P<action>\w+)/(?P<value>.+)$', 'mod'),
@@ -33,12 +33,13 @@ urlpatterns = patterns('users.views',
 
 	# consider (?:\d,?)+ as RE for P<uids>
 
-    (r'^massive/delete/(?P<uids>.+)/(?P<no_archive>.*)/?$', 'massive', {'action': 'delete'}),
-    (r'^massive/skel/(?P<uids>.+)/(?P<skel>/.*)/?$', 'massive', {'action': 'skel'}),
+    (r'^massive/delete/(?P<uids>[,\d]+)/(?P<no_archive>.*)/?$', 'massive', {'action': 'delete'}),
+    (r'^massive/skel/(?P<uids>[,\d]+)/(?P<skel>.*)/?$', 'massive', {'action': 'skel'}),
+    (r'^massive/export/(?P<uids>[,\d]+)(?:/(?P<type>.*))?/?$', 'massive', {'action': 'export'}),
 
     (r'^import/(?P<confirm>.*)/?$', 'import_view'),
-    (r'^dl_import/(?P<import_id>.+)/?$', 'import_download'),
     (r'^upload/?$', 'upload_file'),
+
     (r'^check_pwd_strenght/(?P<pwd>.+)/?$', 'check_pwd_strenght'),
-    (r'^generate_pwd/?$', 'generate_pwd'),    
+    (r'^generate_pwd/?$', 'generate_pwd'),
     )
