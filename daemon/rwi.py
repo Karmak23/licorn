@@ -693,10 +693,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		firstline  = open(import_filename).readline()
 		lcndialect = csv.Sniffer().sniff(firstline)
 
-		if lcndialect.delimiter != opts.separator:
+		if lcndialect.delimiter == opts.separator:
 			separator = lcndialect.delimiter
 		else:
 			separator = opts.separator
+
+		print ">> lcn sep ", lcndialect.delimiter
+		print ">> sep ", separator
 
 		try:
 			import_fd = open(import_filename, 'rb')
@@ -717,6 +720,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 			line = fdline[:-1].split(separator)
 
+			print "splitted line : ",line 
+
 			user = {}
 			for (column, number) in (
 					('firstname', firstname_col),
@@ -725,6 +730,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					('login', opts.login_col),
 					('password', opts.password_col)
 				):
+
+				print ">>> column ", column
+				print "num_line ", number
 
 				try:
 					if number is None:
@@ -742,10 +750,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							user[column] = unicode(
 									clean_csv_field(line[number]), encoding)
 
-				except IndexError, e:
-					raise exceptions.LicornRuntimeError('\n'+_(u'Import error '
-						'on line {0}: no {1} specified or bad {2} data '
-						'(was: {3}).').format(i + 1, column, translation, e))
+				#except IndexError, e:
+					#raise exceptions.LicornRuntimeError('\n'+_(u'Import error '
+					#	'on line {0}: no {1} specified or bad {2} data '
+					#	'(was: {3}).').format(i + 1, column, translation, e))
+					#print ">>>>>>> ", e
 
 				except UnicodeEncodeError, e:
 					raise exceptions.LicornRuntimeError('\n'+_(u'Encoding not '
@@ -768,9 +777,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
 					'on line {0} (was: {1}).').format(i+1, e))
 
+			user_groups = []
 			try:
-				user['group'] =	Group.make_name(user['group'])
-
+				for gname in user['group'].split(','):
+					user_groups.append(Group.make_name(gname))
+				
 			except IndexError, e:
 				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
 					'on line {0}: no group specified or bad {2} data '
@@ -780,8 +791,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
 					'on line {0} (was: {1}).').format(i+1, e))
 
-			if user['group'] not in groups_to_add:
-				groups_to_add.append(user['group'])
+			for g in user_groups:
+				if g not in groups_to_add:
+					groups_to_add.append(g)
 
 			users_to_add.append(user)
 
