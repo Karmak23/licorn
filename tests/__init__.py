@@ -26,7 +26,7 @@ from licorn.daemon.threads        import GenericQueueWorkerThread
 from licorn.core                  import LMC
 
 # set this if you want background thread debugging.
-options.SetVerbose(verbose.INFO)
+#options.SetVerbose(verbose.INFO)
 
 sce_status = EnumDict('scenario_status')
 sce_status.NOT_STARTED = 0x0
@@ -65,14 +65,6 @@ class Testsuite:
 		self.passed     = []
 		self.best_state = 1
 		self.working    = Event()
-
-		# As contexts are shared with one only licorn, we cannot run more
-		# than 1 parallel job for now. But this still allows to continue
-		# to run jobs while the tester inspects job results, and this is
-		# still important to save time on success jobs which don't wait.
-		self.workers_scheduler = TestsuiteRunnerThread.setup(licornd=None,
-									input_queue=self.to_run,
-									peers_min=1, peers_max=1, daemon=True)
 
 		# used to modify the best state behaviour when running one one test
 		# or the whole TS.
@@ -132,6 +124,15 @@ class Testsuite:
 			self.passed.append(sce.counter)
 			self.save_best_state()
 	def run_threaded(self):
+
+		# As contexts are shared with one only licorn, we cannot run more
+		# than 1 parallel job for now. But this still allows to continue
+		# to run jobs while the tester inspects job results, and this is
+		# still important to save time on success jobs which don't wait.
+		self.workers_scheduler = TestsuiteRunnerThread.setup(licornd=None,
+									input_queue=self.to_run,
+									peers_min=1, peers_max=1, daemon=True)
+
 		""" Feed the queue with things to do. """
 		if self.selected_scenario != []:
 			# clean the system from previus run
@@ -164,7 +165,7 @@ class Testsuite:
 					# the next to check. This permits the user to check
 					# scenario to the end, before checking a new one, at
 					# the expense of a little more loop cycles.
-					print '>> downgrading sce %s %s' % (sce.counter, sce.name)
+					#print '>> downgrading sce %s %s' % (sce.counter, sce.name)
 					self.failed.task_done()
 					self.failed.put((sce.counter, sce))
 					# if we got another job, our current failed one is still
@@ -172,7 +173,7 @@ class Testsuite:
 					time.sleep(1.0)
 					continue
 
-				print '>> run sce %s %s ' % (sce.counter, sce.name)
+				#print '>> run sce %s %s ' % (sce.counter, sce.name)
 				self.display_status()
 				sce.Run(interactive=True)
 				self.failed.task_done()
@@ -876,7 +877,7 @@ def log_and_exec(command, inverse_test=False, result_code=0, comment="",
 
 	if verb:
 		sys.stderr.write(output)
-def execute(cmd, verbose=verbose, interactive=False):
+def execute(cmd, verbose=0, interactive=False):
 	if verbose and interactive:
 		logging.notice('running %s.' % ' '.join(cmd))
 	p4 = Popen(cmd, shell=False,
@@ -982,6 +983,7 @@ def testsuite_parse_args():
 	""" return basic options of a TS """
 	from optparse import OptionParser
 	parser = OptionParser()
+
 	parser.add_option("-r", "--reload", action="store_true", dest="reload",
 						help=_(u"reload testsuite. Start from beginning."))
 	parser.add_option("-e", "--execute", dest="execute", type="int",
@@ -1025,6 +1027,7 @@ system_files = ( 'passwd', 'shadow', 'group', 'gshadow', 'adduser.conf',
 				'licorn/profiles.xml')
 
 bkp_ext = 'licorn'
+
 state_files = {
 	'context':  'data/.ctx_status',
 	'scenarii':	'data/.sce_status',
@@ -1037,12 +1040,13 @@ state_files = {
 for var_name in ('COLS', 'COLUMNS', 'LINES'):
 	try:
 		del os.environ[var_name]
+
 	except KeyError:
 		pass
 
 if __debug__:
 	PYTHON = [ 'python' ]
-	verbose=True
+	verbose = True
 else:
 	PYTHON = [ 'python', '-OO' ]
-	verbose=False
+	verbose = False
