@@ -87,10 +87,13 @@ def get_next_unset_id():
 	# get the next unsed id in order to generate the task name
 	max_num = 0
 	for task in [ t for t in LMC.tasks if isinstance(t, TaskExtinction)]:
-		num=int(task.name[16:])
-		if num > max_num:
-			max_num = num
-
+		try:
+			num=int(task.name[16:])
+			if num > max_num:
+				max_num = num
+		except ValueError,e :
+			# can be raised if an TaskExtinction has not the name we expect
+			pass
 	return int(max_num) + 1
 	
 @staff_only
