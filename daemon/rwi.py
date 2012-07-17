@@ -2765,7 +2765,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			apps = wmi_event_app.django_apps_list()
 
 		for app in apps:
-			logging.progress(_(u'Running WMI Django tests for app {0}, '
+			logging.notice(_(u'Running WMI Django tests for app {0}, '
 					u'this may take a while…').format(stylize(ST_NAME, app)))
 
 			something_done = False

@@ -70,11 +70,6 @@ class method_decorator(object):
 
 		return wrapper
 
-class class_property(property):
-	#http://stackoverflow.com/questions/128573/using-property-on-classmethods
-    def __get__(self, cls, owner):
-        return self.fget.__get__(None, owner)()
-
 class BasicCounter(object):
 	def __init__(self, init=0):
 		object.__init__(self)
