@@ -509,12 +509,20 @@ def get_events_parse_arguments(app):
 	parser.add_option_group(__get_output_group(app, parser, 'events'))
 
 	events = OptionGroup(parser,
-		stylize(ST_OPTION, _(u"Events monitoring options")))
+		stylize(ST_OPTION, _(u"Events listing/monitoring options")))
+
+
+	events.add_option('-m', '--monitor',
+		action='store_true', dest='monitor', default=False,
+		help=_(u'Stay connected to the daemon and dump events in "monitor" '
+			u'mode. You can filter events with -f. Without this flag, all '
+			u' valid events will only be listed, with their handlers and '
+			u'callbacks if you add -v.'))
 
 	events.add_option('-f', '--facilities',
-		action='store', type='string', dest='facilities', default='std',
-		help=_(u'Specify facilities to monitor. Default: %s (see online '
-			u'documentation for possible values.') %
+		action='store', type='string', dest='facilities', default=None,
+		help=_(u'Specify facilities when monitor. Default: %s (see online '
+			u'documentation for possible values).') %
 				stylize(ST_DEFAULT, _(u"std")))
 
 	parser.add_option_group(events)
