@@ -464,10 +464,12 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.setup_signals_handler()
 
 		self.__init_daemon_phase_1()
-		self.__collect_modules_threads()
+		#self.__collect_modules_threads()
+		self.collect_and_start_threads(collect_only=True)
 		self.__init_daemon_phase_2()
-		self.__start_threads()
-
+		#self.__start_threads()
+		self.collect_and_start_threads()
+		
 		if options.daemon:
 			logging.notice(_(u'{0}: all threads started, going to sleep '
 									u'waiting for signals.').format(self))

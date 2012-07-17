@@ -865,10 +865,10 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 	load_ok = False
 
 	# local and specific implementations of SelectableController methods.
-	def by_id(self, t_id):
+	def by_id(self, t_id, strong=True):
 		return self[int(t_id)]
 
-	def by_name(self, t_name):
+	def by_name(self, t_name, strong=True):
 		# call weakref to retrun real object
 		return Task.by_name[t_name]()
 
