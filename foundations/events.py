@@ -8,6 +8,7 @@ Licorn® foundations - events
 :license: GNU GPL version 2
 """
 
+import types
 from threading import current_thread, Timer
 
 from Queue     import PriorityQueue
@@ -399,7 +400,12 @@ def unregister_collector(collector):
 												u'collector {0}'), collector)
 def scan_object(objekt, meth_handler, meth_callback):
 	for attribute in (getattr(objekt, attr) for attr in dir(objekt)):
-		if callable(attribute):
+		# We need to check the "type()" too, because for instance
+		# jsonrpc.ServiceProxy() are callable, have a "is_handler"
+		# attribute, but are no handler at all.
+		if callable(attribute) and type(attribute) in (types.MethodType,
+														types.FunctionType):
+
 			if hasattr(attribute, 'is_callback'):
 				meth_callback(attribute.__name__, attribute)
 

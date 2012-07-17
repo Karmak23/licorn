@@ -50,6 +50,10 @@ from licorn.interfaces.wmi.libs   import utils
 # =============================================================== Local classes
 
 class WmiEventCollectorThread(LicornThread, MessageProcessor):
+	""" Receives all LicornEvent from licornd and dumplicates them for
+		each user connected to the WMI (which should all have a PUSH
+		stream queue). """
+
 	def __init__(self, *a, **kw):
 		LicornThread.__init__(self, *a, **kw)
 		MessageProcessor.__init__(self, *a, **kw)
