@@ -51,7 +51,7 @@ div#banner {
 	position: fixed;
 	overflow: hidden;
 	left: 0px;
-	top: 0px;
+	top: -1px;
 	float: left;
 }
 
