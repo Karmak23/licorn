@@ -216,12 +216,14 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		self.authenticate()
 	@events.handler_method
+	# Doesn't need @only_if_enabled, it won't be trigerred unless enabled.
 	def extension_mylicorn_authenticated(self, *args, **kwargs):
 		""" Event handler that will start the updater thread once we are
 			successfully authenticated on the central server. """
 
 		self.__start_updater_thread()
 	@events.handler_method
+	# Doesn't need @only_if_enabled, it won't be trigerred unless enabled.
 	def extension_mylicorn_configuration_changed(self, *args, **kwargs):
 		""" Event handler triggered by an API key change; will call
 			:meth:`disconnect` and then :meth:`authenticate` to benefit from
