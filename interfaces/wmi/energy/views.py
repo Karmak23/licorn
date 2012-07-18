@@ -115,16 +115,16 @@ def add_rule(request, new=None, who=None, hour=None, minute=None,
 				try:
 					mach = LMC.machines.guess_one(
 											LMC.machines.word_match(m))
-				except KeyError:
+				except KeyError, e:
 					wmi_event_app.queue(request).put(notify((
 						_(u'Error while adding task for machines {0} on'
-							u' {1} at {2} : One machine cannot be '
+							u' {1} at {2} : At least one machine cannot be '
 							u'resolved : {3}.').format(
 								who,
 								", ".join(
 									[ days[str(d) if d !='*' else d] \
 										for d in day.split(',')]), 
-								'{0}:{1}'.format(hour, minute), e))))
+								'{0}:{1}'.format(hour, minute), m))))
 
 				if mach.master_machine is not None:
 					machines_to_shutdown.append(mach.master_machine.mid)
