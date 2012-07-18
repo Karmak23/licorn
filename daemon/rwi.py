@@ -1009,7 +1009,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			if wmi_output:
 				dl_lnk = _('''This repport is available on the server '''
 					'''at "<code>{0}</code>", you can '''
-					'''<a href="/download/{0}">'''
+					'''<a href="/system/download/{0}">'''
 					'''download it</a> for easier access''').format(html_file_filename)
 			else:
 				dl_lnk = ''
