@@ -698,10 +698,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			separator = lcndialect.delimiter
 
-		print "opts.separator ", opts.separator
-		print ">> lcn sep ", lcndialect.delimiter
-		print ">> sep ", separator
-
 		try:
 			import_fd = open(import_filename, 'rb')
 
@@ -721,8 +717,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 			line = fdline[:-1].split(separator)
 
-			print "splitted line : ",line 
-
 			user = {}
 			for (column, number) in (
 					('firstname', firstname_col),
@@ -731,9 +725,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					('login', opts.login_col),
 					('password', opts.password_col)
 				):
-
-				print ">>> column ", column
-				print "num_line ", number
 
 				try:
 					if number is None:
