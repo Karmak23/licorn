@@ -749,11 +749,11 @@ class MachinesController(DictSingleton, CoreController):
 		return 'hostname'
 
 	# local and specific implementations of SelectableController methods.
-	def by_mid(self, mid):
+	def by_mid(self, mid, strong=False):
 		# we need to be sure we get an int(), because the 'uid' comes from RWI
 		# and is often a string.
 		return self[mid]
-	def by_hostname(self, hostname):
+	def by_hostname(self, hostname, strong=False):
 		# Call the thing before returning it, because it's a weakref.
 		# return Machine.by_hostname[hostname]()
 		return Machine.by_hostname[hostname]
@@ -1323,8 +1323,6 @@ class MachinesController(DictSingleton, CoreController):
 		return hostname
 
 	def word_match(self, word): 
-		print set(itertools.chain(*[ 
-			(m.name if m.name != m.mid else '', m.mid) for m in self]))
 		return hlstr.word_match(word, set(itertools.chain(*[ 
 			(m.name, m.mid) for m in self]))) 
 
