@@ -77,6 +77,10 @@ class ImportForm(forms.Form):
 		self.fields['file']  = forms.FileField(
 				label=_('CSV file'))
 
+		self.fields['separator'] = forms.CharField(
+				initial=';',
+				label=_('Columns separator'))
+
 		self.fields['profile'] = forms.ChoiceField(
 					choices = [(p.gidNumber, p.name) for p in LMC.profiles ])
 

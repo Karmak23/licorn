@@ -693,11 +693,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		firstline  = open(import_filename).readline()
 		lcndialect = csv.Sniffer().sniff(firstline)
 
-		if lcndialect.delimiter == opts.separator:
-			separator = lcndialect.delimiter
-		else:
+		if lcndialect.delimiter != opts.separator and opts.separator != None:
 			separator = opts.separator
+		else:
+			separator = lcndialect.delimiter
 
+		print "opts.separator ", opts.separator
 		print ">> lcn sep ", lcndialect.delimiter
 		print ">> sep ", separator
 
@@ -747,14 +748,20 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							user[column] = hlstr.validate_name(
 										unicode(line[number], encoding), True)
 						else:
-							user[column] = unicode(
-									clean_csv_field(line[number]), encoding)
+							cleaned_field = clean_csv_field(line[number])
+							if not isinstance(cleaned_field, unicode):
+								cleaned_field = unicode(cleaned_field, encoding)
+							user[column] = cleaned_field
 
-				#except IndexError, e:
-					#raise exceptions.LicornRuntimeError('\n'+_(u'Import error '
-					#	'on line {0}: no {1} specified or bad {2} data '
-					#	'(was: {3}).').format(i + 1, column, translation, e))
-					#print ">>>>>>> ", e
+				except IndexError, e:
+					err = _(u'Import error '
+						'on line {0}: no {1} specified or bad separator used'
+						'(was: {2}).').format(i + 1, column, e)
+
+					if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+					raise exceptions.LicornRuntimeError('\n'+err)
 
 				except UnicodeEncodeError, e:
 					raise exceptions.LicornRuntimeError('\n'+_(u'Encoding not '
@@ -848,8 +855,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					progression += delta
 
-				except exceptions.AlreadyExistsException, e:
+				except exceptions.AlreadyExistsError, e:
+					# Error is when a group already exist BUT not the same kind
 					logging.warning(str(e), to_local=False)
+					progression += delta
+
+				except exceptions.AlreadyExistsException, e:
+					# Error is when a group already exist WITH the same kind
 					progression += delta
 
 				except exceptions.LicornException, e:
@@ -858,6 +870,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					raise e
 
 				data_to_export_to_html[g]= {}
+				
 				# FIXME: flush the listener??
 				#sys.stdout.flush()
 
@@ -892,12 +905,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			try:
 				i += 1
 				if opts.confirm_import:
+					in_groups = []
+					for _group in u['group'].split(','):
+						in_groups.append(LMC.groups.guess_one(Group.make_name(_group)))
+
 					user, password = LMC.users.add_User(lastname=u['lastname'],
 											firstname=u['firstname'],
 											login=u['login'],
 											password=u['password'],
 											profile=profile,
-											in_groups=[ groups[u['group']] ],
+											in_groups=in_groups,
 											batch=opts.no_sync)
 
 					logging.progress('\r' + _(u'Added user {0} {1} '
@@ -908,10 +925,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					# the dictionnary key is forged to have something that is sortable.
 					# like this, the user accounts will be sorted in their group.
-					data_to_export_to_html[ u['group'] ][
-							'%s%s' % (u['lastname'], u['firstname'])
-						] = [ u['firstname'], u['lastname'],
-								user.login, password ]
+					for _group in u['group'].split(','):
+						data_to_export_to_html[ Group.make_name(_group) ][
+								'%s%s' % (u['lastname'], u['firstname'])
+							] = [ u['firstname'], u['lastname'],
+									user.login, password ]
 				else:
 					# Why make_login() for examples and not prepare the logins
 					# when loading CSV file? this is a pure arbitrary choice.
@@ -995,15 +1013,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					'''download it</a> for easier access''').format(html_file_filename)
 			else:
 				dl_lnk = ''
-				html_file.write('''<html>
-					<head>
-						<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-						<style type=\"text/css\">
-						<!-- {css} -->
-						</style>
-					</head>
-					<body>''').format(
-					css='''
+				html_file.write("<html>"
+					"<head>"
+						"<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\" />"
+						"<style type=\"text/css\">"
+						"<!-- {0} -->"
+						"</style>"
+					"</head>"
+					"<body>".format(
+					'''
 						body { font-size:14pt; }
 						h1,h2,h3 { text-align:center; }
 						p,div { text-align:center; }
@@ -1014,7 +1032,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						.even { background-color: #eef; }
 						.odd { background-color: #efe; }
 						div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
-						''')
+						'''))
 
 			html_file.write('''
 					<h1>{title}</h1>
