@@ -253,7 +253,7 @@ def get_recap(request):
 	
 
 	return HttpResponse(render_to_string('energy/recap_policies.html', {
-				'tasks'    : sorted(extinction_tasks, key=attrgetter('week_day')),
+				'tasks'    : sorted(sorted(sorted(extinction_tasks, key=attrgetter('minute')), key=attrgetter('hour')), key=attrgetter('week_day')),
 				'get_days' : get_days,
 				'generate_machine_html' : generate_machine_html,
 			}))

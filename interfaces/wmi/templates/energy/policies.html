@@ -70,12 +70,37 @@
 			$.get('/energy/del_rule/'+tid)
 		}
 
+ 		$.tablesorter.addParser({ 
+			// set a unique id 
+			id: 'weekdays', 
+			is: function(s) { 
+				// return false so this parser is not auto detected 
+				return false; 
+			}, 
+			format: function(s) { 
+				// format your data for normalization
+				console.log(s) 
+				return s.toLowerCase()
+					.replace(/sunday/,6).replace(/satursday/,5).replace(/friday/,4).replace(/thrusday/,3).replace(/wednesday/,2).replace(/tuesday/,1).replace(/monday/,0); 
+			}, 
+			// set type, either numeric or text 
+			type: 'numeric' 
+		}); 
+               
+
 		function update_recap() {
 			$.get('/energy/get_recap', function(recap_html) {
 				// load new table
 				$('#extinction_recap').html(recap_html)
 				// make it sortable
-				$('#extinction_recap_table').tablesorter();
+				$('#extinction_recap_table').tablesorter({
+				 	sortList: [[0,0]], 
+					headers: { 
+						0: { 
+							sorter:'weekdays' 
+						} 
+					}, 
+				}); 
 
 				generate_machine();
 					
