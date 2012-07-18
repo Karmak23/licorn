@@ -109,6 +109,11 @@ def test_get(context, testsuite):
 		GET + [ "privileges" ],
 		GET + [ "privileges", "-x" ],
 		GET + [ "privileges", "--xml" ],
+		# Events (NO XML available)
+		GET + [ "events" ],
+		GET + [ "events", '-v' ],
+		# should not produce more nor less than '-v'
+		GET + [ "events", '-vv' ],
 		]
 
 	testsuite.add_scenario(ScenarioTest(commands, context=context, descr='''CLI get tests'''))

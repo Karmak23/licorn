@@ -151,7 +151,7 @@ class PowermanagementExtension(ObjectSingleton, LicornExtension):
 								stylize(ST_ATTR, member)))
 
 		if device is None and member != 'Changed':
-			sleeping = member == 'Sleeping'
+			sleeping = (member == 'Sleeping')
 			logging.info(_(u'{0}: system is {1}, broadcasting information.').format(
 							self.pretty_name,
 							stylize(ST_BAD, _('going to sleep'))
