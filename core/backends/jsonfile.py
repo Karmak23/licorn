@@ -25,26 +25,26 @@ from licorn.core                  import LMC
 
 from licorn.core.backends         import TasksBackend
 
-class SimplefileBackend(Singleton, TasksBackend):
-	""" A simple file backend. """
+class JsonfileBackend(Singleton, TasksBackend):
+	""" A JSON file backend. """
 
 	init_ok = False
 
 	def __init__(self):
 
-		assert ltrace(TRACE_SIMPLEFILE, '> __init__(%s)' % SimplefileBackend.init_ok)
+		assert ltrace(TRACE_SIMPLEFILE, '> __init__(%s)' % JsonfileBackend.init_ok)
 
-		if SimplefileBackend.init_ok:
+		if JsonfileBackend.init_ok:
 			return
 
-		TasksBackend.__init__(self, name='simplefile')
+		TasksBackend.__init__(self, name='jsonfile')
 
-		# the simplefile backend is always enabled on a Linux system.
+		# the jsonfile backend is always enabled on a Linux system.
 		self.available = True
 		self.enabled   = True
 
-		SimplefileBackend.init_ok = True
-		assert ltrace(TRACE_SIMPLEFILE, '< __init__(%s)' % SimplefileBackend.init_ok)
+		JsonfileBackend.init_ok = True
+		assert ltrace(TRACE_SIMPLEFILE, '< __init__(%s)' % JsonfileBackend.init_ok)
 	def initialize(self):
 		return self.available
 	
@@ -116,12 +116,9 @@ class SimplefileBackend(Singleton, TasksBackend):
 
 
 from licorn.core.classes          import CoreStoredObject
-try:
-	from licorn.foundations._json     import LicornEncoder as encoder
-except:
-	from json import JSONEncoder as encoder
+from licorn.foundations           import json
 
-class JSONTaskEncoder(encoder):
+class JSONTaskEncoder(json.LicornEncoder):
     def default(self, obj):
 		if isinstance(obj, CoreStoredObject):
 			r = "LMC."+ obj.controller.name + '.by_name('+ obj.name+')'
