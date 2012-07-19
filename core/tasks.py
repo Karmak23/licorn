@@ -128,7 +128,7 @@ from dateutil.rrule               import *
 from dateutil.relativedelta       import *
 
 from licorn.foundations           import settings, logging, exceptions, \
-										pyutils
+										pyutils, events
 from licorn.foundations.base      import DictSingleton
 from licorn.foundations.workers   import workers
 from licorn.foundations.constants import *
@@ -895,7 +895,15 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 
 		#self.load()
 
-		#events.collect(self)
+		events.collect(self)
+
+	@events.handler_method
+	def licornd_cruising(self, *args, **kwargs):
+		""" Event handler that will load the controller when
+			Licornd is `cruising`, which means “ `everything is ready, boys` ”. """
+
+		self.load()
+
 	def load(self):
 		""" Load tasks form different backends """
 		if TasksController.load_ok:

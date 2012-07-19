@@ -251,7 +251,9 @@ class LicornMasterController(MixedDictObject):
 				# load common core objects.
 				from users  import UsersController
 				from groups import GroupsController
+				from tasks    import TasksController
 
+				self.tasks = TasksController()
 				self.users  = UsersController()
 				self.groups = GroupsController()
 
@@ -328,17 +330,14 @@ class LicornMasterController(MixedDictObject):
 		from profiles import ProfilesController
 		from keywords import KeywordsController
 		from machines import MachinesController
-		from tasks    import TasksController
-
+		
 		self.profiles = ProfilesController()
 		self.profiles.load()
 		self.machines = MachinesController()
 		self.machines.load()
 		self.keywords = KeywordsController()
 		self.keywords.load()
-		self.tasks = TasksController()
-		self.tasks.load()
-
+		
 	def terminate(self):
 
 		if self._ServerLMC:
