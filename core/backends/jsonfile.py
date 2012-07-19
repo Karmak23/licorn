@@ -57,7 +57,7 @@ class JsonfileBackend(Singleton, TasksBackend):
 
 		# take tasks from config file
 		try:
-			_file = open(settings.licornd.cron_file, "rb")
+			_file = open(settings.licornd.tasks_file, "rb")
 			data = json.load(_file)
 			_file.close()
 		except:
@@ -107,7 +107,7 @@ class JsonfileBackend(Singleton, TasksBackend):
 		tab = []
 		for task in tasks:
 			tab.append(task.json_dump())
-		_file = open(settings.licornd.cron_file, "w")
+		_file = open(settings.licornd.tasks_file, "w")
 		json.dump(tab, _file, cls=JSONTaskEncoder, indent=4)
 		_file.close()
 	def delete_Task(self, task):

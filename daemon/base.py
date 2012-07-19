@@ -244,7 +244,7 @@ class LicornBaseDaemon:
 			'licornd.wmi.pid_file'         : '/var/run/licornd-wmi.pid',
 			'licornd.wmi.ssl_cert'         : '/etc/ssl/certs/licornd-wmi.crt',
 			'licornd.wmi.ssl_key'          : '/etc/ssl/private/licornd-wmi.key',
-			'licornd.cron_file'            : '/etc/licorn/cron.conf',
+			'licornd.tasks_file'           : '/etc/licorn/tasks.conf',
 		}, overwrite=False, emit_event=False)
 	def __check_settings(self):
 
