@@ -755,8 +755,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					raise exceptions.LicornRuntimeError('\n'+err)
 
 				except UnicodeEncodeError, e:
-					raise exceptions.LicornRuntimeError('\n'+_(u'Encoding not '
-						'supported for input filename (was: %s).') % str(e))
+					err = _(u'Encoding not '
+						'supported for input filename (was: %s).') % str(e)
+					if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+					raise exceptions.LicornRuntimeError('\n'+err)
 			try:
 				if opts.login_col is None:
 					user['login'] = User.make_login(
@@ -775,21 +778,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
 					'on line {0} (was: {1}).').format(i+1, e))
 
-			user_groups = []
-			try:
-				for gname in user['group'].split(','):
-					user_groups.append(Group.make_name(gname))
-				
-			except IndexError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
-					'on line {0}: no group specified or bad {2} data '
-					'(was: {1}).').format(i+1, e, _(u'group')))
+			user['group'] = [Group.make_name(g) for g in user['group'].split(',') if g != '']
 
-			except exceptions.LicornRuntimeError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
-					'on line {0} (was: {1}).').format(i+1, e))
 
-			for g in user_groups:
+			for g in user['group']:
 				if g not in groups_to_add:
 					groups_to_add.append(g)
 
@@ -897,8 +889,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				i += 1
 				if opts.confirm_import:
 					in_groups = []
-					for _group in u['group'].split(','):
-						in_groups.append(LMC.groups.guess_one(Group.make_name(_group)))
+					for _group in u['group']:
+						in_groups.append(LMC.groups.guess_one(_group))
 
 					user, password = LMC.users.add_User(lastname=u['lastname'],
 											firstname=u['firstname'],
@@ -916,8 +908,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					# the dictionnary key is forged to have something that is sortable.
 					# like this, the user accounts will be sorted in their group.
-					for _group in u['group'].split(','):
-						data_to_export_to_html[ Group.make_name(_group) ][
+					for _group in in_groups:
+						data_to_export_to_html[ _group.name ][
 								'%s%s' % (u['lastname'], u['firstname'])
 							] = [ u['firstname'], u['lastname'],
 									user.login, password ]
@@ -1004,15 +996,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					'''download it</a> for easier access''').format(html_file_filename)
 			else:
 				dl_lnk = ''
-				html_file.write("<html>"
-					"<head>"
-						"<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\" />"
-						"<style type=\"text/css\">"
-						"<!-- {0} -->"
-						"</style>"
-					"</head>"
-					"<body>".format(
-					'''
+				html_file.write('''<html>
+					<head>
+						<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+						<style type=\"text/css\">
+						<!-- {O} -->
+						</style>
+					</head>
+					<body>''').format(
+						'''
 						body { font-size:14pt; }
 						h1,h2,h3 { text-align:center; }
 						p,div { text-align:center; }
@@ -1023,7 +1015,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						.even { background-color: #eef; }
 						.odd { background-color: #efe; }
 						div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
-						'''))
+						''')
 
 			html_file.write('''
 					<h1>{title}</h1>
