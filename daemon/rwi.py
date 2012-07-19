@@ -1414,7 +1414,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		except Exception, e:
 			remote_output(_("{0} while adding task {1} : {2}\n".format(
 				stylize(ST_BAD, "Error"), stylize(ST_PATH, task_name),e )))
-
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
 
@@ -1689,7 +1688,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		gc.collect()
 		# this one has no effect at all. Only the gc.collect() has.
 		#del groups_to_del
-
 	def del_task(self, opts, args):
 		self.setup_listener_gettext()
 		tasks_to_del = []
@@ -1729,7 +1727,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			
 		for task in tasks_to_del:
 			LMC.tasks.del_task(task.id)
-
 	def del_profile(self, opts, args):
 		""" Delete a system wide User profile. """
 
@@ -2099,7 +2096,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			(opts.exclude_login, LMC.users.by_login),
 			(opts.exclude_uid, LMC.users.by_uid)
 		])
-
 	def __default_groups_includes_excludes(self, opts):
 		return ([
 			(opts.name, LMC.groups.by_name),

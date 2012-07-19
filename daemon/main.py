@@ -53,7 +53,6 @@ from licorn.daemon.inotifier      import INotifier
 from licorn.daemon.cmdlistener    import CommandListener
 
 from licorn.daemon.rwi            import RealWorldInterface
-from licorn.daemon.wmi            import WebManagementInterface
 
 #from licorn.daemon.cache         import Cache
 #from licorn.daemon.searcher      import FileSearchServer
