@@ -4,3 +4,5 @@
 push_permissions = {
 	'/energy': (lambda req: req.user.is_staff, (), None),
 	}
+dependancies = ('settings.experimental.enabled', )
+base_url     = r'^energy/'

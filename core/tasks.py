@@ -901,7 +901,6 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 	def licornd_cruising(self, *args, **kwargs):
 		""" Event handler that will load the controller when
 			Licornd is `cruising`, which means “ `everything is ready, boys` ”. """
-
 		self.load()
 
 	def load(self):

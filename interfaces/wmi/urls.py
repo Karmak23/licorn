@@ -41,10 +41,6 @@ urlpatterns = patterns('',
 	(r'^system/', include('wmi.system.urls')),
 	(r'^users/', include('wmi.users.urls')),
 	(r'^groups/', include('wmi.groups.urls')),
-
-	(r'^machines/', include('wmi.machines.urls')),
-	(r'^backups?/', include('wmi.backup.urls')),
-	(r'^energy?/', include('wmi.energy.urls')),
 )
 
 # dynamic app routes, loaded only if all dependancies are satisfied.
