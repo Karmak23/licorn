@@ -13,6 +13,10 @@ def users_import_finished_handler(request, event):
 	yield utils.format_RPC_JS('reload_div', "#sub_content",
 						open(event.kwargs['result_filename'], 'r').read())
 
+def users_import_failed_handler(request, event):
+	yield utils.notify(_(u'Users import <em>failed</em> : {0}.').format(event.kwargs['error']))
+	
+
 def users_import_tested_handler(request, event):
 	yield utils.notify(_(u'Users import test ran fine.'))
 	yield utils.format_RPC_JS('reload_div', "#test_result", event.kwargs['import_preview'])
