@@ -769,22 +769,47 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					user['login'] =	User.make_login(
 										inputlogin=user['login'])
 			except IndexError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
+				err =  _(u'Import error '
 					'on line {0}: no group specified or bad {2} data '
 					'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
-						if opts.login_col is None else _(u'login'))))
+						if opts.login_col is None else _(u'login')))
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+				raise exceptions.LicornRuntimeError('\n' +err)
 
 			except exceptions.LicornRuntimeError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
-					'on line {0} (was: {1}).').format(i+1, e))
+				err = _(u'Import error '
+					'on line {0} (was: {1}).').format(i+1, e)
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
 
-			user['group'] = [Group.make_name(g) for g in user['group'].split(',') if g != '']
+				raise exceptions.LicornRuntimeError('\n' + err)
 
+			try:
+			
+				user['group'] = [Group.make_name(g) for g in user['group'].split(',') if g != '']
+			
+			except IndexError, e:
+				err =  _(u'Import error '
+					'on line {0}: no group specified or bad {2} data '
+					'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
+						if opts.login_col is None else _(u'login')))
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
 
-			for g in user['group']:
-				if g not in groups_to_add:
-					groups_to_add.append(g)
+				raise exceptions.LicornRuntimeError('\n' +err)
 
+			except exceptions.LicornRuntimeError, e:
+				err = _(u'Import error '
+					'on line {0} (was: {1}).').format(i+1, e)
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+				raise exceptions.LicornRuntimeError('\n' + err)
+
+			groups_to_add.extend([g for g in user['group'] if g not in groups_to_add])
+		
 			users_to_add.append(user)
 
 			if not (i % 100):
@@ -888,7 +913,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			try:
 				i += 1
 				if opts.confirm_import:
-					
+
 					in_groups = [LMC.groups.guess_one(g) for g in u['group']]
 
 					user, password = LMC.users.add_User(lastname=u['lastname'],
@@ -998,24 +1023,21 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				html_file.write('''<html>
 					<head>
 						<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-						<style type=\"text/css\">
-						<!-- {O} -->
+						<style type="text/css">
+							body { font-size:14pt; }
+							h1,h2,h3 { text-align:center; }
+							p,div { text-align:center; }
+							table { margin: 3em 10%%; width: 80%%; border: 5px groove #369; border-collapse: collapse; }
+							tr { border: 1px solid black; }
+							th {border-bottom: 3px solid #369; background-color: #99c; }
+							td,th { text-align: center; padding: 0.7em; }
+							.even { background-color: #eef; }
+							.odd { background-color: #efe; }
+							div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
 						</style>
 					</head>
-					<body>''').format(
-						'''
-						body { font-size:14pt; }
-						h1,h2,h3 { text-align:center; }
-						p,div { text-align:center; }
-						table { margin: 3em 10%%; width: 80%%; border: 5px groove #369; border-collapse: collapse; }
-						tr { border: 1px solid black; }
-						th {border-bottom: 3px solid #369; background-color: #99c; }
-						td,th { text-align: center; padding: 0.7em; }
-						.even { background-color: #eef; }
-						.odd { background-color: #efe; }
-						div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
-						''')
-
+					<body>''')
+				
 			html_file.write('''
 					<h1>{title}</h1>
 					<h2>{import_on_date}</h2>
