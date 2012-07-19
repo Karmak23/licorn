@@ -3,20 +3,36 @@
 
 {% from 'widgets/common.html' import licorn_list, jquery_popover_media with context %}
 
-{%- extends 'fullbase.html' -%}
+{%- extends 'template_one_content.html' -%}
 
 {%- block extended_media -%}
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/list.css" />
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/machines.css" />
-	{{ jquery_popover_media() }}
-	<script language="javascript" type="text/javascript" src="/media/js/list.js"></script>
-	<script language="javascript" type="text/javascript" src="/media/js/machines.js"></script>
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
 {%- endblock -%}
 
 {%- block title -%}{{ _('Machines management') }}{%- endblock -%}
 
 {%- block main_content -%}
 
+	<div class='table_header'>
+		<span class='table_header_title'>
+			Machines (<span class='table_header_item_counter'> </span>)
+		</span>
+
+		<span class='table_header_massive_actions'>
+			MASSIVE ACTIONS
+		</span>
+
+		<span class='table_header_filter table_header_item'>
+			FILTER
+		</span>
+	</div>
+	<table>
+	</table>
+
+
+
+
+	<!-- OLD 
 	{#-
 		{ "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
 		{ "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"},
@@ -62,11 +78,9 @@
 
 			$("#search_box").focus();
 		});
-	</script>
+	</script> -->
 
 {%- endblock -%}
 
-{%- block sub_content -%}
-{%- endblock -%}
 
 
