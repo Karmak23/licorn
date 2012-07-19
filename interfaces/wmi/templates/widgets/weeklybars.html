@@ -1,5 +1,5 @@
 <style type="text/css">
-	
+
 .weekly_bars_wrapper {
 	text-align: center;
 	background-color: #fafafa;
@@ -20,7 +20,7 @@
 .databar {
 	text-align: center;
 	padding: 3px;
-	margin: 1px;	
+	margin: 1px;
 }
 
 .scaleline {
@@ -55,7 +55,7 @@
 </div>
 <script language="javascript">
 
-	// VARS 
+	// VARS
 	var total_width  = 0.9*$("#sub_content_wrapper").width()
 	var total_height = 0.8*$("#sub_content_wrapper").height()
 
@@ -68,7 +68,7 @@
 	var bar_width = total_width_bar / 2
 
 	var separator_height = 5
-	var separator_width = 0.6*total_width_bar	
+	var separator_width = 0.6*total_width_bar
 
 
 	$("#weekly_bars_chart_container").width(total_width)
@@ -79,7 +79,7 @@
 						.attr("width", total_width)
 						.attr("height", total_height)
 						.append("svg:g");
-		
+
 	function draw_extinction_calendar(new_data_separators) {
 		h=[]
 		$.each(new_data_separators, function(i, data) {
@@ -107,19 +107,19 @@
 			{ 'on': d3.min(h)*60, 'off': hour_min*60},
 		]
 
-		
+
 		$.each(new_data_separators, function(i, data) {
 			off = data_on_off[parseInt(data['day'])]['off']
 			if (off == null || off < parseInt(data['hour']) * 60 + parseInt(data['minute'])) {
 				data_on_off[parseInt(data['day'])]['off'] = parseInt(data['hour'])*60+parseInt(data['minute'])
 			}
 		})
-		
+
 		// hour line vectors
 		var hour_vect = d3.scale.linear()
 		    .domain([hour_min*60, (hour_max+1)*60])
 	    	.range([25, total_height_graph]);
-	    
+
 	     // day cols vectors
 	    var day_vect = d3.scale.ordinal()
 			.domain([0,1,2,3,4,5,6])
@@ -132,7 +132,7 @@
 		//remvoe old lines
 		hour_line = wbchart.selectAll("line.line_hour")
 		    .data(hour_range)
-		
+
 
 		hour_line.enter()
 		    	.append("svg:line")
@@ -147,9 +147,9 @@
 			.attr("y1", hour_vect)
 			.attr("y2", hour_vect)
 		hour_line.exit().remove();
-	
 
-		// hour text 
+
+		// hour text
 		hour_text = wbchart.selectAll("text.hour")
 			.data(hour_range)
 		hour_text.enter().append("svg:text")
@@ -161,12 +161,12 @@
 			.attr("text-anchor", "middle");
 		hour_text.attr("y", hour_vect)
 		hour_text.exit().remove();
-		
-		// DAY TEXT 
+
+		// DAY TEXT
 		wbchart.selectAll("text.day")
-		.data([ "{{ _('Mon.') }}", "{{ _('Tue.') }}", "{{_('Wed.') }}", 
-						"{{ _('Thu.') }}", "{{_('Fri.') }}", "{{_('Sat.') }}", 
-						"{{_('Sun.') }}" ])
+		.data([ "{{ _('Mon.') }}", "{{ _('Tue.') }}", "{{_('Wed.') }}",
+			"{{ _('Thu.') }}", "{{_('Fri.') }}", "{{_('Sat.') }}",
+			"{{_('Sun.') }}" ])
 		.enter()
 			.append("svg:text")
 			.attr("class", "day")
@@ -175,16 +175,16 @@
 			.attr("dx", function(d, i){ return total_width_bar/2.5; })
 			.text(function(d, i){ return d; })
 
-		
-		
+
+
 		// rect on
 		rect_on = wbchart.selectAll(".rect_on").data(data_on_off)
-			
+
 		rect_on.enter()
 			.append("svg:rect")
 			.attr("class", "rect_on")
 			.attr("x", function(d, i) { return day_vect(i) + bar_width/2 })
-			
+
 			.attr("width", bar_width)
 			.attr("height", function(d) { return hour_vect(d.off) - hour_vect(hour_min*60) })
 			.attr("y", function(d) { return hour_vect(hour_min*60); });
@@ -192,31 +192,31 @@
 		rect_on
 			.attr("height", function(d) { return hour_vect(d.off) - hour_vect(hour_min*60) })
 			.attr("y", function(d) { return hour_vect(hour_min*60); });
-		
+
 		rect_on.exit().remove()
-		
+
 		// rect off
 		rect_off= wbchart.selectAll(".rect_off").data(data_on_off)
-			
+
 		rect_off.enter()
 			.append("svg:rect")
 			.attr("class", "rect_off")
 			.attr("x", function(d, i) { return day_vect(i) + bar_width/2 })
-			
+
 			.attr("width", bar_width)
 			.attr("height", function(d) { return hour_vect((hour_max+1)*60) - hour_vect(d.off) })
 			.attr("y", function(d) { return hour_vect(d.off); });
-		
+
 		rect_off
 			.attr("x", function(d, i) { return day_vect(i) + bar_width/2 })
 			.attr("width", bar_width)
 			.attr("height", function(d) { return hour_vect((hour_max+1)*60) - hour_vect(d.off) })
 			.attr("y", function(d) { return hour_vect(d.off); });
-		
-		rect_off.exit().remove()
-		
 
-		// draw separators		
+		rect_off.exit().remove()
+
+
+		// draw separators
 		separators = wbchart.selectAll(".rect_sep").data(new_data_separators)
 
 		separators.enter()
@@ -226,7 +226,7 @@
 			.attr("width", separator_width)
 			.attr("height", separator_height)
 			.attr("y", function(d) { return hour_vect(parseInt(d.hour)*60+parseInt(d.minute)) - separator_height/2 })
-		
+
 		separators
 			.attr("class", "rect_sep")
 			.attr("x", function(d) { return day_vect(d.day) + ( total_width_bar - separator_width)/2 })
@@ -236,24 +236,24 @@
 
 		separators.exit().remove()
 
-		$('svg .rect_sep').tipsy({ 
-	    	gravity: 's', 
-	    	html: true, 
+		$('svg .rect_sep').tipsy({
+	    	gravity: 's',
+	    	html: true,
 	    	title: function() {
 	    		var d = this.__data__, g = d.who_html;
 	    		return "{{ _('Extinction of ') }} "+ g
 
 
-	    		 
+
 	    	   }
-	    	
+
 	    });
 
-	
-	   
+
+
 
 	}
 
-	
+
 </script>
 
