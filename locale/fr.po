@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-19 16:35+0200\n"
+"POT-Creation-Date: 2012-07-19 16:46+0200\n"
 "PO-Revision-Date: 2012-07-16 10:46+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -913,12 +913,12 @@ msgstr ""
 msgid "Cannot add"
 msgstr ""
 
-#: core/tasks.py:1076
+#: core/tasks.py:1075
 #, fuzzy
 msgid "{0}: task {1} unscheduled and {2}."
 msgstr "{0} {1} : {2}"
 
-#: core/tasks.py:1079
+#: core/tasks.py:1078
 #, fuzzy
 msgid "removed"
 msgstr "Supprimé(e)&nbsp;: %s"
@@ -930,7 +930,7 @@ msgstr ""
 #: core/tasks.py:1098
 msgid ""
 "\n"
-"\t{0} (id: {1}) : {2} > {3}(args={4}, kwargs={5})"
+"\t{0} (id: {1}): {2} > {3}(args={4}, kwargs={5})"
 msgstr ""
 
 #: core/tasks.py:1100

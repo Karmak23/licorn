@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-19 16:35+0200\n"
-"PO-Revision-Date: 2012-07-19 15:54+0200\n"
+"POT-Creation-Date: 2012-07-19 16:52+0200\n"
+"PO-Revision-Date: 2012-07-19 16:51+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -182,77 +182,83 @@ msgid "Volumes rescanned."
 msgstr "Volumes re-scannés."
 
 #: energy/event_handlers.py:17
-#, fuzzy
 msgid "All machines"
-msgstr "Machines"
+msgstr "Toutes les machines"
 
 #: energy/event_handlers.py:24
 msgid "Task \"{0}\" added on the system for machines {1} on {2} at {3}:{4}."
 msgstr ""
+"Tâche « {0} » ajoutée sur le système pour les machines {1}, le(s) {2} à {3}:"
+"{4}."
 
 #: energy/event_handlers.py:34
 msgid "Task \"{0}\" deleted."
-msgstr ""
+msgstr "Tâche « {0} » supprimée."
 
 #: energy/views.py:30
 msgid "Monday"
-msgstr ""
+msgstr "Lundi"
 
 #: energy/views.py:31
 msgid "Tuesday"
-msgstr ""
+msgstr "Mardi"
 
 #: energy/views.py:32
 msgid "Wednesday"
-msgstr ""
+msgstr "Mercredi"
 
 #: energy/views.py:33
 msgid "Thursday"
-msgstr ""
+msgstr "Jeudi"
 
 #: energy/views.py:34
 msgid "Friday"
-msgstr ""
+msgstr "Vendredi"
 
 #: energy/views.py:35
 msgid "Satursday"
-msgstr ""
+msgstr "Samedi"
 
 #: energy/views.py:36
 msgid "Sunday"
-msgstr ""
+msgstr "Dimanche"
 
 #: energy/views.py:37 energy/views.py:49
 msgid "ALL"
-msgstr ""
+msgstr "Tous(tes)"
 
 #: energy/views.py:135
 msgid ""
 "Error while adding task for machines {0} on {1} at {2} : At least one "
 "machine cannot be resolved : {3}."
 msgstr ""
+"Erreur pendant l'ajout de la tâche pour les machines {0} le(s) {1} à {2} : "
+"au moins un des noms de machines ne peut pas être résolu : {3}."
 
 #: energy/views.py:172
 msgid "Error while adding task for machines {0} on {1} at {2} : {3}."
 msgstr ""
+"Erreur pendant l'ajout de la tâche pour les machines {0} le(s) {1} à {2}:{3}."
 
 #: energy/views.py:178
-#, fuzzy
 msgid "BadArgumentError while adding rule"
-msgstr "Erreur pendant l'envoi du fichier {0}"
+msgstr "Erreur d'argument pendant l'ajout de la règle"
 
 #: energy/views.py:181
 msgid "Unknown error while adding extinction task"
-msgstr ""
+msgstr "Erreur inconnue pendant l'ajout de la tâche d'extinction"
 
 #: energy/views.py:183
-#, fuzzy
 msgid "Unknown error while adding rule"
-msgstr "Erreur pendant l'envoi du fichier {0}"
+msgstr "Erreur inconnue pendant l'ajout de la règle"
 
 #: energy/views.py:189
 msgid "DEL OK."
 msgstr ""
+
+#: energy/views.py:261
+msgid "No extinction task created yet."
+msgstr "Aucune tâche d'extinction enregistrée."
 
 #: groups/event_handlers.py:15 system/views.py:183 system/views.py:319
 #: templates/groups/users_list.html:64 templates/users/groups_list.html:43

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-19 16:35+0200\n"
+"POT-Creation-Date: 2012-07-19 16:52+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -804,11 +804,11 @@ msgstr ""
 msgid "Cannot add"
 msgstr ""
 
-#: core/tasks.py:1076
+#: core/tasks.py:1075
 msgid "{0}: task {1} unscheduled and {2}."
 msgstr ""
 
-#: core/tasks.py:1079
+#: core/tasks.py:1078
 msgid "removed"
 msgstr ""
 
@@ -819,7 +819,7 @@ msgstr ""
 #: core/tasks.py:1098
 msgid ""
 "\n"
-"\t{0} (id: {1}) : {2} > {3}(args={4}, kwargs={5})"
+"\t{0} (id: {1}): {2} > {3}(args={4}, kwargs={5})"
 msgstr ""
 
 #: core/tasks.py:1100
