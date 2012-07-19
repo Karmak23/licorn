@@ -69,8 +69,7 @@ def test_get(context, testsuite):
 
 	commands = []
 
-	for category in [ 'config_dir', 'main_config_file',
-		'extendedgroup_data_file' ]:
+	for category in [ 'config_dir', 'main_config_file' ]:
 		for mode in [ '', '-s', '-b', '--bourne-shell', '-c', '--c-shell',
 			'-p', '--php-code' ]:
 			commands.append(GET + [ 'configuration', category, mode ])
