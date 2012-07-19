@@ -43,18 +43,6 @@ h4 { font-size: 110%; margin: .3em 0 .1em }
 	width: 46%;
 }
 
-div#banner {
-	background: @back_color url('/media/images/banner_back.png') top left no-repeat;
-	color: #fff;
-	height: 100%;
-	width: 220px;
-	position: fixed;
-	overflow: hidden;
-	left: 0px;
-	top: -1px;
-	float: left;
-}
-
 .hidden {
 	display: none;
 }
