@@ -513,3 +513,14 @@ def merge_dicts_of_lists(*args, **kwargs):
 				else:
 					new_dict[key] = list(set(value))
 	return new_dict
+
+
+def MixIn(TargetClass, MixInClass, name=None):
+    if name is None:
+        name = "mixed_%s_with_%s" % (TargetClass.__name__, MixInClass.__name__)
+
+    class CombinedClass(TargetClass, MixInClass):
+        pass
+
+    CombinedClass.__name__ = name
+    return CombinedClass

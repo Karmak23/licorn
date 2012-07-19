@@ -1,0 +1,4 @@
+<div class="standy_line">
+{%- set standby_form = standby(groups, who, when) -%}
+{{ _("Members of") }} {{ standby_form['who'] }} {{ _("enter stand by mode when inactive since ")}} {{ standby_form['when'] }} {{ _("minutes")}}. <input type='button' value="save" id='standby_line_save'/>
+</div>

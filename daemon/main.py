@@ -638,7 +638,6 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 						stylize(ST_OK, u'&') if thread.daemon else '',
 						0 if thread.ident is None else thread.ident)))
 			"""
-			#print tdata
 			data += u'\n'.join(sorted(tdata)) + '\n'
 
 			return data

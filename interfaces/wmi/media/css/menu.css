@@ -6,6 +6,8 @@
 @menu_item_height: 30px;
 @menu_link_color: white;
 
+@menu_link_font_size: 16px;
+
 #mainnav {
 	border: none;
 	font: inherit;
@@ -101,6 +103,8 @@
 	left: 0;
 	background: url('/media/images/fleche_pourpre.png') no-repeat;
 	background-position: -(@menu_width + 20) top;
+
+	font-size: @menu_link_font_size;
 }
 
 .menu-back {

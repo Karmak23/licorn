@@ -149,3 +149,9 @@ class MachinesBackend(CoreBackend):
 	def delete_Machine(self, mid):
 		assert ltrace_func(TRACE_BACKENDS)
 		pass
+
+class TasksBackend(CoreBackend):
+	def __init__(self, name='tasks'):
+		CoreBackend.__init__(self, name=name, controllers_compat=['tasks'])
+		assert ltrace(TRACE_OBJECTS, '| TasksBackends.__init__()')
+		

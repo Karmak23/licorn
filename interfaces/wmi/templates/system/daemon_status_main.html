@@ -169,6 +169,28 @@
 						{%- elif key in ('wake_up') -%}
 							{#- don't display this attribute in the WMI -#}
 
+						{%- elif key == 'jobs' -%}
+							{%- set jobs = value|count -%}
+							<li><span class="ajax-slider-toggle-master"
+									id="ds_toggle_workers_{{ tindex }}">
+									<span class="_refresh" id="_rf_ds_dtdt_wkr{{ tindex }}">{{ jobs }}</span>
+								Job{{ 's' if jobs > 1 }}</span>
+								<div class="ajax-slider-toggle-slave ajax-initially-hidden"
+									id="ds_toggle_workers_{{ tindex }}">
+									<ul class="_refresh" id="_rf_ds_dtdtulwkr{{ tindex }}">
+									{%- for worker in value -%}
+				
+											<li>{{ worker.name }} (next run: {{ worker.next_run }})</li>
+
+						
+
+									{%- endfor -%}
+									</ul>
+								</div>
+							</li>
+
+
+
 						{%- elif key not in ('name', 'ident', 'collectors',
 											'daemon', 'alive', 'qsize', 'loops',
 											'wakers', 'watches', 'workers', 

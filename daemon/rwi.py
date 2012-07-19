@@ -475,6 +475,40 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			remote_output(data)
 
 		assert ltrace(TRACE_GET, '< get_machines()')
+
+	def get_tasks(self, opts, args):
+		""" Get the list of tasks. """
+
+		self.setup_listener_gettext()
+		assert ltrace(TRACE_GET, '> get_tasks(%s,%s)' % (opts, args))
+
+		if opts.all is False and len(args) == 1:
+			opts.all = True
+		if opts.all is False and len(args) == 2:
+			try:
+				tid = int(args[1])
+			except:
+				tid = LMC.tasks.by_name(args[1]).id
+
+			selection = tid
+
+		if opts.all:
+			selection = filters.ALL
+		if opts.extinction:
+			selection = filters.EXTINCTION_TASK
+		else:
+			# Running, finished
+			pass
+		
+		tasks_to_get = LMC.tasks.select(selection)
+
+		data = LMC.tasks._cli_get(selected=tasks_to_get,
+										long_output=opts.long_output)
+
+		if data and data != '\n':
+			remote_output(data)
+
+		assert ltrace(TRACE_GET, '< get_tasks()')
 	def get_configuration(self, opts, args):
 		""" Output th current Licorn system configuration. """
 
@@ -1369,6 +1403,94 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.auto_scan or opts.discover:
 			LMC.machines.scan_network(
 				network_to_scan=None if opts.auto_scan else [ opts.discover ])
+	def add_task(self, opts, args):
+		self.setup_listener_gettext()
+
+		if opts.name is '' and len(args) == 2:
+			opts.name = args[1]
+			del args[1]
+
+		if opts.name=='' and opts.action=='' and len(args) == 3:
+			opts.name = args[1]
+			opts.action = args[2]
+
+		if opts.action == '' or opts.name == '':
+			logging.warning("{0} : One of the required argument '{1}' or "
+			"'{2}' is missing.".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					stylize(ST_PATH, 'name'),
+					stylize(ST_PATH, 'action')), to_local=False)
+			return
+		
+		task_name = opts.name
+		task_action = opts.action
+
+		task_defer_resolution = opts.defer_resolution
+
+		task_year   = opts.year
+		task_month  = opts.month
+		task_day    = opts.day
+		task_hour   = opts.hour
+		task_minute = opts.minute
+		task_second = opts.second
+		task_week_day = opts.week_day
+
+		task_delay_until_year   = opts.delay_until_year
+		task_delay_until_month  = opts.delay_until_month
+		task_delay_until_day    = opts.delay_until_day
+		task_delay_until_hour   = opts.delay_until_hour
+		task_delay_until_minute = opts.delay_until_minute
+		task_delay_until_second = opts.delay_until_second
+
+		if opts.args == "":
+			task_args = []
+		else:
+			# if the task is an extinction_task, guess machines
+			if task_action == 'LMC.machines.shutdown':
+				try:
+					if ';' in opts.args:
+						task_args = [ LMC.machines.guess_one(LMC.machines.word_match(m)).mid for m in opts.args.split(';') ]
+					else:
+						task_args = [ LMC.machines.guess_one(LMC.machines.word_match(opts.args)).mid ]
+
+				except KeyError, e:
+					logging.exception('unable to recognize machine {0}'.format(e))
+				except:
+					logging.exception("{0} : {3} unpacking args of task {1} "
+						"(args={2}) ".format(
+						stylize(ST_NAME, LMC.tasks.name),
+						opts.name, opts.args, stylize(ST_BAD, "Error while"),
+						to_local=False))
+					return
+			else:
+				task_args = opts.args.split(';')
+		
+		task_kwargs = {}
+		if opts.kwargs != "":
+			try:
+				for kw in opts.kwargs.split(';'):
+					_kw = kw.split('=')
+					task_kwargs.update({_kw[0]:_kw[1]})
+			except Exception, e:
+				logging.exception("{0} : {3} unpacking kwargs of task {1} "    
+					"(kwargs={2}) ".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					opts.name, kw, stylize(ST_BAD, "Error while"),
+					stylize(ST_PATH, task_name), task_kwargs), 
+					to_local=False)
+
+		try:
+			LMC.tasks.add_task(task_name, task_action, 
+				year=task_year, month=task_month, day=task_day, hour=task_hour,
+				minute=task_minute, second=task_second, week_day=task_week_day,
+				delay_until_year=task_delay_until_year, delay_until_month=task_delay_until_month,
+				delay_until_day=task_delay_until_day, delay_until_hour=task_delay_until_hour,
+				delay_until_minute=task_delay_until_minute, delay_until_second=task_delay_until_second,
+				args=task_args, kwargs=task_kwargs, 
+				defer_resolution=task_defer_resolution)
+		except Exception, e:
+			remote_output(_("{0} while adding task {1} : {2}\n".format(
+				stylize(ST_BAD, "Error"), stylize(ST_PATH, task_name),e )))
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
 
@@ -1641,6 +1763,47 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		#
 		# I thus add this gc.collect() call at the end of all RWI methods.
 		gc.collect()
+		# this one has no effect at all. Only the gc.collect() has.
+		#del groups_to_del
+	def del_task(self, opts, args):
+		self.setup_listener_gettext()
+		tasks_to_del = []
+		
+		if opts.name is None and len(args) == 2:
+			for t in args[1].split(','):
+				try:
+					tasks_to_del.append(LMC.tasks.guess_one(t))
+				except exceptions.DoesntExistException:
+					logging.notice("{0} : Unknown task {1}, invalid or "
+						"non-existing".format(
+						stylize(ST_NAME, LMC.tasks.name),
+						stylize(ST_PATH, t)))
+		
+			del args[1]
+
+		elif opts.all:
+			tasks_to_del = LMC.tasks.select(filters.ALL)
+		else:
+			if opts.name == None and opts.id == 0:
+				logging.warning("{0} : One of the required argument '{1}' or "
+					"'{2}' is missing.".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					stylize(ST_PATH, 'name'),
+					stylize(ST_PATH, 'id')), to_local=False)
+			elif opts.name != None:
+				tasks_to_del = [ LMC.tasks.by_name(opts.name) ]
+			elif opts.id != 0:
+				try:
+					_id = LMC.tasks.by_id(opts.id)
+				except exception.DoesntExistException:
+					logging.exception('{0} : no task with id {1}'.format(
+						stylize(ST_NAME, LMC.tasks.name), stylize(ST_PATH, t_id)))
+				
+				tasks_to_del = [ _id ]
+
+			
+		for task in tasks_to_del:
+			LMC.tasks.del_task(task.id)
 	def del_profile(self, opts, args):
 		""" Delete a system wide User profile. """
 
@@ -2010,7 +2173,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			(opts.exclude_login, lambda x: LMC.users.by_login(x, strong=True)),
 			(opts.exclude_uid, lambda x: LMC.users.by_uid(x, strong=True))
 		])
-
 	def __default_groups_includes_excludes(self, opts):
 		return ([
 			(opts.name, lambda x: LMC.groups.by_name(x, strong=True)),
@@ -2322,6 +2484,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					machine.do_upgrade()
 			except:
 				logging.exception('Failed to operate on machine {0}.', (ST_NAME, machine.hostname))
+	def mod_task(self, opts, args):
+		""" Modify a machine. """
+
+		self.setup_listener_gettext()
+
+		remote_output("{0}, please delete the task you want to modify and "
+		"create a new one. \n\t {1} : You can easily modify the configuration "
+		"file to change few arguments of a task.\n".format(
+			stylize(ST_BAD, 'Not implemented'), stylize(ST_OK, "TIP")))
 	def mod_keyword(self, opts, args):
 		""" Modify a keyword. """
 
@@ -2688,7 +2859,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				pass
 
 			except:
-				logging.exception(_(u'Could not run tests for app {0}'), (ST_NAME, app))
+				logging.exception(_(u'Could not run tests for app {0}.'), (ST_NAME, app))
 				continue
 
 			logging.notice(_(u'Successfully ran Django WMI tests '

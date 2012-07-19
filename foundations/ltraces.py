@@ -66,6 +66,7 @@ TRACE_SHADOW        = _ltrace_level(0x0000000000000000200000000, 'shadow')
 TRACE_DNSMASQ       = _ltrace_level(0x0000000000000000400000000, 'dnsmasq')
 TRACE_SQLITE        = _ltrace_level(0x0000000000000000800000000, 'sqlite')
 TRACE_PICKLE        = _ltrace_level(0x0000000000000001000000000, 'pickle')
+TRACE_JSONFILE      = _ltrace_level(0x0000000000000002000000000, 'jsonfile')
 
 
 TRACE_EXTENSIONS    = _ltrace_level(0x000000000ffff000000000000, 'extensions')
