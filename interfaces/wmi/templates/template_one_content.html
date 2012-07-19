@@ -1,0 +1,48 @@
+{#- Copyright 2011 META IT & Robin Lucbernet <robin@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{%- extends 'base.html' -%}
+
+{%- block base_media -%}
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/menu.css">
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/main_template_one_content.css">
+	
+	<script language="javascript" type="text/javascript" src="/media/js/jquery-1.7.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.color.20111012.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.easing-1.3.min.js"></script>
+	
+	<script type="text/javascript" src="{{ url_for('django.views.i18n.javascript_catalog', args=['djangojs']) }}"></script>
+
+	<script language="javascript" type="text/javascript" src="/media/js/utils.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/push.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/menu.js"></script>
+{%- endblock -%}
+
+{%- block end_media -%}
+	{#- "LESS" needs to be loaded last, in case extended_media loads more less-CSS. -#}
+	<script language="javascript" type="text/javascript" src="/media/js/less-1.1.5.min.js"></script>
+{%- endblock -%}
+
+
+{%- block body -%}
+
+	{%- include 'sidebar.html' -%}
+
+	<div id="content">
+		{%- block content -%}
+			<div id="notification"></div>
+			<div id="main_content">
+				{%- block main_content -%}
+					{%- if main_content_template -%}
+						{%- include main_content_template -%}
+
+					{%- else -%}
+						<h1>{{ _('Please define <code>main_content_template</code> in your current view.') }}</h1>
+					{%- endif -%}
+				{%- endblock -%}
+			</div><!-- end main_content -->
+		{%- endblock -%}
+	</div><!-- end content -->
+
+{%- endblock -%}
+
