@@ -178,3 +178,14 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		except:
 			logging.exception(_(u'{0}: Exception in user_pre_del({1})'), (ST_NAME, self.name), (ST_LOGIN, user.login))
 			return False
+	@events.handler_method
+	def user_logged_in(self, *args, **kwargs):
+
+		user = kwargs.pop('user')
+
+		samba_params = dict(key.split('_', 1)[1], value
+								for key, value in kwargs.iteritems()
+									if key.startswith('smb_')
+										or key.startswith('samba_'))
+
+		print '>> SMB USER LOGGED IN:', user
