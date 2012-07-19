@@ -21,18 +21,33 @@ from licorn.core           import version, LMC
 
 def get_events(opts, args, listener):
 
-	monitor_id = LMC.rwi.register_monitor(opts.facilities)
+	if opts.monitor:
 
-	try:
-		CliInteractor(listener).run()
+		if opts.facilities is None:
+			opts.facilities = 'std'
 
-	finally:
+		monitor_id     = LMC.rwi.register_monitor(opts.facilities)
+		cli_interactor = CliInteractor(listener)
+
 		try:
-			LMC.rwi.unregister_monitor(monitor_id)
+			try:
+				cli_interactor.run()
 
-		except Pyro.errors.ConnectionClosedError:
-			# the connection has been closed by the server side.
-			pass
+			except KeyboardInterrupt:
+				# This is needed to restore the terminal state.
+				# Relying on the "finally" clause isn't sufficient.
+				cli_interactor.quit_interactor()
+				raise
+		finally:
+			try:
+				LMC.rwi.unregister_monitor(monitor_id)
+
+			except Pyro.errors.ConnectionClosedError:
+				# the connection has been closed by the server side.
+				pass
+
+	else:
+		LMC.rwi.get_events_list(opts, args)
 def get_events_reconnect(opts, args, listener):
 	LMC.rwi.register_monitor(opts.facilities)
 def get_status(opts, args, listener):
@@ -219,13 +234,10 @@ def get_main():
 		'privileges':	 ('get_privileges_parse_arguments',	'get_privileges'),
 		'tags':          ('get_keywords_parse_arguments', 'get_keywords'),
 		'keywords':      ('get_keywords_parse_arguments', 'get_keywords'),
-		'daemon_status': ('get_daemon_status_parse_arguments',
-														None, get_status),
-		'events'       : ('get_events_parse_arguments',
-														None, get_events,
+		'daemon_status': ('get_daemon_status_parse_arguments', None, get_status),
+		'events'       : ('get_events_parse_arguments',	None, get_events,
 														get_events_reconnect),
-		'inside'       : ('get_inside_parse_arguments',
-														None, get_inside),
+		'inside'       : ('get_inside_parse_arguments', None, get_inside),
 		'volumes':       ('get_volumes_parse_arguments', 'get_volumes'),
 		}, {
 		"name"     		: "licorn-get",

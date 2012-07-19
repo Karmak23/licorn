@@ -523,6 +523,49 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			remote_output(LMC.configuration.Export())
 
 		assert ltrace(TRACE_GET, '< get_configuration()')
+	def get_events_list(self, opts, args):
+		""" Output the list of internal events. """
+
+		self.setup_listener_gettext()
+
+		# we need to merge, because some events have only
+		# handlers, and others have only callbacks.
+		events_names = set(events.events_handlers.keys()
+							+ events.events_callbacks.keys())
+		max_name_len = max(len(x) for x in events_names)
+
+		if opts.verbose >= verbose.INFO:
+			remote_output(_(u'{0} distinct event(s), {1} handler(s) '
+					u'and {2} callback(s)').format(len(events_names),
+					sum(len(x) for x in events.events_handlers.itervalues()),
+					sum(len(x) for x in events.events_callbacks.itervalues())
+					) + u'\n')
+			for event_name in events_names:
+				handlers  = events.events_handlers.get(event_name, ())
+				callbacks = events.events_callbacks.get(event_name, ())
+
+				remote_output(_(u'Event: {0}\n\tHandlers:{1}{2}\n'
+						u'\tCallbacks:{3}{4}\n').format(
+					stylize(ST_NAME, event_name),
+					u'\n\t\t' if len(handlers) else u'',
+					u'\n\t\t'.join(_(u'{0} in module {1}').format(
+						stylize(ST_NAME, h.__name__),
+						stylize(ST_COMMENT, h.__module__)) for h
+							in handlers),
+					u'\n\t\t' if len(callbacks) else u'',
+					u'\n\t\t'.join(_(u'{0} in module {1}').format(
+						stylize(ST_NAME, c.__name__),
+						stylize(ST_COMMENT, c.__module__)) for c
+							in callbacks),
+				))
+		else:
+			for event_name in events_names:
+				remote_output(_(u'{0}: {1} handler(s), {2} callback(s).\n').format(
+							stylize(ST_NAME, event_name.rjust(max_name_len)),
+							len(events.events_handlers.get(event_name, ())),
+							len(events.events_callbacks.get(event_name, ())),
+						))
+
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
 			This function wraps SquidGuard configuration files.
@@ -684,10 +727,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		firstline  = open(import_filename).readline()
 		lcndialect = csv.Sniffer().sniff(firstline)
 
-		if lcndialect.delimiter != opts.separator:
-			separator = lcndialect.delimiter
-		else:
+		if lcndialect.delimiter != opts.separator and opts.separator != None:
 			separator = opts.separator
+		else:
+			separator = lcndialect.delimiter
 
 		try:
 			import_fd = open(import_filename, 'rb')
@@ -730,17 +773,27 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							user[column] = hlstr.validate_name(
 										unicode(line[number], encoding), True)
 						else:
-							user[column] = unicode(
-									clean_csv_field(line[number]), encoding)
+							cleaned_field = clean_csv_field(line[number])
+							if not isinstance(cleaned_field, unicode):
+								cleaned_field = unicode(cleaned_field, encoding)
+							user[column] = cleaned_field
 
 				except IndexError, e:
-					raise exceptions.LicornRuntimeError('\n'+_(u'Import error '
-						'on line {0}: no {1} specified or bad {2} data '
-						'(was: {3}).').format(i + 1, column, translation, e))
+					err = _(u'Import error '
+						'on line {0}: no {1} specified or bad separator used'
+						'(was: {2}).').format(i + 1, column, e)
+
+					if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+					raise exceptions.LicornRuntimeError('\n'+err)
 
 				except UnicodeEncodeError, e:
-					raise exceptions.LicornRuntimeError('\n'+_(u'Encoding not '
-						'supported for input filename (was: %s).') % str(e))
+					err = _(u'Encoding not '
+						'supported for input filename (was: %s).') % str(e)
+					if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+					raise exceptions.LicornRuntimeError('\n'+err)
 			try:
 				if opts.login_col is None:
 					user['login'] = User.make_login(
@@ -750,30 +803,47 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					user['login'] =	User.make_login(
 										inputlogin=user['login'])
 			except IndexError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
+				err =  _(u'Import error '
 					'on line {0}: no group specified or bad {2} data '
 					'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
-						if opts.login_col is None else _(u'login'))))
+						if opts.login_col is None else _(u'login')))
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+				raise exceptions.LicornRuntimeError('\n' +err)
 
 			except exceptions.LicornRuntimeError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
-					'on line {0} (was: {1}).').format(i+1, e))
+				err = _(u'Import error '
+					'on line {0} (was: {1}).').format(i+1, e)
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+				raise exceptions.LicornRuntimeError('\n' + err)
 
 			try:
-				user['group'] =	Group.make_name(user['group'])
-
+			
+				user['group'] = [Group.make_name(g) for g in user['group'].split(',') if g != '']
+			
 			except IndexError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
+				err =  _(u'Import error '
 					'on line {0}: no group specified or bad {2} data '
-					'(was: {1}).').format(i+1, e, _(u'group')))
+					'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
+						if opts.login_col is None else _(u'login')))
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+				raise exceptions.LicornRuntimeError('\n' +err)
 
 			except exceptions.LicornRuntimeError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
-					'on line {0} (was: {1}).').format(i+1, e))
+				err = _(u'Import error '
+					'on line {0} (was: {1}).').format(i+1, e)
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
 
-			if user['group'] not in groups_to_add:
-				groups_to_add.append(user['group'])
+				raise exceptions.LicornRuntimeError('\n' + err)
 
+			groups_to_add.extend([g for g in user['group'] if g not in groups_to_add])
+		
 			users_to_add.append(user)
 
 			if not (i % 100):
@@ -827,8 +897,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					progression += delta
 
-				except exceptions.AlreadyExistsException, e:
+				except exceptions.AlreadyExistsError, e:
+					# Error is when a group already exist BUT not the same kind
 					logging.warning(str(e), to_local=False)
+					progression += delta
+
+				except exceptions.AlreadyExistsException, e:
+					# Error is when a group already exist WITH the same kind
 					progression += delta
 
 				except exceptions.LicornException, e:
@@ -837,6 +912,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					raise e
 
 				data_to_export_to_html[g]= {}
+				
 				# FIXME: flush the listener??
 				#sys.stdout.flush()
 
@@ -871,12 +947,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			try:
 				i += 1
 				if opts.confirm_import:
+
+					in_groups = [LMC.groups.guess_one(g) for g in u['group']]
+
 					user, password = LMC.users.add_User(lastname=u['lastname'],
 											firstname=u['firstname'],
 											login=u['login'],
 											password=u['password'],
 											profile=profile,
-											in_groups=[ groups[u['group']] ],
+											in_groups=in_groups,
 											batch=opts.no_sync)
 
 					logging.progress('\r' + _(u'Added user {0} {1} '
@@ -887,10 +966,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					# the dictionnary key is forged to have something that is sortable.
 					# like this, the user accounts will be sorted in their group.
-					data_to_export_to_html[ u['group'] ][
-							'%s%s' % (u['lastname'], u['firstname'])
-						] = [ u['firstname'], u['lastname'],
-								user.login, password ]
+					for _group in in_groups:
+						data_to_export_to_html[ _group.name ][
+								'%s%s' % (u['lastname'], u['firstname'])
+							] = [ u['firstname'], u['lastname'],
+									user.login, password ]
 				else:
 					# Why make_login() for examples and not prepare the logins
 					# when loading CSV file? this is a pure arbitrary choice.
@@ -970,31 +1050,28 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			if wmi_output:
 				dl_lnk = _('''This repport is available on the server '''
 					'''at "<code>{0}</code>", you can '''
-					'''<a href="/download/{0}">'''
+					'''<a href="/system/download/{0}">'''
 					'''download it</a> for easier access''').format(html_file_filename)
 			else:
 				dl_lnk = ''
 				html_file.write('''<html>
 					<head>
 						<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-						<style type=\"text/css\">
-						<!-- {css} -->
+						<style type="text/css">
+							body { font-size:14pt; }
+							h1,h2,h3 { text-align:center; }
+							p,div { text-align:center; }
+							table { margin: 3em 10%%; width: 80%%; border: 5px groove #369; border-collapse: collapse; }
+							tr { border: 1px solid black; }
+							th {border-bottom: 3px solid #369; background-color: #99c; }
+							td,th { text-align: center; padding: 0.7em; }
+							.even { background-color: #eef; }
+							.odd { background-color: #efe; }
+							div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
 						</style>
 					</head>
-					<body>''').format(
-					css='''
-						body { font-size:14pt; }
-						h1,h2,h3 { text-align:center; }
-						p,div { text-align:center; }
-						table { margin: 3em 10%%; width: 80%%; border: 5px groove #369; border-collapse: collapse; }
-						tr { border: 1px solid black; }
-						th {border-bottom: 3px solid #369; background-color: #99c; }
-						td,th { text-align: center; padding: 0.7em; }
-						.even { background-color: #eef; }
-						.odd { background-color: #efe; }
-						div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
-						''')
-
+					<body>''')
+				
 			html_file.write('''
 					<h1>{title}</h1>
 					<h2>{import_on_date}</h2>
