@@ -137,6 +137,33 @@
 					)
 				}}
 
+				{{
+					menu_item(
+						"energy_menuitem",
+						"/energy",
+						_('Manage energy policies of the network and clients'),
+						_('Energy')
+					)
+				}}
+				{#
+						(
+							(
+								'energy_policies_menuitem',
+								'/energy/policies',
+								_('Energetic policies'),
+								_('Policies'),
+								"/media/images/24x24/mass_skel.png",
+							),
+							(
+								'energy_metrology_menuitem',
+								'/energy/metrology',
+								_('Energetic metrology'),
+								_('Metrology'),
+								"/media/images/24x24/mass_skel.png",
+							),
+						)
+				#}
+
 			{%- endif -%}
 
 		{% else %}

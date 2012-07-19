@@ -65,7 +65,7 @@ base_packages  = ('pyro', 'python-pylibacl', 'python-ldap', 'python-xattr',
 				'python-ipcalc', 'python-dbus', 'python-gobject', 'gettext',
 				'python-pygments', 'python-apt', 'python-pyinotify',
 				'python-sqlite', 'python-cracklib', 'python-pip',
-				'python-dmidecode', 'python-libxml2',
+				'python-dmidecode', 'python-libxml2', 'python-dateutil',
 				# LXC-environment forgotten packages
 				'psmisc')
 

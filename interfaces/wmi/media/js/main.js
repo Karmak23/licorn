@@ -50,6 +50,7 @@ function refresh_div(div, html, no_effect) {
 
 	if (typeof no_effect == 'undefined' || no_effect) {
 
+
 		div.find('._refresh').each(function() {
 			$(this).html(new_html.find('#' + $(this).attr('id')).html());
 		});
@@ -172,6 +173,7 @@ function password_helpers(content) {
 	console.log(content.find('input:password'))
 	content.find('input:password').keyup(function() {
 		console.log('keyup')
+
 		var empty = false;
 		content.find('input:password').each(function() {
 			if ($(this).val() == '') {
@@ -219,8 +221,6 @@ function password_helpers(content) {
 		}
 	});
 
-	//console.log("content", content)
-
 	$('#generate_pwds').click(function() {
 		var pwd_generated = null;
 		$.get('/users/generate_pwd/', function(pwd) {
@@ -228,7 +228,6 @@ function password_helpers(content) {
 			gen_pwd_dialog = new dialog(gettext("Random password generator"),
 				strargs(gettext("<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</code> button, and remember it."), [pwd_generated]),
 				true, function() {
-					//console.log(content)
 					content.find('input:password').val(pwd_generated).trigger('keyup');
 
 
@@ -237,4 +236,16 @@ function password_helpers(content) {
 		})
 
 	});
+}
+
+
+
+function generate_machine() {
+	$.each($('.licorn_machine'), function(i, v) {
+		mid = $(this).attr('id');
+
+		$.get('/energy/generate_machine_html/'+mid, function(html) {
+			$(v).before($(html));
+		})		
+	})
 }

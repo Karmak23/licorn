@@ -1,0 +1,306 @@
+{#- Copyright 2011 META IT, Olivier Cortès <oc@meta-it.fr>, Robin Lucbernet<rl@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{% from 'widgets/common.html' import licorn_list, jquery_popover_media %}
+
+{%- extends 'fullbase.html' -%}
+
+{%- block extended_media -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/energy.css" />
+	<script language="javascript" type="text/javascript" src="/media/js/d3/d3.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/d3/d3.layout.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.tablesorter.min.js"></script>
+
+	<!-- for autocomplete -->
+	<script language="javascript" type="text/javascript" src="/media/js/jquery-ui-1.8.20.custom.min.js"></script>
+	<!--<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/jquery-ui-1.8.20.custom.css" />-->
+	<!-- for tooltip over  -->
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.tipsy.js"></script> <!-- used for tooltip in svg content -->
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/tipsy.css" />
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/bootstrap.min.css" />
+	<!--<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/jquery.autocomplete.css" />
+
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/horizontal-layout.css" />-->
+{%- endblock -%}
+
+{%- block title -%}{{ _('Energy policies') }}{%- endblock -%}
+
+{%- block main_content -%}
+
+	<div class="title">	{{ _('Add a policy') }} </div>
+
+	<div id="extinction_rules">
+		{{ _('Shutdown machine(s) ')}}
+		<input type="text" class='textbox_medium' id='extinction_machine_list' title='{{_("Machine(s) to shutdown, separated by a \",\".")}}'/>
+		{{ _(' at ') }}
+		<input type="text" class='textbox_small' id='extinction_machine_hour' title='{{_("Shutdown hour (0<=hour<=23)")}}'/>
+		:
+		<input type="text" class='textbox_small' id='extinction_machine_minute' value='00' title='{{_("Shutdown minute (0<=hour<=59)")}}'/>
+		{{ _('on') }}
+		<input type="text" class='textbox_medium' id='extinction_machine_day' title='{{_("Shutdown day (0<=day<=6, \"ALL\", \"*\", or day in plain text), separated by a \",\".")}}'/>
+
+		<input type='button' value="add" id='rule_extinction_add'/>
+		<!--<input type='button' value="reset" id='rule_extinction_reset'/>-->
+		<br /><br /><br />
+	</div>
+
+	<div class="title"> {{ _('Current policies') }} </div>
+	<!-- #extinction_reacap is filled by javascript -->
+	<div id="extinction_recap"></div>
+
+
+{%- endblock -%}
+
+{%- block sub_content -%}
+
+
+	<div class="title"> {{ _('Shutdown calendar') }} </div>
+
+	{% with data_separators= data_separators %}
+		{% include "widgets/weeklybars.html" %}
+	{% endwith %}
+
+
+	<script language="javascript" type="text/javascript">
+
+		var days = [ gettext("Monday"), gettext("Tuesday"), gettext("Wednesday"),
+				gettext("Thrusday"), gettext("Friday"), gettext("Satursday"), gettext("Sunday"), gettext("ALL") ]
+
+		function del_rule(tid) {
+			$.get('/energy/del_rule/'+tid)
+		}
+
+ 		$.tablesorter.addParser({
+			// set a unique id
+			id: 'weekdays',
+			is: function(s) {
+				// return false so this parser is not auto detected
+				return false;
+			},
+			format: function(s) {
+				// format your data for normalization
+				console.log(s)
+				return s.toLowerCase()
+					.replace(/sunday/,6).replace(/satursday/,5).replace(/friday/,4).replace(/thursday/,3).replace(/wednesday/,2).replace(/tuesday/,1).replace(/monday/,0);
+			},
+			// set type, either numeric or text
+			type: 'numeric'
+		});
+
+
+		function update_recap() {
+			$.get('/energy/get_recap', function(recap_html) {
+				// load new table
+				$('#extinction_recap').html(recap_html)
+				// make it sortable
+				$('#extinction_recap_table').tablesorter({
+				 	sortList: [[0,0]],
+					headers: {
+						0: {
+							sorter:'weekdays'
+						}
+					},
+				});
+
+				generate_machine();
+
+			})
+		}
+
+		function update_calendar(data_calendar) {
+			$.get('/energy/get_calendar_data', function(data_calendar) {
+				//data_on_off = get_data_on_off(data_calendar);
+				draw_extinction_calendar(data_calendar);
+			}, "json")
+		}
+
+		function split( val ) {
+			return val.split( /,\s*/ );
+		}
+		function extractLast( term ) {
+			return split( term ).pop();
+		}
+		function translate_day(day) {
+			// translate days
+
+
+			/* return the weekday number [0,1,..,6] of the specified day */
+			if (day == '*' || day == 'all' || day == 'ALL') { return "0,1,2,3,4,5,6" }
+
+			if (day == '0' || day == '1' || day == '2' || day == '3' || day == '4' || day == '5' || day == '6') {
+				return parseInt(day);
+			}
+
+			for (i=0; i < days.length ; i++) {
+				if (days[i] == day) {
+					return i;
+				}
+			}
+		}
+
+		function check_who(who) {
+			t = [];
+			s = who.split(",")
+			for (i=0; i<s.length;i++) {
+				if ($.trim(s[i]) != '') {
+					t.push($.trim(s[i]))
+				}
+			}
+
+			return t.join(',')
+		}
+		function check_hour(hour) {
+			if (hour > 0 && hour <= 24) {
+				return hour;
+			}
+			else {
+				show_message_through_notification(gettext("The interval period allowed to record an extinction rule is between 1h and 24h"))
+				return null;
+			}
+		}function check_minute(minute) {
+			if (minute >= 0 && minute < 60) {
+				return minute;
+			}
+			else {
+				show_message_through_notification(gettext("Minute has to be 0<=minute<60"))
+				return null;
+			}
+		}
+
+		function get_data_on_off(calendar_data) {
+			data_on_off = [
+				{'on': 6, 'off':6},
+				{'on': 6, 'off':6},
+				{'on': 6, 'off':6},
+				{'on': 6, 'off':6},
+				{'on': 6, 'off':6},
+				{'on': 6, 'off':6},
+				{'on': 6, 'off':6},
+			]
+			for (i=0; i<calendar_data.length; i++) {
+				rule=calendar_data[i];
+				if (rule.hour >= data_on_off[rule.day]['off']) {
+					data_on_off[rule.day]['off'] = rule.hour
+				}
+			}
+			return data_on_off
+
+		}
+		$(document).ready(function() {
+
+			update_recap()
+			update_calendar()
+
+			generate_machine()
+
+			$('#rule_extinction_add').click( function() {
+				who  = check_who($(this).parent().find("#extinction_machine_list").val());
+				hour = check_hour(parseInt($.trim($(this).parent().find("#extinction_machine_hour").val())));
+				minute = check_minute(parseInt($.trim($(this).parent().find("#extinction_machine_minute").val())));
+				day  = $.trim($(this).parent().find("#extinction_machine_day").val());
+
+				var t = split(day);
+				var result = []
+				for (i=0;i<t.length;i++){
+					if (t[i] != '') {
+						result.push(translate_day(t[i]))
+					}
+				}
+				if (result.length > 1) { day = result.join(', ') } else { day = result[0] }
+
+				if (who == null || who == '' || hour == null || day == null || minute == null) {
+					show_message_through_notification(gettext("Cannot add rule : at least one of the required field is missing, please check information"))
+					return;
+				}
+
+				$.get("/energy/add_rule/"+who+'/'+hour+'/'+minute+'/'+day)
+			});
+
+			/* AUTOCOMPLETE BOX */
+
+			$.getJSON("/energy/get_machine_list", function(data) {
+				suggestions = [];
+	            //process response
+	            $.each(data, function(i, val){
+	            	suggestions.push(val['mname']);
+	        	});
+
+	        	$("#extinction_machine_list")
+	        		// don't navigate away from the field on tab when selecting an item
+					.bind( "keydown", function( event ) {
+						if ( event.keyCode === $.ui.keyCode.TAB &&
+								$( this ).data( "autocomplete" ).menu.active ) {
+							event.preventDefault();
+						}
+					})
+					.autocomplete({
+						minLength: 0,
+						source: function( request, response ) {
+							// delegate back to autocomplete, but extract the last term
+							response( $.ui.autocomplete.filter(
+								suggestions, extractLast( request.term ) ) );
+						},
+						focus: function() {
+							// prevent value inserted on focus
+							return false;
+						},
+						select: function( event, ui ) {
+							var terms = split( this.value );
+							// remove the current input
+							terms.pop();
+							// add the selected item
+							terms.push( ui.item.value );
+							// add placeholder to get the comma-and-space at the end
+							terms.push( "" );
+							this.value = terms.join( "," );
+
+							return false;
+						},
+					});
+
+	    	});
+
+	    	$("#extinction_machine_hour").autocomplete({
+	    		source: [ "6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22"]
+	    	});
+
+	    	$("#extinction_machine_day")
+	    		// don't navigate away from the field on tab when selecting an item
+				.bind( "keydown", function( event ) {
+					if ( event.keyCode === $.ui.keyCode.TAB &&
+							$( this ).data( "autocomplete" ).menu.active ) {
+						event.preventDefault();
+					}
+				})
+				.autocomplete({
+				minLength: 0,
+				source: function( request, response ) {
+					// delegate back to autocomplete, but extract the last term
+					response( $.ui.autocomplete.filter(
+						days, extractLast( request.term ) ) );
+				},
+				focus: function() {
+					// prevent value inserted on focus
+					return false;
+				},
+				select: function( event, ui ) {
+					var terms = split( this.value );
+					// remove the current input
+					terms.pop();
+					// add the selected item
+					terms.push( ui.item.value );
+					// add placeholder to get the comma-and-space at the end
+					terms.push( "" );
+					this.value = terms.join( "," );
+
+					result_terms = []
+
+					return false;
+				}
+	    	});
+
+		});
+	</script>
+{%- endblock -%}
+
+

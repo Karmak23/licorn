@@ -227,6 +227,7 @@ def get_main():
 		'groups':        ('get_groups_parse_arguments', 'get_groups'),
 		'profiles':      ('get_profiles_parse_arguments', 'get_profiles'),
 		'machines':      ('get_machines_parse_arguments', 'get_machines'),
+		'tasks':         ('get_tasks_parse_arguments', 'get_tasks'),
 		'clients':       ('get_machines_parse_arguments', 'get_machines'),
 		'configuration': ('get_configuration_parse_arguments',
 														'get_configuration'),

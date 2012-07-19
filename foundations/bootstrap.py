@@ -138,6 +138,7 @@ def check_python_modules_dependancies():
 		(u'pygments',  u'python-pygments',	None),
 		(u'pyinotify', u'python-pyinotify',	None),
 		(u'dbus',      u'python-dbus',		None),
+		(u'dateutil',  u'python-dateutil',	None),
 		(u'dmidecode', u'python-dmidecode',	clear_dmidecode),
 		# dmidecode needs libxml2 and even on Ubuntu 12.04, there is
 		# no valid dependancy in the debian package. Gosh!

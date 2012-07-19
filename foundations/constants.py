@@ -82,6 +82,8 @@ filters.INOTIFIED           = filters.WATCHED
 filters.NOT_WATCHED         = filters.STANDARD - filters.WATCHED
 filters.NOT_INOTIFIED       = filters.NOT_WATCHED
 
+filters.EXTINCTION_TASK     = 0x00010000
+
 filters.EMPTY               = 0x00ff0000
 
 # enum machine stati, for core.machines

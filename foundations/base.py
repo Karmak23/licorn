@@ -57,7 +57,6 @@ class method_decorator(object):
 			return self.func(instance, *args, **kwargs)
 
 		for key, value in self.kwargs.iteritems():
-			#print '>> setattr', key, value, 'ON', wrapper
 			setattr(wrapper, key, value)
 
 		# This instance does not need the descriptor anymore,

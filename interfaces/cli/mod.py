@@ -27,6 +27,7 @@ def mod_main():
 		'tags':          ('mod_keyword_parse_arguments', 'mod_keyword'),
 		'keywords':      ('mod_keyword_parse_arguments', 'mod_keyword'),
 		'path':          ('mod_path_parse_arguments', 'mod_path'),
+		'tasks':         ('mod_task_parse_arguments', 'mod_task'),
 		}, {
 		"name"     		: "licorn-modify",
 		"description"	: "Licorn Modify Entries",

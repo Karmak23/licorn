@@ -221,6 +221,15 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		""" Event handler that will start the updater thread once we are
 			successfully authenticated on the central server. """
 
+		# We authenticated, the server will eventually
+		# update our reachability status if our public
+		# IP changed. Get this information back.
+		workers.network_enqueue(priorities.NORMAL,
+								self.update_reachability,
+								# Wait a little for the server
+								# to have performed the test.
+								job_delay=20.0)
+
 		self.__start_updater_thread()
 	@events.handler_method
 	# Doesn't need @only_if_enabled, it won't be trigerred unless enabled.
@@ -269,11 +278,12 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 			self.threads.updater = LicornJobThread(
 								target=self.update_remote_informations,
-								# informations are updated every hour by default.
-								delay=3600,
+								# informations are updated every half-hour by default.
+								delay=1800,
 								tname='extensions.mylicorn.updater',
-								# first noop() is in 1 seconds.
-								time=(time.time()+1.0),
+								# first noop() is in half an hour,
+								# we have just authenticated.
+								time=(time.time()+1800),
 								)
 
 			self.threads.updater.start()

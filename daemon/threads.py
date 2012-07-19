@@ -896,6 +896,7 @@ class LicornJobThread(AbstractTimerThread):
 		# to countdown the delay while job is running.
 		self.job_runner = None
 	def dump_status(self, long_output=False, precision=None, as_string=False):
+		""" get detailled thread status. """
 		if as_string:
 			return '%s%s [%s]' % (
 				stylize(ST_RUNNING
