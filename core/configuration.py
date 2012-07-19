@@ -976,7 +976,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				'app_name'                : _(u'Application name'),
 				'backends'                : _(u'Storage backends for Core objects'),
 				'config_dir'              : _(u'Application main configuration directory'),
-				'extendedgroup_data_file' : _(u'Filename of extended group data'),
 				'extensions'              : _(u'Application extensions (available add-ons)'),
 				'help'                    : _(u'This current help'),
 				'main_config_file'        : _(u'Application main configuration filename'),
@@ -989,7 +988,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			word = hlstr.word_match(args[0], words.keys())
 
 			if word is None:
-				raise exceptions.BadArgument(_(u'Sorry, "%s" is not a '
+				raise exceptions.BadArgumentError(_(u'Sorry, "%s" is not a '
 											u'recognized keyword.') % args[0])
 
 			if word == 'help':
@@ -1037,22 +1036,18 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				data += u'\n'.join(str(e) for e in LMC.extensions) + u'\n'
 
 			# TODO: update this code for 'settings' use...
-			elif word in ('config_dir', 'main_config_file',
-						'extendedgroup_data_file', 'app_name'):
+			elif word in ('config_dir', 'main_config_file', 'app_name'):
 
 				varname = word.upper()
 
 				if word == 'config_dir':
-					varval = self.config_dir
+					varval = settings.config_dir
 
 				elif word == 'main_config_file':
-					varval = self.main_config_file
-
-				elif word == 'extendedgroup_data_file':
-					varval = self.extendedgroup_data_file
+					varval = settings.main_config_file
 
 				elif word == 'app_name':
-					varval = self.app_name
+					varval = settings.app_name
 
 				if cli['name']:
 					data +=	 '%s%s%s"%s"%s\n' % (
@@ -1133,14 +1128,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				data += "%s\n" % stylize(ST_PATH, attr)
 
 			elif type(attr) == type(LicornConfigObject()):
-				data += "\n%s" % str(attr)
+				data += "\n%s\n" % str(attr)
 
 			elif type(attr) in (
 				type([]), type(''), type(()), type({})):
 				data += "\n\t%s\n" % str(attr)
 
 			elif issubclass(attr.__class__, CoreModule):
-				data += "\n%s" % str(attr)
+				data += "\n%s\n" % str(attr)
 
 			else:
 				data += ('%s, to be implemented in '

@@ -463,6 +463,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 			self.__is_permissive = permissive
 
+			self._cli_invalidate()
+
 			self.reload_check_rules((('@GROUP', self.__name),
 								('@GW', 'w' if self.__is_permissive else '-')))
 

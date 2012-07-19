@@ -2166,21 +2166,21 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		return selection
 	def __default_users_includes_excludes(self, opts):
 		return ([
-			(opts.login, LMC.users.by_login),
-			(opts.uid, LMC.users.by_uid)
+			(opts.login, lambda x: LMC.users.by_login(x, strong=True)),
+			(opts.uid, lambda x: LMC.users.by_uid(x, strong=True))
 		], [
-			(opts.exclude, LMC.users.guess_one),
-			(opts.exclude_login, LMC.users.by_login),
-			(opts.exclude_uid, LMC.users.by_uid)
+			(opts.exclude, lambda x: LMC.users.guess_one(x, strong=True)),
+			(opts.exclude_login, lambda x: LMC.users.by_login(x, strong=True)),
+			(opts.exclude_uid, lambda x: LMC.users.by_uid(x, strong=True))
 		])
 	def __default_groups_includes_excludes(self, opts):
 		return ([
-			(opts.name, LMC.groups.by_name),
-			(opts.gid, LMC.groups.by_gid)
+			(opts.name, lambda x: LMC.groups.by_name(x, strong=True)),
+			(opts.gid, lambda x: LMC.groups.by_gid(x, strong=True))
 		], [
-			(opts.exclude, LMC.groups.guess_one),
-			(opts.exclude_group, LMC.groups.by_name),
-			(opts.exclude_gid, LMC.groups.by_gid)
+			(opts.exclude, lambda x: LMC.groups.guess_one(x, strong=True)),
+			(opts.exclude_group, lambda x: LMC.groups.by_name(x, strong=True)),
+			(opts.exclude_gid, lambda x: LMC.groups.by_gid(x, strong=True))
 		])
 	def mod_group(self, opts, args):
 		""" Modify a group. """
