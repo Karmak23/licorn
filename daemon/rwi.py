@@ -888,9 +888,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			try:
 				i += 1
 				if opts.confirm_import:
-					in_groups = []
-					for _group in u['group']:
-						in_groups.append(LMC.groups.guess_one(_group))
+					
+					in_groups = [LMC.groups.guess_one(g) for g in u['group']]
 
 					user, password = LMC.users.add_User(lastname=u['lastname'],
 											firstname=u['firstname'],
