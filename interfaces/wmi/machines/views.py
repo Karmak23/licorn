@@ -29,7 +29,7 @@ def main(request, sort="login", order="asc", select=None, **kwargs):
 	machines_list = utils.select('machines', default_selection=host_status.ONLINE)
 
 	return render(request, 'machines/index.html', {
-			'machines_list'        : machines_list,
+			'machines'        : machines_list,
 			'get_host_status_html' : wmi_data.get_host_status_html,
 			'get_host_os_html'     : wmi_data.get_host_os_html,
 			'get_host_type_html'   : wmi_data.get_host_type_html

@@ -8,6 +8,7 @@
 
 {%- block extended_media -%}
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
+
 {%- endblock -%}
 
 {%- block title -%}{{ _('Machines management') }}{%- endblock -%}
@@ -16,7 +17,7 @@
 
 	<div class='table_header'>
 		<span class='table_header_title table_header_item'>
-			Machines (<span class='table_header_item_counter'> </span>)
+			Machines (<span class='table_header_item_counter'>{{ machines|length }}</span>)
 		</span>
 
 		<span class='table_header_massive_actions table_header_item'>
@@ -27,7 +28,18 @@
 			FILTER
 		</span>
 	</div>
-	<table>
+	<table class="table">
+		<tr>
+			<th>Status</th>
+			<th>hostname</th>
+			<th>type</th>
+			<th>OS</th>
+		</tr>
+		{%- for machine in machines -%}
+			<tr>
+				{%- include 'machines/machine_row.html' -%}
+			</tr>
+		{%- endfor -%}
 	</table>
 
 
