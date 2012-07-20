@@ -23,6 +23,28 @@ Côté client
 
 * Rien pour l'instant.
 
+.. _extensions.samba3.netlogon.fr:
+
+Personnalisation des scripts ``netlogon``
+=========================================
+
+Lorsque les utilisateurs s'identifient sur les postes Windows®, certains
+//lecteurs réseaux// peuvent être automatiquement attachés au
+Poste de travail (nommé //Ordinateur// sous Windows //Vista// et //Seven//),
+le //Menu Démarrer// et d'autres attributs de session sont adaptés ou
+peuvent l'être.
+
+Ceci passe par un script entièrement personnalisable, automatiquement
+généré au moment où l'utilisateur s'est correctement authentifié sur le
+serveur Licorn®.
+
+Ce script ``netlogon`` est en fait la somme de plusieurs autres, dont le
+contenu depend des groupes de l'utilisateur, de la version de Windows® sur son
+poste de travail, et d'autres paramètres explicités ci-après.
+
+
+
+
 
 .. _extensions.samba3.faq.fr:
 
