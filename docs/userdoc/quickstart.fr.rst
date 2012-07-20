@@ -48,7 +48,7 @@ Béatrice a perdu son mot de passe::
 	# la même en version lisible par un humain:
 	sudo mod user beatrice --change-password
 
-Le groupe ``Partage`` n'est pas :ref:`permissif <groups/permissions.fr>` à sa création, ce qui signifie que ses membres ne peuvent pas modifier les documents des autres, mais seulement les lire (:ref:`plus de détails sur les permissions <groups-permissions.fr>` ?). Pour que tous les membres puissent modifier tous les fichiers contenus dans le répertoire sans distinction, rendons le groupe permissif::
+Le groupe ``Partage`` n'est pas :ref:`permissif <groups/permissions.fr>` à sa création, ce qui signifie que ses membres ne peuvent pas modifier les documents des autres, mais seulement les lire (:ref:`plus de détails sur les permissions <groups.permissions.fr>` ?). Pour que tous les membres puissent modifier tous les fichiers contenus dans le répertoire sans distinction, rendons le groupe permissif::
 
 	mod group Partage -p
 	# version humainement lisible:

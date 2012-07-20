@@ -1,5 +1,5 @@
 
-.. _groups-permissions.en:
+.. _groups.permissions.en:
 
 .. _permissiveness.en:
 
