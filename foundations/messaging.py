@@ -225,6 +225,7 @@ class ListenerObject(object):
 	def console_start(self, is_tty=True):
 		# we have to import 'logging' not at the top of the module
 		import logging, events
+		from _settings import settings
 
 		# other foundations
 		from workers import workers
@@ -239,20 +240,21 @@ class ListenerObject(object):
 		self._console_isatty    = is_tty
 		self._console_namespace = {
 				'version'       : version,
+				'settings'      : settings,
+				'options'       : options,
+				'exceptions'    : exceptions,
+				'workers'       : workers,
+				'events'        : events,
+				'LicornEvent'   : events.LicornEvent,
 				'daemon'        : self.licornd,
-				'queues'        : workers.queues,
 				'threads'       : self.licornd.threads,
 				'uptime'        : self.licornd.uptime,
 				'LMC'           : LMC,
 				'dump'          : ltrace_dump,
 				'fulldump'      : ltrace_fulldump,
 				'dumpstacks'    : ltrace_dumpstacks,
-				'options'       : options,
 				'RLock'         : RLock,
 				'Event'         : Event,
-				'workers'       : workers,
-				'events'        : events,
-				'LicornEvent'   : events.LicornEvent,
 			}
 
 		self._console_interpreter = self.__class__.BufferedInterpreter(
