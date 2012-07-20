@@ -74,7 +74,7 @@ class SelectableController(NamedObject, dict):
 		try:
 			return self.by_id(value, strong=strong)
 
-		except (TypeError, ValueError):
+		except (TypeError, ValueError, KeyError):
 				return self.by_name(value, strong=strong)
 	def guess_list(self, value_list, strong=False):
 		objs = set()

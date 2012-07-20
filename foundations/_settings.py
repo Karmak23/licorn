@@ -61,6 +61,7 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		self.inotifier_exclude_file  = self.config_dir + u'/nowatch.conf'
 		self.home_backup_dir         = self.defaults.home_base_path + u'/backup'
 		self.home_archive_dir        = self.defaults.home_base_path + u'/archives'
+		self.tasks_data_file         = self.config_dir + u'/tasks.conf'
 
 		# the inotifier wants a lock. We don't use it internally otherwise.
 		self.lock = RLock()

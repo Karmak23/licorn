@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-15 10:35+0200\n"
-"PO-Revision-Date: 2012-07-12 10:24+0200\n"
+"POT-Creation-Date: 2012-07-19 16:52+0200\n"
+"PO-Revision-Date: 2012-07-19 16:51+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -18,98 +18,98 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
-#: app.py:119
+#: app.py:123
 msgid "{0}: {1} tryied to stop us more than once!"
 msgstr ""
 
-#: app.py:128
+#: app.py:132
 msgid "Stopping WMI event collector thread."
 msgstr "Arrêt du thread collecteur d'évènements de la WMI."
 
-#: app.py:130
+#: app.py:134
 msgid "{0}: unregistering ourselves from licornd collectors."
 msgstr ""
 
-#: app.py:137
+#: app.py:141
 msgid "{0}: exception while unregistering ourselves from licornd."
 msgstr ""
 
-#: app.py:143
+#: app.py:147
 msgid "{0}: emptying our event queue."
 msgstr ""
 
-#: app.py:148
+#: app.py:152
 msgid "{0}: exception while emptying our queue."
 msgstr ""
 
-#: app.py:246
+#: app.py:250
 #, fuzzy
 msgid "{0:s}: Exception while collecting {1}."
 msgstr "Exception dans {0} : {1}."
 
-#: app.py:272
+#: app.py:276
 msgid "{0}: cannot exec {0}({1}, {2})!"
 msgstr ""
 
-#: app.py:331
+#: app.py:335
 msgid "PUSH-stream force-close for user {0} (session {1})"
 msgstr "Fermeture forcée du flux PUSH pour l'utilisateur {0} (session {1})"
 
-#: app.py:365
+#: app.py:369
 msgid "Unexpected exception in Event handler {0}; continuing."
 msgstr ""
 "Erreur imprévue dans le gestionnaire d'évènement {0}; continuation des "
 "traitements."
 
-#: app.py:369
+#: app.py:373
 msgid "No WMI handler yet for event \"{0}\"."
 msgstr "Aucun gestionnaire pour l'évènement « {0} » dans la WMI."
 
-#: app.py:391
+#: app.py:395
 msgid "{0}: starting threads and collecting dynamic handlers."
 msgstr ""
 
-#: app.py:422
+#: app.py:425
 msgid "module {0} does not include a {1} dict in its {2} file!"
 msgstr ""
 
-#: app.py:433
+#: app.py:436
 msgid "Dynamic parts of module {0} cannot be loaded!"
 msgstr ""
 
-#: app.py:463
+#: app.py:467
 msgid "{0}: all threads started, ready to dispatch events."
 msgstr ""
 
-#: app.py:514
+#: app.py:518
 msgid "Manual PUSH-stream queue-flush for user {0} (session {1})"
 msgstr ""
 "Vidage manuel de la file d'attente du flux PUSH de l'utilisateur {0} "
 "(session {1})"
 
-#: app.py:540
+#: app.py:544
 msgid "Cannot setup collector {0}."
 msgstr "Impossible de configurer le collecteur {0}."
 
-#: app.py:545
+#: app.py:549
 msgid "Welcome to Licorn® WMI, {0}."
 msgstr "Bienvenue dans la WMI Licorn®, {0}."
 
-#: app.py:557
+#: app.py:561
 #, fuzzy
 msgid "{0}: stopping operator threads."
 msgstr "Arrêt du thread collecteur d'évènements de la WMI."
 
-#: app.py:561
+#: app.py:565
 #, fuzzy
 msgid "{0}: stopping helper threads."
 msgstr "Arrêt du thread collecteur d'évènements de la WMI."
 
-#: app.py:565
+#: app.py:569
 msgid "{0}: all thread stopped."
 msgstr ""
 
-#: app.py:593
+#: app.py:597
 msgid "Sorry, the {0} functionnality is not yet implemented."
 msgstr ""
 
@@ -181,20 +181,99 @@ msgstr "Impossible d'éjecter le volume {0} (erreur : {1})"
 msgid "Volumes rescanned."
 msgstr "Volumes re-scannés."
 
-#: groups/event_handlers.py:15 system/views.py:184 system/views.py:320
+#: energy/event_handlers.py:17
+msgid "All machines"
+msgstr "Toutes les machines"
+
+#: energy/event_handlers.py:24
+msgid "Task \"{0}\" added on the system for machines {1} on {2} at {3}:{4}."
+msgstr ""
+"Tâche « {0} » ajoutée sur le système pour les machines {1}, le(s) {2} à {3}:"
+"{4}."
+
+#: energy/event_handlers.py:34
+msgid "Task \"{0}\" deleted."
+msgstr "Tâche « {0} » supprimée."
+
+#: energy/views.py:30
+msgid "Monday"
+msgstr "Lundi"
+
+#: energy/views.py:31
+msgid "Tuesday"
+msgstr "Mardi"
+
+#: energy/views.py:32
+msgid "Wednesday"
+msgstr "Mercredi"
+
+#: energy/views.py:33
+msgid "Thursday"
+msgstr "Jeudi"
+
+#: energy/views.py:34
+msgid "Friday"
+msgstr "Vendredi"
+
+#: energy/views.py:35
+msgid "Satursday"
+msgstr "Samedi"
+
+#: energy/views.py:36
+msgid "Sunday"
+msgstr "Dimanche"
+
+#: energy/views.py:37 energy/views.py:49
+msgid "ALL"
+msgstr "Tous(tes)"
+
+#: energy/views.py:135
+msgid ""
+"Error while adding task for machines {0} on {1} at {2} : At least one "
+"machine cannot be resolved : {3}."
+msgstr ""
+"Erreur pendant l'ajout de la tâche pour les machines {0} le(s) {1} à {2} : "
+"au moins un des noms de machines ne peut pas être résolu : {3}."
+
+#: energy/views.py:172
+msgid "Error while adding task for machines {0} on {1} at {2} : {3}."
+msgstr ""
+"Erreur pendant l'ajout de la tâche pour les machines {0} le(s) {1} à {2}:{3}."
+
+#: energy/views.py:178
+msgid "BadArgumentError while adding rule"
+msgstr "Erreur d'argument pendant l'ajout de la règle"
+
+#: energy/views.py:181
+msgid "Unknown error while adding extinction task"
+msgstr "Erreur inconnue pendant l'ajout de la tâche d'extinction"
+
+#: energy/views.py:183
+msgid "Unknown error while adding rule"
+msgstr "Erreur inconnue pendant l'ajout de la règle"
+
+#: energy/views.py:189
+msgid "DEL OK."
+msgstr ""
+
+#: energy/views.py:261
+msgid "No extinction task created yet."
+msgstr "Aucune tâche d'extinction enregistrée."
+
+#: groups/event_handlers.py:15 system/views.py:183 system/views.py:319
 #: templates/groups/users_list.html:64 templates/users/groups_list.html:43
 #: users/views.py:393
 msgid "member"
 msgstr "membre"
 
-#: groups/event_handlers.py:16 groups/views.py:266 system/views.py:190
-#: system/views.py:326 templates/groups/users_list.html:59
+#: groups/event_handlers.py:16 groups/views.py:266 system/views.py:189
+#: system/views.py:325 templates/groups/users_list.html:59
 #: templates/users/groups_list.html:38 users/views.py:398
 msgid "guest"
 msgstr "invité(e)"
 
-#: groups/event_handlers.py:17 groups/views.py:256 system/views.py:178
-#: system/views.py:314 templates/groups/users_list.html:68
+#: groups/event_handlers.py:17 groups/views.py:256 system/views.py:177
+#: system/views.py:313 templates/groups/users_list.html:68
 #: templates/users/groups_list.html:47 users/views.py:388
 msgid "responsible"
 msgstr "responsable"
@@ -667,17 +746,17 @@ msgstr ""
 msgid "Go to online documentation website."
 msgstr "Aller sur le site de documentation en ligne."
 
-#: libs/old_utils.py:559 templates/gettext.html:35
+#: libs/old_utils.py:559 templates/gettext.html:37
 #: templates/system/daemon_status_sub.html:7
 #: templates/system/index_sub_nostaff.html:7
 msgid "Documentation"
 msgstr "Documentation"
 
-#: libs/old_utils.py:560 templates/gettext.html:36
+#: libs/old_utils.py:560 templates/gettext.html:38
 msgid "Get product support / help"
 msgstr "Obtenir du support ou de l'aide"
 
-#: libs/old_utils.py:560 templates/gettext.html:37
+#: libs/old_utils.py:560 templates/gettext.html:39
 msgid "Support"
 msgstr "Support"
 
@@ -752,14 +831,19 @@ msgstr "La machine « {0} » est maintenant inaccessible."
 msgid "New Licorn® machine {0} discovered."
 msgstr "Nouvelle machine Licorn® « {0} » découverte."
 
-#: machines/wmi_data.py:19 machines/wmi_data.py:20 machines/wmi_data.py:22
-#: machines/wmi_data.py:23 machines/wmi_data.py:24
+#: machines/wmi_data.py:19 machines/wmi_data.py:20 machines/wmi_data.py:23
+#: machines/wmi_data.py:24
 msgid "This machine is online"
 msgstr ""
 
 #: machines/wmi_data.py:21
 msgid "The state of the machine is unknown"
 msgstr ""
+
+#: machines/wmi_data.py:22
+#, fuzzy
+msgid "This machine is offline"
+msgstr "La machine « {0} » est maintenant inaccessible."
 
 #: machines/wmi_data.py:25
 msgid "This machine is upgrating its packages"
@@ -878,17 +962,17 @@ msgstr "Aucun partage à cette adresse, désolé."
 msgid "Uploaded files are not downloadable."
 msgstr "Les fichiers déposés ne sont pas téléchargeables."
 
-#: shares/views.py:223 system/views.py:245
+#: shares/views.py:223 system/views.py:244
 msgid "Error while sending file {0}"
 msgstr "Erreur pendant l'envoi du fichier {0}"
 
-#: shares/views.py:225 system/views.py:247
+#: shares/views.py:225 system/views.py:246
 msgid "Problem occured while sending file. Please try again later."
 msgstr ""
 "Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
 "tard."
 
-#: shares/views.py:229 system/views.py:251
+#: shares/views.py:229 system/views.py:250
 msgid "Bad file specification or path."
 msgstr "Mauvais chemin ou spécification de fichier."
 
@@ -927,31 +1011,31 @@ msgstr ""
 msgid "Edit user {0}"
 msgstr "Édition du compte {0}"
 
-#: system/views.py:176 system/views.py:312 users/views.py:387
+#: system/views.py:175 system/views.py:311 users/views.py:387
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
-#: system/views.py:182 system/views.py:318 users/views.py:392
+#: system/views.py:181 system/views.py:317 users/views.py:392
 msgid "Memberships"
 msgstr "Appartenances"
 
-#: system/views.py:188 system/views.py:324 users/views.py:397
+#: system/views.py:187 system/views.py:323 users/views.py:397
 msgid "Invitations"
 msgstr "Invitations"
 
-#: system/views.py:194 system/views.py:330 users/views.py:402
+#: system/views.py:193 system/views.py:329 users/views.py:402
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: system/views.py:196 system/views.py:332 users/views.py:403
+#: system/views.py:195 system/views.py:331 users/views.py:403
 msgid "privileged member"
 msgstr "membre privilégié"
 
-#: system/views.py:200 system/views.py:336 users/views.py:407
+#: system/views.py:199 system/views.py:335 users/views.py:407
 msgid "Other system groups"
 msgstr "Autres groupes système"
 
-#: system/views.py:202 system/views.py:338 users/views.py:408
+#: system/views.py:201 system/views.py:337 users/views.py:408
 msgid "system member"
 msgstr "membre système"
 
@@ -1077,7 +1161,7 @@ msgstr "Importer des groupes depuis un fichier CSV"
 msgid "Manage machines on the network"
 msgstr "Gérer les machines du réseau"
 
-#: templates/gettext.html:29
+#: templates/gettext.html:29 templates/energy/recap_policies.html:5
 msgid "Machines"
 msgstr "Machines"
 
@@ -1090,68 +1174,76 @@ msgid "Scan network"
 msgstr "Découvrir"
 
 #: templates/gettext.html:32
+msgid "Manage energy policies of the network and clients"
+msgstr "Gérer les politiques énergétiques du réseau et des machines"
+
+#: templates/gettext.html:33
+msgid "Energy"
+msgstr "Énergie"
+
+#: templates/gettext.html:34
 msgid "View or change my own details"
 msgstr "Voir ou modifier mes détails personnelss"
 
-#: templates/gettext.html:33 templates/system/index.html:18
+#: templates/gettext.html:35 templates/system/index.html:18
 msgid "My information"
 msgstr "Mes informations"
 
-#: templates/gettext.html:34
+#: templates/gettext.html:36
 msgid "Go to online documentation website (in another window/tab)"
 msgstr ""
 "Aller sur le site de documentation en ligne (dans un(e) autre onglet/"
 "fenêtre)."
 
-#: templates/gettext.html:41 templates/widgets/common.html:83
+#: templates/gettext.html:43 templates/widgets/common.html:83
 #: templates/widgets/common.html.py:86
 msgid "d"
 msgstr "j"
 
-#: templates/gettext.html:42
+#: templates/gettext.html:44
 msgid " day"
 msgstr " jour"
 
-#: templates/gettext.html:43
+#: templates/gettext.html:45
 msgid " days"
 msgstr " jours"
 
-#: templates/gettext.html:45 templates/widgets/common.html:92
+#: templates/gettext.html:47 templates/widgets/common.html:92
 #: templates/widgets/common.html.py:95
 msgid "h"
 msgstr "h"
 
-#: templates/gettext.html:46
+#: templates/gettext.html:48
 msgid " hour"
 msgstr " heure"
 
-#: templates/gettext.html:47
+#: templates/gettext.html:49
 msgid " hours"
 msgstr " heures"
 
-#: templates/gettext.html:49 templates/widgets/common.html:101
+#: templates/gettext.html:51 templates/widgets/common.html:101
 #: templates/widgets/common.html.py:104
 msgid "m"
 msgstr "m"
 
-#: templates/gettext.html:50
+#: templates/gettext.html:52
 msgid " minute"
 msgstr " minute"
 
-#: templates/gettext.html:51
+#: templates/gettext.html:53
 msgid " minutes"
 msgstr " minutes"
 
-#: templates/gettext.html:53 templates/widgets/common.html:112
+#: templates/gettext.html:55 templates/widgets/common.html:112
 #: templates/widgets/common.html.py:115
 msgid "s"
 msgstr "s"
 
-#: templates/gettext.html:54
+#: templates/gettext.html:56
 msgid " second"
 msgstr " seconde"
 
-#: templates/gettext.html:55
+#: templates/gettext.html:57
 msgid " seconds"
 msgstr " secondes"
 
@@ -1193,11 +1285,11 @@ msgid "Image representing a unicorn, the logo of Licorn®"
 msgstr ""
 "Logo de Licorn®, représentant une licorne stylisée en pièce de jeu d'échecs"
 
-#: templates/sidebar.html:196
+#: templates/sidebar.html:223
 msgid "Log out from the Licorn® WMI"
 msgstr "Se déconnecter de la WMI Licorn®"
 
-#: templates/sidebar.html:196
+#: templates/sidebar.html:223
 msgid "logout"
 msgstr "quitter"
 
@@ -1412,6 +1504,90 @@ msgstr "Une sauvegarde est en cours sur {0}."
 msgid "Next backup planned in {0}."
 msgstr "Prochaine sauvegarde prévue dans {0}."
 
+#: templates/energy/metrology.html:12
+msgid "Energy metrology"
+msgstr "Métrologie énergétique"
+
+#: templates/energy/metrology.html:17
+#, fuzzy
+msgid "Metrology, not implemented yet."
+msgstr "Fonction pas encore implémentée, désolé."
+
+#: templates/energy/policies.html:26
+msgid "Energy policies"
+msgstr "Politiques énergétiques"
+
+#: templates/energy/policies.html:30
+msgid "Add a policy"
+msgstr "Ajouter une règle"
+
+#: templates/energy/policies.html:33
+msgid "Shutdown machine(s) "
+msgstr "Éteindre la(les) machine(s) "
+
+#: templates/energy/policies.html:34
+msgid "Machine(s) to shutdown, separated by a \",\"."
+msgstr ""
+"Nom DNS de(s) machine(s) à éteindre, séparées par des virgules (avec ou sans "
+"espaces)."
+
+#: templates/energy/policies.html:35
+msgid " at "
+msgstr " à "
+
+#: templates/energy/policies.html:36
+msgid "Shutdown hour (0<=hour<=23)"
+msgstr "Heure d'extinction (0<= heure <= 23)"
+
+#: templates/energy/policies.html:38
+msgid "Shutdown minute (0<=hour<=59)"
+msgstr "Minute d'extinction (0 <= min <= 59)"
+
+#: templates/energy/policies.html:39
+msgid "on"
+msgstr "le"
+
+#: templates/energy/policies.html:40
+msgid ""
+"Shutdown day (0<=day<=6, \"ALL\", \"*\", or day in plain text), separated by "
+"a \",\"."
+msgstr ""
+"Jour de la semaine d'extinction (valeur numérique comprise entre 0 et 6, "
+"mais aussi \"ALL\" ou \"*\" pour tous, ou le nom du jour en toutes lettres), "
+"séparés par des virgules avec ou sans espaces."
+
+#: templates/energy/policies.html:47
+msgid "Current policies"
+msgstr "Règles actuelles"
+
+#: templates/energy/policies.html:57
+msgid "Shutdown calendar"
+msgstr "Calendrier d'extinctions"
+
+#: templates/energy/recap_policies.html:3
+msgid "Week day"
+msgstr "Jour de la semaine"
+
+#: templates/energy/recap_policies.html:4
+msgid "Time"
+msgstr "Heure"
+
+#: templates/energy/recap_policies.html:29
+msgid "Delete rule"
+msgstr "Supprimer la règle"
+
+#: templates/energy/stand_by.html:3
+msgid "Members of"
+msgstr "Membres de"
+
+#: templates/energy/stand_by.html:3
+msgid "enter stand by mode when inactive since "
+msgstr ""
+
+#: templates/energy/stand_by.html:3
+msgid "minutes"
+msgstr "minutes"
+
 #: templates/groups/delete_message.html:3
 msgid "Are you sure you want to remove group <strong>{0}</strong>?"
 msgstr "Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>{0}</strong> ?"
@@ -1424,7 +1600,7 @@ msgstr "Cependant, vous pouvez décider de les supprimer définitivement."
 msgid "Definitely remove group shared data (no archiving)."
 msgstr "Supprimer définitivement les données partagées (aucun archivage)."
 
-#: templates/groups/group.html:17 templates/system/index_main_nostaff.html:16
+#: templates/groups/group.html:17 templates/system/index_main_nostaff.html:17
 #: templates/users/user.html:17
 msgid "(fixed)"
 msgstr "(non-modifiable)"
@@ -2191,37 +2367,44 @@ msgstr "Libre :"
 msgid "Occupied: "
 msgstr "Occupée :"
 
-#: templates/widgets/weeklybars.html:48
-msgid "Allowed activity periods"
-msgstr "Périodes d'actitivé autorisées"
+#: templates/widgets/weeklybars.html:54
+msgid ""
+"Allowed activity periods are displayed in green. Shutdown are red lines."
+msgstr ""
+"Les périodes d'activité sont en vert; les extinctions programmées sont les "
+"lignes rouges."
 
-#: templates/widgets/weeklybars.html:66
+#: templates/widgets/weeklybars.html:167
 msgid "Mon."
 msgstr "Lun."
 
-#: templates/widgets/weeklybars.html:66
+#: templates/widgets/weeklybars.html:167
 msgid "Tue."
 msgstr "Mar."
 
-#: templates/widgets/weeklybars.html:66
+#: templates/widgets/weeklybars.html:167
 msgid "Wed."
 msgstr "Mer."
 
-#: templates/widgets/weeklybars.html:67
+#: templates/widgets/weeklybars.html:168
 msgid "Thu."
 msgstr "Jeu."
 
-#: templates/widgets/weeklybars.html:67
+#: templates/widgets/weeklybars.html:168
 msgid "Fri."
 msgstr "Ven."
 
-#: templates/widgets/weeklybars.html:67
+#: templates/widgets/weeklybars.html:168
 msgid "Sat."
 msgstr "Sam."
 
-#: templates/widgets/weeklybars.html:68
+#: templates/widgets/weeklybars.html:169
 msgid "Sun."
 msgstr "Dim."
+
+#: templates/widgets/weeklybars.html:244
+msgid "Extinction of "
+msgstr "Excetinction de "
 
 #: users/event_handlers.py:9
 msgid "Users import started, please wait while processing…"
@@ -2233,43 +2416,47 @@ msgid "Users import completed successfully."
 msgstr "L'import des comptes utilisateurs s'est terminé avec succès."
 
 #: users/event_handlers.py:17
+msgid "Users import <em>failed</em> : {0}."
+msgstr "L'import des comptes a échoué : {0}."
+
+#: users/event_handlers.py:21
 msgid "Users import test ran fine."
 msgstr "Le test d'import des comptes est un succès."
 
-#: users/event_handlers.py:31
+#: users/event_handlers.py:35
 msgid "User account \"{0}\" added on the system."
 msgstr "Compte utilisateur « {0} » ajouté sur le système."
 
-#: users/event_handlers.py:49
+#: users/event_handlers.py:53
 msgid "User account \"{0}\" deleted from the system."
 msgstr "Compte utilisateur « {0} » supprimé du système."
 
-#: users/event_handlers.py:61
+#: users/event_handlers.py:65
 msgid "User account \"{0}\" full name has been changed to \"{1}\"."
 msgstr ""
 "Le compte utilisateur « {0} » est maintenant connu sous le nom de « {1} »."
 
-#: users/event_handlers.py:67
+#: users/event_handlers.py:71
 msgid "No name given"
 msgstr "Aucun nom donné"
 
-#: users/event_handlers.py:73
+#: users/event_handlers.py:77
 msgid "Password changed for user account \"{0}\"."
 msgstr "Mot de passe changé pour le compte « {0} »."
 
-#: users/event_handlers.py:79
+#: users/event_handlers.py:83
 msgid "Skel reapplyed for for user account \"{0}\"."
 msgstr "Squelette ré-appliqué sur le compte « {0} »."
 
-#: users/event_handlers.py:85
+#: users/event_handlers.py:89
 msgid "Shell of user account \"{0}\" was changed to \"{1}\"."
 msgstr "Les shell de l'utilisateur « {0} » est maintenant « {1} »."
 
-#: users/event_handlers.py:92
+#: users/event_handlers.py:96
 msgid "User account \"{0}\" has been locked."
 msgstr "Compte utilisateur « {0} » verrouillé."
 
-#: users/event_handlers.py:96
+#: users/event_handlers.py:100
 msgid "User account \"{0}\" has been unlocked."
 msgstr "Compte utilisateur « {0} » déverrouillé."
 
@@ -2285,23 +2472,27 @@ msgstr "Quel squelette voulez-vous appliquer ?"
 msgid "CSV file"
 msgstr "Fichier CSV"
 
-#: users/forms.py:85
+#: users/forms.py:82
+msgid "Columns separator"
+msgstr "Séparateur de colonnes"
+
+#: users/forms.py:89
 msgid "Last name column"
 msgstr "Colonne du nom"
 
-#: users/forms.py:88
+#: users/forms.py:92
 msgid "First name column"
 msgstr "Colonne du prénom"
 
-#: users/forms.py:91
+#: users/forms.py:95
 msgid "Group column"
 msgstr "Colonne du groupe"
 
-#: users/forms.py:94
+#: users/forms.py:98
 msgid "Login column"
 msgstr "Colonne de l'identifiant"
 
-#: users/forms.py:97
+#: users/forms.py:101
 msgid "Password column"
 msgstr "Colonne du mot de passe"
 
@@ -2329,8 +2520,8 @@ msgstr "Privilèges"
 msgid "Standard account"
 msgstr "Compte standard"
 
-#~ msgid "Not implemented yet, sorry."
-#~ msgstr "Fonction pas encore implémentée, désolé."
+#~ msgid "Allowed activity periods"
+#~ msgstr "Périodes d'actitivé autorisées"
 
 #~ msgid "Upload a document &raquo;"
 #~ msgstr "Déposer un document &raquo;"

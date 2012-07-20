@@ -6,17 +6,7 @@
 @menu_item_height: 30px;
 @menu_link_color: white;
 
-div#banner {
-	background: @back_color url('/media/images/banner_back.png') top left no-repeat;
-	color: #fff;
-	height: 100%;
-	width: 220px;
-	position: fixed;
-	overflow: hidden;
-	left: 0px;
-	top: -1px;
-	float: left;
-}
+@menu_link_font_size: 16px;
 
 #mainnav {
 	border: none;
@@ -113,6 +103,8 @@ div#banner {
 	left: 0;
 	background: url('/media/images/fleche_pourpre.png') no-repeat;
 	background-position: -(@menu_width + 20) top;
+
+	font-size: @menu_link_font_size;
 }
 
 .menu-back {

@@ -475,6 +475,40 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			remote_output(data)
 
 		assert ltrace(TRACE_GET, '< get_machines()')
+
+	def get_tasks(self, opts, args):
+		""" Get the list of tasks. """
+
+		self.setup_listener_gettext()
+		assert ltrace(TRACE_GET, '> get_tasks(%s,%s)' % (opts, args))
+
+		if opts.all is False and len(args) == 1:
+			opts.all = True
+		if opts.all is False and len(args) == 2:
+			try:
+				tid = int(args[1])
+			except:
+				tid = LMC.tasks.by_name(args[1]).id
+
+			selection = tid
+
+		if opts.all:
+			selection = filters.ALL
+		if opts.extinction:
+			selection = filters.EXTINCTION_TASK
+		else:
+			# Running, finished
+			pass
+		
+		tasks_to_get = LMC.tasks.select(selection)
+
+		data = LMC.tasks._cli_get(selected=tasks_to_get,
+										long_output=opts.long_output)
+
+		if data and data != '\n':
+			remote_output(data)
+
+		assert ltrace(TRACE_GET, '< get_tasks()')
 	def get_configuration(self, opts, args):
 		""" Output th current Licorn system configuration. """
 
@@ -693,10 +727,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		firstline  = open(import_filename).readline()
 		lcndialect = csv.Sniffer().sniff(firstline)
 
-		if lcndialect.delimiter != opts.separator:
-			separator = lcndialect.delimiter
-		else:
+		if lcndialect.delimiter != opts.separator and opts.separator != None:
 			separator = opts.separator
+		else:
+			separator = lcndialect.delimiter
 
 		try:
 			import_fd = open(import_filename, 'rb')
@@ -739,17 +773,27 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							user[column] = hlstr.validate_name(
 										unicode(line[number], encoding), True)
 						else:
-							user[column] = unicode(
-									clean_csv_field(line[number]), encoding)
+							cleaned_field = clean_csv_field(line[number])
+							if not isinstance(cleaned_field, unicode):
+								cleaned_field = unicode(cleaned_field, encoding)
+							user[column] = cleaned_field
 
 				except IndexError, e:
-					raise exceptions.LicornRuntimeError('\n'+_(u'Import error '
-						'on line {0}: no {1} specified or bad {2} data '
-						'(was: {3}).').format(i + 1, column, translation, e))
+					err = _(u'Import error '
+						'on line {0}: no {1} specified or bad separator used'
+						'(was: {2}).').format(i + 1, column, e)
+
+					if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+					raise exceptions.LicornRuntimeError('\n'+err)
 
 				except UnicodeEncodeError, e:
-					raise exceptions.LicornRuntimeError('\n'+_(u'Encoding not '
-						'supported for input filename (was: %s).') % str(e))
+					err = _(u'Encoding not '
+						'supported for input filename (was: %s).') % str(e)
+					if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+					raise exceptions.LicornRuntimeError('\n'+err)
 			try:
 				if opts.login_col is None:
 					user['login'] = User.make_login(
@@ -759,30 +803,47 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					user['login'] =	User.make_login(
 										inputlogin=user['login'])
 			except IndexError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
+				err =  _(u'Import error '
 					'on line {0}: no group specified or bad {2} data '
 					'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
-						if opts.login_col is None else _(u'login'))))
+						if opts.login_col is None else _(u'login')))
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+				raise exceptions.LicornRuntimeError('\n' +err)
 
 			except exceptions.LicornRuntimeError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
-					'on line {0} (was: {1}).').format(i+1, e))
+				err = _(u'Import error '
+					'on line {0} (was: {1}).').format(i+1, e)
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+				raise exceptions.LicornRuntimeError('\n' + err)
 
 			try:
-				user['group'] =	Group.make_name(user['group'])
-
+			
+				user['group'] = [Group.make_name(g) for g in user['group'].split(',') if g != '']
+			
 			except IndexError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
+				err =  _(u'Import error '
 					'on line {0}: no group specified or bad {2} data '
-					'(was: {1}).').format(i+1, e, _(u'group')))
+					'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
+						if opts.login_col is None else _(u'login')))
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
+
+				raise exceptions.LicornRuntimeError('\n' +err)
 
 			except exceptions.LicornRuntimeError, e:
-				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
-					'on line {0} (was: {1}).').format(i+1, e))
+				err = _(u'Import error '
+					'on line {0} (was: {1}).').format(i+1, e)
+				if wmi_output:
+						LicornEvent('users_import_failed', error=err).emit()
 
-			if user['group'] not in groups_to_add:
-				groups_to_add.append(user['group'])
+				raise exceptions.LicornRuntimeError('\n' + err)
 
+			groups_to_add.extend([g for g in user['group'] if g not in groups_to_add])
+		
 			users_to_add.append(user)
 
 			if not (i % 100):
@@ -836,8 +897,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					progression += delta
 
-				except exceptions.AlreadyExistsException, e:
+				except exceptions.AlreadyExistsError, e:
+					# Error is when a group already exist BUT not the same kind
 					logging.warning(str(e), to_local=False)
+					progression += delta
+
+				except exceptions.AlreadyExistsException, e:
+					# Error is when a group already exist WITH the same kind
 					progression += delta
 
 				except exceptions.LicornException, e:
@@ -846,6 +912,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					raise e
 
 				data_to_export_to_html[g]= {}
+				
 				# FIXME: flush the listener??
 				#sys.stdout.flush()
 
@@ -880,12 +947,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			try:
 				i += 1
 				if opts.confirm_import:
+
+					in_groups = [LMC.groups.guess_one(g) for g in u['group']]
+
 					user, password = LMC.users.add_User(lastname=u['lastname'],
 											firstname=u['firstname'],
 											login=u['login'],
 											password=u['password'],
 											profile=profile,
-											in_groups=[ groups[u['group']] ],
+											in_groups=in_groups,
 											batch=opts.no_sync)
 
 					logging.progress('\r' + _(u'Added user {0} {1} '
@@ -896,10 +966,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					# the dictionnary key is forged to have something that is sortable.
 					# like this, the user accounts will be sorted in their group.
-					data_to_export_to_html[ u['group'] ][
-							'%s%s' % (u['lastname'], u['firstname'])
-						] = [ u['firstname'], u['lastname'],
-								user.login, password ]
+					for _group in in_groups:
+						data_to_export_to_html[ _group.name ][
+								'%s%s' % (u['lastname'], u['firstname'])
+							] = [ u['firstname'], u['lastname'],
+									user.login, password ]
 				else:
 					# Why make_login() for examples and not prepare the logins
 					# when loading CSV file? this is a pure arbitrary choice.
@@ -979,31 +1050,28 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			if wmi_output:
 				dl_lnk = _('''This repport is available on the server '''
 					'''at "<code>{0}</code>", you can '''
-					'''<a href="/download/{0}">'''
+					'''<a href="/system/download/{0}">'''
 					'''download it</a> for easier access''').format(html_file_filename)
 			else:
 				dl_lnk = ''
 				html_file.write('''<html>
 					<head>
 						<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-						<style type=\"text/css\">
-						<!-- {css} -->
+						<style type="text/css">
+							body { font-size:14pt; }
+							h1,h2,h3 { text-align:center; }
+							p,div { text-align:center; }
+							table { margin: 3em 10%%; width: 80%%; border: 5px groove #369; border-collapse: collapse; }
+							tr { border: 1px solid black; }
+							th {border-bottom: 3px solid #369; background-color: #99c; }
+							td,th { text-align: center; padding: 0.7em; }
+							.even { background-color: #eef; }
+							.odd { background-color: #efe; }
+							div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
 						</style>
 					</head>
-					<body>''').format(
-					css='''
-						body { font-size:14pt; }
-						h1,h2,h3 { text-align:center; }
-						p,div { text-align:center; }
-						table { margin: 3em 10%%; width: 80%%; border: 5px groove #369; border-collapse: collapse; }
-						tr { border: 1px solid black; }
-						th {border-bottom: 3px solid #369; background-color: #99c; }
-						td,th { text-align: center; padding: 0.7em; }
-						.even { background-color: #eef; }
-						.odd { background-color: #efe; }
-						div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
-						''')
-
+					<body>''')
+				
 			html_file.write('''
 					<h1>{title}</h1>
 					<h2>{import_on_date}</h2>
@@ -1335,6 +1403,94 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.auto_scan or opts.discover:
 			LMC.machines.scan_network(
 				network_to_scan=None if opts.auto_scan else [ opts.discover ])
+	def add_task(self, opts, args):
+		self.setup_listener_gettext()
+
+		if opts.name is '' and len(args) == 2:
+			opts.name = args[1]
+			del args[1]
+
+		if opts.name=='' and opts.action=='' and len(args) == 3:
+			opts.name = args[1]
+			opts.action = args[2]
+
+		if opts.action == '' or opts.name == '':
+			logging.warning("{0} : One of the required argument '{1}' or "
+			"'{2}' is missing.".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					stylize(ST_PATH, 'name'),
+					stylize(ST_PATH, 'action')), to_local=False)
+			return
+		
+		task_name = opts.name
+		task_action = opts.action
+
+		task_defer_resolution = opts.defer_resolution
+
+		task_year   = opts.year
+		task_month  = opts.month
+		task_day    = opts.day
+		task_hour   = opts.hour
+		task_minute = opts.minute
+		task_second = opts.second
+		task_week_day = opts.week_day
+
+		task_delay_until_year   = opts.delay_until_year
+		task_delay_until_month  = opts.delay_until_month
+		task_delay_until_day    = opts.delay_until_day
+		task_delay_until_hour   = opts.delay_until_hour
+		task_delay_until_minute = opts.delay_until_minute
+		task_delay_until_second = opts.delay_until_second
+
+		if opts.args == "":
+			task_args = []
+		else:
+			# if the task is an extinction_task, guess machines
+			if task_action == 'LMC.machines.shutdown':
+				try:
+					if ';' in opts.args:
+						task_args = [ LMC.machines.guess_one(LMC.machines.word_match(m)).mid for m in opts.args.split(';') ]
+					else:
+						task_args = [ LMC.machines.guess_one(LMC.machines.word_match(opts.args)).mid ]
+
+				except KeyError, e:
+					logging.exception('unable to recognize machine {0}'.format(e))
+				except:
+					logging.exception("{0} : {3} unpacking args of task {1} "
+						"(args={2}) ".format(
+						stylize(ST_NAME, LMC.tasks.name),
+						opts.name, opts.args, stylize(ST_BAD, "Error while"),
+						to_local=False))
+					return
+			else:
+				task_args = opts.args.split(';')
+		
+		task_kwargs = {}
+		if opts.kwargs != "":
+			try:
+				for kw in opts.kwargs.split(';'):
+					_kw = kw.split('=')
+					task_kwargs.update({_kw[0]:_kw[1]})
+			except Exception, e:
+				logging.exception("{0} : {3} unpacking kwargs of task {1} "    
+					"(kwargs={2}) ".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					opts.name, kw, stylize(ST_BAD, "Error while"),
+					stylize(ST_PATH, task_name), task_kwargs), 
+					to_local=False)
+
+		try:
+			LMC.tasks.add_task(task_name, task_action, 
+				year=task_year, month=task_month, day=task_day, hour=task_hour,
+				minute=task_minute, second=task_second, week_day=task_week_day,
+				delay_until_year=task_delay_until_year, delay_until_month=task_delay_until_month,
+				delay_until_day=task_delay_until_day, delay_until_hour=task_delay_until_hour,
+				delay_until_minute=task_delay_until_minute, delay_until_second=task_delay_until_second,
+				args=task_args, kwargs=task_kwargs, 
+				defer_resolution=task_defer_resolution)
+		except Exception, e:
+			remote_output(_("{0} while adding task {1} : {2}\n".format(
+				stylize(ST_BAD, "Error"), stylize(ST_PATH, task_name),e )))
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
 
@@ -1607,6 +1763,47 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		#
 		# I thus add this gc.collect() call at the end of all RWI methods.
 		gc.collect()
+		# this one has no effect at all. Only the gc.collect() has.
+		#del groups_to_del
+	def del_task(self, opts, args):
+		self.setup_listener_gettext()
+		tasks_to_del = []
+		
+		if opts.name is None and len(args) == 2:
+			for t in args[1].split(','):
+				try:
+					tasks_to_del.append(LMC.tasks.guess_one(t))
+				except exceptions.DoesntExistException:
+					logging.notice("{0} : Unknown task {1}, invalid or "
+						"non-existing".format(
+						stylize(ST_NAME, LMC.tasks.name),
+						stylize(ST_PATH, t)))
+		
+			del args[1]
+
+		elif opts.all:
+			tasks_to_del = LMC.tasks.select(filters.ALL)
+		else:
+			if opts.name == None and opts.id == 0:
+				logging.warning("{0} : One of the required argument '{1}' or "
+					"'{2}' is missing.".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					stylize(ST_PATH, 'name'),
+					stylize(ST_PATH, 'id')), to_local=False)
+			elif opts.name != None:
+				tasks_to_del = [ LMC.tasks.by_name(opts.name) ]
+			elif opts.id != 0:
+				try:
+					_id = LMC.tasks.by_id(opts.id)
+				except exception.DoesntExistException:
+					logging.exception('{0} : no task with id {1}'.format(
+						stylize(ST_NAME, LMC.tasks.name), stylize(ST_PATH, t_id)))
+				
+				tasks_to_del = [ _id ]
+
+			
+		for task in tasks_to_del:
+			LMC.tasks.del_task(task.id)
 	def del_profile(self, opts, args):
 		""" Delete a system wide User profile. """
 
@@ -1969,22 +2166,21 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		return selection
 	def __default_users_includes_excludes(self, opts):
 		return ([
-			(opts.login, LMC.users.by_login),
-			(opts.uid, LMC.users.by_uid)
+			(opts.login, lambda x: LMC.users.by_login(x, strong=True)),
+			(opts.uid, lambda x: LMC.users.by_uid(x, strong=True))
 		], [
-			(opts.exclude, LMC.users.guess_one),
-			(opts.exclude_login, LMC.users.by_login),
-			(opts.exclude_uid, LMC.users.by_uid)
+			(opts.exclude, lambda x: LMC.users.guess_one(x, strong=True)),
+			(opts.exclude_login, lambda x: LMC.users.by_login(x, strong=True)),
+			(opts.exclude_uid, lambda x: LMC.users.by_uid(x, strong=True))
 		])
-
 	def __default_groups_includes_excludes(self, opts):
 		return ([
-			(opts.name, LMC.groups.by_name),
-			(opts.gid, LMC.groups.by_gid)
+			(opts.name, lambda x: LMC.groups.by_name(x, strong=True)),
+			(opts.gid, lambda x: LMC.groups.by_gid(x, strong=True))
 		], [
-			(opts.exclude, LMC.groups.guess_one),
-			(opts.exclude_group, LMC.groups.by_name),
-			(opts.exclude_gid, LMC.groups.by_gid)
+			(opts.exclude, lambda x: LMC.groups.guess_one(x, strong=True)),
+			(opts.exclude_group, lambda x: LMC.groups.by_name(x, strong=True)),
+			(opts.exclude_gid, lambda x: LMC.groups.by_gid(x, strong=True))
 		])
 	def mod_group(self, opts, args):
 		""" Modify a group. """
@@ -2288,6 +2484,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					machine.do_upgrade()
 			except:
 				logging.exception('Failed to operate on machine {0}.', (ST_NAME, machine.hostname))
+	def mod_task(self, opts, args):
+		""" Modify a machine. """
+
+		self.setup_listener_gettext()
+
+		remote_output("{0}, please delete the task you want to modify and "
+		"create a new one. \n\t {1} : You can easily modify the configuration "
+		"file to change few arguments of a task.\n".format(
+			stylize(ST_BAD, 'Not implemented'), stylize(ST_OK, "TIP")))
 	def mod_keyword(self, opts, args):
 		""" Modify a keyword. """
 
@@ -2654,7 +2859,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				pass
 
 			except:
-				logging.exception(_(u'Could not run tests for app {0}'), (ST_NAME, app))
+				logging.exception(_(u'Could not run tests for app {0}.'), (ST_NAME, app))
 				continue
 
 			logging.notice(_(u'Successfully ran Django WMI tests '

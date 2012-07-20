@@ -1,0 +1,39 @@
+[
+    {
+        "name": "example1",
+        "args": [
+            "example1 : every minute"
+        ],
+        "action": "logging.notice"
+    },
+    {
+        "name": "example2",
+        "args": [
+            "example2 : every 5 sec"
+        ],
+        "second": "*/5",
+        "action": "logging.notice"
+    },
+    {
+        "name": "example3",
+        "args": [
+            "msg"
+        ],
+        "month": "7",
+        "second": "*/15^30",
+        "year": "2012",
+        "day": "14",
+        "minute": "37",
+        "action": "logging.notice"
+    },
+    {
+        "name": "example4",
+        "hour": "12:14",
+        "args": [
+            "msg"
+        ],
+        "action": "logging.notice",
+        "day": "15,-1",
+        "minute": "*/15^30"
+    }
+]

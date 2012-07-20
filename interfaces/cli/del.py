@@ -23,6 +23,7 @@ def del_main():
 		'tags':          ('del_keyword_parse_arguments', 'del_keyword'),
 		'keywords':      ('del_keyword_parse_arguments', 'del_keyword'),
 		'volumes':       ('del_volume_parse_arguments', 'del_volume'),
+		'tasks':         ('del_task_parse_arguments', 'del_task'),
 		}, {
 		"name"        : "licorn-delete",
 		"description" : "Licorn Delete Entries",
