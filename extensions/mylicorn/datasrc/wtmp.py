@@ -55,7 +55,8 @@ class WtmpDataSource(DataSource):
 		last         = self.last
 
 		# keep trace of open entries, to yield only complete ones (start + end)
-		open_entries = {}
+		open_entries    = {}
+		ignored_entries = {}
 
 		# This will ``True`` when the 'last' is reached or if there is
 		# no 'last'; When it's ``True``, the method starts to yield entries.
@@ -91,6 +92,10 @@ class WtmpDataSource(DataSource):
 											# entry.ut_session, is always '0'.
 											str(datetime.fromtimestamp(entry.ut_tv[0]))
 										]
+				elif entry[0] == LOGIN_PROCESS:
+					# keep login/getty in memory to avoid missing real orphans,
+					# and still avoid to send useless entries.
+					ignored_entries[entry.ut_pid, entry.ut_line] = entry.ut_line
 
 				elif (entry[0] == RUN_LVL and entry.ut_user != 'runlevel') \
 												or entry[0] == DEAD_PROCESS:
@@ -106,13 +111,24 @@ class WtmpDataSource(DataSource):
 										) + [ str(datetime.fromtimestamp(entry.ut_tv[0])) ]
 
 					except KeyError:
-						logging.warning2(_(u'{0}: skipped orphaned entry '
-							u'{1} with no start; either it was opened '
-							u'before WTMP file {2} was rotated, either the '
-							u'file is corrupt.').format(
-								self.pretty_name,
-								stylize(ST_COMMENT, (entry.ut_user, entry.ut_line)),
-								stylize(ST_PATH, wtmp_path)))
+						try:
+							# Is this a login / getty process for which we
+							# don't care? if yes, we already noted it to avoid
+							# useless "orphan" warnings.
+							ignored_entries.pop((entry.ut_pid, entry.ut_line))
+
+						except KeyError:
+							logging.warning2(_(u'{0}: skipped orphaned entry '
+								u'{1} with no start; either it was opened '
+								u'before WTMP file {2} was rotated, either the '
+								u'file is corrupt.').format(
+									self.pretty_name,
+									stylize(ST_COMMENT, (entry.ut_user,
+														entry.ut_line,
+														str(datetime.fromtimestamp(
+															entry.ut_tv[0])),
+														entry.ut_host)),
+									stylize(ST_PATH, wtmp_path)))
 
 					else:
 						# Compute the checksum of the entry; the SHA1 is
