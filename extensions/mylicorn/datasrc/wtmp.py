@@ -3,6 +3,7 @@
 
 
 import sys, utmp, time, random, glob
+from datetime import datetime
 
 from licorn.foundations        import logging, styles
 from licorn.foundations.styles import *
@@ -44,7 +45,6 @@ class WtmpDataSource(DataSource):
 		kwargs['anon_genfunc'] = sha1
 
 		super(WtmpDataSource, self).__init__(self, *args, **kwargs)
-
 	def __iter__(self):
 		return self.iter()
 	def iter(self):
@@ -67,7 +67,7 @@ class WtmpDataSource(DataSource):
 			entry = wtmp.getutent()
 
 			while entry:
-				if entry.ut_tv < since:
+				if since and entry.ut_tv < since:
 					assert ltrace(TRACE_MYLICORN, 'skipped older entry {0}'.format(
 							str((entry[0], entry.ut_user, entry.ut_line,
 								entry.ut_host, time.ctime(entry.ut_tv[0])))))
@@ -82,12 +82,14 @@ class WtmpDataSource(DataSource):
 								stylize(ST_PATH, wtmp_path)))
 
 					else:
+						# Record an opened entry, that will be yielded
+						# if a matching closing one is found.
 						open_entries[entry.ut_pid, entry.ut_line] = [
 											entry.ut_user,
 											entry.ut_line,
 											entry.ut_host,
 											# entry.ut_session, is always '0'.
-											entry.ut_tv[0]
+											str(datetime.fromtimestamp(entry.ut_tv[0]))
 										]
 
 				elif (entry[0] == RUN_LVL and entry.ut_user != 'runlevel') \
@@ -96,50 +98,50 @@ class WtmpDataSource(DataSource):
 					# earlier "reboot", or closing user session matching an
 					# already opened one.
 
-						try:
-							# Now that we have the end time too, the
-							# entry is complete and we can yield it.
-							e = open_entries.pop(
-												(entry.ut_pid, entry.ut_line)
-											) + [ entry.ut_tv[0] ]
+					try:
+						# Now that we have the end time too, the
+						# entry is complete and we can yield it.
+						e = open_entries.pop(
+											(entry.ut_pid, entry.ut_line)
+										) + [ str(datetime.fromtimestamp(entry.ut_tv[0])) ]
 
-						except KeyError:
-							logging.warning2(_(u'{0}: skipped orphaned entry '
-								u'{1} with no start; either it was opened '
-								u'before WTMP file {2} was rotated, either the '
-								u'file is corrupt.').format(
-									self.pretty_name,
-									stylize(ST_COMMENT, (entry.ut_user, entry.ut_line)),
-									stylize(ST_PATH, wtmp_path)))
+					except KeyError:
+						logging.warning2(_(u'{0}: skipped orphaned entry '
+							u'{1} with no start; either it was opened '
+							u'before WTMP file {2} was rotated, either the '
+							u'file is corrupt.').format(
+								self.pretty_name,
+								stylize(ST_COMMENT, (entry.ut_user, entry.ut_line)),
+								stylize(ST_PATH, wtmp_path)))
 
-						else:
-							# Compute the checksum of the entry; the SHA1 is
-							# made on the non-anonymized data, to allow re-sync
-							# between central and us without re-transmitting the
-							# whole data.
-							e.insert(0, sha1(str(e)))
+					else:
+						# Compute the checksum of the entry; the SHA1 is
+						# made on the non-anonymized data, to allow re-sync
+						# between central and us without re-transmitting the
+						# whole data.
+						e.insert(0, sha1(str(e)))
 
-							# Anonymise if needed, after checksum computation.
-							if e[1] != 'reboot':
-								# Anonymize usernames and hostnames
-								e[1] = anon[e[0]]
-								e[3] = anon[e[2]]
+						# Anonymise if needed, after checksum computation.
+						if e[1] != 'reboot':
+							# Anonymize usernames and hostnames
+							e[1] = anon[e[1]]
+							e[3] = anon[e[3]]
 
-							if should_yield:
-								yield e
+						if should_yield:
+							yield e
 
-							if last and e[0] == last:
-								# we just reached the last known entry of
-								# the central server. Next and subsequent
-								# must be yielded.
-								should_yield = True
+						if last and e[0] == last:
+							# we just reached the last known entry of
+							# the central server. Next and subsequent
+							# must be yielded.
+							should_yield = True
 
-								# reset 'last' locally, to be sure next loop
-								# iteration will yield, by not altering
-								# 'should_yield'. We could update 'last' with
-								# the current value, but this would imply more
-								# CPU hits. Disabling 'last' is lighter.
-								last = None
+							# reset 'last' locally, to be sure next loop
+							# iteration will yield, by not altering
+							# 'should_yield'. We could update 'last' with
+							# the current value, but this would imply more
+							# CPU hits. Disabling 'last' is lighter.
+							last = None
 
 				entry = wtmp.getutent()
 
