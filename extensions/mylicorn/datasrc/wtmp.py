@@ -34,6 +34,7 @@ class WtmpDataSource(DataSource):
 	def __init__(self, *args, **kwargs):
 
 		self.since = kwargs.pop('since', 0.0)
+		self.last  = kwargs.pop('last', None)
 
 		# On the remote side, only strings are stored.
 		# using randint() for anonymization will not
@@ -51,9 +52,14 @@ class WtmpDataSource(DataSource):
 		# get these things handy, we will use them a lot.
 		anon         = self.anonmap
 		since        = self.since
+		last         = self.last
 
 		# keep trace of open entries, to yield only complete ones (start + end)
 		open_entries = {}
+
+		# This will ``True`` when the 'last' is reached or if there is
+		# no 'last'; When it's ``True``, the method starts to yield entries.
+		should_yield = not last
 
 		# We go from older to newer, to correctly close open entries.
 		for wtmp_path in sorted(glob.glob(WTMP_FILE + '*'), cmp=filecmp, reverse=True):
@@ -107,12 +113,33 @@ class WtmpDataSource(DataSource):
 									stylize(ST_PATH, wtmp_path)))
 
 						else:
-							if e[0] != 'reboot':
-								# Anonymize usernames and hostnames
-								e[0] = anon[e[0]]
-								e[2] = anon[e[2]]
+							# Compute the checksum of the entry; the SHA1 is
+							# made on the non-anonymized data, to allow re-sync
+							# between central and us without re-transmitting the
+							# whole data.
+							e.insert(0, sha1(str(e)))
 
-							yield e
+							# Anonymise if needed, after checksum computation.
+							if e[1] != 'reboot':
+								# Anonymize usernames and hostnames
+								e[1] = anon[e[0]]
+								e[3] = anon[e[2]]
+
+							if should_yield:
+								yield e
+
+							if last and e[0] == last:
+								# we just reached the last known entry of
+								# the central server. Next and subsequent
+								# must be yielded.
+								should_yield = True
+
+								# reset 'last' locally, to be sure next loop
+								# iteration will yield, by not altering
+								# 'should_yield'. We could update 'last' with
+								# the current value, but this would imply more
+								# CPU hits. Disabling 'last' is lighter.
+								last = None
 
 				entry = wtmp.getutent()
 
