@@ -54,10 +54,10 @@ def test_clone_stat():
 
 			# st_ino, st_ctime and st_size won't be the same, obviously.
 			# We can't compare stat() results directly.
-			assert ds.st_mode  == ss.st_mode
-			assert ds.st_dev   == ss.st_dev
-			assert ds.st_uid   == ss.st_uid
-			assert ds.st_gid   == ss.st_gid
+			assert ds.st_mode == ss.st_mode
+			assert ds.st_dev  == ss.st_dev
+			assert ds.st_uid  == ss.st_uid
+			assert ds.st_gid  == ss.st_gid
 
 			if hasattr(os, 'utime'):
 				# This fails! why ?
