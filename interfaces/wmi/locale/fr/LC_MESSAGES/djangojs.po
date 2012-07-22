@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-22 01:42+0200\n"
+"POT-Creation-Date: 2012-07-22 18:56+0200\n"
 "PO-Revision-Date: 2012-06-18 09:59+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -18,23 +18,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
-#: media/js/gettext.js:5 media/js/utils.js:155
+#: media/js/gettext.js:6
 msgid "Confirm"
 msgstr "Confirmer"
 
-#: media/js/gettext.js:6 media/js/utils.js:162
+#: media/js/gettext.js:7
 msgid "Cancel"
 msgstr "Annuler"
 
-#: media/js/gettext.js:7 media/js/utils.js:165
+#: media/js/gettext.js:8
 msgid "Close"
 msgstr "Fermer"
 
-#: media/js/groups.js:26 media/js/groups.js.c:149 media/js/groups.js.c:153
+#: media/js/groups.js:24 media/js/groups.js.py:140 media/js/groups.js:144
 msgid "Make group <strong>%1</strong> not permissive?"
 msgstr "Rendre le groupe <strong>%1</strong> non permissif&nbsp;?"
 
-#: media/js/groups.js:27
+#: media/js/groups.js:25
 msgid ""
 "This will lock shared files to their owner, disallowing modifications by "
 "other members. This is perfectly safe, and generally used on groups with a "
@@ -51,11 +51,11 @@ msgstr ""
 "longue à observer sur les gros partages, car elle dépend du volume de "
 "données partagées (environ 10 secondes par Gigaoctet).</div>"
 
-#: media/js/groups.js:31 media/js/groups.js.c:158
+#: media/js/groups.js:29 media/js/groups.js.py:149
 msgid "Make group <strong>%1</strong> permissive?"
 msgstr "Rendre le groupe <strong>%1</strong> permissif&nbsp;?"
 
-#: media/js/groups.js:32
+#: media/js/groups.js:30
 #, fuzzy
 msgid ""
 "This will permit wider access to files and folders in the group shared "
@@ -65,10 +65,10 @@ msgid ""
 "together on the same documents, making the group permissive is the right "
 "choice.</strong> You would usually use this feature on small working groups "
 "of people only, as it makes hard to track &ldquo;&nbsp;who modified "
-"what&nbsp;&rdquo;. <br /><br /><div class=\"smaller greyed_out\"><em>NOTE</"
-"em>: The operation may be lengthy because the system will change permissions "
-"of all current files (duration is therefore depending on the data volume, "
-"about 10 second for 1Gb).</div>"
+"what&nbsp;&rdquo;. <br /><br /><div class=\\\"smaller greyed_out\\"
+"\"><em>NOTE</em>: The operation may be lengthy because the system will "
+"change permissions of all current files (duration is therefore depending on "
+"the data volume, about 10 second for 1Gb).</div>"
 msgstr ""
 "Ceci définit un accès plus larges aux documents du répertoire partagé "
 "<em>pour ses membres</em>, leur permettant de modifier ou effacer n'importe "
@@ -82,92 +82,92 @@ msgstr ""
 "partages, car elle dépend du volume de données partagées (environ 10 "
 "secondes par Gigaoctet).</div>"
 
-#: media/js/groups.js:45 media/js/users.js:55
+#: media/js/groups.js:42 media/js/users.js:50
 msgid "Removal confirmation"
 msgstr "Confirmation de suppression"
 
-#: media/js/groups.js:67 media/js/users.js:81
+#: media/js/groups.js:63 media/js/users.js:75
 msgid "Skeleton reapplying confirmation"
 msgstr "Confirmation de ré-application de skelette"
 
-#: media/js/list.js:64
+#: media/js/list.js:57
 msgid "Massive removal"
 msgstr "Suppression massive"
 
-#: media/js/list.js:67 media/js/list.js.c:120
+#: media/js/list.js:60 media/js/list.js.py:112
 msgid "Please select at least one account."
 msgstr "Sélectionnez au moins un compte."
 
-#: media/js/list.js:71
+#: media/js/list.js:64
 msgid "Are you sure you want to remove these account(s):"
 msgstr "Récapitulatif des comptes à supprimer :"
 
-#: media/js/list.js:73
+#: media/js/list.js:66
 msgid "Definitely remove account data (no archiving)"
 msgstr "Supprimer définitivement les données (pas d'archivage)"
 
-#: media/js/list.js:117
+#: media/js/list.js:109
 msgid "Massive export"
 msgstr "Export Massif"
 
-#: media/js/list.js:124
+#: media/js/list.js:116
 msgid "Are you sure you want to export these account(s):"
 msgstr "Récapitulatif des comptes à exporter :"
 
-#: media/js/list.js:127
+#: media/js/list.js:119
 msgid "Please choose the export format : "
 msgstr "Choisissez le format d'export :"
 
-#: media/js/list.js:179
+#: media/js/list.js:169
 msgid "Massive skeleton reapplying"
 msgstr "Ré-application massive d'un skelette"
 
-#: media/js/list.js:182
+#: media/js/list.js:172
 msgid "Please select at least one user account."
 msgstr "Merci de sélectionner au moins un compte utilisateur."
 
-#: media/js/list.js:187
+#: media/js/list.js:177
 msgid ""
 "Are you sure you want to reapply their skeleton to these user account(s):"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir ré-appliquer leur skelette initial aux compte(s) "
 "utilisateur(s) suivant(s)&nbsp;:"
 
-#: media/js/list.js:221
+#: media/js/list.js:211
 msgid "Massive group premissiveness"
 msgstr "Basculement massif de permissivité"
 
-#: media/js/list.js:224
+#: media/js/list.js:214
 msgid "Please select at least one group."
 msgstr "Merci de sélectionner au moins un groupe."
 
-#: media/js/list.js:229
+#: media/js/list.js:219
 msgid "Are you sure you want to toggle permissiveness of group(s):"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir basculer la permissivité du(des) groupe(s) "
 "suivant(s)&nbsp;:"
 
-#: media/js/machines.js:20
+#: media/js/machines.js:18
 msgid "Unlock user %1"
 msgstr "Déverrouiller le compte %1"
 
-#: media/js/machines.js:23
+#: media/js/machines.js:21
 msgid "Unlock account "
 msgstr "Déverrouiller le compte"
 
-#: media/js/machines.js:27
+#: media/js/machines.js:25
 msgid "Lock user %1"
 msgstr "Verrouiller le compte %1"
 
-#: media/js/machines.js:30 media/js/machines.js.c:33 media/js/machines.js:36
+#: media/js/machines.js:28 media/js/machines.js.py:31 media/js/machines.js:34
 msgid "Lock account "
 msgstr "Verrouiller le compte"
 
-#: media/js/main.js:228
+#: media/js/main.js:222
 msgid "Random password generator"
 msgstr "Générateur de mot de passe aléatoire"
 
-#: media/js/main.js:229
+#: media/js/main.js:223
 msgid ""
 "<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</"
 "strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</"
@@ -177,49 +177,49 @@ msgstr ""
 "strong>&nbsp;&raquo;. Si vous êtes d'accord pour l'utiliser, cliquez "
 "simplement sur le bouton <code>Confirmer</code>, et retenez ce mot de passe."
 
-#: media/js/menu.js:68
+#: media/js/menu.js:63
 msgid "Sure?"
 msgstr "Confirmer ?"
 
-#: media/js/menu.js:76
+#: media/js/menu.js:71
 msgid "Yes"
 msgstr "Oui"
 
-#: media/js/menu.js:77
+#: media/js/menu.js:72
 msgid "No"
 msgstr "Non"
 
-#: media/js/push.js:48
+#: media/js/push.js:43
 msgid "Push connection back online, rock'n roll!"
 msgstr "Flux d'informations de nouveau opérationnel, Rock'n Roll !"
 
-#: media/js/push.js:73
+#: media/js/push.js:64
 msgid "Push connection lost. Retrying in 5 seconds."
 msgstr ""
 "Connexion au flux d'information perdue. Nouvelle tentative de connexion dans "
 "5 secondes."
 
-#: media/js/push.js:84
+#: media/js/push.js:75
 msgid "Push connection lost. Retrying in 3 seconds."
 msgstr ""
 "Connexion au flux d'information perdue. Tentative de reconnexion dans 3 "
 "secondes."
 
-#: media/js/users.js:31
+#: media/js/users.js:27
 msgid "Unlock confirmation"
 msgstr "Confirmation de déverrouillage"
 
-#: media/js/users.js:32
+#: media/js/users.js:28
 msgid "Do you really want to unlock user account <strong>%1</strong>?"
 msgstr ""
 "Voulez-vous vraiment déverrouiller le compte utilisateur <strong>%1</"
 "strong>&nbsp;?"
 
-#: media/js/users.js:41
+#: media/js/users.js:37
 msgid "Lock confirmation"
 msgstr "Confirmation de verrouillage"
 
-#: media/js/users.js:83
+#: media/js/users.js:77
 msgid ""
 "Are you sure you want to reapply skeleton to user account <strong>%1</"
 "strong>?"
@@ -227,15 +227,15 @@ msgstr ""
 "Êtes-vous sûr(e) de vouloir ré-appliquer le skelette système sur le compte "
 "<strong>%1</strong>&nbsp;?"
 
-#: media/js/users.js:165
+#: media/js/users.js:154
 msgid "Unlock user account"
 msgstr "Déverrouiller le compte utilisateur"
 
-#: media/js/users.js:172 media/js/users.js.c:178
+#: media/js/users.js:161 media/js/users.js.py:167
 msgid "Lock user account"
 msgstr "Verrouiller le compte utilisateur"
 
-#: media/js/utils.js:38
+#: media/js/utils.js:37
 msgid "Collecting data, please wait&hellip;"
 msgstr "Rassemblement des données, merci de patienter&hellip;"
 
