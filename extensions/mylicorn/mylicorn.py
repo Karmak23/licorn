@@ -181,6 +181,14 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		for key in defaults:
 			setattr(self, '_%s__%s' % (klass, key), data[key])
 
+		self.anonymize = pyutils.resolve_attr(
+				'settings.extensions.mylicorn.datasrc.all.anonymize.enabled',
+					{'settings': settings}, False)
+
+		self.anonymize_full = pyutils.resolve_attr(
+				'settings.extensions.mylicorn.datasrc.all.anonymize.full',
+					{'settings': settings}, False)
+
 		return self.available
 	def is_enabled(self):
 		""" Module related method. Always returns ``True``, unless the extension
@@ -525,12 +533,26 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			data_src_module = __import__(import_sym_path, fromlist=[import_sym_path])
 			data_src_klass  = getattr(data_src_module, data_src_class_)
 
-			logging.progress(_(u'{0}: uploading {1} history data since '
-								u'{2}…').format(self.pretty_name,
+			anonymize = pyutils.resolve_attr(
+				'settings.extensions.mylicorn.datasrc.{0}.anonymize.enabled'.format(
+					history_name), {'settings': settings}, self.anonymize)
+
+			anonymize_full = pyutils.resolve_attr(
+				'settings.extensions.mylicorn.datasrc.{0}.anonymize.full'.format(
+					history_name), {'settings': settings}, self.anonymize_full)
+
+			logging.progress(_(u'{0}: uploading {1}{2} history data, starting '
+								u'from hash {3}…').format(self.pretty_name,
+									_(u'fully anonymized ')
+										if anonymize and anonymize_full
+										else _(u'anonymized ')
+											if anonymize else u'',
 									stylize(ST_ATTR, history_name),
 									stylize(ST_COMMENT, last_known_sha1)))
 
-			data_to_upload = list(data_src_klass(last=last_known_sha1).iter())
+			data_to_upload = list(data_src_klass(last=last_known_sha1,
+											anonymize=anonymize,
+											anonymize_full=anonymize_full).iter())
 
 			if data_to_upload:
 				res = self.__remote_call(self.service.update_history,
