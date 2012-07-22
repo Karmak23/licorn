@@ -571,10 +571,10 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 	def __load_factory_settings(self):
 
 		for setting_name, setting_value in (
-					('extensions.simplesharing.max_upload_size', 10485760),
+					('settings.extensions.simplesharing.max_upload_size', 10485760),
 				):
 			try:
-				pyutils.resolve_attr(settings, setting_name)
+				pyutils.resolve_attr(setting_name, {'settings': settings})
 
 			except AttributeError:
 				settings.merge_settings({setting_name: setting_value})
