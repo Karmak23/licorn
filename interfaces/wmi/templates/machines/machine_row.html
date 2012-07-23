@@ -1,6 +1,6 @@
 {%- macro updates_status(machine) -%}
 	{%- if machine.updates_available() -%}
-		{%-if item.security_updates() %}
+		{%-if machine.security_updates() %}
 			{%- set message = _('Security updates available. Click to install.') -%}
 			{%- set icon = 'software-update-urgent.png' -%}
 
@@ -16,17 +16,17 @@
 {%- endmacro -%}
 
 
-<td>
+<td sort-data='{{ machine.status }}'>
 	<img src="/media/images/16x16/{{ get_host_status_html[machine.status][0] }}"
 				alt="{{ get_host_status_html[machine.status][1] }}" width="16" height="16" />
 </td>
 <td>
 	{{ machine.hostname }} {{ updates_status(machine) }}
 </td>
-<td>
+<td sort-data='{{ machine.system_type }}'>
 	<img src="/media/images/16x16/{{ get_host_type_html(machine.system_type)[0] }}" alt="{{ get_host_type_html(machine.system_type)[1] }}" width="16" height="16" />
 </td>
-<td>
+<td sort-data='{{ machine.system_type }}'>
 	<img src="/media/images/16x16/{{ get_host_os_html(machine.system_type)[0] }}"
 					alt="{{ get_host_os_html(machine.system_type)[1] }}" width="16" height="16" />
 <td>

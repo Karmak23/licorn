@@ -8,6 +8,8 @@
 
 {%- block extended_media -%}
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.uitablefilter.js"></script>
+	
 
 {%- endblock -%}
 
@@ -25,75 +27,45 @@
 		</span>
 
 		<span class='table_header_filter table_header_item'>
-			FILTER
+			<div class="input-prepend">
+				<span class="add-on">{{ _('Filter') }}</i></span><input type='text' id="list_filter"/>
+			</div>
 		</span>
 	</div>
-	<table class="table">
-		<tr>
-			<th>Status</th>
-			<th>hostname</th>
-			<th>type</th>
-			<th>OS</th>
-		</tr>
-		{%- for machine in machines -%}
+	<table class="table sortable" id="machines_table">
+		<thead>
 			<tr>
-				{%- include 'machines/machine_row.html' -%}
+				<th>Status</th>
+				<th>hostname</th>
+				<th>type</th>
+				<th>OS</th>
 			</tr>
-		{%- endfor -%}
+		</thead>
+		<tbody>
+			{%- for machine in machines -%}
+				<tr>
+					{%- include 'machines/machine_row.html' -%}
+				</tr>
+			{%- endfor -%}
+		</tbody>
 	</table>
 
-
-
-
-	<!-- OLD 
-	{#-
-		{ "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
-		{ "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"},
-	-#}
-	{%- set massive_actions = [ { "action_name" : "upgrade", "icon" : "/media/images/24x24/mass_skel.png"}, ] -%}
-	{%-
-		set headers = [ { "name" : "select",   "content" : "<input type=\'checkbox\' name=\'select\' id=\'massive_select\'>",
-																		"sortable" : False},
-						{ "name" : "state",    "content" : _("Status"), "sortable" : True, "default_sort" : False},
-						{ "name" : "hostname", "content" : _('Hostname'), "sortable" : True, "default_sort" : True},
-						{ "name" : "type",     "content" : _('Type'), "sortable" : True, "default_sort" : False},
-						{ "name" : "os",       "content" : _('Op. System'), "sortable" : True, "default_sort" : False},
-						{ "name" : "nav",      "content" : "", "sortable" : False} ]
-	-%}
-	{{ licorn_list('machines', 'hostname', _('Machines'),
-					massive_actions, headers,
-					machines_list, 'machines/machine_row.html',
-					[ 'hostname', 'mid' ], 'mid') }}
+		
 
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
-			number_of_list = 1;
-			//init size of lists
-			$(".list_content").hide();
 
-			height = $("#main_content").height() - number_of_list * ($(".list_title").height());
-			content = $(".list:first").find(".list_content");
-			content.show();
-			$(".list:first").addClass('current_list');
-			//content.show().height(height);
-			$('.list_items').height(height - content.find('.search_bar').height() - content.find('.list_header').height() - 100);
-			$('.row').width(content.find('.list_header').width());
+			// from common.js
+			setup_table_filter($('#machines_table'), $('#list_filter'))
 
-			// init click event on list title
-			$(".list_title").each(function() {
-				$(this).click(function() {
-					$('.current_list').removeClass('current_list');
-					$(this).parent().addClass('current_list');
-					$(".list_content").hide();
-					$(this).parent().find(".list_content").show();
-				});
-			});
 
-			$("#search_box").focus();
+			
 		});
-	</script> -->
+	</script>
+
 
 {%- endblock -%}
+
 
 
 
