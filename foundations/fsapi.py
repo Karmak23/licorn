@@ -606,8 +606,13 @@ def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 		# remove path from entry to get where we are.
 		current_path = entry[len(path+os.sep):]
 
+		if followlinks:
+			stat_func = os.stat
+		else:
+			stat_func = os.lstat
+
 		try:
-			entry_stat = os.lstat(entry)
+			entry_stat = stat_func(entry)
 			entry_type = entry_stat.st_mode & 0170000
 			entry_mode = entry_stat.st_mode & 07777
 
@@ -670,6 +675,9 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 
 		# Does the file/dir exist ?
 		try:
+			# WARNING: do not use os.stat(), this could lead to checking
+			# files out of scope, and can be considered as a security
+			# vulnerability in some situations.
 			entry_stat = os.lstat(path)
 
 		except (IOError, OSError), e:
@@ -690,8 +698,8 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 
 					os.mkdir(path)
 
-					# we need to re-stat because we use the stat result after
-					# this point.
+					# We need to re-stat because we use the stat result after
+					# this point. NO `os.stat()`!!
 					entry_stat = os.lstat(path)
 
 					if full_display:
@@ -866,7 +874,7 @@ def __raise_or_return(pretty_path, batch, auto_answer):
 												u'exception?').format(
 													pretty_path),
 													auto_answer=auto_answer))
-def check_perms(dir_info, file_type=None, is_root_dir=False,
+def check_perms(dir_info, file_type=None, is_root_dir=False, check_symlinks=False,
 					batch=False, auto_answer=None, full_display=True):
 	""" Check if permissions and ACLs conforms on a file or directory.
 
@@ -887,12 +895,20 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 	assert ltrace_func(TRACE_FSAPI)
 
+	pretty_name = stylize(ST_NAME, 'fsapi.check_perms()')
+
+	if file_type == S_IFLNK and not check_symlinks:
+		# This check is very important (see #835).
+		logging.progress(_(u'{0}: check of symlink {1} skipped.').format(
+							pretty_name, stylize(ST_PATH, dir_info.path)))
+		return
+
 	try:
 		path = check_utf8_filename(dir_info.path, batch=batch,
 											auto_answer=auto_answer,
 											full_display=full_display)
 	except (OSError, IOError), e:
-		logging.exception(_(u'fsapi.check_perms(): exception while checking '
+		logging.exception(_(u': exception while checking '
 						u'filename validity of {0}.'), (ST_PATH, dir_info.path))
 
 		if e.errno == errno.ENOENT:
@@ -910,6 +926,9 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 			return
 
 	pretty_path = stylize(ST_PATH, path)
+
+	logging.progress(_(u'{0}: checking permissions on {1}…').format(
+													pretty_name, pretty_path))
 
 	# get the access_perm and the type of perm (POSIX1E or POSIX) that will be
 	# applyed on path
@@ -1233,11 +1252,14 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 				all_went_ok = False
 
 		try:
+			# WARNING: do not use os.stat(), this could lead to check
+			# files in unwanted places and can be considered as a
+			# security vulnerability.
 			pathstat     = os.lstat(path)
 			current_perm = pathstat.st_mode & 07777
 
 		except (IOError, OSError), e:
-			logging.exception(_(u'Exception while trying to `lstat()` {0}'), pretty_path)
+			logging.exception(_(u'Exception while trying to `stat()` {0}'), pretty_path)
 
 			if e.errno == errno.ENOENT:
 				return
@@ -1299,6 +1321,9 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 		logging.progress(_(u'Checking POSIX uid/gid/perms of %s.') %
 													stylize(ST_PATH, path))
 	try:
+		# WARNING: do not use os.stat(), this could lead to checking
+		# a completely different file/dir and can be considered as
+		# a security vulnerability in some situations.
 		pathstat = os.lstat(path)
 
 	except (IOError, OSError), e:
@@ -1309,7 +1334,7 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 			#     - when we explicitely want to check a path which does not
 			#		exist because it has not been created yet (eg: ~/.dmrc
 			#		on a brand new user account).
-		logging.exception(_(u'Exception while trying to `lstat()` {0}'), pretty_path)
+		logging.exception(_(u'Exception while trying to `stat()` {0}'), pretty_path)
 
 		if e.errno == errno.ENOENT:
 			return
@@ -1559,8 +1584,8 @@ if hasattr(os, "chflags"):
 			nflags = 0
 			for f in flags:
 				nflags |= f
-
-		return os.stat(filename).st_flags & nflags
+		# WARNING: no os.stat() here, we do not want to follow a symlink!!
+		return os.lstat(filename).st_flags & nflags
 
 else:
 	# because of LP#969032, we must implement wheels, hands and foots...
@@ -1630,7 +1655,7 @@ def clone_stat(src, dst, clone_owner=True, clone_group=True, clone_acl=False):
 			we don't need it.
 	"""
 
-	src_stat = os.stat(src)
+	src_stat = os.lstat(src)
 	src_mode = S_IMODE(src_stat.st_mode)
 
 	if hasattr(os, 'utime'):
@@ -1649,7 +1674,7 @@ def clone_stat(src, dst, clone_owner=True, clone_group=True, clone_acl=False):
 				raise
 
 	if clone_owner or clone_group:
-		dst_stat = os.stat(dst)
+		dst_stat = os.lstat(dst)
 		os.chown(dst, src_stat.st_uid if clone_owner else dst_stat.st_uid,
 					src_stat.st_gid if clone_group else dst_stat.st_gid)
 
@@ -1712,6 +1737,7 @@ def execbits2str(filename, check_other=False):
 		means in a posix1e ACL ?
 	"""
 
+	# WARNING: no os.stat(); see elsewhere in this file for comment.
 	fileperms = os.lstat(filename).st_mode & 07777
 	execperms = []
 
