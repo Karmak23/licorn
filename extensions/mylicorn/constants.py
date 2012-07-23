@@ -17,6 +17,7 @@ __common_dict = {
 	'NOTIMPLEMENTED' : -100,
 	'OVERQUOTA'      : -10,
 	'NOTFOUND'       : -9,
+	'BADARGUMENT'    : -5,
 	'SUSPENDED'      : -3,
 	'UNAUTHORIZED'   : -2,
 	'FAILED'         : -1,
@@ -38,6 +39,8 @@ disconnect.ALREADY = 2
 
 # other JSON-RPC functions
 set_attribute = EnumDict('set_attribute', from_dict=__common_dict)
+
+update_history = EnumDict('update_history', from_dict=__common_dict)
 
 shorten_url = EnumDict('shorten_url', from_dict=__common_dict)
 shorten_url.ALREADY = 2

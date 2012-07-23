@@ -8,7 +8,7 @@
 import sys, os, apt_pkg, subprocess
 
 from licorn.foundations import logging
-from licorn.core import LMC
+from licorn.core        import LMC
 
 SYNAPTIC_PINFILE = "/var/lib/synaptic/preferences"
 DISTRO = subprocess.Popen(["lsb_release","-c","-s"],

@@ -152,7 +152,8 @@ def check_python_modules_dependancies():
 
 	optmods = (
 		(u'xattr',    u'python-xattr',		None),
-		(u'ldap',     u'python-ldap',		None)
+		(u'ldap',     u'python-ldap',		None),
+		(u'utmp',     u'python-utmp',		None),
 		# plistlib, uuid don't need to be checked, they're part of standard
 		# python dist-packages.
 		)
