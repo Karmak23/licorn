@@ -51,6 +51,7 @@ for root, dirs, files in os.walk(upgrades_root):
 			# just helpers (like 'common.py').
 			if module_dir:
 				try:
+					# FIXME: use __import__() not exec!!
 					exec 'from licorn.upgrades.{0}.{1} import *'.format(
 								module_dir, module_name) in globals(), locals()
 

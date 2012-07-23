@@ -630,6 +630,27 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		"""
 
 		return self.gidMembers + self.members
+	def __iter__(self):
+		return self.itervalues()
+	def itervalues(self):
+		""" Iterate over the group's primary members then auxilliary members.
+			Yields :class:`~licorn.core.users.User` instances."""
+
+		for m in self.__gidMembers:
+			yield m()
+
+		for m in self.__members:
+			yield m()
+	def iterkeys(self):
+		""" Iterate over the group's primary members then auxilliary members.
+			Yields integers, the :class:`~licorn.core.users.User` IDs. """
+
+		for m in self.itervalues():
+			yield m.uidNumber
+	def keys(self):
+		return [ x for x in self.iterkeys() ]
+	def values(self):
+		return [ x for x in self.itervalues() ]
 	@property
 	def profiles(self):
 		""" the profiles the group is recorded in. Stored internally as
@@ -2161,8 +2182,6 @@ class GroupsController(DictSingleton, CoreFSController):
 				u'%s\n'
 				u'</groups-list>\n') % u'\n'.join(
 						group.to_XML() for group in groups)
-
-
 	def get_CSV_data(self, selected=None, long_output=False):
 		""" return the group accounts list ready to be parsed by python csv module.
 			name;gid;desc;members;backend;permissive
@@ -2194,7 +2213,6 @@ class GroupsController(DictSingleton, CoreFSController):
 						])
 
 			return csv_data
-
 	def to_JSON(self, selected=None):
 		""" Export the user accounts list to JSON. """
 

@@ -7,6 +7,7 @@ constants - all enums for the rest of the world.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2
 """
+
 import stat
 
 # ============================================================== licorn imports

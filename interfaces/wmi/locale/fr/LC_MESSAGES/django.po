@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-19 16:52+0200\n"
+"POT-Creation-Date: 2012-07-22 01:42+0200\n"
 "PO-Revision-Date: 2012-07-19 16:51+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -1195,8 +1195,8 @@ msgstr ""
 "Aller sur le site de documentation en ligne (dans un(e) autre onglet/"
 "fenêtre)."
 
-#: templates/gettext.html:43 templates/widgets/common.html:83
-#: templates/widgets/common.html.py:86
+#: templates/gettext.html:43 templates/widgets/common.html:91
+#: templates/widgets/common.html.py:94
 msgid "d"
 msgstr "j"
 
@@ -1208,8 +1208,8 @@ msgstr " jour"
 msgid " days"
 msgstr " jours"
 
-#: templates/gettext.html:47 templates/widgets/common.html:92
-#: templates/widgets/common.html.py:95
+#: templates/gettext.html:47 templates/widgets/common.html:100
+#: templates/widgets/common.html.py:103
 msgid "h"
 msgstr "h"
 
@@ -1221,8 +1221,8 @@ msgstr " heure"
 msgid " hours"
 msgstr " heures"
 
-#: templates/gettext.html:51 templates/widgets/common.html:101
-#: templates/widgets/common.html.py:104
+#: templates/gettext.html:51 templates/widgets/common.html:109
+#: templates/widgets/common.html.py:112
 msgid "m"
 msgstr "m"
 
@@ -1234,8 +1234,8 @@ msgstr " minute"
 msgid " minutes"
 msgstr " minutes"
 
-#: templates/gettext.html:55 templates/widgets/common.html:112
-#: templates/widgets/common.html.py:115
+#: templates/gettext.html:55 templates/widgets/common.html:120
+#: templates/widgets/common.html.py:123
 msgid "s"
 msgstr "s"
 
@@ -1513,41 +1513,41 @@ msgstr "Métrologie énergétique"
 msgid "Metrology, not implemented yet."
 msgstr "Fonction pas encore implémentée, désolé."
 
-#: templates/energy/policies.html:26
+#: templates/energy/policies.html:27
 msgid "Energy policies"
 msgstr "Politiques énergétiques"
 
-#: templates/energy/policies.html:30
+#: templates/energy/policies.html:31
 msgid "Add a policy"
 msgstr "Ajouter une règle"
 
-#: templates/energy/policies.html:33
+#: templates/energy/policies.html:34
 msgid "Shutdown machine(s) "
 msgstr "Éteindre la(les) machine(s) "
 
-#: templates/energy/policies.html:34
+#: templates/energy/policies.html:35
 msgid "Machine(s) to shutdown, separated by a \",\"."
 msgstr ""
 "Nom DNS de(s) machine(s) à éteindre, séparées par des virgules (avec ou sans "
 "espaces)."
 
-#: templates/energy/policies.html:35
+#: templates/energy/policies.html:36
 msgid " at "
 msgstr " à "
 
-#: templates/energy/policies.html:36
+#: templates/energy/policies.html:37
 msgid "Shutdown hour (0<=hour<=23)"
 msgstr "Heure d'extinction (0<= heure <= 23)"
 
-#: templates/energy/policies.html:38
+#: templates/energy/policies.html:39
 msgid "Shutdown minute (0<=hour<=59)"
 msgstr "Minute d'extinction (0 <= min <= 59)"
 
-#: templates/energy/policies.html:39
+#: templates/energy/policies.html:40
 msgid "on"
 msgstr "le"
 
-#: templates/energy/policies.html:40
+#: templates/energy/policies.html:41
 msgid ""
 "Shutdown day (0<=day<=6, \"ALL\", \"*\", or day in plain text), separated by "
 "a \",\"."
@@ -1556,11 +1556,11 @@ msgstr ""
 "mais aussi \"ALL\" ou \"*\" pour tous, ou le nom du jour en toutes lettres), "
 "séparés par des virgules avec ou sans espaces."
 
-#: templates/energy/policies.html:47
+#: templates/energy/policies.html:48
 msgid "Current policies"
 msgstr "Règles actuelles"
 
-#: templates/energy/policies.html:57
+#: templates/energy/policies.html:58
 msgid "Shutdown calendar"
 msgstr "Calendrier d'extinctions"
 
@@ -1976,11 +1976,11 @@ msgstr ""
 "Note : vous ne pourrez pas afficher le mot de passe une fois saisi, retenez-"
 "le ou notez-le. Vous pourrez en revanche le changer sans restrictions."
 
-#: templates/shares/parts/share-view.html:90 templates/widgets/common.html:25
+#: templates/shares/parts/share-view.html:90 templates/widgets/common.html:33
 msgid "Yes"
 msgstr "Oui"
 
-#: templates/shares/parts/share-view.html:91 templates/widgets/common.html:26
+#: templates/shares/parts/share-view.html:91 templates/widgets/common.html:34
 msgid "No"
 msgstr "Non"
 
@@ -2315,23 +2315,23 @@ msgstr "Rendu graphique des extensions non implémenté dans la WMI2"
 msgid "This user is not {0} of any group yet."
 msgstr "Cet utilisateur n'est encore {0} d'aucun groupe."
 
-#: templates/widgets/common.html:183
+#: templates/widgets/common.html:191
 msgid "Mass actions:"
 msgstr "Actions massives :"
 
-#: templates/widgets/common.html:190
+#: templates/widgets/common.html:198
 msgid "Massive {0} icon"
 msgstr "Icône de {0} massive"
 
-#: templates/widgets/common.html:191
+#: templates/widgets/common.html:199
 msgid "Massive {0} on selected rows"
 msgstr "{0} massif(ve) sur la(es) rangée(s) sélectionnée(s)"
 
-#: templates/widgets/common.html:215
+#: templates/widgets/common.html:223
 msgid "Click to sort on this column"
 msgstr "Cliquez pour classer sur cette colonne"
 
-#: templates/widgets/common.html:222
+#: templates/widgets/common.html:230
 msgid "Descending order image"
 msgstr "Image de classement descendant"
 

@@ -10,7 +10,6 @@ Licorn extensions: mylicorn - http://docs.licorn.org/extensions/mylicorn
 
 import os, time, urllib2, random, errno, socket
 
-from threading import Thread
 
 from licorn.foundations           import exceptions, logging, settings
 from licorn.foundations           import events, json, hlstr, pyutils
@@ -21,8 +20,7 @@ from licorn.foundations.ltraces   import *
 from licorn.foundations.threads   import Event
 
 from licorn.foundations.base      import ObjectSingleton
-from licorn.foundations.constants import services, svccmds, distros, \
-											host_types, priorities, host_status
+from licorn.foundations.constants import host_types, priorities, host_status
 
 from licorn.daemon.threads        import LicornJobThread
 
@@ -182,6 +180,14 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		# only take in data the parameters we know, avoiding collisions.
 		for key in defaults:
 			setattr(self, '_%s__%s' % (klass, key), data[key])
+
+		self.anonymize = pyutils.resolve_attr(
+				'settings.extensions.mylicorn.datasrc.all.anonymize.enabled',
+					{'settings': settings}, False)
+
+		self.anonymize_full = pyutils.resolve_attr(
+				'settings.extensions.mylicorn.datasrc.all.anonymize.full',
+					{'settings': settings}, False)
 
 		return self.available
 	def is_enabled(self):
@@ -517,5 +523,77 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			# reachability before asking for it back.
 			workers.network_enqueue(priorities.NORMAL, self.update_reachability,
 																job_delay=20.0)
+
+			workers.network_enqueue(priorities.LOW, self.update_histories)
+	def update_histories(self):
+
+		def upload_latest_data(history_name, last_known_sha1):
+			import_sym_path = 'licorn.extensions.mylicorn.datasrc.%s' % history_name
+			data_src_class_ = history_name.title() + 'DataSource'
+			data_src_module = __import__(import_sym_path, fromlist=[import_sym_path])
+			data_src_klass  = getattr(data_src_module, data_src_class_)
+
+			anonymize = pyutils.resolve_attr(
+				'settings.extensions.mylicorn.datasrc.{0}.anonymize.enabled'.format(
+					history_name), {'settings': settings}, self.anonymize)
+
+			anonymize_full = pyutils.resolve_attr(
+				'settings.extensions.mylicorn.datasrc.{0}.anonymize.full'.format(
+					history_name), {'settings': settings}, self.anonymize_full)
+
+			logging.progress(_(u'{0}: uploading {1}{2} history data, starting '
+								u'from hash {3}…').format(self.pretty_name,
+									_(u'fully anonymized ')
+										if anonymize and anonymize_full
+										else _(u'anonymized ')
+											if anonymize else u'',
+									stylize(ST_ATTR, history_name),
+									stylize(ST_COMMENT, last_known_sha1)))
+
+			data_to_upload = list(data_src_klass(last=last_known_sha1,
+											anonymize=anonymize,
+											anonymize_full=anonymize_full).iter())
+
+			if data_to_upload:
+				res = self.__remote_call(self.service.update_history,
+											history_name, data_to_upload)
+				code = res['result']
+
+				if code < 0:
+					logging.warning(_(u'{0}: problem uploading {1} history '
+								u'data (was: code={2}, message={3}).').format(
+									self.pretty_name,
+									stylize(ST_ATTR, history_name),
+									stylize(ST_UGID, update_history[code]),
+									stylize(ST_COMMENT, res['message'])))
+
+				else:
+					logging.info(_(u'{0}: successfully uploaded / updated {1} '
+									u'history data at {2}.').format(
+										self.pretty_name,
+										stylize(ST_ATTR, history_name),
+										stylize(ST_URL, self.my_licorn_uri)))
+			else:
+				logging.info(_(u'{0}: no new data to send for {1} '
+								u'history since last upload.').format(
+									self.pretty_name,
+									stylize(ST_ATTR, history_name)))
+
+		for history_name in ('wtmp', ):
+			res = self.__remote_call(self.service.update_history,
+										# history_name, history_data, query_last
+										history_name,	None, 			True)
+			code = res['result']
+
+			if code < 0:
+				logging.warning(_(u'{0}: problem querying for last {1} history '
+							u'value, skipping to next (was: code={2}, '
+							u'message={3}).').format(self.pretty_name,
+											stylize(ST_ATTR, history_name),
+											stylize(ST_UGID, update_history[code]),
+											stylize(ST_COMMENT, res['message'])))
+
+			else:
+				upload_latest_data(history_name, res['message'])
 
 __all__ = ('MylicornExtension', )

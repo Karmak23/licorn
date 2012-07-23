@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-19 16:52+0200\n"
+"POT-Creation-Date: 2012-07-22 18:56+0200\n"
 "PO-Revision-Date: 2012-06-18 09:59+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -56,6 +56,7 @@ msgid "Make group <strong>%1</strong> permissive?"
 msgstr "Rendre le groupe <strong>%1</strong> permissif&nbsp;?"
 
 #: media/js/groups.js:30
+#, fuzzy
 msgid ""
 "This will permit wider access to files and folders in the group shared "
 "directory, allowing any <strong>member of the group</strong> to modify or "

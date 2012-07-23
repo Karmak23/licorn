@@ -25,6 +25,9 @@ if not process.executable_exists_in_path('unattended-upgrades'):
 # version_compare() will refuse to work without this.
 apt_pkg.init()
 
+# import it here to have it handy inside Licorn®
+version_compare = apt_pkg.version_compare
+
 from licorn.contrib import apt_check
 
 opts = LicornConfigObject()
@@ -52,3 +55,5 @@ def apt_do_upgrade():
 	except:
 		logging.exception(_(u'Error while running « unattended-upgrades »!'))
 		return None, None
+
+__all__ = ('version_compare', 'apt_do_check', 'apt_do_upgrade', )
