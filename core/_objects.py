@@ -12,7 +12,7 @@ Basic objects used in all core controllers.
 
 """
 
-import os, weakref, time, pyinotify
+import os, weakref, time, pyinotify, errno
 
 from licorn.foundations.threads import RLock, Event
 
@@ -937,10 +937,11 @@ class CoreFSUnitObject(object):
 				expiry = self.__last_fast_check.get(path, None)
 
 				if expiry:
-					# don't check a previously checked file, if previous check was less
-					# than 5 seconds.
+					# don't check a previously checked file,
+					# if previous check was less than 5 seconds.
 					if time.time() - expiry < self.__expire_time:
-						assert ltrace(TRACE_CHECKS, '  %s._fast_aclcheck: not expired %s' % (self.name, path))
+						assert ltrace(TRACE_CHECKS, '  %s._fast_aclcheck: '
+										'not expired %s' % (self.name, path))
 						return
 					else:
 						del self.__last_fast_check[path]
@@ -948,10 +949,12 @@ class CoreFSUnitObject(object):
 		home = self.homeDirectory
 
 		try:
+			# WARNING: do not use os.stat(), this could lead to checking
+			# files outside of the home directory and is a vulnerability.
 			entry_stat = os.lstat(path)
 
 		except (IOError, OSError), e:
-			if e.errno == 2:
+			if e.errno == errno.ENOENT:
 				if path != home:
 					# bail out if path has disappeared since we were called.
 					return
@@ -971,7 +974,13 @@ class CoreFSUnitObject(object):
 
 					self._inotifier_del_watch()
 			else:
-				raise e
+				raise
+
+		if not path.startswith(home):
+			logging.warning(_(u'{0}: {1} called on an external path {2}, '
+								u'aborting!').format(self.pretty_name,
+									stylize(ST_NAME, '_fast_aclcheck()'),
+									stylize(ST_PATH, path)))
 
 		rule_name = path[len(home)+1:].split('/')[0]
 
@@ -1004,7 +1013,6 @@ class CoreFSUnitObject(object):
 					dir_info.uid = 0
 			else:
 				dir_info.uid = -1
-
 
 		# determine good GID owner for the path:
 		#	- 'acl' if an acl will be set to the path.
