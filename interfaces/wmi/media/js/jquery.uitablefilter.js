@@ -28,7 +28,24 @@
     // these function pointers may change
     var matches = function(elem) { elem.show() }
     var noMatch = function(elem) { elem.hide(); new_hidden = true }
-    var getText = function(elem) { return elem.text() }
+    var getText = function(elem) { 
+      var text = '';
+      
+      $.each(elem.children(), function(i, v) {
+        f = $(v).attr('filter-data');
+        if (typeof f === 'undefined') {
+          text += $(v).text();
+
+        } else {
+          text += f;
+        } 
+      })
+
+      return text
+
+
+      
+    }
 
     if( column ) {
       var index = null;
