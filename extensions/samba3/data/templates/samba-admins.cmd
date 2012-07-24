@@ -10,20 +10,20 @@ copy \\%servname%\netlogon\templates\hosts %windir%\hosts >nul
 rem net use p: \\%servname%\programs /yes >nul
 rem net use n: \\%servname%\netlogon /yes >nul
 
-goto %_admins_osver%
-goto _admins_end
+goto %samba-admins_osver%
+goto samba-admins_end
 
-:_admins_Win95
-goto _admins_end
+:samba-admins_Win95
+goto samba-admins_end
 
-:_admins_WinNT
-goto _admins_end
+:samba-admins_WinNT
+goto samba-admins_end
 
-:_admins_Win2k
-goto _admins_end
+:samba-admins_Win2k
+goto samba-admins_end
 
-:_admins_WinXP
-goto _admins_end
+:samba-admins_WinXP
+goto samba-admins_end
 
-:_admins_end
+:samba-admins_end
 

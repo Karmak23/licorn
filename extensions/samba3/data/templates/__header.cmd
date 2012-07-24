@@ -13,30 +13,30 @@ rem regedit /s \\%servname%\netlogon\templates\registry\mapping_desktop.reg >nul
 
 rem ====================================================== OS specific features
 
-goto %_base_osver%
+goto %__header_osver%
 
-rem if %_base_osver% is unknown, we skip right to the end. This avoids messing
+rem if %__header_osver% is unknown, we skip right to the end. This avoids messing
 rem with a different OS script. All customized scripts should do the same, even
 rem if they don't define any OS-specific feature.
-goto _base_end
+goto __header_end
 
 
-:_base_Win95
+:__header_Win95
 regedit /s \\%servname%\netlogon\templates\registry\common-Win95.reg >nul
-goto _base_end
+goto __header_end
 
-:_base_WinNT
-goto _base_end
+:__header_WinNT
+goto __header_end
 
-:_base_Win2k
+:__header_Win2k
 regedit /s \\%servname%\netlogon\templates\registry\nosynchro_offline.reg >nul
-goto _base_end
+goto __header_end
 
-:_base_WinXP
+:__header_WinXP
 regedit /s \\%servname%\netlogon\templates\registry\nosynchro_offline.reg >nul
-goto _base_end
+goto __header_end
 
-:_base_end
+:__header_end
 
 rem use the server proxy.
 rem regedit /s \\%servname%\netlogon\templates\registry\autoproxy.reg     >nul

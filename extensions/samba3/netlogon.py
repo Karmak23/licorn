@@ -243,9 +243,8 @@ set servname={8}
 									stylize(ST_LOGIN, user.login),
 									stylize(ST_PATH, potential_overwriter)))
 
-	def script_out(msg=None, script_buffer=script_buffer):
-		# this function will write the script in a Windows-friendly way
-		script_buffer += '%s\r\n' % msg or ''
+	def script_out(msg=None):
+		return '%s\r\n' % (msg or '')
 	def netlogon_script(script_buffer=script_buffer):
 
 		assert ltrace_func(TRACE_SAMBA3)
@@ -295,11 +294,13 @@ set servname={8}
 									pretty_name, stylize(ST_NAME, user.login),
 									stylize(ST_PROG, to_add)))
 
-				script_out('set {0}_osver={0}_{1}'.format(var_prefix, client_arch))
-				script_out()
-				script_out('setlocal')
+				script_buffer += script_out('setlocal')
+				script_buffer += script_out()
+				script_buffer += script_out('set {0}_osver={0}_{1}'.format(var_prefix, client_arch))
+				script_buffer += script_out()
 				script_buffer += open(script).read().replace('\n', '\r\n')
-				script_out('endlocal')
+				script_buffer += script_out('endlocal')
+				script_buffer += script_out()
 
 		with open(script_filename, 'wb') as f:
 			f.write(script_buffer)

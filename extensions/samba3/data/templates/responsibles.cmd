@@ -12,20 +12,20 @@ rem net use x: \\%servname%\progs_resps_rw /yes >nul
 rem activate this to mount the writable programs share
 rem net use y: \\%servname%\programs_rw /yes >nul
 
-goto %_resps_osver%
-goto _resps_end
+goto %responsibles_osver%
+goto responsibles_end
 
-:_resps_Win95
-goto _resps_end
+:responsibles_Win95
+goto responsibles_end
 
-:_resps_WinNT
-goto _resps_end
+:responsibles_WinNT
+goto responsibles_end
 
-:_resps_Win2k
-goto _resps_end
+:responsibles_Win2k
+goto responsibles_end
 
-:_resps_WinXP
-goto _resps_end
+:responsibles_WinXP
+goto responsibles_end
 
-:_resps_end
+:responsibles_end
 
