@@ -16,7 +16,7 @@ import sys, os, glob, errno
 
 from apt_pkg   import version_compare
 
-from licorn.foundations           import logging, settings, process
+from licorn.foundations           import logging, settings, process, pyutils
 from licorn.foundations           import packaging, fsapi, events, network
 from licorn.foundations.styles    import *
 from licorn.foundations.constants import distros
@@ -73,6 +73,8 @@ def check_and_install_django():
 		version if `foundations.apt` or `foundations.packaging` gets some
 		dedicated function. """
 
+	installed_via_pip = False
+
 	if (LMC.configuration.distro == distros.UBUNTU
 			and version_compare(LMC.configuration.distro_version, '11.10') >= 0
 		) or (LMC.configuration.distro == distros.DEBIAN
@@ -90,14 +92,19 @@ def check_and_install_django():
 
 		if dj == []:
 			packaging.pip_install_packages([ django_packages[distros.UNKNOWN] ])
+			installed_via_pip = True
 
 	else:
 		packaging.raise_not_installable(django_packages[distros.UNKNOWN])
+
+	return installed_via_pip
 def check_and_install_jinja2():
 	""" We need Jinja 2.6+ for some `sort*()` functions and other
 		enhancements. Version 2.6 is available as a package only on
 		Ubuntu Precise and Debian Wheezy as of 20120227. Older DEBIAN
 		distros will get it installed via PIP. """
+
+	installed_via_pip = False
 
 	if (LMC.configuration.distro == distros.UBUNTU
 			and version_compare(LMC.configuration.distro_version, '12.04') >= 0
@@ -118,17 +125,25 @@ def check_and_install_jinja2():
 
 		if j2 == []:
 			packaging.pip_install_packages([ jinja2_packages[distros.UNKNOWN] ])
+			installed_via_pip = True
 
 	else:
 		packaging.raise_not_installable(jinja2_packages[distros.UNKNOWN])
+
+	return installed_via_pip
 def check_and_install_djinja():
 	""" Djinja is only available as a PIP package as of 20120227, whatever the Debian
 		derivative tested. """
+
+	installed_via_pip = False
 
 	dj = glob.glob('/usr/local/lib/python*/dist-packages/Djinja-*')
 
 	if dj == []:
 		packaging.pip_install_packages(['Djinja'])
+		installed_via_pip = True
+
+	return installed_via_pip
 def check_django_wmi_database():
 	""" Check the first installation of the Django session database for the
 		WMI. If it doesn't exist, create it and sync it, for the WMI2 to work
@@ -236,13 +251,16 @@ def wmi_starts(*args, **kwargs):
 
 	common.check_and_install_pip()
 
-	check_and_install_openssl()
-	check_and_install_twisted()
-	check_and_install_django()
-	check_and_install_jinja2()
-	check_and_install_djinja()
+	installed_via_pip = []
 
-	common.check_pip_perms()
+	installed_via_pip.append(check_and_install_openssl())
+	installed_via_pip.append(check_and_install_twisted())
+	installed_via_pip.append(check_and_install_django())
+	installed_via_pip.append(check_and_install_jinja2())
+	installed_via_pip.append(check_and_install_djinja())
+
+	if reduce(pyutils.keep_true, installed_via_pip):
+		common.check_pip_perms(batch=True, full_display=False)
 
 	check_django_wmi_database()
 	check_ssl_certificate()
