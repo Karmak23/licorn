@@ -2781,7 +2781,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		self.setup_listener_gettext()
 
 		LMC.configuration.check(opts.minimal, batch=opts.batch,
-			auto_answer=opts.auto_answer)
+									auto_answer=opts.auto_answer)
+
+		if not opts.minimal:
+			from licorn.upgrades import common as upgrades_common
+
+			upgrades_common.check_pip_perms(batch=opts.batch,
+											auto_answer=opts.auto_answer)
 	def chk_system(self, opts, args):
 
 		self.setup_listener_gettext()
