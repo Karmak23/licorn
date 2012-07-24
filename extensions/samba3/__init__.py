@@ -12,4 +12,3 @@ Licorn extensions: samba3 - http://docs.licorn.org/extensions/samba3
 
 # get the class here for the ExtensionsManager to find it.
 from samba3 import Samba3Extension
-

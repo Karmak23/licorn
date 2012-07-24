@@ -9,9 +9,10 @@ Licorn extensions: samba3 - http://docs.licorn.org/extensions/samba3.html
 
 """
 
-import os
+import os, errno
 
-from licorn.foundations           import settings, logging, events, process
+from licorn.foundations           import settings, logging, events
+from licorn.foundations           import process, fsapi
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
@@ -49,12 +50,17 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		self.paths.smb_conf   = '/etc/samba/smb.conf'
 		self.paths.smb_daemon = '/usr/sbin/smbd'
 
-		self.data = LicornConfigObject()
+		self.paths.defaults   = LicornConfigObject()
+
+		self.__build_default_paths()
 
 		self.groups              = LicornConfigObject()
 
 		# The administrator can change groups names if desired.
 		# Defaults are 'machines' and 'responsibles'.
+		self.groups.admins     = settings.get(
+										'extensions.samba3.groups.admins',
+										'samba-admins')
 		self.groups.machines     = settings.get(
 										'extensions.samba3.groups.machines',
 										'machines')
@@ -101,9 +107,11 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		assert ltrace_func(TRACE_SAMBA3)
 
 		group_descrs = {
-			self.groups.machines    : _('Windows® workstations members of the MS domain'),
-			self.groups.responsibles: _('Users responsible of at least one group'),
+			self.groups.admins       : _('Windows®(-only) domain administrators'),
+			self.groups.machines     : _('Windows® workstations members of the MS domain'),
+			self.groups.responsibles : _('Users responsible of at least one group'),
 			}
+
 		for group in self.groups:
 			if not LMC.groups.exists(name=group):
 				if batch or logging.ask_for_repair(_(u'{0}: group {1} must be '
@@ -121,6 +129,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 											self.pretty_name,
 											stylize(ST_NAME, group)))
 
+		self.__check_paths(batch=batch, auto_answer=auto_answer)
 		self.__check_responsibles(batch=batch, auto_answer=auto_answer)
 
 		# TODO:
@@ -129,12 +138,114 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		#	- check users
 
 		return True
+	def __build_default_paths(self):
+
+		self.paths.windows_base_dir = settings.get(
+									'extensions.samba3.paths.windows_base_dir',
+									os.path.join(settings.defaults.home_base_path, 'windows'))
+
+
+		# NETLOGON .CMD scripts
+		self.paths.netlogon_base_dir = settings.get(
+									'extensions.samba3.paths.netlogon_base_dir',
+									os.path.join(self.paths.windows_base_dir, 'netlogon'))
+		self.paths.netlogon_templates_dir =  settings.get(
+									'extensions.samba3.paths.netlogon_templates_dir',
+									os.path.join(self.paths.netlogon_base_dir, 'templates'))
+		self.paths.netlogon_custom_dir = settings.get(
+										'extensions.samba3.paths.netlogon_custom_dir',
+										os.path.join(self.paths.netlogon_base_dir, 'local'))
+
+		# By Machine profiles
+		self.paths.profiles_base_dir = settings.get(
+										'extensions.samba3.paths.profiles_base_dir',
+										os.path.join(self.paths.windows_base_dir, 'profiles'))
+		self.paths.profiles_current_dir = settings.get(
+										'extensions.samba3.paths.profiles_current_dir',
+										os.path.join(self.paths.profiles_base_dir, 'current'))
+
+		# Profiles templates.
+		self.paths.profiles_templates_base_dir = settings.get(
+										'extensions.samba3.paths.profiles_templates_base_dir',
+										os.path.join(self.paths.windows_base_dir, 'profiles', 'templates'))
+		self.paths.profiles_templates_users_dir = settings.get(
+										'extensions.samba3.paths.profiles_templates_users_dir',
+										os.path.join(self.paths.windows_base_dir, 'profiles', 'templates', 'Users'))
+		self.paths.profiles_templates_groups_dir   = settings.get(
+										'extensions.samba3.paths.profiles_templates_groups_dir',
+										os.path.join(self.paths.windows_base_dir, 'profiles', 'templates', 'Groups'))
+		self.paths.profiles_templates_machines_dir = settings.get(
+										'extensions.samba3.paths.profiles_templates_machines_dir',
+										os.path.join(self.paths.windows_base_dir, 'profiles', 'templates', 'Machines'))
 	def __check_responsibles(self, batch=False, auto_answer=None):
 
 		allresps = LMC.groups.by_name(self.groups.responsibles)
 
 		for group in LMC.groups.select(filters.RESPONSIBLE):
 			allresps.add_Users(group.members)
+	def __check_paths(self, batch=False, auto_answer=None):
+
+		acls_conf      = LMC.configuration.acls
+		users_group    = LMC.configuration.users.group
+		dirs_to_verify = []
+
+		for smb_path, users_access in (
+					(self.paths.windows_base_dir,			'--x'),
+					(self.paths.netlogon_base_dir,			'r-x'),
+					(self.paths.netlogon_templates_dir,		None),
+					(self.paths.netlogon_custom_dir,		None),
+
+					(self.paths.profiles_base_dir,					'--x'),
+					(self.paths.profiles_current_dir,				'--x'),
+					(self.paths.profiles_templates_base_dir,		None),
+					(self.paths.profiles_templates_users_dir,		None),
+					(self.paths.profiles_templates_groups_dir,		None),
+					(self.paths.profiles_templates_machines_dir,	None),
+				):
+
+			dirs_to_verify.append(
+				fsapi.FsapiObject(name=smb_path.replace('/', '_'),
+						path=smb_path,
+						uid=0, gid=acls_conf.gid,
+						root_dir_acl=True,
+						root_dir_perm = '{0},{1},{2}{3}'.format(
+							acls_conf.acl_base,
+							acls_conf.acl_admins_ro,
+							('g:%s:%s,' % (users_group, users_access))
+								if users_access else '',
+							acls_conf.acl_mask)))
+
+		# The user profile 'rwx' access will be eventually restricted
+		# by Samba itself with the fake_perms module. But without
+		# fake_perms (which is the default), users need write access
+		# to their profile for Windows to load and update it.
+
+		for user in LMC.users.select(filters.STD):
+			dir_info      = user.check_rules._default.copy()
+			dir_info.name = user.login + '_windows_profile'
+			dir_info.path = os.path.join(self.paths.profiles_current_dir, user.login)
+
+			dirs_to_verify.append(dir_info)
+
+		try:
+			for uyp in fsapi.check_full(dirs_to_verify, batch=batch,
+										auto_answer=auto_answer):
+				pass
+
+		except (IOError, OSError), e:
+			if e.errno == errno.EOPNOTSUPP:
+				# this is the *first* "not supported" error encountered (on
+				# config load of first licorn command). Try to make the error
+				# message kind of explicit and clear, to let administrator know
+				# he/she should mount the partition with 'acl' option.
+				raise exceptions.LicornRuntimeError(_(u'Filesystem must be '
+								u'mounted with "acl" option:\n\t%s') % e)
+			else:
+				raise
+
+		except TypeError:
+			# nothing to check (fsapi.... returned None and yielded nothing).
+			pass
 
 	def is_enabled(self):
 		""" Always return the value of :attr:`self.available`, because we make
@@ -145,9 +256,8 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 	@events.handler_method
 	@only_if_enabled
 	def user_post_add(self, *args, **kwargs):
-		""" Create a caldavd user account and the associated calendar resource,
-			then write the configuration and release the associated lock.
-		"""
+		""" Update Samba user database, mkdir the profile directory and give
+			it to the user. """
 
 		assert ltrace_func(TRACE_SAMBA3)
 
@@ -158,26 +268,40 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		if user.is_system:
 			return True
 
+		all_ok = True
+
 		try:
-			try:
-				out, err = process.execute([ self.paths.smbpasswd, '-a', user.login, '-s' ],
-											'%s\n%s\n' % (password, password))
-				if out:
-					logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+			out, err = process.execute([ self.paths.smbpasswd, '-a', user.login, '-s' ],
+										'%s\n%s\n' % (password, password))
+			if out:
+				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
 
-				if err:
-					logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
-
-			except (IOError, OSError), e:
-				if e.errno not in (2, 32):
-					raise e
-
-			return True
+			if err:
+				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
 
 		except:
 			logging.exception(_(u'{0}: Exception in user_post_add({1})'),
 									self.pretty_name, (ST_LOGIN, user.login))
-			return False
+			all_ok = False
+
+		dir_info      = user.check_rules._default.copy()
+		dir_info.name = user.login + '_windows_profile'
+		dir_info.path = os.path.join(self.paths.profiles_current_dir, user.login)
+
+		try:
+			for uyp in fsapi.check_full([ dir_info ], batch=True):
+				pass
+
+			logging.notice(_(u'{0}: created {1}\'s Windows® profile (empty) '
+									u'in {2}.').format(self.pretty_name,
+										stylize(ST_LOGIN, user.login),
+										stylize(ST_PATH, dir_info.path)))
+
+		except TypeError:
+			# nothing to check (fsapi.... returned None and yielded nothing).
+			pass
+
+		return all_ok
 	@events.handler_method
 	@only_if_enabled
 	def user_post_change_password(self, *args, **kwargs):
@@ -193,29 +317,25 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			return True
 
 		try:
-			try:
-				out, err = process.execute([ self.paths.smbpasswd, user.login, '-s' ],
-											"%s\n%s\n" % (password, password))
-				if out:
-					logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+			out, err = process.execute([ self.paths.smbpasswd, user.login, '-s' ],
+										"%s\n%s\n" % (password, password))
+			if out:
+				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
 
-				if err:
-					logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
+			if err:
+				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
 
-			except (IOError, OSError), e:
-				if e.errno not in (2, 32):
-					raise e
-
-			return True
 		except:
 			logging.exception(_(u'{0}: Exception in user_post_change_password({1})'),
 									self.pretty_name, (ST_LOGIN, user.login))
 			return False
+
+		return True
 	@events.handler_method
 	@only_if_enabled
 	def user_pre_del(self, *args, **kwargs):
-		""" delete a user and its resource in the caldavd accounts file, then
-			reload the service. """
+		""" Remove user from Samba user database and archive the user profile
+			if non-empty. """
 
 		assert ltrace_func(TRACE_SAMBA3)
 
@@ -224,27 +344,39 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		if user.is_system:
 			return True
 
+		all_ok = True
+
 		try:
+			out, err = process.execute([ self.paths.smbpasswd, '-x', user.login ])
 
-			try:
-				out, err = process.execute([ self.paths.smbpasswd, '-x', user.login ])
+			if out:
+				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
 
-				if out:
-					logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
-
-				if err:
-					logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
-
-			except (IOError, OSError), e:
-				if e.errno not in (2, 32):
-					raise e
-
-			return True
+			if err:
+				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
 
 		except:
 			logging.exception(_(u'{0}: Exception in user_pre_del({1})'),
 								c, (ST_LOGIN, user.login))
-			return False
+			all_ok = False
+
+		profile_dir = os.path.join(self.paths.profiles_current_dir, user.login)
+
+		try:
+			os.rmdir(profile_dir)
+
+		except (OSError, IOError):
+			# Directory was not empty ?
+			try:
+				fsapi.archive_directory(profile_dir,
+								orig_name='%s_windows_profile' % (user.login))
+
+			except (IOError, OSError), e:
+				# Nah, it was probably something else
+				if e.errno != errno.ENOENT:
+					raise
+
+		return all_ok
 	@events.handler_method
 	@only_if_enabled
 	def group_post_add_user(self, *args, **kwargs):
@@ -318,6 +450,8 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		#						for key, value in kwargs.iteritems()
 		#							if key.startswith('smb_')
 		#								or key.startswith('samba_'))
+
+		#print '>>', event, event.kwargs
 
 		if event.kwargs.get('event_source', None) == 'samba3-netlogon':
 			netlogon.netlogon(*event.args, **event.kwargs)
