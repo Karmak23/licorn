@@ -343,6 +343,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		try:
 			# convert the weakref into a real before returning it to caller.
 			return self.__primaryGroup()
+
 		except TypeError:
 			return None
 	@primaryGroup.setter
