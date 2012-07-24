@@ -676,6 +676,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		self.users.group = 'users'
 
+		# This one will be filled later
+		self.users.gid   = 100
+
 		# see groupadd(8), coming from addgroup(8)
 		self.users.login_maxlenght = 31
 
@@ -1211,8 +1214,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if e.errno != 17:
 				raise e
 
-		acls_conf = self.acls
-
+		acls_conf      = self.acls
+		users_group    = self.users.group
 		dirs_to_verify = []
 
 		dirs_to_verify.append(
@@ -1226,9 +1229,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						path=self.users.base_path,
 						uid=0, gid=acls_conf.gid,
 						root_dir_acl=True,
-						root_dir_perm = '%s,%s,g:www-data:--x,g:users:%s,%s' % (
+						root_dir_perm = '%s,%s,g:www-data:--x,g:%s:%s,%s' % (
 							acls_conf.acl_base,
 							acls_conf.acl_admins_ro,
+							users_group,
 							acls_conf.acl_users,
 							acls_conf.acl_mask)))
 
@@ -1237,9 +1241,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						path=self.groups.base_path,
 						uid=0, gid=acls_conf.gid,
 						root_dir_acl=True,
-						root_dir_perm = '%s,%s,g:www-data:--x,g:users:%s,%s' % (
+						root_dir_perm = '%s,%s,g:www-data:--x,g:%s:%s,%s' % (
 							acls_conf.acl_base,
 							acls_conf.acl_admins_ro,
+							users_group,
 							acls_conf.acl_users,
 							acls_conf.acl_mask)))
 
@@ -1298,8 +1303,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		home_archive = fsapi.FsapiObject(name='home_archive')
 		home_archive.path = settings.home_archive_dir
-		# FIXME: don't hardcode 'acl' here.
-		home_archive.group = LMC.groups.by_name('acl').gidNumber
+		home_archive.group = acls_conf.gid
 		home_archive.user = 0
 		home_archive.root_dir_acl = True
 		home_archive.root_dir_perm = "%s,%s,%s" % (
@@ -1391,8 +1395,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		self.groups.hidden = groups.get_hidden_state()
 
-		# cache this here for faster access in check methods
-		self.acls.gid = groups.by_name(self.acls.group).gidNumber
+		# Cache these here for faster access in check methods
+		self.acls.gid  = groups.by_name(self.acls.group).gidNumber
+		self.users.gid = groups.by_name(self.users.group).gidNumber
 
 		self.check_base_dirs(batch=True)
 	def CheckHostname(self, batch = False, auto_answer = None):
