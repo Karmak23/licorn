@@ -1330,9 +1330,9 @@ class MachinesController(DictSingleton, CoreController):
 
 		return hostname
 
-	def word_match(self, word): 
-		return hlstr.word_match(word, set(itertools.chain(*[ 
-			(m.name, m.mid) for m in self]))) 
+	def word_match(self, word):
+		return hlstr.word_match(word, set(itertools.chain(*[
+			(m.name, m.mid) for m in self])))
 
 
 

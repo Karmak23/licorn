@@ -11,9 +11,11 @@ import os, getpass, errno
 # ================================================= Licorn® foundations imports
 import logging, styles, events
 # WARNING: don't import "options", this would produce a circular loop.
+
 from ltrace    import *
 from ltraces   import *
 from styles    import *
+from pyutils   import resolve_attr
 from threads   import RLock
 from base      import ObjectSingleton, NamedObject, LicornConfigObject, BasicCounter
 from constants import roles
@@ -326,5 +328,18 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		self.__load_inotifier_exclusions(emit_event)
 
 		self.check()
+	def get(self, setting_name, default_value=None):
 
+		if not setting_name.startswith('settings.'):
+			setting_name = 'settings.' + setting_name
+
+		try:
+			value = resolve_attr(setting_name, {'settings': self})
+
+		except AttributeError:
+			if default_value is None:
+				raise
+
+			else:
+				return default_value
 settings = LicornSettings()

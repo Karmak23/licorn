@@ -43,7 +43,9 @@ class OpensshExtension(ObjectSingleton, ServiceExtension):
 		self.paths.pid_file    = '/var/run/sshd.pid'
 		self.paths.disabler    = '/etc/ssh/sshd_not_to_be_run'
 
-		self.group = 'remotessh'
+		# The administrator can change the group
+		# name if desired. Default is 'remotessh'.
+		self.group = settings.get('extensions.openssh.group', 'remotessh')
 
 		self.defaults = {
 				'UsePAM'                 : 'yes',
@@ -82,10 +84,10 @@ class OpensshExtension(ObjectSingleton, ServiceExtension):
 			self.configuration = ConfigFile(self.paths.sshd_config,
 					separator=' ')
 		else:
-			logging.warning2('%s: not available because %s or %s do not exist '
-				'on the system.' % (self.name,
-					stylize(ST_PATH, self.paths.sshd_binary),
-					stylize(ST_PATH, self.paths.sshd_config)))
+			logging.warning2(_(u'{0}: not available because {1} or {2} do '
+						u'not exist on the system.').format(self.pretty_name,
+							stylize(ST_PATH, self.paths.sshd_binary),
+							stylize(ST_PATH, self.paths.sshd_config)))
 
 
 		assert ltrace(self._trace_name, '< initialize(%s)' % self.available)
@@ -141,19 +143,20 @@ class OpensshExtension(ObjectSingleton, ServiceExtension):
 			if not LMC.groups.exists(name=self.group):
 				need_reload = True
 				if batch or logging.ask_for_repair(_(u'{0}: group {1} must be '
-									'created. Do it?').format(
+									u'created. Do it?').format(
 									self.pretty_name,
 									stylize(ST_NAME, self.group)),
 								auto_answer=auto_answer):
 					LMC.groups.add_Group(name=self.group,
 						description=_(u'Users allowed to connect via SSHd'),
-						system=True, batch=True)
+						system=True, batch=batch)
 				else:
-					raise exceptions.LicornCheckError(
-							_(u'{0}: group {1} must exist before continuing.').format(
-							self.pretty_name, stylize(ST_NAME, self.group)))
+					raise exceptions.LicornCheckError(_(u'{0}: group {1} must '
+										u'exist before continuing.').format(
+											self.pretty_name,
+											stylize(ST_NAME, self.group)))
 
-		logging.progress(_('{0}: checking good default values in {1}…').format(
+		logging.progress(_(u'{0}: checking good default values in {1}…').format(
 						self.pretty_name, stylize(ST_PATH, self.paths.sshd_config)))
 
 		need_rewrite = False
@@ -164,7 +167,7 @@ class OpensshExtension(ObjectSingleton, ServiceExtension):
 
 		if need_rewrite:
 			if batch or logging.ask_for_repair(_(u'{0}: {1} must be modified. '
-							'Do it?').format(self.pretty_name,
+							u'Do it?').format(self.pretty_name,
 								stylize(ST_PATH, self.paths.sshd_config)),
 							auto_answer=auto_answer):
 				self.configuration.backup()
@@ -174,9 +177,9 @@ class OpensshExtension(ObjectSingleton, ServiceExtension):
 					stylize(ST_PATH, self.paths.sshd_config)))
 			else:
 				raise exceptions.LicornCheckError(_(u'{0}: configuration file '
-					'{1} must be altered to continue.').format(
-						self.pretty_name,
-						stylize(ST_PATH, self.paths.sshd_config)))
+								u'{1} must be altered to continue.').format(
+									self.pretty_name,
+									stylize(ST_PATH, self.paths.sshd_config)))
 
 		if need_reload or need_rewrite:
 			self.service(svccmds.RELOAD)
