@@ -9,6 +9,7 @@
 {%- block extended_media -%}
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.uitablefilter.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.iselectable.js"></script>
 	
 
 {%- endblock -%}
@@ -16,14 +17,17 @@
 {%- block title -%}{{ _('Machines management') }}{%- endblock -%}
 
 {%- block main_content -%}
+	<div class="modal hide" id="machine_modal">
+	</div>
 
 	<div class='table_header'>
 		<span class='table_header_title table_header_item'>
-			Machines (<span class='table_header_item_counter'>{{ machines|length }}</span>)
+			Machines (<span id='model_machines_count'>{{ machines|length }}</span>)
 		</span>
 
 		<span class='table_header_massive_actions table_header_item'>
 			MASSIVE ACTIONS
+			<span id='test'> TEST SELECT </span>
 		</span>
 
 		<span class='table_header_filter table_header_item'>
@@ -32,7 +36,7 @@
 			</div>
 		</span>
 	</div>
-	<table class="table sortable" id="machines_table">
+	<table class="table sortable" id="model_machines_table">
 		<thead>
 			<tr>
 				<th>Status</th>
@@ -43,9 +47,7 @@
 		</thead>
 		<tbody>
 			{%- for machine in machines -%}
-				<tr>
-					{%- include 'machines/machine_row.html' -%}
-				</tr>
+				{%- include 'machines/machine_row.html' -%}
 			{%- endfor -%}
 		</tbody>
 	</table>
@@ -55,12 +57,62 @@
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
 
-			// from common.js
-			setup_table_filter($('#machines_table'), $('#list_filter'))
-
-
+			setup_machines()
+			
+			$("#test").click(function() {
+				alert(get_selected_rows($('#model_machines_table tbody'), 'row_selected'))
+			});
 			
 		});
+
+		var default_sort = [[1,1]]
+		var setup_row_timeout;
+
+		function setup_machines() {
+			/* Setup all events related to machines */
+
+			// setup the filter mecanism
+			setup_table_filter($('#model_machines_table'), $('#list_filter'))
+			// make rows selectable
+			setup_table_row_selectable($('#model_machines_table tbody'), 'row_selected', '.not-me')
+			// setup doubleclick on each rows
+			setup_table_row_doubleclick($('#model_machines_table tbody td'), func_doubleclick_row)
+			// setup the sort plugin
+			setup_table_sorter(default_sort);
+
+			// setup upgrade facilities
+			setup_upgrade_facilities()
+
+		}
+		function setup_upgrade_facilities() {
+			$(".machine_upgrade").click(function() {
+				console.log("upgrade")
+				mid = $(this).data('mid')
+				$.get('/machines/upgrade/'+mid)
+			})
+		}
+		function setup_row(row) {
+			
+			clearTimeout(setup_row_timeout)
+
+			setup_table_row_doubleclick($(row), func_doubleclick_row)
+			
+			setup_row_timeout = setTimeout( function() {
+				// try to do it only once because it is applyed to the whole table
+				setup_table_row_selectable($('#model_machines_table tbody'), 'row_selected', '.not-me')
+				
+				// let know the sort plugin that we updated the table
+				$("table.sortable").trigger("update"); 
+            	$("table.sortable").trigger("sorton",[default_sort]); 
+				},
+				1000); 
+		}
+		function func_doubleclick_row(td_element) {
+			console.log()
+			$.get('/machines/edit/'+td_element.data('mid'), function(modal_html) {
+				$("#machine_modal").html(modal_html).modal()
+			})
+		}
 	</script>
 
 

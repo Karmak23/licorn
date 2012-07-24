@@ -42,3 +42,12 @@ def scan(request, *args, **kwargs):
 
 	LMC.machines.scan_network()
 	return HttpResponse('Processing network scan')
+
+def edit(request, mid, *args, **kwargs):
+	return HttpResponse(render_to_string('machines/edit.html', {
+		'machine' : LMC.machines.guess_one(mid) 
+		}))
+
+def upgrade(request, mid, *args, **kwargs):
+	LMC.machines.guess_one(mid).do_upgrade()
+	return HttpResponse("OK")

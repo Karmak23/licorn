@@ -30,7 +30,8 @@
 			var settings = {
         		'acccept': '',
 				'exclude': '',
-        		'active' : 'active'
+        		'active' : 'active',
+        		'event_set' : 'iselectable-event-set'
       	};
 
 			//override settings with user options
@@ -41,7 +42,7 @@
 			//set the children class for accepted items
 			var children_class= '';
 			if (settings.accept) children_class = settings.accept;
-			else if (settings.exclude) children_class = ':not('+settings.exclude+')';
+			else if (settings.exclude) children_class = ':not('+settings.exclude+'):not(.'+settings.event_set+')';
 					
 			$(this).children(children_class).mousedown(function(e) {
 
@@ -115,12 +116,11 @@
 					}
 					
 				}
-			
 			});
 			
 			$('body').mouseup(function(e) {
-					mousedown = false;
-					$(container).children().removeClass("iselectable-dragstart");
+				mousedown = false;
+				$(container).children().removeClass("iselectable-dragstart");
 			});
 			
 			//drag select
@@ -158,6 +158,10 @@
 				}
 			});
 			
+			$(this).children(children_class).each(function() {
+				// set the event as already set to avoid setting it another time
+				$(this).addClass(settings.event_set)
+			})
 			
 			
 		});  

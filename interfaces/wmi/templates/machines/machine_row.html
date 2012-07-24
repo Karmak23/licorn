@@ -11,31 +11,31 @@
 		{%- endif -%}
 
 		&nbsp;<img src="/media/images/16x16/{{ icon }}"
-			title="{{ message }}" alt="{{ message }}"/>
+			title="{{ message }}" alt="{{ message }}" class="machine_upgrade" data-mid="{{ machine.mid }}"/>
 	{%- endif -%}
 {%- endmacro -%}
 
+<tr data-mid="{{ machine.mid }}" id='machines_{{ machine.wid }}'>
+	<td data-sort='{{ machine.status }}' data-filter='{{ machine.status }}'>
+		<img src="/media/images/16x16/{{ get_host_status_html[machine.status][0] }}"
+					alt="{{ get_host_status_html[machine.status][1] }}" width="16" height="16" />
+	</td>
+	<td>
+		{{ machine.hostname }} 
 
-<td sort-data='{{ machine.status }}' filter-data='{{ machine.status }}'>
-	<img src="/media/images/16x16/{{ get_host_status_html[machine.status][0] }}"
-				alt="{{ get_host_status_html[machine.status][1] }}" width="16" height="16" />
-</td>
-<td>
-	{{ machine.hostname }} 
-
-	{%- if machine.hostname != machine.mid -%}
-		&nbsp; ( {{ machine.mid }} )
-	{%- endif -%}
+		{%- if machine.hostname != machine.mid -%}
+			&nbsp; ( {{ machine.mid }} )
+		{%- endif -%}
 
 
-	{{ updates_status(machine) }}
-</td>
-<td sort-data='{{ machine.system_type }}' filter-data="toto">
-	<img src="/media/images/16x16/{{ get_host_type_html(machine.system_type)[0] }}" alt="{{ get_host_type_html(machine.system_type)[1] }}" width="16" height="16" />
-</td>
-<td sort-data='{{ machine.system_type }}'>
-	<img src="/media/images/16x16/{{ get_host_os_html(machine.system_type)[0] }}"
-					alt="{{ get_host_os_html(machine.system_type)[1] }}" width="16" height="16" />
-<td>
-
+		<span id="machine_status"> {{ updates_status(machine) }} </span>
+	</td>
+	<td data-sort='{{ machine.system_type }}' data-filter="toto">
+		<img src="/media/images/16x16/{{ get_host_type_html(machine.system_type)[0] }}" alt="{{ get_host_type_html(machine.system_type)[1] }}" width="16" height="16" />
+	</td>
+	<td data-sort='{{ machine.system_type }}'>
+		<img src="/media/images/16x16/{{ get_host_os_html(machine.system_type)[0] }}"
+						alt="{{ get_host_os_html(machine.system_type)[1] }}" width="16" height="16" />
+	</td>
+</tr>
 

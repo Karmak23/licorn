@@ -32,7 +32,7 @@
       var text = '';
       
       $.each(elem.children(), function(i, v) {
-        f = $(v).attr('filter-data');
+        f = $(v).data('filter');
         if (typeof f === 'undefined') {
           text += $(v).text();
 

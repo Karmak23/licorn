@@ -6,6 +6,12 @@ from licorn.foundations import hlstr
 urlpatterns = patterns('machines.views',
     (r'^/?$', 'main'),
     (r'^scan/?$', 'scan'),
+
+    (r'^edit/(?P<mid>.+)/?$', 'edit'),
+
+	(r'^upgrade/(?P<mid>.+)/?$', 'upgrade'),
+
+
     # NOT YET READY FOR MACHINES
     #(r'^view/(?P<mid>\d+)/?$', 'view'),
     #(r'^view/(?P<hostname>%s)/?$' % hlstr.regex['login'][1:-1]  , 'view', {'semantic': True}),

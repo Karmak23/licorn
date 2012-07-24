@@ -1,15 +1,17 @@
 var page_cleaner_interval;
 
-function update_instance(model, iid, created, new_html) {
+function update_instance(model, iid, new_html, callback) {
 	// This function will work with anything, but best for replacing a <tr>
 	// with a new one, already rendered.
 	//
-
+	
 	new_  = $(new_html);
 
 	table = $('#model_' + model + '_table');
+
 	old   = $('#' + model + '_' + iid);
 
+	
 	if (old.length) {
 		// this instance was already known.
 		// remove the old corresponding ROW.
@@ -23,7 +25,6 @@ function update_instance(model, iid, created, new_html) {
 	} else {
 		// we've got a new challenger, insert it at the end.
 		last = table.find('tr:last');
-
 		last.after(new_);
 
 		if (last.hasClass('no-data')) {
@@ -41,6 +42,19 @@ function update_instance(model, iid, created, new_html) {
 
 	new_.show();
 
+	if (callback != null) {
+		// if a callback is set, call it with the new row as parameter
+		if (typeof(callback) == "string") {
+			var fn = window[callback];
+			fn(new_);
+		}
+		else {
+			callback(new_);
+		}
+
+	}
+
+	/* OLD CALBACK 
 	// don't forget links, modals, popoversâ€¦
 	setup_everything(new_);
 
@@ -51,6 +65,7 @@ function update_instance(model, iid, created, new_html) {
 		.trigger("sorton", [table.get(0).config.sortList]);
 	  //.trigger("appendCache");
 	  //.trigger("applyWidgets");
+	*/
 
 	// remove old stuff marked as such.
 	page_cleaner();
@@ -71,7 +86,7 @@ function popover_placement(objekt, parent) {
 	}
 }
 function table_sort_extractor(node) {
-	s = $(node).attr('sort-data');
+	s = $(node).data('sort');
 
 	if (typeof s === 'undefined') {
 		return node.innerHTML;
@@ -101,9 +116,10 @@ function page_cleaner() {
 		}
 	}
 }
-function setup_table_sorter() {
+function setup_table_sorter(sort_list) {
+	if (sort_list == null) { sort_list = [[0, 0], [1, 0]]; }
 	$("table.sortable").tablesorter({
-		sortList: [[0, 0], [1, 0]],
+		sortList: sort_list,
 		textExtraction: table_sort_extractor,
 	});
 	//.bind('sortEnd', function(sorter) {
@@ -111,11 +127,33 @@ function setup_table_sorter() {
 	//});
 }
 function setup_table_filter(table_element, input_element) {
-
 	input_element.keyup(function(event) {
-		$.uiTableFilter( table_element, input_element.val() )
+		$.uiTableFilter( table_element, input_element.val() );
 	});
-
+}
+function setup_table_row_selectable(table_element, active_class, ignore_class) {
+	// selectable rows
+	table_element.iselectable({
+		active: active_class,
+		exclude: ignore_class
+	});
+}
+function get_selected_rows(table_element, active_class) {
+	rows = [];
+	$.each(table_element.children(), function(index, row) {
+		if ($(row).hasClass(active_class)) {
+			rows.push(row);
+		}
+	});
+	return rows;
+}
+function setup_table_row_doubleclick(elements, _function) {
+	// double click on a row will call _function with td as parameter
+	elements.each(function(index, row) {
+		$(row).dblclick(function(event) {
+			_function($(event.target).parent());
+		});
+	});
 }
 function setup_popovers(parent){
 
@@ -180,10 +218,31 @@ function setup_auto_cleaner() {
 	page_cleaner_interval = setInterval(page_cleaner, 600000);
 }
 
+/* this is now a librairy 
+
 $(document).ready(function() {
 	setup_everything();
 
 	setup_table_sorter();
 	setup_auto_cleaner();
 
-});
+});*/
+
+function reload_div(div_id, html, no_effect) {
+	div = $(div_id);
+
+	// orig: true2 > false2 	> can made the div not fadeIn() completely
+	//								in some fast-mouse-movement cases.
+	// true/false > false/true 	> idem
+	// true/true > false/true 	> idem
+	// true2 > nothing 			> seems perfect.
+
+	if (no_effect === undefined) {
+		div.stop(false, false).fadeOut('fast', function(){
+			$(this).html(html).stop(false, true)
+				.fadeIn('fast');
+		});
+	} else {
+		div.stop(true, false).html(html);
+	}
+}

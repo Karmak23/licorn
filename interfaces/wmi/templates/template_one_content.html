@@ -6,6 +6,7 @@
 {%- block base_media -%}
 	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/menu.css">
 	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/main_template_one_content.css">
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/notifications.css" />
 
 	
 	<script language="javascript" type="text/javascript" src="/media/js/jquery-1.7.min.js"></script>
@@ -53,6 +54,14 @@
 			</div><!-- end main_content -->
 		{%- endblock -%}
 	</div><!-- end content -->
+	<script language="javascript" text='script/javascript'>
+		$(document).ready(function() {
+			push_setup();
+			$('#notification').hide();
+			setup_auto_cleaner();
+		});
 
+		
+	</script>
 {%- endblock -%}
 

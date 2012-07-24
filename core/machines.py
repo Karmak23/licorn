@@ -53,6 +53,7 @@ def myself_or_system_forward(func):
 	@functools.wraps(func)
 	def wrap(self, *a, **kw):
 		if self.myself:
+			kw['machine'] = self
 			return getattr(LMC.system, func.__name__)(*a, **kw)
 
 		if self.system:
@@ -220,6 +221,10 @@ class Machine(CoreStoredObject, SharedResource):
 	def mid(self):
 		""" The IP address of the host. """
 		return self.__mid
+	@property
+	def wid(self):
+		""" Used in the WMI, return the IP address replacing '.' by '_' """
+		return self.__mid.replace('.', '_')
 
 	# Comfort alias ("mid" is not a common name,
 	# only for me and Licorn® internals)
@@ -354,6 +359,7 @@ class Machine(CoreStoredObject, SharedResource):
 			else:
 				self.status = host_status.PINGS
 				if old_status not in UP_status:
+					print "host_onlien"
 					LicornEvent('host_back_online'
 									if self.has_already_been_online
 									else 'host_online', host=self).emit()
@@ -382,6 +388,8 @@ class Machine(CoreStoredObject, SharedResource):
 
 			try:
 				self.hostname = socket.gethostbyaddr(self.mid)[0]
+
+				LicornEvent('machine_hostname_changed', host=self).emit()
 
 			except Exception:
 				logging.exception(_(u'Could not resolve machine name for '

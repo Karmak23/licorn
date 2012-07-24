@@ -153,17 +153,17 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 		assert ltrace(TRACE_SYSTEM, '| get_host_type(%s)' % systype)
 
 		return systype
-	def updates_available(self, full=False):
+	def updates_available(self, full=False, *args, **kwargs):
 		up, sec = apt.apt_do_check()
 		if full:
 			return up, sec
 		return (up or sec)
-	def security_updates(self):
+	def security_updates(self, *args, **kwargs):
 		return apt.apt_do_check()[1]
-	def software_updates(self):
+	def software_updates(self, *args, **kwargs):
 		return apt.apt_do_check()[0]
 	@workers.background_service(priorities.NORMAL)
-	def do_upgrade(self):
+	def do_upgrade(self, machine=None, *args, **kwargs):
 		""" This method will launch the upgrade procedure in a background
 			service thread. """
 
@@ -172,14 +172,14 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 
 		with self.lock:
 			self.__status |= host_status.UPGRADING
-			LicornEvent('upgrade_started').emit()
+			LicornEvent('software_upgrades_started', host=machine).emit()
 
 		# no need to try/except, apt_do_upgrade() does it already.
 		apt.apt_do_upgrade()
 
 		with self.lock:
 			self.__status -= host_status.UPGRADING
-			LicornEvent('upgrade_finished').emit()
+			LicornEvent('software_upgrades_finished', host=machine).emit()
 
 		# reset the status, anyway
 		apt.apt_do_check(cache_force_expire=True)
