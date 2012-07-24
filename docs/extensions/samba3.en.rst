@@ -24,6 +24,13 @@ Client side
 
 * nothing yet. perhaps winbind sychronization will be pulled in someday. Feel free to ask for new functionnalities.
 
+.. _extensions.samba3.netlogon.en:
+
+Netlogon script customization
+=============================
+
+This section is not yet translated, you can refer to the :ref:`french one <extensions.samba3.netlogon.fr>` for the moment.
+
 
 .. _extensions.samba3.faq.en:
 

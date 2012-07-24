@@ -1,0 +1,15 @@
+Windows Registry Editor Version 5.00
+
+;--------------------------------------------------------------------------------
+;                          Disable "Offline Files and Folders"
+;--------------------------------------------------------------------------------
+
+;To prevent file synchronization at logon/logoff for XP
+;Pour empecher la synchronisation des fichiers
+;pour une utilisation "offline" - hors reseau.
+
+;Disable "Offline Files and Folders"
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\NetCache]
+"SyncAtLogon"=dword:00000000
+"SyncAtLogoff"=dword:00000000
+"NoReminders"=dword:00000001

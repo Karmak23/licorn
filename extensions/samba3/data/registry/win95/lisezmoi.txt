@@ -1,0 +1,10 @@
+
+Pour mettre à jour votre windows, merci de télécharger les fichiers
+qui se trouvent ici:
+
+1. Lisez ce fichier:
+   http://www.boinklabs.com/download/win95_updates/readme.txt
+2. Téléchargez ce qu'il faut
+   http://www.boinklabs.com/download/win95_updates/
+   http://ftp.cac.psu.edu/pub/ger/temp/Win95/
+   http://www.sfu.ca/acs/software/pc/service/win95/
