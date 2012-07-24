@@ -59,13 +59,14 @@ function update_instance(model, iid, new_html, callback) {
 	setup_everything(new_);
 
 	//console.log('re-sort on ' + [table.get(0).config.sortList]);
-
+	*/
+	
 	// re-sort the table.
 	table.trigger("update")
 		.trigger("sorton", [table.get(0).config.sortList]);
 	  //.trigger("appendCache");
 	  //.trigger("applyWidgets");
-	*/
+	
 
 	// remove old stuff marked as such.
 	page_cleaner();
@@ -105,6 +106,7 @@ function page_cleaner() {
 	try {
 		$('body').find('.to-remove').each(function(){
 			$(this).remove();
+			
 		});
 
 	} catch (err) {

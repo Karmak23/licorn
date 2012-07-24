@@ -88,7 +88,7 @@ def machine_hostname_changed_handler(request, event, reinit=False):
 	#print 'licorn_host_online'
 	#print machine.mid
 
-	yield utils.notify(_(u'Machine with address {0} is ow known as {1}.').format(
+	yield utils.notify(_(u'Machine with address {0} is now known as {1}.').format(
 												machine.mid, machine.hostname))
 
 	yield utils.format_RPC_JS('update_instance',
@@ -111,10 +111,10 @@ def software_upgrades_started_handler(request, event, reinit=False):
 
 	yield utils.notify(_(u'Software upgrades started on machine {0}.').format(
 															machine.hostname))
-	yield utils.format_RPC_JS('reload_div', "#machines_{0} #machine_status".format(machine.wid),
-		"<img src='/media/images/progress/ajax-loader.gif'>")
 
-	
+	yield utils.format_RPC_JS('reload_div', "#machines_{0} #machine_status".format(machine.wid),
+		"<img src='/media/images/throbber.gif'>")
+
 def software_upgrades_finished_handler(request, event, reinit=False):
 	machine = event.kwargs['host']
 
@@ -131,5 +131,3 @@ def software_upgrades_finished_handler(request, event, reinit=False):
 									'get_host_type_html'   : wmi_data.get_host_type_html}),
 								"setup_row"
 								)
-
-	
