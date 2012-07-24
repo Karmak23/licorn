@@ -1,0 +1,16 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">×</button>
+    <h3>{{ _('Massive action confirmation') }}</h3>
+  </div>
+  <div class="modal-body">
+    <p>{{ _('Do you really want to apply massive action <em><strong>{0}</strong></em> on machines:'.format(massive_action_name)) }}</p>
+    <ul>
+    	{%- for m in machines -%}
+    		<li> {{ m.mid }}</li>
+    	{%- endfor -%} 
+    </ul>
+  </div>
+  <div class="modal-footer">
+    <a href="#" class="btn" data-dismiss="modal">No, Thanks</a>
+    <a href="#" class="btn btn-primary" id="apply_massive_action">Yes, I want</a>
+</div>

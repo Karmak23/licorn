@@ -1,0 +1,40 @@
+
+@import "base.less";
+
+#notification {
+	position: absolute;
+	top: 0;
+	width: 60%;
+	left: 20%;
+	z-index: 10000;
+	color: #fff;
+	background: darken(desaturate(@back_color, 10%), 10%);
+	opacity: 0.95;
+	-webkit-border-bottom-right-radius: 3px;
+	-webkit-border-bottom-left-radius: 3px;
+	-moz-border-radius-bottomright: 3px;
+	-moz-border-radius-bottomleft: 3px;
+	border-bottom-right-radius: 3px;
+	border-bottom-left-radius: 3px;
+	/*
+	border-left: 3px solid #e4cad3;
+	border-bottom: 3px solid #ab2d58;
+	border-right: 3px solid #ab2d58;
+	*/
+	padding: 5px 10px 10px;
+    -moz-box-shadow:    0 0 10px @back_color;
+    -webkit-box-shadow: 0 0 10px @back_color;
+    box-shadow:         0 0 10px @back_color;
+}
+
+.notification-text {
+	font-size: 95%;
+}
+
+
+.push_reconnection_notification {
+	padding-left: 35px;
+	background-image: url('/media/images/throbber.gif');
+	background-position: left center;
+	background-repeat: no-repeat;
+}
