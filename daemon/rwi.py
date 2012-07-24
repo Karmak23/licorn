@@ -499,7 +499,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			# Running, finished
 			pass
-		
+
 		tasks_to_get = LMC.tasks.select(selection)
 
 		data = LMC.tasks._cli_get(selected=tasks_to_get,
@@ -821,9 +821,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError('\n' + err)
 
 			try:
-			
+
 				user['group'] = [Group.make_name(g) for g in user['group'].split(',') if g != '']
-			
+
 			except IndexError, e:
 				err =  _(u'Import error '
 					'on line {0}: no group specified or bad {2} data '
@@ -843,7 +843,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError('\n' + err)
 
 			groups_to_add.extend([g for g in user['group'] if g not in groups_to_add])
-		
+
 			users_to_add.append(user)
 
 			if not (i % 100):
@@ -912,7 +912,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					raise e
 
 				data_to_export_to_html[g]= {}
-				
+
 				# FIXME: flush the listener??
 				#sys.stdout.flush()
 
@@ -1071,7 +1071,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						</style>
 					</head>
 					<body>''')
-				
+
 			html_file.write('''
 					<h1>{title}</h1>
 					<h2>{import_on_date}</h2>
@@ -1421,7 +1421,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					stylize(ST_PATH, 'name'),
 					stylize(ST_PATH, 'action')), to_local=False)
 			return
-		
+
 		task_name = opts.name
 		task_action = opts.action
 
@@ -1464,7 +1464,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					return
 			else:
 				task_args = opts.args.split(';')
-		
+
 		task_kwargs = {}
 		if opts.kwargs != "":
 			try:
@@ -1472,21 +1472,21 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					_kw = kw.split('=')
 					task_kwargs.update({_kw[0]:_kw[1]})
 			except Exception, e:
-				logging.exception("{0} : {3} unpacking kwargs of task {1} "    
+				logging.exception("{0} : {3} unpacking kwargs of task {1} "
 					"(kwargs={2}) ".format(
 					stylize(ST_NAME, LMC.tasks.name),
 					opts.name, kw, stylize(ST_BAD, "Error while"),
-					stylize(ST_PATH, task_name), task_kwargs), 
+					stylize(ST_PATH, task_name), task_kwargs),
 					to_local=False)
 
 		try:
-			LMC.tasks.add_task(task_name, task_action, 
+			LMC.tasks.add_task(task_name, task_action,
 				year=task_year, month=task_month, day=task_day, hour=task_hour,
 				minute=task_minute, second=task_second, week_day=task_week_day,
 				delay_until_year=task_delay_until_year, delay_until_month=task_delay_until_month,
 				delay_until_day=task_delay_until_day, delay_until_hour=task_delay_until_hour,
 				delay_until_minute=task_delay_until_minute, delay_until_second=task_delay_until_second,
-				args=task_args, kwargs=task_kwargs, 
+				args=task_args, kwargs=task_kwargs,
 				defer_resolution=task_defer_resolution)
 		except Exception, e:
 			remote_output(_("{0} while adding task {1} : {2}\n".format(
@@ -1768,7 +1768,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def del_task(self, opts, args):
 		self.setup_listener_gettext()
 		tasks_to_del = []
-		
+
 		if opts.name is None and len(args) == 2:
 			for t in args[1].split(','):
 				try:
@@ -1778,7 +1778,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						"non-existing".format(
 						stylize(ST_NAME, LMC.tasks.name),
 						stylize(ST_PATH, t)))
-		
+
 			del args[1]
 
 		elif opts.all:
@@ -1798,10 +1798,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				except exception.DoesntExistException:
 					logging.exception('{0} : no task with id {1}'.format(
 						stylize(ST_NAME, LMC.tasks.name), stylize(ST_PATH, t_id)))
-				
+
 				tasks_to_del = [ _id ]
 
-			
+
 		for task in tasks_to_del:
 			LMC.tasks.del_task(task.id)
 	def del_profile(self, opts, args):
