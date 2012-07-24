@@ -18,7 +18,7 @@ All interfaces connect to the Licorn® daemon via the Pyro channel.
 :license:
 	* GNU GPL version 2.
 """
-import types, Pyro.core, itertools, gc, tempfile
+import types, Pyro.core, itertools, gc, tempfile, json
 
 from operator  import attrgetter
 from threading import current_thread
@@ -1513,6 +1513,47 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		# TODO: move that code into the extension.
 		LMC.extensions.volumes.mount_volumes(volumes=volumes)
+	def add_event(self, opts, args):
+		""" Modify volumes. """
+
+		self.setup_listener_gettext()
+
+		if opts.event_name is None:
+			opts.event_name = args[1]
+
+		events_names = set(events.events_handlers.keys()
+							+ events.events_callbacks.keys())
+
+		if opts.event_name not in events_names:
+			raise exceptions.BadArgumentError(_(u'Bad event name "{0}". Use '
+				u'`get events` to display a list of valid event names.').format(
+					opts.event_name))
+
+		if opts.event_args is None:
+			opts.event_args = ()
+
+		else:
+			opts.event_args = json.loads(opts.event_args)
+
+
+		if opts.event_kwargs is None:
+			opts.event_kwargs = {}
+
+		else:
+			opts.event_kwargs = json.loads(opts.event_kwargs)
+
+		if opts.event_priority != None:
+			try:
+				opts.event_priority = getattr(priorities, opts.event_priority)
+
+			except:
+				raise exceptions.BadArgumentError(_(u'Bad priority '
+										u'"{0}"').format(opts.event_priority))
+
+		# if 'synchronous' is present in kwargs, the event will be,
+		# else it will be backgrounded like any other event.
+		LicornEvent(opts.event_name, *opts.event_args,
+								**opts.event_kwargs).emit(opts.event_priority)
 	def add_backup(self, opts, args):
 		""" Add a backup from CLI. TODO: make this code provided directly
 			by the extension. """

@@ -319,6 +319,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		#							if key.startswith('smb_')
 		#								or key.startswith('samba_'))
 
-		netlogon.netlogon(*event.args, **event.kwargs)
+		if event.kwargs.get('event_source', None) == 'samba3-netlogon':
+			netlogon.netlogon(*event.args, **event.kwargs)
 
 __all__ = ('Samba3Extension', )
