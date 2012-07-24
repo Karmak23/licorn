@@ -182,15 +182,18 @@ class SimpleShare(PicklableObject):
 					raise
 		else:
 			try:
-				# Archive the uploads/ directory only if non-empty.
-				if os.listdir(self.uploads_directory) != []:
-					fsapi.archive_directory(self.uploads_directory,
-							orig_name='share_%s_%s_uploads' % (
-										self.coreobj.name, self.name))
+				# this will fail if non-empty
+				os.rmdir(self.uploads_directory)
 
-			except (IOError, OSError), e:
-				if e.errno != errno.ENOENT:
-					raise
+			except (OSError, IOError):
+				try:
+					fsapi.archive_directory(self.uploads_directory,
+											orig_name='share_%s_%s_uploads' % (
+												self.coreobj.name, self.name))
+
+				except (IOError, OSError), e:
+					if e.errno != errno.ENOENT:
+						raise
 
 		LicornEvent('share_uploads_state_changed', share=self).emit()
 	@property
