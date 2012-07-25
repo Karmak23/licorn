@@ -17,7 +17,7 @@
 }
 
 .row_selected, .row_selected:hover {
-	background-color: #01DFD7;
+	background-color: #00FFFF;
 }
  
 .table tbody tr:hover td,
