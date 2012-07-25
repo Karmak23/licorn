@@ -71,7 +71,7 @@
 			setup_machines()
 		});
 
-		var default_sort = [[1,1]]
+		var default_sort = [[1,0]]
 		var setup_row_timeout;
 
 		var select_active_class = 'row_selected'
@@ -97,7 +97,6 @@
 		}
 		function setup_upgrade_facilities() {
 			$(".machine_upgrade").click(function() {
-				console.log("upgrade")
 				mid = $(this).data('mid')
 				$.get('/machines/upgrade/'+mid)
 			})
@@ -113,22 +112,18 @@
 			// filter the list
             $('#list_filter').trigger('keyup')
 
+			// let know the sort plugin that we updated the table
+			$("table.sortable").trigger("update");
+
+			// resort the table
+			$("table.sortable").trigger("sorton",[default_sort]);
 			setup_row_timeout = setTimeout( function() {
 				// try to do it only once because it is applyed to the whole table
-				setup_table_row_selectable($('#model_machines_table tbody'), '', '.not-me')
-
-				// let know the sort plugin that we updated the table
-				$("table.sortable").trigger("update");
-
-				// resort the table
-            	$("table.sortable").trigger("sorton",[default_sort]);
-
-
+				setup_table_row_selectable($('#model_machines_table tbody'), select_active_class, '.not-me')
 				},
 				1000);
 		}
 		function func_doubleclick_row(td_element) {
-			console.log()
 			$.get('/machines/edit/'+td_element.data('mid'), function(modal_html) {
 				$("#machine_modal").html(modal_html).modal()
 			})
@@ -138,7 +133,6 @@
 			$('.massive_action').click(function() {
 				// get selected items
 				selected_rows = get_selected_rows($('#model_machines_table tbody'), select_active_class);
-				console.log("selected_rows ", selected_rows, selected_rows.length)
 
 				action_name = $(this).data('name')
 				action_url = $(this).data('url')
@@ -151,7 +145,6 @@
 
 					mids=[]
 					$.each(get_selected_rows($('#model_machines_table tbody'), select_active_class), function(i, item) {
-						console.log(i, item)
 						mids.push($(item).data('mid'))
 					})
 
@@ -170,7 +163,6 @@
 				$("#machine_modal").modal('hide')
 
 				// run the action
-				console.log("run action ", action)
 				$.get(action + mids)
 
 				// unselect all rows

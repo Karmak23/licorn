@@ -28,10 +28,9 @@
 
 			//default settings
 			var settings = {
-        		'acccept': '',
+        		'accept': '',
 				'exclude': '',
-        		'active' : 'active',
-        		'event_set' : 'iselectable-event-set'
+        		'active' : 'active'
       	};
 
 			//override settings with user options
@@ -42,10 +41,15 @@
 			//set the children class for accepted items
 			var children_class= '';
 			if (settings.accept) children_class = settings.accept;
-			else if (settings.exclude) children_class = ':not('+settings.exclude+'):not(.'+settings.event_set+')';
+			else if (settings.exclude) children_class = ':not('+settings.exclude+')';
+
+			// unbind events in case they were already set.
+			//console.log('unbinding for ', $(this).children(children_class))
+			$(this).children(children_class).unbind('mousedown').unbind("mouseenter")
+			$('body').unbind('mouseup')
+
 
 			$(this).children(children_class).mousedown(function(e) {
-
 				mousedown = true;
 
 				//control click
@@ -104,23 +108,21 @@
 
 				//normal click
 				} else {
-
 					$(this).addClass("iselectable-dragstart");
-					var size = container.children("."+settings.active).size();
 
+					var size = container.children("."+settings.active).size();
 					if (size==1 && $(this).hasClass(settings.active)) {
 						$(this).removeClass(settings.active);
 					} else {
 						container.children("."+settings.active).removeClass(settings.active);
 						$(this).addClass(settings.active);
 					}
-
 				}
-			});
 
+			});
 			$('body').mouseup(function(e) {
-				mousedown = false;
-				$(container).children().removeClass("iselectable-dragstart");
+					mousedown = false;
+					$(container).children().removeClass("iselectable-dragstart");
 			});
 
 			//drag select
@@ -157,13 +159,6 @@
 
 				}
 			});
-
-			$(this).children(children_class).each(function() {
-				// set the event as already set to avoid setting it another time
-				$(this).addClass(settings.event_set)
-			})
-
-
 		});
 	};
 
