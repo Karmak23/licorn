@@ -100,13 +100,20 @@
 
 			setup_table_row_doubleclick($(row), func_doubleclick_row)
 
+			// filter the list
+            $('#list_filter').trigger('keyup')
+			
 			setup_row_timeout = setTimeout( function() {
 				// try to do it only once because it is applyed to the whole table
 				setup_table_row_selectable($('#model_machines_table tbody'), 'row_selected', '.not-me')
 
 				// let know the sort plugin that we updated the table
 				$("table.sortable").trigger("update");
+
+				// resort the table
             	$("table.sortable").trigger("sorton",[default_sort]);
+
+
 				},
 				1000);
 		}
