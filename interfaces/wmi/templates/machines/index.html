@@ -173,6 +173,9 @@
 				console.log("run action ", action)
 				$.get(action + mids)
 
+				// unselect all rows
+				$('.row_selected').removeClass('row_selected')
+
 			})
 		}
 		function bind_escape() {

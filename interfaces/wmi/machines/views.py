@@ -45,7 +45,7 @@ def scan(request, *args, **kwargs):
 
 def edit(request, mid, *args, **kwargs):
 	return HttpResponse(render_to_string('machines/edit.html', {
-		'machine' : LMC.machines.guess_one(mid) 
+		'machine' : LMC.machines.guess_one(mid)
 		}))
 
 def upgrade(request, mid, *args, **kwargs):
@@ -54,7 +54,8 @@ def upgrade(request, mid, *args, **kwargs):
 
 def massive_select_template(request, action_name, mids, *args, **kwargs):
 	print [ LMC.machines.guess_one(m) for m in mids.split(',') ]
-	return HttpResponse(render_to_string('machines/massive_select.html', {
-		'massive_action_name' : action_name,
-		'machines' : [ LMC.machines.guess_one(m) for m in mids.split(',') ],
+	return HttpResponse(
+		render_to_string('machines/parts/massive_{0}.html'.format(action_name),
+			{
+				'machines' : [ LMC.machines.guess_one(m) for m in mids.split(',') ],
 		}))
