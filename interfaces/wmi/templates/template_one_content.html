@@ -59,9 +59,11 @@
 			push_setup();
 			$('#notification').hide();
 			setup_auto_cleaner();
-		});
 
-		
+			// you need to define this function in your code
+			bind_escape();
+
+		});
 	</script>
 {%- endblock -%}
 

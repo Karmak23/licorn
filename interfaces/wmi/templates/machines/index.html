@@ -26,8 +26,20 @@
 		</span>
 
 		<span class='table_header_massive_actions table_header_item'>
-			{{ _('Massive action :') }}
-			<span class="massive_action" data-url='/machines/massive/upgrades/' data-name='upgrade'> Mass Upgrade </span>
+			<table>
+				<tr>
+					<td>
+						{{ _('Massive action :') }}
+					</td>
+					<td>
+						<div class="btn-group">
+							<button class="btn massive_action" data-url='/machines/massive/upgrades/' data-name='upgrade'>{{_('Upgrade')}}</button>
+							<!--<button class="btn">2</button>-->
+						</div>
+					</td>
+				</tr>
+			</table>
+
 		</span>
 
 		<span class='table_header_filter table_header_item'>
@@ -56,17 +68,13 @@
 
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
-
 			setup_machines()
-
-			$("#test").click(function() {
-				alert(get_selected_rows($('#model_machines_table tbody'), 'row_selected'))
-			});
-
 		});
 
 		var default_sort = [[1,1]]
 		var setup_row_timeout;
+
+		var select_active_class = 'row_selected'
 
 		function setup_machines() {
 			/* Setup all events related to machines */
@@ -74,7 +82,7 @@
 			// setup the filter mecanism
 			setup_table_filter($('#model_machines_table'), $('#list_filter'));
 			// make rows selectable
-			setup_table_row_selectable($('#model_machines_table tbody'), 'row_selected', '.not-me');
+			setup_table_row_selectable($('#model_machines_table tbody'), select_active_class, '.not-me');
 			// setup doubleclick on each rows
 			setup_table_row_doubleclick($('#model_machines_table tbody td'), func_doubleclick_row);
 			// setup the sort plugin
@@ -94,6 +102,8 @@
 				$.get('/machines/upgrade/'+mid)
 			})
 		}
+
+
 		function setup_row(row) {
 
 			clearTimeout(setup_row_timeout)
@@ -102,10 +112,10 @@
 
 			// filter the list
             $('#list_filter').trigger('keyup')
-			
+
 			setup_row_timeout = setTimeout( function() {
 				// try to do it only once because it is applyed to the whole table
-				setup_table_row_selectable($('#model_machines_table tbody'), 'row_selected', '.not-me')
+				setup_table_row_selectable($('#model_machines_table tbody'), '', '.not-me')
 
 				// let know the sort plugin that we updated the table
 				$("table.sortable").trigger("update");
@@ -127,19 +137,20 @@
 		function setup_massive_actions() {
 			$('.massive_action').click(function() {
 				// get selected items
-				selected_rows = get_selected_rows($('#model_machines_table tbody'), 'row_selected');
+				selected_rows = get_selected_rows($('#model_machines_table tbody'), select_active_class);
 				console.log("selected_rows ", selected_rows, selected_rows.length)
 
+				action_name = $(this).data('name')
+				action_url = $(this).data('url')
+
 				if (selected_rows.length == 0) {
-					$("#machine_modal").html('{{ _("Please select at least one machine to apply massive action on") }}').modal()
+					show_message_through_notification('{{ _("Please select at least one machine to apply massive action <strong><em>'+action_name+'</em></strong> on") }}');
 				}
 				else {
 
-					action_url = $(this).data('url')
-					action_name = $(this).data('name')
 
 					mids=[]
-					$.each(get_selected_rows($('#model_machines_table tbody'), 'row_selected'), function(i, item) {
+					$.each(get_selected_rows($('#model_machines_table tbody'), select_active_class), function(i, item) {
 						console.log(i, item)
 						mids.push($(item).data('mid'))
 					})
@@ -163,6 +174,33 @@
 				$.get(action + mids)
 
 			})
+		}
+		function bind_escape() {
+
+			$(document).keyup(function(e) {
+				/* if a table filter as been set, unset it.
+				If not, if rows are selected, unselect them. */
+
+				if (e.keyCode == 27) {    // ESC
+
+					var searchb = $('#list_filter');
+
+					if (searchb != [] && searchb.val() != "") {
+						searchb.val('');
+						searchb.keyup();
+
+					} else {
+						/*$.each(get_selected_rows($('#model_machines_table tbody'), select_active_class), function(i, item) {
+							console.log(i, item)
+							$(item).removeClass('row_selected').trigger('mousedown').trigger('mouseup');
+						})*/
+						$('.row_selected').removeClass('row_selected')
+					}
+
+
+				}
+			});
+
 		}
 	</script>
 
