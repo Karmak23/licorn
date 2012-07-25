@@ -441,6 +441,10 @@ class Volume(PicklableObject, SharedResource):
 			logging.warning(_(u'{0}: {1}').format(
 							stylize(ST_NAME, 'volumes'), output))
 
+		# This must be tested before the event is emitted.
+		if self.supported:
+			self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
+
 		if emit_event:
 			LicornEvent('volume_mounted', volume=self).emit()
 
@@ -449,9 +453,6 @@ class Volume(PicklableObject, SharedResource):
 						stylize(ST_DEVICE, self.device),
 						stylize(ST_DEVICE, self.fstype),
 						stylize(ST_PATH, self.mount_point)))
-
-		if self.supported:
-			self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
 
 		return self
 	@self_locked
@@ -483,6 +484,11 @@ class Volume(PicklableObject, SharedResource):
 			# TODO: Import cdll from ctypes. Then load your os libc, then use libc.mount()
 			output = process.execute(umount_cmd)[1].strip()
 
+			old_mount_point  = self.mount_point
+
+			# self.mount_point must be None before the event is emitted.
+			self.mount_point = None
+
 			if output:
 				logging.warning(_(u'{0}: {1}').format(
 								stylize(ST_NAME, 'volumes'), output))
@@ -493,9 +499,8 @@ class Volume(PicklableObject, SharedResource):
 				logging.notice(_(u'{0}: unmounted device {1} from {2}.').format(
 								stylize(ST_NAME, 'volumes'),
 								stylize(ST_DEVICE, self.device),
-								stylize(ST_PATH, self.mount_point)))
+								stylize(ST_PATH, old_mount_point)))
 
-			old_mount_point = self.mount_point
 
 			try:
 				os.rmdir(old_mount_point)
@@ -506,18 +511,17 @@ class Volume(PicklableObject, SharedResource):
 						u'busy after unmounting.').format(
 							stylize(ST_NAME, 'volumes'),
 							stylize(ST_DEVICE, self.device),
-							stylize(ST_PATH, self.mount_point)))
+							stylize(ST_PATH, old_mount_point)))
 
 				elif e.errno != errno.ENOENT:
 					logging.warning(_(u'{0}({1}): cannot remove mount '
 						u'point {2}: {3}.').format(
 							stylize(ST_NAME, 'volumes'),
 							stylize(ST_DEVICE, self.device),
-							stylize(ST_PATH, self.mount_point), e))
+							stylize(ST_PATH, old_mount_point), e))
 
 				return False
 
-			self.mount_point = None
 			logging.info(_(u'{0}: removed directory {1}.').format(
 				stylize(ST_NAME, 'volumes'),
 				stylize(ST_PATH, old_mount_point)))
