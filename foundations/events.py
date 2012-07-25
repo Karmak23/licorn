@@ -175,18 +175,15 @@ class LicornEvent(NamedObject):
 	"""
 	def __init__(self, _event_name, *args, **kwargs):
 
-		self.synchronous = kwargs.pop('synchronous', False)
-		self.callbacks   = kwargs.pop('callbacks', None)
-
 		super(LicornEvent, self).__init__(name=_event_name)
 
 		self.args        = args
 		self.kwargs      = kwargs
 
-	def emit(self, priority=None, delay=None):
+	def emit(self, priority=None, delay=None, synchronous=False):
 
 		if delay:
-			if self.synchronous:
+			if synchronous:
 				raise exceptions.LicornRuntimeError(_(u'A synchronous event '
 						u'cannot be delayed! (on %s)').format(self.name))
 
@@ -195,11 +192,17 @@ class LicornEvent(NamedObject):
 			t.start()
 
 		else:
-			if self.synchronous:
-				# access the event manager to run the event *NOW*.
+			if synchronous:
+				# Access the event manager to run the event *NOW*.
+				#
 				# The current method will return only when handlers
-				# and callbacks have been processed.
+				# and callbacks have been processed. The caller is
+				# by consequence suspended until then, which is the
+				# desired effect: the event is turned into a kind
+				# of simple "hook" which runs "things", unknown to
+				# the original caller.
 				looper_thread.run_event(self)
+
 			else:
 				events_queue.put((priority or priorities.NORMAL, self))
 LicornEventType = type(LicornEvent('dummy_event'))

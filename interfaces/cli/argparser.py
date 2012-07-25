@@ -1214,6 +1214,12 @@ def add_event_parse_arguments(app):
 		help=_(u"The event priority, a string like 'LOW', 'NORMAL' (default), "
 			u"or 'HIGH'."))
 
+	event.add_option('-s', "--sync", "--synchronous",
+		action="store_true", dest="event_synchronous", default=False,
+		help=_(u"Run the event synchronously, eg. wait for handlers and "
+			u"callbacks to terminate before giving back hand. Default: "
+			u"{0}.").format(stylize(ST_SPECIAL, _(u"False"))))
+
 	parser.add_option_group(event)
 
 	return parser.parse_args()

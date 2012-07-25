@@ -122,8 +122,7 @@ class ModulesManager(LockedController):
 				class_name  = module_name.title() + self.module_type.title()
 
 				LicornEvent('%s_%s_imports' % (
-									self.module_type, module_name),
-							synchronous=True).emit()
+						self.module_type, module_name)).emit(synchronous=True)
 
 				try:
 					python_module = __import__(self.module_sym_path
@@ -265,9 +264,8 @@ class ModulesManager(LockedController):
 				assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
 					self.module_type, stylize(ST_NAME, module_name)))
 
-				LicornEvent('%s_%s_loads' % (
-								self.module_type, module_name),
-							synchronous=True).emit()
+				LicornEvent('%s_%s_loads' % (self.module_type, module_name)
+									).emit(synchronous=True)
 
 				try:
 					module.load(server_modules=server_side_modules)
@@ -276,9 +274,8 @@ class ModulesManager(LockedController):
 					# callbacks of the module.
 					events.collect(module)
 
-					LicornEvent('%s_%s_loaded' % (
-									self.module_type, module_name),
-								synchronous=True).emit()
+					LicornEvent('%s_%s_loaded' % (self.module_type, module_name)
+										).emit(synchronous=True)
 
 				except Exception:
 					# an uncatched exception occured, the module is buggy or

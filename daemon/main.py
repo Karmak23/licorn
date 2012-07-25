@@ -684,7 +684,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.__restart_event.set()
 
 		# We've got to be sure everyone is ready to restart !
-		LicornEvent('daemon_will_restart', reason=kwargs.get('reason'), synchronous=True).emit()
+		LicornEvent('daemon_will_restart', reason=kwargs.get('reason')).emit(synchronous=True)
 
 		# TODO: mark the 'restart' status in LMC.system. This needs
 		# system.status become a property...
@@ -748,7 +748,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 	def daemon_shutdown(self):
 		""" stop threads and clear pid files. """
 
-		LicornEvent('daemon_shutdown', synchronous=True).emit(priorities.HIGH)
+		LicornEvent('daemon_shutdown').emit(priorities.HIGH, synchronous=True)
 
 		try:
 			# before stopping threads (notably cmdlistener), we've got to announce

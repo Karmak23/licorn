@@ -397,7 +397,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		if self.connected:
 
-			LicornEvent('extension_mylicorn_disconnects', synchronous=True).emit()
+			LicornEvent('extension_mylicorn_disconnects').emit(synchronous=True)
 
 			self.__stop_updater_thread()
 

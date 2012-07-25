@@ -52,8 +52,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		Pyro.core.ObjBase.__init__(self)
 		MixedDictObject.__init__(self, name='configuration')
 
-		LicornEvent('configuration_initialises', configuration=self,
-													synchronous=True).emit()
+		LicornEvent('configuration_initialises', configuration=self).emit(synchronous=True)
 
 		self.app_name = 'Licorn®'
 
@@ -88,7 +87,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			self.FindUserDir()
 
 			LicornEvent('configuration_loads', configuration=self,
-							minimal=minimal, synchronous=True).emit()
+							minimal=minimal).emit(synchronous=True)
 
 			if not minimal:
 				self.load1(batch=batch)
@@ -108,7 +107,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			raise exceptions.BadConfigurationError(_(u'Configuration '
 										u'initialization failed: %s') % e)
 
-		LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
+		LicornEvent('configuration_loaded', configuration=self).emit(synchronous=True)
 
 		LicornConfiguration.init_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< __init__()')

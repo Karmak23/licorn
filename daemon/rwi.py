@@ -1553,7 +1553,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# if 'synchronous' is present in kwargs, the event will be,
 		# else it will be backgrounded like any other event.
 		LicornEvent(opts.event_name, *opts.event_args,
-								**opts.event_kwargs).emit(opts.event_priority)
+								**opts.event_kwargs).emit(
+										priority=opts.event_priority,
+										synchronous=opts.event_synchronous)
 	def add_backup(self, opts, args):
 		""" Add a backup from CLI. TODO: make this code provided directly
 			by the extension. """
