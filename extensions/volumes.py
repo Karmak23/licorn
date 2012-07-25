@@ -469,8 +469,8 @@ class Volume(PicklableObject, SharedResource):
 			# unmounting thread is considered a worker, too. We can't test
 			# self.busy(), it would always be True.
 			if len(self.workers) > 1 and not force:
-				logging.notice(_('{0}: workers {1}\n{2}\n').format(self, self.workers,
-					'\n'.join(w.dump_status() for w in self.workers)))
+				logging.warning(_('{0}: still got workers: {1}.').format(self,
+								', '.join(w.name for w in self.workers)))
 
 				raise VolumeException(_('Cannot unmount {0}, still busy in Licorn®.').format(self))
 
@@ -566,7 +566,7 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		""" The key (attribute or property) used to sort
 			User objects from RWI.select(). """
 		return 'device'
-	def by_device(self, device):
+	def by_device(self, device, strong=False):
 		# we need to be sure we get an int(), because the 'uid' comes from RWI
 		# and is often a string.
 		return self.volumes[device]
