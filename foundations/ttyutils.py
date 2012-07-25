@@ -7,7 +7,7 @@ ttyutils - manipulate TTY; display messages and interact with TTY user.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
-import sys, os, termios, threading, curses
+import sys, os, termios, threading, curses, struct, fcntl
 import select, signal, errno
 
 # licorn.foundations
@@ -56,6 +56,8 @@ def clear_terminal(channel=None):
 	channel.write(clear_char)
 	channel.flush()
 def terminal_size():
+	""" We could also get it from a more feature complete function at
+		http://stackoverflow.com/a/566752 in case we need more. """
 	#print '(rows, cols, x pixels, y pixels) =',
 	return struct.unpack("HHHH",
 		fcntl.ioctl(

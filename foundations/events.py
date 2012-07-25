@@ -8,6 +8,7 @@ Licorn® foundations - events
 :license: GNU GPL version 2
 """
 
+import types
 from threading import current_thread, Timer
 
 from Queue     import PriorityQueue
@@ -100,7 +101,7 @@ class RoundRobinEventLooper(LicornBasicThread):
 
 		# process the event asynchronously in a service thread.
 		workers.service_enqueue(priority, self.run_event, event)
-	def run_methods(self, event, method_type_container, method_type):
+	def run_methods(self, event, method_type_container, method_type, synchronous):
 		try:
 			methods = method_type_container[event.name]
 
@@ -118,12 +119,27 @@ class RoundRobinEventLooper(LicornBasicThread):
 			except SystemExit:
 				pass
 
+			except exceptions.LicornStopException:
+				# This is the only one type of exception accepted, it should
+				# stop any synchronous event caller.
+				if synchronous:
+					raise
+
+				else:
+					logging.warning(_(u'{0}: {1} {2} of event {3} raised a {4} '
+							u'but it has no effect because the event is run '
+							u'asynchronously!').format(
+								stylize(ST_NAME, self.name),
+								method_type, stylize(ST_NAME, method),
+								stylize(ST_NAME, event.name),
+								stylize(ST_BAD, 'LicornStopException')))
+
 			except:
 				logging.exception(_(u'{0}: exception encountered while '
 					u'running {1} {2} for event {3}, continuing with '
 					u'next method'), (ST_NAME, self.name), method_type,
 						(ST_NAME, method), (ST_NAME, event.name))
-	def run_event(self, event):
+	def run_event(self, event, synchronous=False):
 		""" Will "run" or execute an event:
 
 				* all handlers associated with a given ``event`` are executed in turn
@@ -146,17 +162,10 @@ class RoundRobinEventLooper(LicornBasicThread):
 		logging.monitor(TRACE_EVENTS, TRACELEVEL_1, _('Processing event {0}'),
 														(ST_NAME, event.name))
 
-		self.run_methods(event, events_handlers, _('event handler'))
-		self.run_methods(event, events_callbacks, _('event callback'))
+		self.run_methods(event, events_handlers, _('event handler'), synchronous)
+		self.run_methods(event, events_callbacks, _('event callback'), synchronous)
 class LicornEvent(NamedObject):
 	""" Licorn® event object class.
-
-		:param synchronous: a boolean indicating that the event should be run
-			synchronously (defaults to `False`). Use with caution, running an
-			event synchronously halts the event-loop during execution.
-
-		:param callbacks: an optional iterable of python function or method
-			which will be called after the event handlers have been processed.
 
 		:param *args: any nameless argument will be stored in the event, to be
 			forwarded to the callbacks: the one registered for the event, and
@@ -174,18 +183,15 @@ class LicornEvent(NamedObject):
 	"""
 	def __init__(self, _event_name, *args, **kwargs):
 
-		self.synchronous = kwargs.pop('synchronous', False)
-		self.callbacks   = kwargs.pop('callbacks', None)
-
 		super(LicornEvent, self).__init__(name=_event_name)
 
 		self.args        = args
 		self.kwargs      = kwargs
 
-	def emit(self, priority=None, delay=None):
+	def emit(self, priority=None, delay=None, synchronous=False):
 
 		if delay:
-			if self.synchronous:
+			if synchronous:
 				raise exceptions.LicornRuntimeError(_(u'A synchronous event '
 						u'cannot be delayed! (on %s)').format(self.name))
 
@@ -194,11 +200,17 @@ class LicornEvent(NamedObject):
 			t.start()
 
 		else:
-			if self.synchronous:
-				# access the event manager to run the event *NOW*.
+			if synchronous:
+				# Access the event manager to run the event *NOW*.
+				#
 				# The current method will return only when handlers
-				# and callbacks have been processed.
-				looper_thread.run_event(self)
+				# and callbacks have been processed. The caller is
+				# by consequence suspended until then, which is the
+				# desired effect: the event is turned into a kind
+				# of simple "hook" which runs "things", unknown to
+				# the original caller.
+				looper_thread.run_event(self, synchronous=True)
+
 			else:
 				events_queue.put((priority or priorities.NORMAL, self))
 LicornEventType = type(LicornEvent('dummy_event'))
@@ -399,7 +411,12 @@ def unregister_collector(collector):
 												u'collector {0}'), collector)
 def scan_object(objekt, meth_handler, meth_callback):
 	for attribute in (getattr(objekt, attr) for attr in dir(objekt)):
-		if callable(attribute):
+		# We need to check the "type()" too, because for instance
+		# jsonrpc.ServiceProxy() are callable, have a "is_handler"
+		# attribute, but are no handler at all.
+		if callable(attribute) and type(attribute) in (types.MethodType,
+														types.FunctionType):
+
 			if hasattr(attribute, 'is_callback'):
 				meth_callback(attribute.__name__, attribute)
 

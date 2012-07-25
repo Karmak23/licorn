@@ -1,5 +1,5 @@
 
-.. _groups-permissions.fr:
+.. _groups.permissions.fr:
 
 .. _permissiveness.fr:
 

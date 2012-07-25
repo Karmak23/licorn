@@ -7,6 +7,7 @@ constants - all enums for the rest of the world.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2
 """
+
 import stat
 
 # ============================================================== licorn imports
@@ -81,6 +82,8 @@ filters.INOTIFIED           = filters.WATCHED
 
 filters.NOT_WATCHED         = filters.STANDARD - filters.WATCHED
 filters.NOT_INOTIFIED       = filters.NOT_WATCHED
+
+filters.EXTINCTION_TASK     = 0x00010000
 
 filters.EMPTY               = 0x00ff0000
 

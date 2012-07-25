@@ -50,6 +50,10 @@ from licorn.interfaces.wmi.libs   import utils
 # =============================================================== Local classes
 
 class WmiEventCollectorThread(LicornThread, MessageProcessor):
+	""" Receives all LicornEvent from licornd and dumplicates them for
+		each user connected to the WMI (which should all have a PUSH
+		stream queue). """
+
 	def __init__(self, *a, **kw):
 		LicornThread.__init__(self, *a, **kw)
 		MessageProcessor.__init__(self, *a, **kw)
@@ -405,7 +409,6 @@ class WmiEventApplication(ObjectSingleton):
 		self.dynamic_infos    = {}
 
 		for entry in os.listdir(dirname):
-
 			# If is has 'views' and 'urls', we consider it a django app;
 			# it SHOULD have a `push_permissions` dict defined in __init__.py
 			if os.path.exists(os.path.join(dirname, entry, 'views.py')) \
@@ -444,6 +447,7 @@ class WmiEventApplication(ObjectSingleton):
 						self.dynamic_infos[entry] = module.dynamic_infos
 
 			if os.path.exists(os.path.join(dirname, entry, 'event_handlers.py')):
+
 				module = __import__('licorn.interfaces.wmi.%s.event_handlers' % entry,
 								fromlist=["licorn.interfaces.wmi.%s" % entry])
 

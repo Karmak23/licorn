@@ -29,6 +29,8 @@ pyudev_packages.setdefault(distros.UNKNOWN, 'Pyudev')
 def check_and_install_pyudev():
 	""" We need Pyudev to talk to udev and handle volumes. """
 
+	installed_via_pip = False
+
 	if (LMC.configuration.distro == distros.UBUNTU
 			and version_compare(LMC.configuration.distro_version, '10.04') >= 0
 		) or (LMC.configuration.distro == distros.DEBIAN
@@ -46,9 +48,12 @@ def check_and_install_pyudev():
 
 		if udev == []:
 			packaging.pip_install_packages([ pyudev_packages[distros.UNKNOWN] ])
+			installed_via_pip = True
 
 	else:
 		packaging.raise_not_installable(pyudev_packages[distros.UNKNOWN])
+
+	return installed_via_pip
 
 @events.handler_function
 def extension_volumes_imports(*args, **kwargs):
@@ -60,7 +65,7 @@ def extension_volumes_imports(*args, **kwargs):
 	from licorn.upgrades import common
 
 	common.check_and_install_pip()
-	check_and_install_pyudev()
-	common.check_pip_perms()
+	if check_and_install_pyudev():
+		common.check_pip_perms(batch=True, full_display=False)
 
 __all__ =  ('extension_volumes_imports', )

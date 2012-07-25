@@ -148,7 +148,6 @@ def main(request, *args, **kwargs):
 
 		f = UserForm(edit_mod, user)
 
-
 		resps     = []
 		guests    = []
 		stdgroups = []

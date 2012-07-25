@@ -6,10 +6,10 @@ Licorn core: machines - http://docs.licorn.org/core/machines.html
 
 :license: GNU GPL version 2
 """
-import os
+import os, time, types
 from collections import deque
 
-import netifaces, ipcalc, dumbnet, Pyro, socket, functools
+import netifaces, ipcalc, dumbnet, Pyro, socket, functools, itertools
 
 from threading  import current_thread
 from time       import strftime, localtime
@@ -749,13 +749,14 @@ class MachinesController(DictSingleton, CoreController):
 		return 'hostname'
 
 	# local and specific implementations of SelectableController methods.
-	def by_mid(self, mid):
+	def by_mid(self, mid, strong=False):
 		# we need to be sure we get an int(), because the 'uid' comes from RWI
 		# and is often a string.
 		return self[mid]
-	def by_hostname(self, hostname):
+	def by_hostname(self, hostname, strong=False):
 		# Call the thing before returning it, because it's a weakref.
-		return Machine.by_hostname[hostname]()
+		# return Machine.by_hostname[hostname]()
+		return Machine.by_hostname[hostname]
 
 	# the generic way (called by SelectableController)
 	by_key  = by_mid
@@ -1269,7 +1270,16 @@ class MachinesController(DictSingleton, CoreController):
 		""" Shutdown a machine, after having warned the connected user(s) if
 			asked to."""
 
-		self[mid].shutdown(warn_users=warn_users)
+		if type(mid) in (types.StringType, types.UnicodeType):
+			self[mid].shutdown(warn_users=warn_users)
+		elif type(mid) == types.ListType:
+			for m in mid:
+				try:
+					self[m].shutdown(warn_users=warn_users)
+				except KeyError:
+					logging.exception('{0} to shutdown machine {1}, not'
+					' referenced in the machines controller'.format(
+						stylize(ST_BAD, "Unable"), stylize(ST_PATH, m)))
 	def is_alt(self, mid=None, ether=None):
 		""" Return True if the machine is an ALT client, else False.
 			TODO: move this to Machine class.
@@ -1311,3 +1321,11 @@ class MachinesController(DictSingleton, CoreController):
 						inputhostname, hlstr.regex['hostname']))
 
 		return hostname
+
+	def word_match(self, word):
+		return hlstr.word_match(word, set(itertools.chain(*[
+			(m.name, m.mid) for m in self])))
+
+
+
+

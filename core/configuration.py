@@ -52,8 +52,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		Pyro.core.ObjBase.__init__(self)
 		MixedDictObject.__init__(self, name='configuration')
 
-		LicornEvent('configuration_initialises', configuration=self,
-													synchronous=True).emit()
+		LicornEvent('configuration_initialises', configuration=self).emit(synchronous=True)
 
 		self.app_name = 'Licorn®'
 
@@ -88,7 +87,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			self.FindUserDir()
 
 			LicornEvent('configuration_loads', configuration=self,
-							minimal=minimal, synchronous=True).emit()
+							minimal=minimal).emit(synchronous=True)
 
 			if not minimal:
 				self.load1(batch=batch)
@@ -108,7 +107,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			raise exceptions.BadConfigurationError(_(u'Configuration '
 										u'initialization failed: %s') % e)
 
-		LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
+		LicornEvent('configuration_loaded', configuration=self).emit(synchronous=True)
 
 		LicornConfiguration.init_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
@@ -676,6 +675,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		self.users.group = 'users'
 
+		# This one will be filled later
+		self.users.gid   = 100
+
 		# see groupadd(8), coming from addgroup(8)
 		self.users.login_maxlenght = 31
 
@@ -976,7 +978,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				'app_name'                : _(u'Application name'),
 				'backends'                : _(u'Storage backends for Core objects'),
 				'config_dir'              : _(u'Application main configuration directory'),
-				'extendedgroup_data_file' : _(u'Filename of extended group data'),
 				'extensions'              : _(u'Application extensions (available add-ons)'),
 				'help'                    : _(u'This current help'),
 				'main_config_file'        : _(u'Application main configuration filename'),
@@ -989,7 +990,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			word = hlstr.word_match(args[0], words.keys())
 
 			if word is None:
-				raise exceptions.BadArgument(_(u'Sorry, "%s" is not a '
+				raise exceptions.BadArgumentError(_(u'Sorry, "%s" is not a '
 											u'recognized keyword.') % args[0])
 
 			if word == 'help':
@@ -1037,22 +1038,18 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				data += u'\n'.join(str(e) for e in LMC.extensions) + u'\n'
 
 			# TODO: update this code for 'settings' use...
-			elif word in ('config_dir', 'main_config_file',
-						'extendedgroup_data_file', 'app_name'):
+			elif word in ('config_dir', 'main_config_file', 'app_name'):
 
 				varname = word.upper()
 
 				if word == 'config_dir':
-					varval = self.config_dir
+					varval = settings.config_dir
 
 				elif word == 'main_config_file':
-					varval = self.main_config_file
-
-				elif word == 'extendedgroup_data_file':
-					varval = self.extendedgroup_data_file
+					varval = settings.main_config_file
 
 				elif word == 'app_name':
-					varval = self.app_name
+					varval = settings.app_name
 
 				if cli['name']:
 					data +=	 '%s%s%s"%s"%s\n' % (
@@ -1133,14 +1130,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				data += "%s\n" % stylize(ST_PATH, attr)
 
 			elif type(attr) == type(LicornConfigObject()):
-				data += "\n%s" % str(attr)
+				data += "\n%s\n" % str(attr)
 
 			elif type(attr) in (
 				type([]), type(''), type(()), type({})):
 				data += "\n\t%s\n" % str(attr)
 
 			elif issubclass(attr.__class__, CoreModule):
-				data += "\n%s" % str(attr)
+				data += "\n%s\n" % str(attr)
 
 			else:
 				data += ('%s, to be implemented in '
@@ -1216,8 +1213,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if e.errno != 17:
 				raise e
 
-		acls_conf = self.acls
-
+		acls_conf      = self.acls
+		users_group    = self.users.group
 		dirs_to_verify = []
 
 		dirs_to_verify.append(
@@ -1231,9 +1228,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						path=self.users.base_path,
 						uid=0, gid=acls_conf.gid,
 						root_dir_acl=True,
-						root_dir_perm = '%s,%s,g:www-data:--x,g:users:%s,%s' % (
+						root_dir_perm = '%s,%s,g:www-data:--x,g:%s:%s,%s' % (
 							acls_conf.acl_base,
 							acls_conf.acl_admins_ro,
+							users_group,
 							acls_conf.acl_users,
 							acls_conf.acl_mask)))
 
@@ -1242,9 +1240,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						path=self.groups.base_path,
 						uid=0, gid=acls_conf.gid,
 						root_dir_acl=True,
-						root_dir_perm = '%s,%s,g:www-data:--x,g:users:%s,%s' % (
+						root_dir_perm = '%s,%s,g:www-data:--x,g:%s:%s,%s' % (
 							acls_conf.acl_base,
 							acls_conf.acl_admins_ro,
+							users_group,
 							acls_conf.acl_users,
 							acls_conf.acl_mask)))
 
@@ -1303,8 +1302,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		home_archive = fsapi.FsapiObject(name='home_archive')
 		home_archive.path = settings.home_archive_dir
-		# FIXME: don't hardcode 'acl' here.
-		home_archive.group = LMC.groups.by_name('acl').gidNumber
+		home_archive.group = acls_conf.gid
 		home_archive.user = 0
 		home_archive.root_dir_acl = True
 		home_archive.root_dir_perm = "%s,%s,%s" % (
@@ -1396,8 +1394,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		self.groups.hidden = groups.get_hidden_state()
 
-		# cache this here for faster access in check methods
-		self.acls.gid = groups.by_name(self.acls.group).gidNumber
+		# Cache these here for faster access in check methods
+		self.acls.gid  = groups.by_name(self.acls.group).gidNumber
+		self.users.gid = groups.by_name(self.users.group).gidNumber
 
 		self.check_base_dirs(batch=True)
 	def CheckHostname(self, batch = False, auto_answer = None):

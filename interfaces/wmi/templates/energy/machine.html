@@ -1,0 +1,18 @@
+
+<span class="lmachine" id=''>
+	<span class="lmachine_type">
+		{%- if machine.mtype != '' -%}
+			<img src="/media/images/16x16/{{ machine.mtype[0] }}"
+			alt="{{ machine.mtype[1] }}" title="{{ machine.mtype[1] }}"
+			width="16" height="16" />
+		{%- endif -%}
+	</span>
+	<span>{{ machine.mname }}</span>
+	<span class="lmachine_status">
+		{%- if machine.mstatus != '' -%}
+			<img src="/media/images/16x16/{{ machine.mstatus[0] }}"
+			alt="{{ machine.mstatus[1] }}" title="{{ machine.mstatus[1] }}"
+			width="16" height="16" />
+		{%- endif -%}
+	</span>
+</span>

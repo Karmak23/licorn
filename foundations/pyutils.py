@@ -57,15 +57,22 @@ def catch_exception(func):
 							+ (str(v)[max_string_size:] and stylize(ST_COMMENT, '… (truncated)')))
 						for k, v in kw.iteritems()))
 	return wrap
-def resolve_attr(multi_attr_str, globals_):
+def resolve_attr(multi_attr_str, globals_, value_if_not_found=None):
 	""" Given an argument string "object.attr1.attr2", return `attr2`
 		as a usable python object.  """
 
 	attrs        = multi_attr_str.split('.')
 	current_attr = globals_[attrs[0]]
 
-	for attr_name in attrs[1:]:
-		current_attr = getattr(current_attr, attr_name)
+	try:
+		for attr_name in attrs[1:]:
+			current_attr = getattr(current_attr, attr_name)
+
+	except AttributeError:
+		if value_if_not_found is not None:
+			return value_if_not_found
+
+		raise
 
 	return current_attr
 def print_exception_if_verbose():
@@ -513,3 +520,14 @@ def merge_dicts_of_lists(*args, **kwargs):
 				else:
 					new_dict[key] = list(set(value))
 	return new_dict
+
+
+def MixIn(TargetClass, MixInClass, name=None):
+    if name is None:
+        name = "mixed_%s_with_%s" % (TargetClass.__name__, MixInClass.__name__)
+
+    class CombinedClass(TargetClass, MixInClass):
+        pass
+
+    CombinedClass.__name__ = name
+    return CombinedClass

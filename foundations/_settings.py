@@ -11,9 +11,11 @@ import os, getpass, errno
 # ================================================= Licorn® foundations imports
 import logging, styles, events
 # WARNING: don't import "options", this would produce a circular loop.
+
 from ltrace    import *
 from ltraces   import *
 from styles    import *
+from pyutils   import resolve_attr
 from threads   import RLock
 from base      import ObjectSingleton, NamedObject, LicornConfigObject, BasicCounter
 from constants import roles
@@ -61,6 +63,7 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		self.inotifier_exclude_file  = self.config_dir + u'/nowatch.conf'
 		self.home_backup_dir         = self.defaults.home_base_path + u'/backup'
 		self.home_archive_dir        = self.defaults.home_base_path + u'/archives'
+		self.tasks_data_file         = self.config_dir + u'/tasks.conf'
 
 		# the inotifier wants a lock. We don't use it internally otherwise.
 		self.lock = RLock()
@@ -104,8 +107,6 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 			# timeout for CLI connect; in seconds.
 			'connect.timeout'              : 30,
 
-			# one day between backups.
-			'backup.interval'              : 86400,
 			'experimental.enabled'         : self.experimental_should_be_enabled,
 
 			# TODO: move the following directives to where they belong.
@@ -143,7 +144,6 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		assert ltrace_func(TRACE_SETTINGS)
 
 		self.__check_settings_role()
-		self.__check_settings_backup()
 		self.__check_debug_variable()
 	def __check_settings_role(self):
 		""" check the licornd.role directive for correctness. """
@@ -175,17 +175,6 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 					stylize(ST_NAME, 'LICORN_SERVER')))
 			logging.notice(_(u'Our Licorn® server is {0}').format(
 							stylize(ST_NAME, self.server_main_address)))
-	def __check_settings_backup(self):
-		""" TODO. """
-
-		if self.backup.interval < 3600 or self.backup.interval > 604800:
-			raise exceptions.BadConfigurationError(_(
-				u'\n\tinvalid value {0} for configuration '
-				u'directive {1}: must be an integer between '
-				u'{2} (one hour) and {3} (one week).').format(
-					stylize(ST_BAD, self.backup.interval),
-					stylize(ST_COMMENT, 'backup.interval'),
-					stylize(ST_COMMENT, '3600'), stylize(ST_COMMENT, '604800')))
 	def merge_settings(self, conf, overwrite=True, emit_event=True):
 		""" Build the licorn configuration object from a dict. """
 
@@ -325,5 +314,18 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		self.__load_inotifier_exclusions(emit_event)
 
 		self.check()
+	def get(self, setting_name, default_value=None):
 
+		if not setting_name.startswith('settings.'):
+			setting_name = 'settings.' + setting_name
+
+		try:
+			value = resolve_attr(setting_name, {'settings': self})
+
+		except AttributeError:
+			if default_value is None:
+				raise
+
+			else:
+				return default_value
 settings = LicornSettings()

@@ -25,7 +25,9 @@ def add_main():
 		'machines':		 ('add_machine_parse_arguments', 'add_machine'),
 		'clients':		 ('add_machine_parse_arguments', 'add_machine'),
 		'volumes':       ('add_volume_parse_arguments', 'add_volume'),
-		'backup':        ('add_backup_parse_arguments', 'add_backup'),
+		'tasks':         ('add_task_parse_arguments', 'add_task'),
+		'backups':       ('add_backup_parse_arguments', 'add_backup'),
+		'events':        ('add_event_parse_arguments', 'add_event'),
 		}, {
 		"name"        : "licorn-add",
 		"description" : "Licorn Add Entries",

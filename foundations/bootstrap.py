@@ -138,6 +138,7 @@ def check_python_modules_dependancies():
 		(u'pygments',  u'python-pygments',	None),
 		(u'pyinotify', u'python-pyinotify',	None),
 		(u'dbus',      u'python-dbus',		None),
+		(u'dateutil',  u'python-dateutil',	None),
 		(u'dmidecode', u'python-dmidecode',	clear_dmidecode),
 		# dmidecode needs libxml2 and even on Ubuntu 12.04, there is
 		# no valid dependancy in the debian package. Gosh!
@@ -151,7 +152,8 @@ def check_python_modules_dependancies():
 
 	optmods = (
 		(u'xattr',    u'python-xattr',		None),
-		(u'ldap',     u'python-ldap',		None)
+		(u'ldap',     u'python-ldap',		None),
+		(u'utmp',     u'python-utmp',		None),
 		# plistlib, uuid don't need to be checked, they're part of standard
 		# python dist-packages.
 		)

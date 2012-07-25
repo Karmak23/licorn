@@ -24,7 +24,7 @@ pip_packages.setdefault(distros.UNKNOWN, 'PIP')
 def check_and_install_pip():
 	if not os.path.exists('/usr/bin/pip'):
 		packaging.install_packages(pip_packages)
-def check_pip_perms():
+def check_pip_perms(batch=False, auto_answer=None, full_display=True):
 	""" Fix a PIP bug we don't notice if we are root. But normal developpers
 		could face it.
 
@@ -49,7 +49,7 @@ def check_pip_perms():
 									path=python_path, uid=0, gid=0,
 									root_dir_perm=00755, dirs_perm=00755,
 									files_perm=00644)
-							], batch=True, full_display=False):
+							], batch=batch, auto_answer=auto_answer, full_display=full_display):
 				# TODO: we could count modified entries and display a nice
 				# information message. Left to contributors, we don't have
 				# enough time.
