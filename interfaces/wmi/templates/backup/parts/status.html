@@ -7,7 +7,7 @@
 		<p class="backup_in_progress">{{ _('A backup is running on {0}.').format(extension.current_operated_volume.pretty_name) }}</p>
 		{# need http://fgnass.github.com/spin.js/ #}
 
-	{%- elif extension.event('active') -%}
+	{%- elif extension.event('active') and extension.enabled_volumes() -%}
 
 		<p class="alert">{{ _('Next backup planned in {0}.').format(countdown(extension.time_before_next_automatic_backup(), short=True)) }}</p>
 
@@ -18,7 +18,7 @@
 
 		{%- endfor -%}
 
-	{%- else -%}
+	{%- elif extension.enabled_volumes() -%}
 		{{ display_needed_space(extension.compute_total_space()) }}
 
 	{%- endif -%}
