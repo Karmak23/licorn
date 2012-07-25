@@ -1404,36 +1404,21 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			LMC.machines.scan_network(
 				network_to_scan=None if opts.auto_scan else [ opts.discover ])
 	def add_task(self, opts, args):
+
 		self.setup_listener_gettext()
 
-		if opts.name is '' and len(args) == 2:
-			opts.name = args[1]
-			del args[1]
-
-		if opts.name=='' and opts.action=='' and len(args) == 3:
-			opts.name = args[1]
-			opts.action = args[2]
-
-		if opts.action == '' or opts.name == '':
-			logging.warning("{0} : One of the required argument '{1}' or "
-			"'{2}' is missing.".format(
-					stylize(ST_NAME, LMC.tasks.name),
-					stylize(ST_PATH, 'name'),
-					stylize(ST_PATH, 'action')), to_local=False)
-			return
-
-		task_name = opts.name
+		task_name   = opts.name
 		task_action = opts.action
 
-		task_defer_resolution = opts.defer_resolution
-
-		task_year   = opts.year
-		task_month  = opts.month
-		task_day    = opts.day
-		task_hour   = opts.hour
-		task_minute = opts.minute
-		task_second = opts.second
+		task_year     = opts.year
+		task_month    = opts.month
+		task_day      = opts.day
+		task_hour     = opts.hour
+		task_minute   = opts.minute
+		task_second   = opts.second
 		task_week_day = opts.week_day
+
+		task_defer_resolution   = opts.defer_resolution
 
 		task_delay_until_year   = opts.delay_until_year
 		task_delay_until_month  = opts.delay_until_month
@@ -1442,55 +1427,56 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		task_delay_until_minute = opts.delay_until_minute
 		task_delay_until_second = opts.delay_until_second
 
-		if opts.args == "":
+		if opts.args == '':
 			task_args = []
+
 		else:
 			# if the task is an extinction_task, guess machines
 			if task_action == 'LMC.machines.shutdown':
 				try:
 					if ';' in opts.args:
-						task_args = [ LMC.machines.guess_one(LMC.machines.word_match(m)).mid for m in opts.args.split(';') ]
+						task_args = [ LMC.machines.guess_one(
+										LMC.machines.word_match(m)).mid
+											for m in opts.args.split(';') ]
 					else:
-						task_args = [ LMC.machines.guess_one(LMC.machines.word_match(opts.args)).mid ]
+						task_args = [ LMC.machines.guess_one(
+										LMC.machines.word_match(opts.args)).mid ]
 
 				except KeyError, e:
-					logging.exception('unable to recognize machine {0}'.format(e))
+					raise exceptions.BadArgumentError(_(u'Unable to resolve '
+													u'machine: {0}').format(e))
+
 				except:
-					logging.exception("{0} : {3} unpacking args of task {1} "
-						"(args={2}) ".format(
-						stylize(ST_NAME, LMC.tasks.name),
-						opts.name, opts.args, stylize(ST_BAD, "Error while"),
-						to_local=False))
-					return
+					raise exceptions.BadArgumentError(_(u'Error unpacking task '
+												u'args {0}'.format(opts.args)))
+
 			else:
 				task_args = opts.args.split(';')
 
 		task_kwargs = {}
-		if opts.kwargs != "":
+
+		if opts.kwargs != '':
 			try:
 				for kw in opts.kwargs.split(';'):
 					_kw = kw.split('=')
-					task_kwargs.update({_kw[0]:_kw[1]})
-			except Exception, e:
-				logging.exception("{0} : {3} unpacking kwargs of task {1} "
-					"(kwargs={2}) ".format(
-					stylize(ST_NAME, LMC.tasks.name),
-					opts.name, kw, stylize(ST_BAD, "Error while"),
-					stylize(ST_PATH, task_name), task_kwargs),
-					to_local=False)
+					task_kwargs.update({_kw[0]: _kw[1]})
 
-		try:
-			LMC.tasks.add_task(task_name, task_action,
-				year=task_year, month=task_month, day=task_day, hour=task_hour,
-				minute=task_minute, second=task_second, week_day=task_week_day,
-				delay_until_year=task_delay_until_year, delay_until_month=task_delay_until_month,
-				delay_until_day=task_delay_until_day, delay_until_hour=task_delay_until_hour,
-				delay_until_minute=task_delay_until_minute, delay_until_second=task_delay_until_second,
-				args=task_args, kwargs=task_kwargs,
-				defer_resolution=task_defer_resolution)
-		except Exception, e:
-			remote_output(_("{0} while adding task {1} : {2}\n".format(
-				stylize(ST_BAD, "Error"), stylize(ST_PATH, task_name),e )))
+			except Exception, e:
+				raise exceptions.BadArgumentError(_(u'Error unpacking task kwarg '
+						u'{0} from {1} (was: {2})').format(kw, 	opts.kwargs))
+
+		LMC.tasks.add_task(task_name, task_action,
+			year=task_year, month=task_month, day=task_day, hour=task_hour,
+			minute=task_minute, second=task_second, week_day=task_week_day,
+			delay_until_year=task_delay_until_year,
+			delay_until_month=task_delay_until_month,
+			delay_until_day=task_delay_until_day,
+			delay_until_hour=task_delay_until_hour,
+			delay_until_minute=task_delay_until_minute,
+			delay_until_second=task_delay_until_second,
+			args=task_args, kwargs=task_kwargs,
+			defer_resolution=task_defer_resolution)
+
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
 

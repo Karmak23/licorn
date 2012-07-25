@@ -146,7 +146,6 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		assert ltrace_func(TRACE_SETTINGS)
 
 		self.__check_settings_role()
-		self.__check_settings_backup()
 		self.__check_debug_variable()
 	def __check_settings_role(self):
 		""" check the licornd.role directive for correctness. """
