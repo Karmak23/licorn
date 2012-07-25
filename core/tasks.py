@@ -1008,6 +1008,18 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 
 			task.validate()
 
+			try:
+				LicornEvent('task_pre_add', task=task).emit(synchronous=True)
+
+			except exceptions.LicornStopException, e:
+				logging.warning(_(u'{0}: addition prevented: {1}').format(
+														self.pretty_name, e))
+
+				# delete the task from the configuration file.
+				task.backend.delete_Task(task)
+				del task
+				return
+
 			self[task.id] = task
 
 			#resolve action
@@ -1057,6 +1069,15 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		task = self.by_id(task_id)
 
 		if task != None:
+
+			try:
+				LicornEvent('task_pre_del', task=task).emit(synchronous=True)
+
+			except exceptions.LicornStopException, e:
+				logging.warning(_(u'{0}: deletion prevented: {1}').format(
+														self.pretty_name, e))
+				return
+
 			name = task.name
 
 			# cancel it from the scheduler
