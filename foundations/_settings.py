@@ -107,8 +107,6 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 			# timeout for CLI connect; in seconds.
 			'connect.timeout'              : 30,
 
-			# one day between backups.
-			'backup.interval'              : 86400,
 			'experimental.enabled'         : self.experimental_should_be_enabled,
 
 			# TODO: move the following directives to where they belong.
@@ -177,17 +175,6 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 					stylize(ST_NAME, 'LICORN_SERVER')))
 			logging.notice(_(u'Our Licorn® server is {0}').format(
 							stylize(ST_NAME, self.server_main_address)))
-	def __check_settings_backup(self):
-		""" TODO. """
-
-		if self.backup.interval < 3600 or self.backup.interval > 604800:
-			raise exceptions.BadConfigurationError(_(
-				u'\n\tinvalid value {0} for configuration '
-				u'directive {1}: must be an integer between '
-				u'{2} (one hour) and {3} (one week).').format(
-					stylize(ST_BAD, self.backup.interval),
-					stylize(ST_COMMENT, 'backup.interval'),
-					stylize(ST_COMMENT, '3600'), stylize(ST_COMMENT, '604800')))
 	def merge_settings(self, conf, overwrite=True, emit_event=True):
 		""" Build the licorn configuration object from a dict. """
 
