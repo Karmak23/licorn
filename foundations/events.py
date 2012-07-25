@@ -101,7 +101,7 @@ class RoundRobinEventLooper(LicornBasicThread):
 
 		# process the event asynchronously in a service thread.
 		workers.service_enqueue(priority, self.run_event, event)
-	def run_methods(self, event, method_type_container, method_type):
+	def run_methods(self, event, method_type_container, method_type, synchronous):
 		try:
 			methods = method_type_container[event.name]
 
@@ -119,12 +119,27 @@ class RoundRobinEventLooper(LicornBasicThread):
 			except SystemExit:
 				pass
 
+			except exceptions.LicornStopException:
+				# This is the only one type of exception accepted, it should
+				# stop any synchronous event caller.
+				if synchronous:
+					raise
+
+				else:
+					logging.warning(_(u'{0}: {1} {2} of event {3} raised a {4} '
+							u'but it has no effect because the event is run '
+							u'asynchronously!').format(
+								stylize(ST_NAME, self.name),
+								method_type, stylize(ST_NAME, method),
+								stylize(ST_NAME, event.name),
+								stylize(ST_BAD, 'LicornStopException')))
+
 			except:
 				logging.exception(_(u'{0}: exception encountered while '
 					u'running {1} {2} for event {3}, continuing with '
 					u'next method'), (ST_NAME, self.name), method_type,
 						(ST_NAME, method), (ST_NAME, event.name))
-	def run_event(self, event):
+	def run_event(self, event, synchronous=False):
 		""" Will "run" or execute an event:
 
 				* all handlers associated with a given ``event`` are executed in turn
@@ -147,17 +162,10 @@ class RoundRobinEventLooper(LicornBasicThread):
 		logging.monitor(TRACE_EVENTS, TRACELEVEL_1, _('Processing event {0}'),
 														(ST_NAME, event.name))
 
-		self.run_methods(event, events_handlers, _('event handler'))
-		self.run_methods(event, events_callbacks, _('event callback'))
+		self.run_methods(event, events_handlers, _('event handler'), synchronous)
+		self.run_methods(event, events_callbacks, _('event callback'), synchronous)
 class LicornEvent(NamedObject):
 	""" Licorn® event object class.
-
-		:param synchronous: a boolean indicating that the event should be run
-			synchronously (defaults to `False`). Use with caution, running an
-			event synchronously halts the event-loop during execution.
-
-		:param callbacks: an optional iterable of python function or method
-			which will be called after the event handlers have been processed.
 
 		:param *args: any nameless argument will be stored in the event, to be
 			forwarded to the callbacks: the one registered for the event, and
@@ -201,7 +209,7 @@ class LicornEvent(NamedObject):
 				# desired effect: the event is turned into a kind
 				# of simple "hook" which runs "things", unknown to
 				# the original caller.
-				looper_thread.run_event(self)
+				looper_thread.run_event(self, synchronous=True)
 
 			else:
 				events_queue.put((priority or priorities.NORMAL, self))
