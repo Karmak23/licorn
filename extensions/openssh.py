@@ -11,7 +11,7 @@ Licorn extensions: OpenSSH - http://docs.licorn.org/extensions/openssh.html
 import os, errno
 
 from licorn.foundations           import exceptions, logging, settings
-from licorn.foundations           import fsapi
+from licorn.foundations           import fsapi, process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
@@ -82,7 +82,7 @@ class OpensshExtension(ObjectSingleton, ServiceExtension):
 			self.available = True
 
 			self.configuration = ConfigFile(self.paths.sshd_config,
-					separator=' ')
+															separator=' ')
 		else:
 			logging.warning2(_(u'{0}: not available because {1} or {2} do '
 						u'not exist on the system.').format(self.pretty_name,
@@ -112,6 +112,17 @@ class OpensshExtension(ObjectSingleton, ServiceExtension):
 
 		if must_be_running and not self.running(self.paths.pid_file):
 			self.service(svccmds.START)
+
+		# strip the OpenSSL stuff, then the 'OpenSSH_' prefix
+		ssh_version = process.execute(('ssh', '-V'))[1].split(',')[0].split('_')[1]
+
+		logging.info(_(u'{0}: extension available on top of {1} version '
+				u'{2}, service currently {3}.').format(self.pretty_name,
+								stylize(ST_NAME, 'OpenSSH'),
+								stylize(ST_UGID, ssh_version),
+								stylize(ST_OK, _('enabled'))
+									if must_be_running
+									else stylize(ST_BAD, _('disabled'))))
 
 		assert ltrace(self._trace_name, '| is_enabled() → %s' % must_be_running)
 		return must_be_running

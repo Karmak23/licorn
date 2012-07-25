@@ -100,8 +100,6 @@ def eject(request, device, **kwargs):
 	device = '/dev/' + device
 	volume = utils.select('volumes', [ device ])[0]
 
-	print dir(volume)
-
 	try:
 		volume.unmount()
 
