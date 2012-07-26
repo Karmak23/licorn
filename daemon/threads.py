@@ -46,6 +46,12 @@ class BaseLicornThread(Thread):
 		"""
 		Thread.start(self)
 		return self
+	def stop(self):
+		try:
+			self.__class__._instances.remove(self)
+
+		except ValueError:
+			pass
 class LicornThread(Thread):
 	"""
 		A simple thread with an Event() used to stop it properly, and a Queue() to
@@ -58,8 +64,7 @@ class LicornThread(Thread):
 	def __init__(self, tname=None):
 		Thread.__init__(self)
 
-		self.name  = (tname if tname else
-				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
+		self.name  = tname or self.__class__.__name__
 
 		# trap the original gettext translator, to avoid the builtin '_'
 		# trigerring an exception everytime we need to translate a string.
@@ -105,7 +110,7 @@ class LicornThread(Thread):
 		assert ltrace(TRACE_THREAD, '%s stopping' % self.name)
 		self._stop_event.set()
 		self._input_queue.put(None)
-class LicornBasicThread(Thread):
+class LicornBasicThread(BaseLicornThread):
 	""" A simple Thread with an Event(), used to stop it properly. Threaded
 		gettext is setup in the :meth:`__init__` method.
 
@@ -133,11 +138,15 @@ class LicornBasicThread(Thread):
 	@property
 	def pretty_name(self):
 		return stylize(ST_NAME, self.name)
-	def __init__(self, tname=None, licornd=None):
-		Thread.__init__(self)
+	def __init__(self, *args, **kwargs):
 
-		self.name = (tname if tname else
-				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
+		# Pop our args to not bother upper classes.
+		tname   = kwargs.pop('tname', None)
+		licornd = kwargs.pop('licornd', None)
+
+		BaseLicornThread.__init__(self, *args, **kwargs)
+
+		self.name = tname or self.__class__.__name__
 
 		self.__licornd = licornd
 
@@ -153,6 +162,7 @@ class LicornBasicThread(Thread):
 			self._ = __builtin__.__dict__['_']
 
 		self._stop_event  = Event()
+
 		assert ltrace(TRACE_THREAD, '%s initialized.' % self.name)
 	@property
 	def licornd(self):
@@ -214,17 +224,11 @@ class LicornBasicThread(Thread):
 		self.finish()
 	def finish(self):
 		assert ltrace(TRACE_THREAD, '%s ended' % self.name)
-	def start(self):
-		""" Just a handy method that allows us to do::
-
-			>>> th = LicornBasicThread(...).start()
-		"""
-		Thread.start(self)
-		return self
 	def stop(self):
 		""" Stop current Thread. """
 		assert ltrace(TRACE_THREAD, '%s stopping' % self.name)
 		self._stop_event.set()
+		BaseLicornThread.stop(self)
 class GQWSchedulerThread(BaseLicornThread):
 	""" Try to dynamically adapt the number of workers for a given qsize.
 
@@ -289,12 +293,14 @@ class GQWSchedulerThread(BaseLicornThread):
 				# still a lot of job to do, spawn another peer to get the
 				# job done, until the configured thread limit is reached.
 
-				if qsize > 0 and cls.instances == cls.busy:
-					if cls.instances < cls.peers_max:
+				n_instances = cls.instances
+
+				if qsize > 0 and n_instances == cls.busy:
+					if n_instances < cls.peers_max:
 						# sleep a lot, because we start a lot of workers,
 						# but no more that 10 seconds.
 						return min(10.0, float(self.spawn_worker(min(qsize,
-											cls.peers_max - cls.instances))))
+											cls.peers_max - n_instances))))
 
 					else:
 						if time.time() - cls.last_warning > 5.0:
@@ -327,12 +333,14 @@ class GQWSchedulerThread(BaseLicornThread):
 				# but only if there are still more peers than the configured
 				# lower limit.
 
-				if qsize <= cls.instances and cls.instances > cls.busy:
+				n_instances = cls.instances
+
+				if qsize <= n_instances and n_instances > cls.busy:
 					# sleep a lot if we terminate a lot of workers, but
 					# no more than 10 seconds to avoid beiing flooded
 					# by next "queue attack".
 					return min(10.0, float(self.stop_worker(
-									cls.instances - qsize - cls.peers_min)))
+									n_instances - qsize - cls.peers_min)))
 
 				# things have not changed. Wait a little, but not that
 				# much in case things go up again fast.
@@ -385,7 +393,12 @@ class GQWSchedulerThread(BaseLicornThread):
 	def stop(self):
 		assert ltrace_func(TRACE_THREAD)
 
+		# Stop blocked workers
 		self.stop_worker(self.scheduled_class.instances)
+
+		# Stop sleeping workers
+		for inst in self.scheduled_class._instances:
+			inst.stop()
 
 		self._stop_event.set()
 
@@ -397,11 +410,188 @@ class GQWSchedulerThread(BaseLicornThread):
 	def stop_worker(self, number=None):
 		for i in range(number or 1):
 			self.scheduled_class.input_queue.put_nowait(
-				self.scheduled_class.stop_packet)
+											self.scheduled_class.stop_packet)
 		return number or 1.0
-class GenericQueueWorkerThread(BaseLicornThread):
+class AbstractTimerThread(LicornBasicThread):
+	""" Base (abstract) class for any advanced timer thread:
+
+		* the thread can loop any number of time (0 to infinite). 0 means it is
+		  a one shot timer, 1 or more means it is like a scheduled job (but no
+		  date handling yet).
+		* it can wait a specific time before starting to loop.
+		* the timer can be reset at any moment.
+
+		:param time: is a time.time() object before first execution, or for
+				one-shot jobs ("AT" like)
+		:param count: eventually the number of time you want the job to repeat (>0)
+				default: None => infinite loop
+		:param delay: a float in seconds to wait between each call when looping.
+				Only used in loop.
+
+			If looping (infinite or not), delay must be set.
+
+			args and kwargs are for target, which will be executed at least once.
+
+			tname is an optionnal thread name, to differentiate each, if you
+			launch more than one JobThread.
+
+		.. versionadded:: 1.2.4
+
+		.. warning:: This class is an abstract one, it does nothing besides
+			sleeping. All inheriting classes must implement a
+			``run_action_method``, else they will fail.
+
 	"""
-		.. versionadded:: 1.2.5
+	def __init__(self, *args, **kwargs):
+
+		# Pop our args to not bother upper classes.
+		time   = kwargs.pop('time', None)
+		count  = kwargs.pop('count', None)
+		delay  = kwargs.pop('delay', None)
+		daemon = kwargs.pop('daemon', False)
+
+		LicornBasicThread.__init__(self, *args, **kwargs)
+
+		self.time   = time
+		self.delay  = delay
+		self.count  = count
+		self.daemon = daemon
+
+		# lock used when accessing self.time_elapsed and self.sleep_delay
+		self._time_lock = RLock()
+
+		# these 2 variable are internal to the sleep() method, but can be used
+		# R/O in remaining_time().
+		self.__time_elapsed = 0.0
+		self.__sleep_delay  = None
+
+		#: used when we want to reset the timer, without running our action.
+		self._reset_event = Event()
+
+		#: used when we force running our action without waiting the full
+		#: delay. This event is triggered from the outside using methods.
+		self._trigger_event = Event()
+		self.__trigger_delay = None
+
+		if self.count is None:
+			self.loop = True
+
+		else:
+			if self.count <= 0:
+				raise exceptions.BadArgumentError('count can only be > 0')
+
+			elif self.count >= 1:
+				self.loop = False
+
+		assert ltrace(TRACE_THREAD, '| AbstractTimerThread.__init__(time=%s, '
+			'count=%s, delay=%s, loop=%s)' % (self.time,
+										self.count, self.delay, self.loop))
+
+		if (self.loop or self.count > 1) and self.delay is None:
+			raise exceptions.BadArgumentError(
+				'must provide a delay for looping.')
+	def sleep(self, delay=None):
+		""" sleep at most self.delay, but with smaller intervals, to allow
+			interruption without waiting to the end of self.delay, which can
+			be very long.
+		"""
+
+		if delay:
+			self.__sleep_delay = delay
+
+		else:
+			self.__sleep_delay = self.delay
+
+		assert ltrace(TRACE_THREAD, '| %s.sleep(%s)' % (self.name, delay))
+
+		with self._time_lock:
+			self.__time_elapsed = 0.0
+
+		while self.__time_elapsed < self.__sleep_delay:
+			#print "waiting %.1f < %.1f" % (current_delay, self.delay)
+
+			if self._stop_event.is_set():
+				break
+
+			if self._reset_event.is_set():
+				logging.progress(_(u'{0}: timer reset after {1} elapsed.').format(
+						stylize(ST_NAME, self.name),
+						pyutils.format_time_delta(self.__time_elapsed,
+													big_precision=True)))
+
+				with self._time_lock:
+					self.__time_elapsed = 0.0
+
+				self._reset_event.clear()
+
+			if self._trigger_event.is_set():
+				with self._time_lock:
+					if self.__trigger_delay is None:
+						self.__time_elapsed = self.__sleep_delay
+					else:
+						self.__time_elapsed = self.__sleep_delay - self.__trigger_delay
+				self._trigger_event.clear()
+
+			time.sleep(0.01)
+			with self._time_lock:
+				self.__time_elapsed += 0.01
+
+		assert ltrace(TRACE_THREAD, '| %s.sleep(EXIT)' % self.name)
+	def trigger_event(self, delay=None):
+		self.__trigger_delay = delay
+		self._trigger_event.set()
+	trigger = trigger_event
+	def reset_timer(self):
+		self._reset_event.set()
+	#: :meth:`reset` is an alias to :meth:`reset_timer`
+	reset = reset_timer
+	def remaining_time(self):
+		""" Returns the remaining time until next target execution, in seconds.
+		"""
+		with self._time_lock:
+			if self.__sleep_delay is None:
+				raise exceptions.LicornRuntimeException(
+										'%s: not yet started.' % self.name)
+			return self.__sleep_delay - self.__time_elapsed
+	def run(self):
+		""" TODO. """
+
+		self.current_loop = 0
+
+		# first occurence: we need to wait until time if it is set.
+		if self.time:
+			# only sleep 'til initial time if not already passed. Else just run
+			# the loop, to have the job done as soon as possible.
+			first_delay = self.time - time.time()
+			if first_delay > 0:
+				self.sleep(first_delay)
+		elif self.delay:
+			# we just have to wait a delay before starting (this is a
+			# simple timer thread).
+			self.sleep()
+
+		while self.loop or self.current_loop < self.count:
+
+			if self._stop_event.is_set():
+				break
+
+			self.run_action_method()
+
+			self.current_loop += 1
+			self.sleep()
+		LicornBasicThread.finish(self)
+class GenericQueueWorkerThread(AbstractTimerThread):
+	""" Inherits from :class:`AbstractTimerThread` to be able to be interrupted
+		in the middle of a :meth:`sleep` triggered by a ``job_delay``. The
+		:meth:`run` method of the :class:`AbstractTimerThread` is totally
+		overriden though, and is never called, this is intended. We just need
+		the :meth:`sleep` one. The :meth:`stop` method comes from
+		:class:`LicornBasicThread`.
+
+		.. versionadded::
+			- created for the 1.2.5
+			- enhanced for the 1.5: add the ability to stop the thread in the
+			  middle of a sleep, not only when the thread is idle.
 	"""
 
 	_setup_done  = False
@@ -460,11 +650,20 @@ class GenericQueueWorkerThread(BaseLicornThread):
 			raise RuntimeError(_(u'Class method {0}.setup() has not been '
 									u'called!').format(cls.__name__))
 
-		BaseLicornThread.__init__(self, *a, **kw)
+		kw.update({
+			#: the :class:`threading.Thread` attributes.
+			'tname'   : '%s-%03d' % (cls.__name__, cls.counter),
+			'daemon'  : cls.daemon,
+			'licornd' : cls.licornd,
 
-		#: the :class:`threading.Thread` attributes.
-		self.name   = '%s-%03d' % (cls.__name__, cls.counter)
-		self.daemon = cls.daemon
+			# FAKE: we pass 1 for the AbstractTimerThread.__init__() not to
+			# bother us with 'must provide a delay for looping' check error.
+			# Anyway, as we override completely its run() method, this has
+			# no importance at all for the runtime, *we* loop like we want.
+			'count'   : 1,
+		})
+
+		AbstractTimerThread.__init__(self, *a, **kw)
 
 		# trap the original gettext translator, to avoid the builtin '_'
 		# trigerring an exception everytime we need to translate a string.
@@ -501,14 +700,7 @@ class GenericQueueWorkerThread(BaseLicornThread):
 					stylize(ST_RUNNING
 						if self.is_alive() else ST_STOPPED, self.name),
 					'&' if self.daemon else '',
-					'on %s since %s' % (stylize(ST_ON, '%s(%s%s%s)' % (
-							self.job,
-							', '.join([str(j) for j in self.job_args])
-								if self.job_args else '',
-							', ' if self.job_args and self.job_kwargs else '',
-							', '.join(['%s=%s' % (key, value) for key, value
-										in self.jobs_kwargs])
-								if self.job_kwargs else '')),
+					'on %s since %s' % (self.__format_job(),
 						pyutils.format_time_delta(
 								time.time() - self.job_start_time,
 								big_precision=True))
@@ -521,13 +713,28 @@ class GenericQueueWorkerThread(BaseLicornThread):
 							start_time=self.job_start_time,
 							jobbing=self.jobbing.is_set(),
 							**process.thread_basic_info(self))
+	def __format_job(self):
+		return stylize(ST_ON, '%s(%s%s%s)' % (
+							self.job.__name__,
+							', '.join([str(j) for j in self.job_args])
+								if self.job_args else '',
+							', ' if self.job_args and self.job_kwargs else '',
+							', '.join(['%s=%s' % (key, value) for key, value
+										in self.jobs_kwargs])
+								if self.job_kwargs else ''))
 	def run(self):
+		""" A queue worker can be interrupted in two ways:
+
+			- calling its :meth:`stop` method
+			- putting ``(None, …)`` in its queue.
+		"""
+
 		assert ltrace_func(TRACE_THREAD)
 
 		cls = self.__class__
 		q   = cls.input_queue
 
-		while True:
+		while not self._stop_event.is_set():
 
 			self.priority, self.job, self.job_args, self.jobs_kwargs = q.get()
 
@@ -537,6 +744,11 @@ class GenericQueueWorkerThread(BaseLicornThread):
 				# emit task_done(), else the main process will block forever
 				# on q.join().
 				q.task_done()
+
+				# Don't set self._stop_event(), just break: when we encounter
+				# the 'stop job' item, the QueueWorkerScheduler is in the
+				# process of calling our stop() method too. Setting the event
+				# from here is thus not necessary; the loop will already break.
 				break
 
 			with cls.lock:
@@ -549,7 +761,23 @@ class GenericQueueWorkerThread(BaseLicornThread):
 			# this will at most eventually sleep a little if called requested
 			# if, or at best (with 0.0s) switch to another thread needing the
 			# CPU in the Python interpreter before starting to process the job.
-			time.sleep(self.jobs_kwargs.pop('job_delay', 0.0))
+			self.sleep(self.jobs_kwargs.pop('job_delay', 0.0))
+
+			# In case the sleep() was interrupted by a stop(), we need to
+			# check, to avoid running the job in a stopping daemon.
+			if self._stop_event.is_set():
+
+				with cls.lock:
+					cls.busy -= 1
+
+				with self.lock:
+					self.jobbing.clear()
+
+				q.task_done()
+
+				logging.warning(_(u'{0}: stopped during sleep, job {1} will '
+					u'not be run at all.').format(self.name, self.__format_job()))
+				break
 
 			#assert ltrace(TRACE_THREAD, '%s: running job %s' % (
 			#										self.name, self.job))
@@ -557,11 +785,9 @@ class GenericQueueWorkerThread(BaseLicornThread):
 			try:
 				self.job(*self.job_args, **self.jobs_kwargs)
 
-			except Exception, e:
-				logging.warning(_(u'{0}: Exception encountered while running '
-								u'{1}({2}, {3}): {4}').format(self.name, self.job,
-								str(self.job_args), str(self.job_kwargs), e))
-				pyutils.print_exception_if_verbose()
+			except Exception:
+				logging.exception(_(u'{0}: Exception encountered while running '
+									u'{1}'), self.name, self.__format_job())
 
 			q.task_done()
 
@@ -590,163 +816,6 @@ class ACLCkeckerThread(GenericQueueWorkerThread):
 	pass
 class NetworkWorkerThread(GenericQueueWorkerThread):
 	pass
-class AbstractTimerThread(LicornBasicThread):
-	""" Base (abstract) class for any advanced timer thread:
-
-		* the thread can loop any number of time (0 to infinite). 0 means it is
-		  a one shot timer, 1 or more means it is like a scheduled job (but no
-		  date handling yet).
-		* it can wait a specific time before starting to loop.
-		* the timer can be reset at any moment.
-
-		:param time: is a time.time() object before first execution, or for
-				one-shot jobs ("AT" like)
-		:param count: eventually the number of time you want the job to repeat (>0)
-				default: None => infinite loop
-		:param delay: a float in seconds to wait between each call when looping.
-				Only used in loop.
-
-			If looping (infinite or not), delay must be set.
-
-			args and kwargs are for target, which will be executed at least once.
-
-			tname is an optionnal thread name, to differentiate each, if you
-			launch more than one JobThread.
-
-		.. versionadded:: 1.2.4
-
-		.. warning:: This class is an abstract one, it does nothing besides
-			sleeping. All inheriting classes must implement a
-			``run_action_method``, else they will fail.
-
-	"""
-	def __init__(self, tname=None, time=None, count=None, delay=0.0, daemon=False):
-
-		LicornBasicThread.__init__(self, tname=tname)
-
-		self.time   = time
-		self.delay  = delay
-		self.count  = count
-		self.daemon = daemon
-
-		# lock used when accessing self.time_elapsed and self.sleep_delay
-		self._time_lock = RLock()
-
-		# these 2 variable are internal to the sleep() method, but can be used
-		# R/O in remaining_time().
-		self.__time_elapsed = 0.0
-		self.__sleep_delay  = None
-
-		#: used when we want to reset the timer, without running our action.
-		self._reset_event = Event()
-
-		#: used when we force running our action without waiting the full
-		#: delay. This event is triggered from the outside using methods.
-		self._trigger_event = Event()
-		self.__trigger_delay = None
-
-		if self.count is None:
-			self.loop = True
-		else:
-			if self.count <= 0:
-				raise exceptions.BadArgumentError('count can only be > 0')
-			elif self.count >= 1:
-				self.loop = False
-
-		assert ltrace(TRACE_THREAD, '| AbstractTimerThread.__init__(time=%s, '
-			'count=%s, delay=%s, loop=%s)' % (self.time,
-				self.count, self.delay, self.loop))
-
-		if (self.loop or self.count) and self.delay is None:
-			raise exceptions.BadArgumentError(
-				'must provide a delay for looping.')
-	def sleep(self, delay=None):
-		""" sleep at most self.delay, but with smaller intervals, to allow
-			interruption without waiting to the end of self.delay, which can
-			be very long.
-		"""
-
-		if delay:
-			self.__sleep_delay = delay
-		else:
-			self.__sleep_delay = self.delay
-
-		assert ltrace(TRACE_THREAD, '| %s.sleep(%s)' % (self.name, delay))
-
-		with self._time_lock:
-			self.__time_elapsed = 0.0
-
-		while self.__time_elapsed < self.__sleep_delay:
-			#print "waiting %.1f < %.1f" % (current_delay, self.delay)
-
-			if self._stop_event.is_set():
-				break
-
-			if self._reset_event.is_set():
-				logging.progress(_(u'{0}: timer reset after {1} elapsed.').format(
-						stylize(ST_NAME, self.name),
-						pyutils.format_time_delta(self.__time_elapsed,
-													big_precision=True)))
-
-				with self._time_lock:
-					self.__time_elapsed = 0.0
-
-				self._reset_event.clear()
-
-			if self._trigger_event.is_set():
-				with self._time_lock:
-					if self.__trigger_delay is None:
-						self.__time_elapsed = self.__sleep_delay
-					else:
-						self.__time_elapsed = self.__sleep_delay - self.__trigger_delay
-				self._trigger_event.clear()
-
-			time.sleep(0.01)
-			with self._time_lock:
-				self.__time_elapsed += 0.01
-	def trigger_event(self, delay=None):
-		self.__trigger_delay = delay
-		self._trigger_event.set()
-	trigger = trigger_event
-	def reset_timer(self):
-		self._reset_event.set()
-	#: :meth:`reset` is an alias to :meth:`reset_timer`
-	reset = reset_timer
-	def remaining_time(self):
-		""" Returns the remaining time until next target execution, in seconds.
-		"""
-		with self._time_lock:
-			if self.__sleep_delay is None:
-				raise exceptions.LicornRuntimeException(
-										'%s: not yet started.' % self.name)
-			return self.__sleep_delay - self.__time_elapsed
-	def run(self):
-		""" TODO. """
-
-		self.current_loop = 0
-
-		# first occurence: we need to wait until time if it is set.
-		if self.time:
-			# only sleep 'til initial time if not already passed. Else just run
-			# the loop, to have the job done as soon as possible.
-			first_delay = self.time - time.time()
-			if first_delay > 0:
-				self.sleep(first_delay)
-		elif self.delay:
-			# we just have to wait a delay before starting (this is a
-			# simple timer thread).
-			self.sleep()
-
-		while self.loop or self.current_loop < self.count:
-
-			if self._stop_event.is_set():
-				break
-
-			self.run_action_method()
-
-			self.current_loop += 1
-			self.sleep()
-		LicornBasicThread.finish(self)
 class TriggerTimerThread(AbstractTimerThread):
 	""" A Timer Thread whose sole action is to trigger an
 		:class:`~threading.Event`. It is used in conjunction of the
@@ -764,9 +833,46 @@ class TriggerTimerThread(AbstractTimerThread):
 	def run_action_method(self):
 		return self._trigger_event.set()
 class TriggerWorkerThread(LicornBasicThread):
-	def __init__(self, target, trigger_event, args=(), kwargs={}, tname=None):
+	def __init__(self, *a, **kw):
 		assert ltrace(TRACE_THREAD, '| TriggerWorkerThread.__init__()')
-		LicornBasicThread.__init__(self, tname)
+
+		try:
+			target = a.pop()
+
+		except:
+			try:
+				target = kw.pop('target')
+
+			except:
+				raise exceptions.BadArgumentError(_(u'{0}: the "target" first '
+								u'(or named) argument is mandatory!').format(
+									self.__class__.__name__))
+		try:
+			trigger_event = a.pop()
+
+		except:
+			try:
+				trigger_event = kw.pop('trigger_event')
+
+			except:
+				raise exceptions.BadArgumentError(_(u'{0}: the "trigger_event" '
+						u'second (or named) argument is mandatory!').format(
+							self.__class__.__name__))
+
+		try:
+			args = a.pop()
+
+		except:
+			args = kw.pop('args', ())
+
+		try:
+			kwargs = a.pop()
+
+		except:
+			kwargs = kw.pop('kwargs', {})
+
+		LicornBasicThread.__init__(self, *a, **kw)
+
 		self._disable_event     = Event()
 		self._currently_running = Event()
 		self._trigger_event     = trigger_event
