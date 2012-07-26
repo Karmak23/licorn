@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-22 01:42+0200\n"
-"PO-Revision-Date: 2012-07-19 16:51+0200\n"
+"POT-Creation-Date: 2012-07-26 18:35+0200\n"
+"PO-Revision-Date: 2012-07-26 18:35+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -169,15 +169,15 @@ msgstr "Impossible de démarrer la sauvegarde sur {0} (erreur : {1})"
 msgid "Could not enable volume {0} (was: {1})"
 msgstr "Impossible de réserver le volume {0} (erreur : {1})"
 
-#: backup/views.py:109
+#: backup/views.py:107
 msgid "Unhandled exception while unmounting volume {0}"
 msgstr ""
 
-#: backup/views.py:112
+#: backup/views.py:110
 msgid "Could not eject volume {0} (was: {1})"
 msgstr "Impossible d'éjecter le volume {0} (erreur : {1})"
 
-#: backup/views.py:135
+#: backup/views.py:133
 msgid "Volumes rescanned."
 msgstr "Volumes re-scannés."
 
@@ -260,20 +260,20 @@ msgstr ""
 msgid "No extinction task created yet."
 msgstr "Aucune tâche d'extinction enregistrée."
 
-#: groups/event_handlers.py:15 system/views.py:183 system/views.py:319
+#: groups/event_handlers.py:15 system/views.py:185 system/views.py:321
 #: templates/groups/users_list.html:64 templates/users/groups_list.html:43
 #: users/views.py:393
 msgid "member"
 msgstr "membre"
 
-#: groups/event_handlers.py:16 groups/views.py:266 system/views.py:189
-#: system/views.py:325 templates/groups/users_list.html:59
+#: groups/event_handlers.py:16 groups/views.py:266 system/views.py:191
+#: system/views.py:327 templates/groups/users_list.html:59
 #: templates/users/groups_list.html:38 users/views.py:398
 msgid "guest"
 msgstr "invité(e)"
 
-#: groups/event_handlers.py:17 groups/views.py:256 system/views.py:177
-#: system/views.py:313 templates/groups/users_list.html:68
+#: groups/event_handlers.py:17 groups/views.py:256 system/views.py:179
+#: system/views.py:315 templates/groups/users_list.html:68
 #: templates/users/groups_list.html:47 users/views.py:388
 msgid "responsible"
 msgstr "responsable"
@@ -962,17 +962,17 @@ msgstr "Aucun partage à cette adresse, désolé."
 msgid "Uploaded files are not downloadable."
 msgstr "Les fichiers déposés ne sont pas téléchargeables."
 
-#: shares/views.py:223 system/views.py:244
+#: shares/views.py:223 system/views.py:246
 msgid "Error while sending file {0}"
 msgstr "Erreur pendant l'envoi du fichier {0}"
 
-#: shares/views.py:225 system/views.py:246
+#: shares/views.py:225 system/views.py:248
 msgid "Problem occured while sending file. Please try again later."
 msgstr ""
 "Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
 "tard."
 
-#: shares/views.py:229 system/views.py:250
+#: shares/views.py:229 system/views.py:252
 msgid "Bad file specification or path."
 msgstr "Mauvais chemin ou spécification de fichier."
 
@@ -1007,35 +1007,35 @@ msgid "Unhandled exception in Django WMI code for request {0}"
 msgstr ""
 "Exception non traitée dans le code Django de la WMI pour la requête {0}"
 
-#: system/views.py:145 users/views.py:294
+#: system/views.py:147 users/views.py:294
 msgid "Edit user {0}"
 msgstr "Édition du compte {0}"
 
-#: system/views.py:175 system/views.py:311 users/views.py:387
+#: system/views.py:177 system/views.py:313 users/views.py:387
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
-#: system/views.py:181 system/views.py:317 users/views.py:392
+#: system/views.py:183 system/views.py:319 users/views.py:392
 msgid "Memberships"
 msgstr "Appartenances"
 
-#: system/views.py:187 system/views.py:323 users/views.py:397
+#: system/views.py:189 system/views.py:325 users/views.py:397
 msgid "Invitations"
 msgstr "Invitations"
 
-#: system/views.py:193 system/views.py:329 users/views.py:402
+#: system/views.py:195 system/views.py:331 users/views.py:402
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: system/views.py:195 system/views.py:331 users/views.py:403
+#: system/views.py:197 system/views.py:333 users/views.py:403
 msgid "privileged member"
 msgstr "membre privilégié"
 
-#: system/views.py:199 system/views.py:335 users/views.py:407
+#: system/views.py:201 system/views.py:337 users/views.py:407
 msgid "Other system groups"
 msgstr "Autres groupes système"
 
-#: system/views.py:201 system/views.py:337 users/views.py:408
+#: system/views.py:203 system/views.py:339 users/views.py:408
 msgid "system member"
 msgstr "membre système"
 
@@ -1059,31 +1059,33 @@ msgstr "Et c'est exactement là que vous êtes, maintenant."
 msgid "Internal server error"
 msgstr "Erreur interne du serveur"
 
-#: templates/500.html:63
-msgid "BOOM"
-msgstr "BOUM"
-
-#: templates/500.html:68
-msgid "BOOM POW!"
-msgstr "BOUM POW !"
-
-#: templates/500.html:69
-msgid "Something crashed in the program."
-msgstr "Quelque chose a craqué dans le programme."
+#: templates/500.html:65
+msgid "OH&nbsp;MY!"
+msgstr "OUPS&nbsp;!"
 
 #: templates/500.html:70
-msgid "In most cases you can {0} without further problems."
-msgstr "Dans la plupart des cas vous pouvez {0} sans conséquence particulière."
+msgid "Something went wrong&hellip;"
+msgstr "Quelque chose a dérapé&hellip;"
 
 #: templates/500.html:71
+msgid "&hellip;Wrong enough to abort the current operation."
+msgstr "&hellip; Assez pour stopper l'opération en cours."
+
+#: templates/500.html:72
+msgid ""
+"You could eventually retry <a href=\"/\">continue using the WMI</a>, or not."
+msgstr ""
+"Vous pourriez éventuellement essayer de <a href=\"/\">continuer à utiliser "
+"la WMI</a>, ou pas."
+
+#: templates/500.html:73
 msgid ""
 "We are very sorry for the inconvenience; all data needed to correct this "
-"error has already been collected, to be exploited if needed by the "
-"developers."
+"error has already been collected to be used by the developers."
 msgstr ""
 "Nous sommes désolés de cet inconvénient ; toutes les données nécessaires à "
-"la correction de cette erreur ont déjà été collectées, pour être exploitées "
-"au besoin par les développeurs."
+"la correction de cette erreur ont déjà été collectées pour être exploitées "
+"par les développeurs."
 
 #: templates/base.bootstrap.html:24
 msgid "Licorn&reg;: "
@@ -2519,6 +2521,19 @@ msgstr "Privilèges"
 #: users/views.py:361
 msgid "Standard account"
 msgstr "Compte standard"
+
+#~ msgid "OH MY!"
+#~ msgstr "OUPS !"
+
+#~ msgid "BOOM"
+#~ msgstr "BOUM"
+
+#~ msgid "BOOM POW!"
+#~ msgstr "BOUM POW !"
+
+#~ msgid "In most cases you can {0} without further problems."
+#~ msgstr ""
+#~ "Dans la plupart des cas vous pouvez {0} sans conséquence particulière."
 
 #~ msgid "Allowed activity periods"
 #~ msgstr "Périodes d'actitivé autorisées"
