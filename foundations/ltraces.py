@@ -57,6 +57,7 @@ TRACE_INTERNET      = _ltrace_level(0x0000000000000000000200000, 'internet')
 TRACE_PRIVILEGES    = _ltrace_level(0x0000000000000000000400000, 'privileges')
 TRACE_KEYWORDS      = _ltrace_level(0x0000000000000000000800000, 'keywords')
 TRACE_SYSTEM        = _ltrace_level(0x0000000000000000001000000, 'system')
+TRACE_TASKS         = _ltrace_level(0x0000000000000000002000000, 'tasks')
 
 
 # ==================================================================== backends

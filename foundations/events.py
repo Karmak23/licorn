@@ -469,7 +469,7 @@ def uncollect(self, on_object=None):
 			uncollect_object(on_object)
 def run():
 	global looper_thread
-	looper_thread = RoundRobinEventLooper('EventLooper')
+	looper_thread = RoundRobinEventLooper(tname='EventLooper')
 	looper_thread.start()
 
 	logging.progress(_(u'{0}: Licorn® Event Loop started.').format(

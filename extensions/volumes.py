@@ -110,11 +110,12 @@ class UdevMonitorThread(LicornBasicThread):
 
 		.. versionadded:: 1.2.4
 	"""
-	def __init__(self):
+	def __init__(self, *args, **kwargs):
 		assert ltrace(TRACE_VOLUMES, '| UdevMonitorThread.__init__()')
 
-		LicornBasicThread.__init__(self,
-			tname='extensions.volumes.UdevMonitor')
+		kwargs['tname'] = 'extensions.volumes.UdevMonitor'
+
+		LicornBasicThread.__init__(self, *args, **kwargs)
 
 		# set daemon in case we take too much time unihibiting udisks
 		# while daemon is stopping.

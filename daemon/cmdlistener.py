@@ -321,25 +321,24 @@ class CommandListener(LicornBasicThread):
 					cls.listeners_pids.remove(pid)
 
 			cls.listeners_pids.add(pid_to_add)
-	def __init__(self, licornd, pids_to_wake1=[], pids_to_wake2=[],
-													daemon=False, **kwargs):
+	def __init__(self, pids_to_wake1=None, pids_to_wake2=None, *args, **kwargs):
 		assert ltrace(TRACE_CMDLISTENER, '| CommandListener.__init__()')
 
-		LicornBasicThread.__init__(self, 'CommandListener', licornd)
+		daemon = kwargs.pop('daemon', False)
+		kwargs['tname'] = 'CommandListener'
 
-		#: the thread attribute
+		LicornBasicThread.__init__(self, *args, **kwargs)
+
+		# The :class:`Thread` attribute
 		self.daemon = daemon
 
-		# wake them with USR1
-		self.pids_to_wake1 = pids_to_wake1
+		# Wake them with USR1
+		self.pids_to_wake1 = pids_to_wake1 or []
 
-		#wake them with USR2
-		self.pids_to_wake2 = pids_to_wake2
+		# Wake them with USR2
+		self.pids_to_wake2 = pids_to_wake2 or []
 
 		self.wake_threads = []
-
-		for attr_name in kwargs:
-			setattr(self, attr_name, kwargs[attr_name])
 	def dump_status(self, long_output=False, precision=None, as_string=True):
 		""" get detailled thread status. """
 		if long_output:

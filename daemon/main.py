@@ -159,9 +159,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# The RWI must be up for the CommandListener to pick it up.
 			self.rwi = RealWorldInterface(self)
 
-			self.__threads.CommandListener = CommandListener(licornd=self,
-											pids_to_wake1=self.pids_to_wake1,
-											pids_to_wake2=set(self.pids_to_wake2))
+			self.__threads.CommandListener = CommandListener(
+												pids_to_wake1=self.pids_to_wake1,
+												pids_to_wake2=set(self.pids_to_wake2),
+												licornd=self)
 			self.__threads.CommandListener.start()
 
 		else:
@@ -236,8 +237,9 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 	def configuration_loaded(self, event, *args, **kwargs):
 		if settings.role == roles.CLIENT:
 
-			self.__threads.CommandListener = CommandListener(licornd=self,
-											pids_to_wake1=self.pids_to_wake1)
+			self.__threads.CommandListener = CommandListener(
+												pids_to_wake1=self.pids_to_wake1,
+												licornd=self)
 			self.__threads.CommandListener.start()
 
 			# NOTE: the remaining of the client processing takes place later,
