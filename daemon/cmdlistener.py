@@ -339,9 +339,6 @@ class CommandListener(LicornBasicThread):
 		self.pids_to_wake2 = pids_to_wake2 or []
 
 		self.wake_threads = []
-
-		for attr_name in kwargs:
-			setattr(self, attr_name, kwargs[attr_name])
 	def dump_status(self, long_output=False, precision=None, as_string=True):
 		""" get detailled thread status. """
 		if long_output:
