@@ -1,16 +1,17 @@
 .jquery_checkbox {
-	display:block;
-	width:60px;
-	height:20px;
+	display: block;
+	width: 60px;
+	height: 20px;
+	cursor: pointer;
 }
 
 .jquery_checkbox_on {
-	margin-left:10px;
+	margin-left: 10px;
 	color: white;
 }
 
 .jquery_checkbox_off {
-	margin-left:0;
+	margin-left: 0;
 }
 
 .jquery_checkbox_text {
