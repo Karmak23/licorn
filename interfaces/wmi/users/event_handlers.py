@@ -14,8 +14,7 @@ def users_import_finished_handler(request, event):
 						open(event.kwargs['result_filename'], 'r').read())
 
 def users_import_failed_handler(request, event):
-	yield utils.notify(_(u'Users import <em>failed</em> : {0}.').format(event.kwargs['error']))
-	
+	yield utils.notify(_(u'Users import <em>failed</em> : {0}.').format(event.kwargs['error']), 10000)
 
 def users_import_tested_handler(request, event):
 	yield utils.notify(_(u'Users import test ran fine.'))

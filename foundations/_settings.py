@@ -25,8 +25,6 @@ stylize = styles.stylize
 
 import readers, network, exceptions
 
-__all__ = ('settings', )
-
 class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 	def __init__(self, filename=None):
 		assert ltrace_func(TRACE_SETTINGS)
@@ -329,3 +327,5 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 			else:
 				return default_value
 settings = LicornSettings()
+
+__all__ = ('settings', )
