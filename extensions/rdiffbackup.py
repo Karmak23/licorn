@@ -809,14 +809,9 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 			this method enqueues the private :meth:`__backup_procedure` method
 			in the Service Queue.
 
-			.. note::
-				* If a backup takes more than the configured
-				  :term:`backup interval <backup.interval>` to complete,
-				  next planned backup will *not* occur because it will be
-				  cancelled by the :meth:`running` method having returned
-				  ``True``. This avoids backups running over them-selves,
-				  but implies backups are not really ran at the configured
-				  interval.
+			.. note:: 
+				* if a backup is already running, another will not be launched
+				  over it.
 
 				* if all service threads are busy
 				  (which is very unlikely to occur, given how many they are),
@@ -824,24 +819,16 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 				  thread is free again.
 
 				* in this very same case, the backup timer would have been
-				  reset anyway,
-				  leading to a potential desynchronization
+				  reset anyway, leading to a potential desynchronization
 				  between the times of the "real" backup event and the timer
 				  completion. I find this completely harmless, until proven
 				  otherwise (feel free to shed a light on any problem I forgot).
 
-			Provided your Licorn® daemon is attached to your terminal, you can
-			launch a manual backup in the daemon's interactive shell, like
-			this::
+			As a `get inside` demonstration (you can use CLI in normal circumstances),
+			you can always launch a manual backup like this::
 
-				[…] [press "i" on your keyboard]
-				 * [2011/11/01 20:19:22.0170] Entering interactive mode. Welcome into licornd's arcanes…
-				Licorn® @DEVEL@, Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39) [GCC 4.4.5] on linux2
 				licornd> LMC.extensions.rdiffbackup.backup(force=True)
-				[…]
 				licornd> [Control-D]
-				 * [2011/11/01 20:28:16.2913] Leaving interactive mode. Welcome back to Real World™.
-				[…]
 		"""
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
@@ -855,17 +842,20 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 											u'reserve it first, or choose '
 											u'another one.').format(volume.name))
 
-		if volume:
+		minimum_interval = settings.get('extensions.rdiffbackup.backup.minimum_interval', 3600*6)
 
+		if minimum_interval < 3600:
+			logging.warning(_(u'{0}: minimum backup interval cannot be less than {1}, '
+				u'clipping.').format(self.pretty_name, pyutils.format_time_delta(3600)))
+			# TODO: rewrite settings when the primitive exists.
+			minimum_interval = 360
+		if volume:
 			if not force and (
-					time.time() - self._last_backup_time(volume) <
-										settings.backup.interval):
+					time.time() - self._last_backup_time(volume) < minimum_interval):
 
 				logging.notice(_(u'{0}: not backing up on {1}, last backup is '
-								u'less than {2}.').format(
-									stylize(ST_NAME, self.name),
-									volume, pyutils.format_time_delta(
-									settings.backup.interval)))
+								u'less than {2}.').format(self.pretty_name,	volume, 
+									pyutils.format_time_delta(minimum_interval)))
 				return
 
 			workers.service_enqueue(priorities.NORMAL,
@@ -940,8 +930,6 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		self.events.backup.set()
 
 		LicornEvent('backup_started', volume=volume).emit()
-
-		self.threads.auto_backup_timer.reset()
 
 		logging.notice(_(u'{0}: running backup on {1:s}, '
 						u'please wait…').format(
