@@ -9,6 +9,8 @@
 
 from licorn.core import LMC
 
+from licorn.extensions.simplesharing import DEFAULT_MAX_UPLOAD_SIZE
+
 def base_data_dict(request):
 	""" data common to many views and event handlers, thus centralized here. """
 

@@ -216,7 +216,11 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
 
-		if not_found:
+		if not_found or self.system_uuid in (
+					# Some systems have invalid UUIDs in their motherboard.
+					'00010002000300040005000600070008',
+					'00020003000400050006000700080009',
+				):
 			if os.path.exists(uuid_data_file):
 				# fallback to the previously generated UUID.
 

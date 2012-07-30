@@ -387,8 +387,8 @@ class LicornBaseDaemon:
 
 		#signal.signal(signal.SIGCHLD, signal.SIG_IGN)
 		signal.signal(signal.SIGTERM, self.terminate)
-		signal.signal(signal.SIGHUP,  self.terminate)
 		signal.signal(signal.SIGINT,  self.terminate)
+		signal.signal(signal.SIGHUP,  self.restart)
 		signal.signal(signal.SIGUSR1, self.restart)
 
 		if hasattr(self, 'USR2_signal_handler'):
