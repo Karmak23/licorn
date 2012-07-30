@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-26 18:35+0200\n"
+"POT-Creation-Date: 2012-07-30 09:18+0200\n"
 "PO-Revision-Date: 2012-07-26 18:35+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -260,20 +260,20 @@ msgstr ""
 msgid "No extinction task created yet."
 msgstr "Aucune tâche d'extinction enregistrée."
 
-#: groups/event_handlers.py:15 system/views.py:185 system/views.py:321
+#: groups/event_handlers.py:15 system/views.py:183 system/views.py:319
 #: templates/groups/users_list.html:64 templates/users/groups_list.html:43
 #: users/views.py:393
 msgid "member"
 msgstr "membre"
 
-#: groups/event_handlers.py:16 groups/views.py:266 system/views.py:191
-#: system/views.py:327 templates/groups/users_list.html:59
+#: groups/event_handlers.py:16 groups/views.py:266 system/views.py:189
+#: system/views.py:325 templates/groups/users_list.html:59
 #: templates/users/groups_list.html:38 users/views.py:398
 msgid "guest"
 msgstr "invité(e)"
 
-#: groups/event_handlers.py:17 groups/views.py:256 system/views.py:179
-#: system/views.py:315 templates/groups/users_list.html:68
+#: groups/event_handlers.py:17 groups/views.py:256 system/views.py:177
+#: system/views.py:313 templates/groups/users_list.html:68
 #: templates/users/groups_list.html:47 users/views.py:388
 msgid "responsible"
 msgstr "responsable"
@@ -954,33 +954,33 @@ msgstr "Cet utilisateur n'a pas de partages publics."
 msgid "This share has expired. It is no more available."
 msgstr "Ce partage a expiré, il n'est plus disponible."
 
-#: shares/views.py:196
+#: shares/views.py:198
 msgid "No Web share at this URI, sorry."
 msgstr "Aucun partage à cette adresse, désolé."
 
-#: shares/views.py:214
+#: shares/views.py:216
 msgid "Uploaded files are not downloadable."
 msgstr "Les fichiers déposés ne sont pas téléchargeables."
 
-#: shares/views.py:223 system/views.py:246
+#: shares/views.py:225 system/views.py:244
 msgid "Error while sending file {0}"
 msgstr "Erreur pendant l'envoi du fichier {0}"
 
-#: shares/views.py:225 system/views.py:248
+#: shares/views.py:227 system/views.py:246
 msgid "Problem occured while sending file. Please try again later."
 msgstr ""
 "Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
 "tard."
 
-#: shares/views.py:229 system/views.py:252
+#: shares/views.py:231 system/views.py:250
 msgid "Bad file specification or path."
 msgstr "Mauvais chemin ou spécification de fichier."
 
-#: shares/views.py:262
+#: shares/views.py:264
 msgid "Incorrect password!"
 msgstr "Mot de passe incorrect !"
 
-#: shares/views.py:265
+#: shares/views.py:267
 msgid "Uploads disabled for this share!"
 msgstr "Les dépôts sont interdits sur ce partage !"
 
@@ -1007,35 +1007,35 @@ msgid "Unhandled exception in Django WMI code for request {0}"
 msgstr ""
 "Exception non traitée dans le code Django de la WMI pour la requête {0}"
 
-#: system/views.py:147 users/views.py:294
+#: system/views.py:145 users/views.py:294
 msgid "Edit user {0}"
 msgstr "Édition du compte {0}"
 
-#: system/views.py:177 system/views.py:313 users/views.py:387
+#: system/views.py:175 system/views.py:311 users/views.py:387
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
-#: system/views.py:183 system/views.py:319 users/views.py:392
+#: system/views.py:181 system/views.py:317 users/views.py:392
 msgid "Memberships"
 msgstr "Appartenances"
 
-#: system/views.py:189 system/views.py:325 users/views.py:397
+#: system/views.py:187 system/views.py:323 users/views.py:397
 msgid "Invitations"
 msgstr "Invitations"
 
-#: system/views.py:195 system/views.py:331 users/views.py:402
+#: system/views.py:193 system/views.py:329 users/views.py:402
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: system/views.py:197 system/views.py:333 users/views.py:403
+#: system/views.py:195 system/views.py:331 users/views.py:403
 msgid "privileged member"
 msgstr "membre privilégié"
 
-#: system/views.py:201 system/views.py:337 users/views.py:407
+#: system/views.py:199 system/views.py:335 users/views.py:407
 msgid "Other system groups"
 msgstr "Autres groupes système"
 
-#: system/views.py:203 system/views.py:339 users/views.py:408
+#: system/views.py:201 system/views.py:337 users/views.py:408
 msgid "system member"
 msgstr "membre système"
 
