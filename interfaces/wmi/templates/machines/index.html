@@ -17,7 +17,8 @@
 {%- block title -%}{{ _('Machines management') }}{%- endblock -%}
 
 {%- block main_content -%}
-	<div class="modal hide" id="machine_modal">
+	<div class="modal hide fade" id="machine_modal">
+		{{ edit_html }}
 	</div>
 
 	<div class='table_header'>
@@ -65,10 +66,13 @@
 	</table>
 
 
-
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
-			setup_machines()
+			setup_machines();
+
+			{%- if edit_html -%} 
+				$("#machine_modal").modal();
+			{%- endif -%}
 		});
 
 		var default_sort = [[1,0]]

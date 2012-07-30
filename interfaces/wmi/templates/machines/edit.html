@@ -1,9 +1,130 @@
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal">×</button>
     <h3>{{ _('Edit machine {0}'.format(machine.hostname)) }}</h3>
-  </div>
-  <div class="modal-body">
-    <p>One fine body…</p>
+</div>
+<div class="modal-body">
+
+	{% if form.errors and not form.non_field_errors() -%}
+	    <div class="error_div error_text">
+			{% trans count=form.errors.items()|length() %}
+			    Merci de corriger l'erreur ci-dessous&nbsp;:
+			{% pluralize %}
+			    Merci de corriger les erreurs suivantes&nbsp;:
+			{% endtrans %}
+	    </div>
+	{% endif -%}
+
+	{% if form.non_field_errors() %}
+	    {% for error in form.non_field_errors() %}
+			<p class="errornote">
+				{{ error }}
+			</p>
+	    {% endfor %}
+	{% endif %}
+
+	<form class="form-horizontal" action="ACTION" method="post" id="account-creation-form">{% csrf_token %}
+
+	{%- set not_first = []  -%}
+	{%- set first = [] -%}
+	{%- set header_displayed = []  -%}
+	{% set one_required = []  %}
+
+
+	<!-- tab headers -->
+	{%- if form.tab -%}
+		<ul class="nav nav-tabs" id="myTab">
+			{% for block in form_blocks %}
+				<li><a href="#{{ form_blocks[block][0] }}" data-toggle="tab">{{ form_blocks[block][1] }}</a></li>
+			{% endfor %}
+		</ul>
+		<script language="javascript">
+			$(document).ready(function(){
+				// $('#myTab a:last').tab('show');
+				$('#myTab a').click(function (e) {
+					  e.preventDefault();
+					  $(this).tab('show');
+					})
+			});
+
+			</script>
+
+		<div class="tab-content">
+	{%- endif -%}
+
+
+
+
+	{% for field in form.visible_fields() %}
+		{%- if field.field.required -%}
+
+			{%  do one_required.append(1) %}
+
+		{%- endif -%}
+
+	    {% if field.name in form_blocks %}
+	    	{% if form.tab %}
+	    		{%  do header_displayed.append(1)  -%}
+	    		{% if first %}
+		    		</div> <!-- end tab-tane -->
+				{%- else -%}
+					{%- do first.append(1) -%}
+				{%- endif -%}
+	    		<div class="tab-pane" id="{{ form_blocks[field.name][0] }}">
+	    	{% else %}
+				{%  do header_displayed.append(1)  -%}
+		    	{% if first %}
+		    		</fielset>
+		    	{%- else -%}
+		    		{%- do not_first.append(1) -%}
+				{%- endif -%}
+	    		<fieldset>
+    				<legend>{{ form_blocks[field.name][1] }}</legend>
+	    	{% endif %}
+
+			<!--{{ ('<h3>' + form_blocks[field.name][0] + '</h3>') if form_blocks[field.name][0] }}
+			{{ ('<p><div class="form-row">' + form_blocks[field.name][1] + '</div></p>') if form_blocks[field.name][1] }} -->
+	    {% endif %}
+
+		<div class="control-group">
+			<label class="control-label" for="id_{{ field.name }}">
+				{{ field.label }}
+				{%-if field.field.required -%}
+					<span class="required_field">*</span>
+				{%- endif -%}
+			</label>
+			<div class="controls">
+				{{ field }}
+				<!--<input type="text" class="input-xlarge" id="input01">-->
+				{%-if field.field.help_text -%}
+					<p class="help-block">{{ field.field.help_text }}</p>
+				{%- endif -%}
+			</div>
+		</div>
+
+
+
+
+
+
+	{% endfor %}
+	{%- if header_displayed -%}
+		{% if form.tab %}
+			</div>
+		{% else %}
+			</fieldset>
+		{% endif %}
+	{%- endif -%}
+	{%- if form.tab -%}
+		</div> <!-- end tab-content -->
+	{%- endif -%}
+	{%- if one_required -%}
+		<p class="required_field">*&nbsp;: champ obligatoire.</p>
+	{%- endif -%}
+
+
+	</form>
+
+
   </div>
   <div class="modal-footer">
     <a href="#" class="btn" data-dismiss="modal">Close</a>
