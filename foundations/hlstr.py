@@ -107,7 +107,7 @@ def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.', replace_
 
 	else:
 		# keep dashes (or custom characters)
-		s = re.sub('[^%sa-z0-9]' % custom_keep, '' if replace_by is None else replace_by, s)
+		s = re.sub('[^%sa-z0-9]' % custom_keep, replace_by or '', s)
 
 	# strip remaining doubles punctuations signs
 	s = re.sub( r'([-._])[-._]*', r'\1', s)
