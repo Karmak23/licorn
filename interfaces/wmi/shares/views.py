@@ -189,7 +189,9 @@ def serve(request, login, shname):
 			# finally, if everything is OK, render the regular view
 			_d.update({
 				'uploaded_files' : share.contents()['uploads'],
-				'file_size_max'  : settings.extensions.simplesharing.max_upload_size,
+				'file_size_max'  : settings.get(
+					'extensions.simplesharing.max_upload_size',
+						wmi_data.DEFAULT_MAX_UPLOAD_SIZE),
 			})
 			return render(request, 'shares/serve-share.html', _d)
 

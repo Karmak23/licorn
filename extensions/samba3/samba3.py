@@ -88,7 +88,12 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 				os.path.exists(self.paths.smb_conf)
 				and os.path.exists(self.paths.smb_daemon)):
 
-			logging.info(_(u'{0}: extension enabled.').format(self.pretty_name))
+			logging.info(_(u'{0}: extension enabled on top of {1} version '
+				u'{2}.').format(self.pretty_name, stylize(ST_NAME, 'smbd'
+					if os.path.exists(self.paths.smb_daemon)
+					else 'smbpasswd'), stylize(ST_UGID, process.execute(
+							('smbclient', '-V'))[0].split(' ')[1].strip())))
+
 			self.available = True
 
 		else:

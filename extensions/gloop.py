@@ -21,7 +21,7 @@ from threading import Thread
 import gobject
 import dbus.mainloop.glib
 
-from licorn.foundations           import exceptions, logging
+from licorn.foundations           import exceptions, logging, styles
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
@@ -30,6 +30,8 @@ from licorn.foundations.constants import services, svccmds, distros
 
 from licorn.core                  import LMC
 from licorn.extensions            import ServiceExtension
+
+stylize = styles.stylize
 
 dbus_pretty_name = stylize(ST_NAME, 'dbus')
 
@@ -104,8 +106,6 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 
 		if os.path.exists(self.paths.dbus_binary) \
 				and os.path.exists(self.paths.dbus_config):
-
-			self.__setup_messages_handlers()
 			self.available = True
 
 			# WE do not use the config file yet.
@@ -145,6 +145,8 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 				u'disabling'), self.pretty_name, dbus_pretty_name)
 
 		else:
+			self.__setup_messages_handlers()
+
 			logging.info(_(u'{0}: started extension and gobject mainloop '
 					u'thread.').format(self.pretty_name))
 
@@ -154,14 +156,15 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 		logging.progress(_(u'{0}: DBUS message {1} {2}.').format(
 				self.pretty_name,
 				u', '.join(stylize(ST_NAME, a) for a in args),
-				u', '.join('%s=%s' % (stylize(ST_KEY, k),
-										stylize(ST_VALUE, v))
+				u', '.join('%s=%s' % (stylize(ST_ATTR, k),
+										stylize(ST_ATTRVALUE, v))
 					for k,v in kwargs.iteritems())))
 	def __setup_messages_handlers(self):
 		if __debug__:
 			# The dbus catchall
-			self.bus.add_signal_receiver(self.dbus_catchall_signal_handler,
+			self.dbus.system_bus.add_signal_receiver(self.dbus_catchall_signal_handler,
 							interface_keyword='dbus_interface',
 							member_keyword='member')
+		pass
 
 __all__ = ('GloopExtension', )

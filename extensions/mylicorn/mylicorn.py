@@ -346,9 +346,16 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			#
 			# TODO: use network-manager instead of just delaying
 			# after resume.
-			delay = random_delay(30, 60)
+			delay_min = 45
+			delay_max = 90
+
 		else:
-			delay = random_delay(delay_max=3600)
+			# a standard retrigger (after an error) should wait,
+			# but not that much in case the failure was transient.
+			delay_min = 300
+			delay_max = 900
+
+		delay = random_delay(delay_min=delay_min, delay_max=delay_max)
 
 		logging.info(_(u'{0}: reprogramming authentication in {1}.').format(
 						self.pretty_name, pyutils.format_time_delta(delay)))
@@ -397,7 +404,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		if self.connected:
 
-			LicornEvent('extension_mylicorn_disconnects', synchronous=True).emit()
+			LicornEvent('extension_mylicorn_disconnects').emit(synchronous=True)
 
 			self.__stop_updater_thread()
 

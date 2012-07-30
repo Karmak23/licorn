@@ -28,6 +28,12 @@ from licorn.core.classes        import only_if_enabled
 from licorn.daemon.threads      import LicornJobThread
 from licorn.extensions          import LicornExtension
 
+RDIFF_TASK_NAME     = 'extensions.rdiffbackup.autobackup'
+RDIFF_DEFAULT_TIME  = '02:00'
+RDIFF_DEFAULT_WKDAY = '*'
+RDIFF_SETTING_TIME  = 'extensions.rdiffbackup.backup_time'
+RDIFF_SETTING_WKDAY = 'extensions.rdiffbackup.backup_week_day'
+
 def lazy_mounted(func):
 	@wraps(func)
 	def decorated(self, volume=None, *args, **kwargs):
@@ -237,6 +243,19 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 												settings.config_dir,
 												'rdiff-backup-globs.conf')
 		self.paths.globbing_file_local      = self._find_local_globbing_filelist()
+
+		# backup is run every day, at 02:00 AM.
+		self.settings = LicornConfigObject()
+		self.reload_settings()
+	def compare_settings(self):
+		time     = settings.get(RDIFF_SETTING_TIME, RDIFF_DEFAULT_TIME).strip()
+		week_day = settings.get(RDIFF_SETTING_WKDAY, RDIFF_DEFAULT_WKDAY).strip()
+
+		return time != self.settings.time or week_day != self.settings.week_day
+	def reload_settings(self, compare=False):
+		self.settings.time = settings.get(RDIFF_SETTING_TIME, RDIFF_DEFAULT_TIME).strip()
+		self.settings.week_day = settings.get(RDIFF_SETTING_WKDAY, RDIFF_DEFAULT_WKDAY).strip()
+		self.settings.hour, self.settings.minute = self.settings.time.split(':')
 	def _find_local_globbing_filelist(self):
 		""" See if environment variable exists and use it, or return the
 			default path for the rdiff-backup configuration.
@@ -306,7 +325,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		else:
 			logging.warning2('%s: not available because rdiff-binary not '
-				'found in $PATH.' % self.name)
+												'found in $PATH.' % self.name)
 
 		assert ltrace(self._trace_name, '< initialize(%s)' % self.available)
 		return self.available
@@ -341,44 +360,50 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 			# are individually locked anyway.
 			self.volumes = LMC.extensions.volumes
 
+			from rdiff_backup.Globals import version as rdiff_backup_version
+
+			logging.info(_(u'{0}: extension enabled on top of {1} version '
+				u'{2}.').format(self.pretty_name,
+								stylize(ST_NAME, 'rdiff-backup'),
+								stylize(ST_UGID, rdiff_backup_version)))
+
 			return True
 
 		return False
-	def __create_timer_thread(self):
-
+	def __create_backup_task(self):
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
-		#TODO: with self.activation_lock: ?
 		if not self.events.active.is_set():
 			self.events.active.set()
 
-			self.threads.auto_backup_timer = LicornJobThread(
-							target=self.backup,
-							delay=settings.backup.interval,
-							tname='extensions.rdiffbackup.AutoBackupTimer',
-							# first backup starts 5 seconds later.
-							time=(time.time()+5.0)
-							)
-			self.threads.auto_backup_timer.start()
+			try:
+				self.task_id = LMC.tasks.add_task(RDIFF_TASK_NAME,
+												'LMC.extensions.rdiffbackup.backup',
+												hour=self.settings.hour,
+												minute=self.settings.minute,
+												week_day=self.settings.week_day).id
 
-			logging.info(_(u'{0}: started auto-backup timer.').format(
-															self.pretty_name))
+				logging.info(_(u'{0}: backup task scheduled.').format(self.pretty_name))
 
-			self.licornd.collect_and_start_threads(collect_only=True,
-													full_display=False)
-	def __stop_timer_thread(self):
+			except exceptions.AlreadyExistsException:
+				pass
+	def __remove_backup_task(self):
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
 		if self.events.active.is_set():
-			# we need to test the existence of the thread, because this method
-			# can be called multiple times. When non-enabled volumes are removed,
-			# it will; and this will fail because there was NO timer anyway.
-			if hasattr(self.threads, 'auto_backup_timer'):
-				self.threads.auto_backup_timer.stop()
-				del self.threads.auto_backup_timer
-
+			# mark us inactive first, else the task deletion protector
+			# will forbid the task unscheduling.
 			self.events.active.clear()
+
+			try:
+				LMC.tasks.del_task(self.task_id)
+				del self.task_id
+
+				logging.info(_(u'{0}: backup task un-scheduled.').format(self.pretty_name))
+
+			except:
+				pass
 	def enable(self):
 		""" This method will (re-)enable the extension, if :meth:`is_enabled`
 			agrees that we can do it.
@@ -408,7 +433,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		# relaunched while we stop.
 		self.events.running.set()
 
-		self.__stop_timer_thread()
+		self.__remove_backup_task()
 
 		# clean the thread reference in the daemon.
 		self.licornd.clean_objects()
@@ -442,14 +467,14 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
 		return True
-	def enabled_volumes(self, complete=True):
+	def enabled_volumes(self, count_unmounted=False):
 		""" Returns a list of Licorn® enabled volumes. """
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
-		return [ volume for volume in self.volumes if volume.enabled
-													and (not complete
-													or volume.mount_point) ]
+		return [ volume for volume in self.volumes
+						if volume.enabled and (volume.mount_point
+												or count_unmounted) ]
 
 	# The operation status is cached, primarily to avoid a race bug in the WMI:
 	# on ejection, the WMI reloads /backup which mounts the volume in turn,
@@ -502,7 +527,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		return os.path.join(volume.mount_point, self.paths.backup_directory)
 	def find_first_volume_available(self):
 		try:
-			return self.enabled_volumes(complete=False)[0]
+			return self.enabled_volumes(count_unmounted=True)[0]
 
 		except IndexError:
 			logging.warning(_(u'{0}: no volume found!').format(
@@ -776,7 +801,8 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		"""
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
-		return self.threads.auto_backup_timer.remaining_time()
+		#return LMC.tasks.by_name(RDIFF_TASK_NAME).next_running_time
+		return LMC.tasks.by_name(RDIFF_TASK_NAME).thread.remaining_time()
 	def backup(self, volume=None, force=False):
 		""" Start a backup in the background (`NORMAL` priority) and reset the
 			backup timer, if no other backup is currently running. Internally,
@@ -1164,11 +1190,41 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 			a backup during the daemon initial checks without doing convoluted
 			things.
 		"""
+
 		if self.enabled_volumes() != []:
-			self.__create_timer_thread()
+			self.__create_backup_task()
+
+		else:
+			# the backup task is a saved task, and as such it has been
+			# restored at daemon relaunch. We need to unload it if there
+			# not backup volumes.
+			self.__remove_backup_task()
 
 		workers.service_enqueue(priorities.LOW, self.compute_total_space)
 
+	@events.handler_method
+	def task_pre_add(self, *args, **kwargs):
+		""" This is a very bare method to protect our own task from deletion
+			in a runtime daemon. But, hey: it works ;-) """
+
+		assert ltrace_func(TRACE_RDIFFBACKUP)
+
+		if kwargs.pop('task').name == RDIFF_TASK_NAME and not (
+							self.enabled and self.events.active.is_set()):
+			raise exceptions.LicornStopException(_(u'No need to schedule the '
+													u'autobackup task yet.'))
+
+	@events.handler_method
+	def task_pre_del(self, *args, **kwargs):
+		""" This is a very bare method to protect our own task from deletion
+			in a runtime daemon. But, hey: it works ;-) """
+
+		assert ltrace_func(TRACE_RDIFFBACKUP)
+
+		if kwargs.pop('task').name == RDIFF_TASK_NAME and (
+								self.enabled and self.events.active.is_set()):
+			raise exceptions.LicornStopException(_(u'Removing the '
+										u'auto-backup task is not allowed.'))
 	@events.handler_method
 	@only_if_enabled
 	def volume_mounted(self, *args, **kwargs):
@@ -1179,8 +1235,8 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
-		if self.enabled_volumes(complete=False) != []:
-			self.__create_timer_thread()
+		if self.enabled_volumes(count_unmounted=True):
+			self.__create_backup_task()
 	@events.handler_method
 	@only_if_enabled
 	def volume_unmounted(self, *args, **kwargs):
@@ -1191,8 +1247,8 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
-		if self.enabled_volumes(complete=False) == []:
-			self.__stop_timer_thread()
+		if not self.enabled_volumes(count_unmounted=True):
+			self.__remove_backup_task()
 	# NOTE: we don't need a volume_added_callback(): any added volume gets
 	# mounted right away if compatible; thus volume_mounted_callback() will
 	# catch it. Any added but not compatible (thus not mounted) volume will
@@ -1207,18 +1263,17 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
-		if self.enabled_volumes(complete=False) == []:
-			self.__stop_timer_thread()
+		if not self.enabled_volumes(count_unmounted=True):
+			self.__remove_backup_task()
 	@events.handler_method
 	@only_if_enabled
 	def volume_enabled(self, *args, **kwargs):
 		""" Trigerred when a new volume is enabled on the system; will blindly
 			create the timer thread, if not already present.
 		"""
-
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
-		self.__create_timer_thread()
+		self.__create_backup_task()
 	@events.handler_method
 	@only_if_enabled
 	def volume_disabled(self, *args, **kwargs):
@@ -1230,7 +1285,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
 		if self.enabled_volumes() == []:
-				self.__stop_timer_thread()
+			self.__remove_backup_task()
 	@events.handler_method
 	@only_if_enabled
 	def settings_changed(self, *args, **kwargs):
@@ -1247,10 +1302,9 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
 		if self.events.active.is_set():
-			if settings.backup.interval != self.threads.auto_backup_timer.delay:
-				logging.info(_(u'{0}: backup interval changed from {1} to {2}, '
-					'restarting timer.').format(stylize(ST_NAME, self.name),
-						stylize(ST_ATTR, self.threads.auto_backup_timer.delay),
-						stylize(ST_ATTR, settings.backup.interval)))
-				self.__stop_timer_thread()
-				self.__create_timer_thread()
+			if self.compare_settings():
+				self.reload_settings()
+				self.__create_backup_task()
+				self.__remove_backup_task()
+
+__all__ = ('RdiffbackupException', 'RdiffbackupExtension', )

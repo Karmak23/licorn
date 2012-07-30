@@ -35,6 +35,8 @@ LicornEvent = events.LicornEvent
 # Just to be sure it is done.
 mimetypes.init()
 
+DEFAULT_MAX_UPLOAD_SIZE = 10485760
+
 class SimpleShare(PicklableObject):
 	""" Object representing a share. It count contents, change password, shows
 		external sharing URL, and the like.
@@ -572,7 +574,7 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 	def __load_factory_settings(self):
 
 		for setting_name, setting_value in (
-					('settings.extensions.simplesharing.max_upload_size', 10485760),
+					('settings.extensions.simplesharing.max_upload_size', DEFAULT_MAX_UPLOAD_SIZE),
 				):
 			try:
 				pyutils.resolve_attr(setting_name, {'settings': settings})
@@ -614,3 +616,6 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 			user.check_shares(batch=True)
 
 		logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
+
+__all__ = ('SimpleShare', 'SimpleSharingUser', 'SimplesharingExtension',
+			'DEFAULT_MAX_UPLOAD_SIZE', )

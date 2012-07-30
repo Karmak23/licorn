@@ -825,7 +825,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 								[ user ], batch=True)
 
 					LicornEvent('group_pre_add_user', group=self.proxy,
-									user=user.proxy, synchronous=True).emit()
+									user=user.proxy).emit(synchronous=True)
 
 					# the ADD operation, per se.
 					self.__members.append(user.weakref)
@@ -852,7 +852,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						self.serialize()
 
 					LicornEvent('group_post_add_user', group=self.proxy,
-									user=user.proxy, synchronous=True).emit()
+									user=user.proxy).emit(synchronous=True)
 
 					if emit_event:
 						LicornEvent('group_member_added', group=self.proxy,
@@ -895,7 +895,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				if user.weakref in self.__members:
 
 					LicornEvent('group_pre_del_user', group=self.proxy,
-									user=user.proxy, synchronous=True).emit()
+									user=user.proxy).emit(synchronous=True)
 
 					self.__members.remove(user.weakref)
 
@@ -918,7 +918,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						self.serialize()
 
 					LicornEvent('group_post_del_user', group=self.proxy,
-									user=user.proxy, synchronous=True).emit()
+									user=user.proxy).emit(synchronous=True)
 
 					if emit_event:
 						LicornEvent('group_member_deleted', group=self.proxy,
@@ -1885,14 +1885,14 @@ class GroupsController(DictSingleton, CoreFSController):
 		# be sure our depency is OK.
 		LMC.users.load()
 
-		LicornEvent('groups_loading', groups=self, synchronous=True).emit()
+		LicornEvent('groups_loading', groups=self).emit(synchronous=True)
 
 		# call the generic reload() method, but silently: this will avoid the
 		# rest of the program believe we are reloading, which is not really the
 		# case.
 		self.reload(send_event=False)
 
-		LicornEvent('groups_loaded', groups=self, synchronous=True).emit()
+		LicornEvent('groups_loaded', groups=self).emit(synchronous=True)
 
 		GroupsController.load_ok = True
 	def reload(self, send_event=True):
@@ -1901,7 +1901,7 @@ class GroupsController(DictSingleton, CoreFSController):
 		assert ltrace_func(TRACE_GROUPS)
 
 		if send_event:
-			LicornEvent('groups_reloading', groups=self, synchronous=True).emit()
+			LicornEvent('groups_reloading', groups=self).emit(synchronous=True)
 
 		# lock users too, because we feed the members cache inside.
 		with nested(self.lock, LMC.users.lock):
@@ -1913,7 +1913,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			self.__connect_users()
 
 		if send_event:
-			LicornEvent('groups_reloaded', groups=self, synchronous=True).emit()
+			LicornEvent('groups_reloaded', groups=self).emit(synchronous=True)
 	def reload_backend(self, backend):
 		""" reload only one backend contents (used from inotifier). """
 
@@ -2454,7 +2454,7 @@ class GroupsController(DictSingleton, CoreFSController):
 						LMC.configuration.groups.gid_max))
 
 		LicornEvent('group_pre_add', gid=manual_gid, name=name,
-						system=system, description=description, synchronous=True).emit()
+						system=system, description=description).emit(synchronous=True)
 
 		assert ltrace(TRACE_GROUPS, '  __add_group in data structures: %s / %s' % (
 																	gid, name))
@@ -2482,7 +2482,7 @@ class GroupsController(DictSingleton, CoreFSController):
 		# DO NOT UNCOMMENT: -- if not batch:
 		group.serialize(backend_actions.CREATE)
 
-		LicornEvent('group_post_add', group=group.proxy, synchronous=True).emit()
+		LicornEvent('group_post_add', group=group.proxy).emit(synchronous=True)
 
 		assert ltrace_func(TRACE_GROUPS, True)
 		return group
@@ -2647,7 +2647,7 @@ class GroupsController(DictSingleton, CoreFSController):
 				u'controller!').format(stylize(ST_NAME, self.name),
 					stylize(ST_NAME, name)))
 
-		LicornEvent('group_pre_del', group=group.proxy, synchronous=True).emit()
+		LicornEvent('group_pre_del', group=group.proxy).emit(synchronous=True)
 
 		# NOTE: the backend deletion must be done *after* having deleted
 		# the object from the controller. See above WARNING.
@@ -2666,7 +2666,7 @@ class GroupsController(DictSingleton, CoreFSController):
 
 		del group
 
-		LicornEvent('group_post_del', gid=gid, name=name, system=system, synchronous=True).emit()
+		LicornEvent('group_post_del', gid=gid, name=name, system=system).emit(synchronous=True)
 
 		log(_(u'Deleted {0}group {1}.').format(
 			_(u'system ') if system else '', stylize(ST_NAME, name)))

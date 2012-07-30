@@ -10,8 +10,7 @@ For more informations, see http://docs.licorn.org/extensions/samba3
 
 How to run the Licorn® netlogon script from :file:`/etc/samba/smb.conf` (or any included file)::
 
-	root preexec = add event --name 'user_logged_in' --kwargs '{ \
-					"synchronous": true, \
+	root preexec = add event --name 'user_logged_in' --synchronous --kwargs '{ \
 					"event_source": "samba3-netlogon", \
 					"client_arch": "%a", \
 					"client_smbname": "%m", \

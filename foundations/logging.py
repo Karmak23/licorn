@@ -233,14 +233,15 @@ def raw_message(mesg, to_listener=True, to_local=True):
 def exception(*args, **kwargs):
 	""" display full exception if >= PROGRESS, else just display a message. """
 
-	if options.verbose >= verbose.PROGRESS:
-		text_message = "%s%s %s\n%s" % (stylize(ST_WARNING, '{E}'), ltrace_time(),
+	if options.verbose >= verbose.INFO:
+		text_message = "%s%s %s\n\t%s" % (stylize(ST_WARNING, '{E}'), ltrace_time(),
 							args[0].format(*(stylize(*x)
 								if type(x) == TupleType
 								else x
 								for x in args[1:])),
-							# full traceback.
-							traceback.format_exc())
+							# full traceback; indented one level, with final
+							# superfluous TAB removed before printing.
+							traceback.format_exc().replace('\n', '\n\t')[:-1])
 
 	else:
 		text_message = "%s%s %s: %s\n" % (stylize(ST_WARNING, '{E}'), ltrace_time(),

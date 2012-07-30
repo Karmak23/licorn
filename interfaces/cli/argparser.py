@@ -379,7 +379,7 @@ def check_opts_and_args(opts_and_args):
 	if hasattr(opts, 'force') and opts.force \
 				and hasattr(opts, 'batch') and opts.batch:
 		raise exceptions.BadArgumentError(_(u'options --force and '
-		u'--batch are mutually exclusive!'))
+										u'--batch are mutually exclusive!'))
 
 	if hasattr(opts, 'filename') :
 		if opts.filename is not None and (
@@ -1214,6 +1214,12 @@ def add_event_parse_arguments(app):
 		help=_(u"The event priority, a string like 'LOW', 'NORMAL' (default), "
 			u"or 'HIGH'."))
 
+	event.add_option('-s', "--sync", "--synchronous",
+		action="store_true", dest="event_synchronous", default=False,
+		help=_(u"Run the event synchronously, eg. wait for handlers and "
+			u"callbacks to terminate before giving back hand. Default: "
+			u"{0}.").format(stylize(ST_SPECIAL, _(u"False"))))
+
 	parser.add_option_group(event)
 
 	return parser.parse_args()
@@ -1329,7 +1335,7 @@ def add_task_parse_arguments(app):
 
 
 	parser = OptionParser(usage=usage_text,
-		version=build_version_string(app, version))
+							version=build_version_string(app, version))
 
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'add_task'))
@@ -1385,9 +1391,21 @@ def add_task_parse_arguments(app):
 		dest="defer_resolution", default=True, help=_(u"Specify if arguments "
 		" will be resolved during execution or during task's load. Default is during task's execution"))
 
+	opts, args = check_opts_and_args(parser.parse_args())
 
-	return check_opts_and_args(parser.parse_args())
+	if opts.name is '' and len(args) == 2:
+		opts.name = args[1]
+		del args[1]
 
+	if opts.name=='' and opts.action=='' and len(args) == 3:
+		opts.name = args[1]
+		opts.action = args[2]
+
+	if opts.action == '' or opts.name == '':
+		raise exceptions.BadArgumentError(_(u'You must specify one of '
+											u'"--name" or "--action"!'))
+
+	return opts, args
 
 ### Delete arguments ###
 def del_user_parse_arguments(app):
