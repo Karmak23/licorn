@@ -789,6 +789,10 @@ def add_user_parse_arguments(app):
 			ST_IMPORTANT,
 			_(u"one of login or firstname+lastname arguments is required")))
 
+	user.add_option('--force-bad-login', '--force-badname',
+		action="store_true", dest="force_badname", default=False,
+		 help=SUPPRESS_HELP)
+
 	user.add_option('-e', "--gecos",
 		action="store", type="string", dest="gecos", default=None,
 		help=_(u"Specify user's GECOS field. If given, GECOS takes precedence "
@@ -889,16 +893,13 @@ def add_user_parse_arguments(app):
 
 	user.add_option("--disabled-password",
 		action="store_true", dest="disabled_password", default=False,
-		help=_(u"The user will have no password. %s.") % stylize(ST_DEFAULT,
-			_(u'Currently this flag is ignored; it exists only for '
-			'compatibility purposes with old scripts')))
+		help=_(u"The user will have an unusable password, rendering the "
+			u"account unloggable from the console (but not from SSH with keys)."))
 
 	user.add_option("--disabled-login",
 		action="store_true", dest="disabled_login", default=False,
 		help=_("The user will not be able to login after the account "
-			"creation. %s") % stylize(ST_DEFAULT,
-			_(u'Currently this flag is ignored; it exists only for '
-			'compatibility purposes with old scripts')))
+			"creation (shell set to /bin/false."))
 
 	# we don't mind using the group backends, because groups and users are
 	# tied in the same prefered backend all the time.

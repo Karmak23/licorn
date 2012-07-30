@@ -1212,13 +1212,17 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						profile=opts.profile,
 						backend=opts.in_backend,
 						inotified=opts.set_inotified,
-						skel=opts.skel, batch=opts.batch, force=opts.force,
-						shell=opts.shell, lastname=lastname, firstname=firstname,
-						in_groups=opts.in_groups)
+						skel=opts.skel,
+						batch=opts.batch, force=opts.force,
+						shell='/bin/false'
+							if opts.disabled_login else opts.shell,
+						lastname=lastname, firstname=firstname,
+						in_groups=opts.in_groups,
+						force_badname=opts.force_badname,
+						disabled_password=opts.disabled_password)
 				except (exceptions.AlreadyExistsException,
 						exceptions.BadArgumentError), e:
 					logging.warning(str(e), to_local=False)
-
 		gc.collect()
 		assert ltrace(TRACE_ADD, '< add_user()')
 	def add_user_in_groups(self, opts, args):
