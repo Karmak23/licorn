@@ -898,8 +898,8 @@ def add_user_parse_arguments(app):
 
 	user.add_option("--disabled-login",
 		action="store_true", dest="disabled_login", default=False,
-		help=_("The user will not be able to login after the account "
-			"creation (shell set to /bin/false."))
+		help=_(u"The user will not be able to login after the account "
+			u"creation (shell set to /bin/false)."))
 
 	# we don't mind using the group backends, because groups and users are
 	# tied in the same prefered backend all the time.
