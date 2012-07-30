@@ -78,7 +78,8 @@ class SimpleShare(PicklableObject):
 		# We've got to create an ID which is somewhat unique, but non-moving
 		# when re-instanciating the share over time. The ctime makes a good
 		# canditate to help the name, which can collide if used alone.
-		self.__shid = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
+		self.__shid = hlstr.validate_name(self.__name, custom_keep='', replace_by='_') \
+									 + str(int(os.stat(directory).st_ctime))
 
 		# a method used to encrypt passwords
 		self.compute_password = coreobj.backend.compute_password
