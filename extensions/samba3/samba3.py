@@ -165,7 +165,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 								auto_answer=auto_answer):
 
 					LMC.users.add_User(login=user,
-										description=descriptions[user],
+										gecos=descriptions[user],
 										disabled_password=True,
 										shell='/bin/false',
 										primary_group=LMC.groups.by_name(self.groups.data),
