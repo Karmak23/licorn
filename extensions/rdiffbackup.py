@@ -73,8 +73,8 @@ def if_not_already_running_on_this_volume(func):
 	def decorated(self, volume, *args, **kwargs):
 
 		if self.events.running.is_set():
-			logging.notice(_(u'{0:s}: an operation is already in progress '
-							u'on {1:s}, aborting.').format(stylize(ST_NAME, self.name), volume))
+			logging.notice(_(u'{0}: an operation is already in progress '
+							u'on {1}, aborting.').format(self.pretty_name, volume))
 			return
 
 		with volume.mount():
@@ -426,7 +426,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		if self.events.running.is_set():
 			logging.warning(_('{0}: cannot disable now, a backup is in '
 				'progress. Please wait until the end and retry.').format(
-					stylize(ST_NAME, self.name)))
+					self.pretty_name))
 			return False
 
 		# Try to avoid any race-collision with any operation beiing
@@ -531,7 +531,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		except IndexError:
 			logging.warning(_(u'{0}: no volume found!').format(
-							stylize(ST_NAME, self.name)))
+							self.pretty_name))
 			return None
 
 	# NOTE: no lazy_mount here, else wmi_main() would crash. There must be
@@ -647,7 +647,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
 		logging.info(_(u'{0}: Computing needed space for next backup, '
-						u'please wait…').format(stylize(ST_NAME, self.name)))
+						u'please wait…').format(self.pretty_name))
 
 		try:
 			# Get rdiff-backup sessions to compute averages.
@@ -773,13 +773,13 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
-		logging.info(_(u'{0:s}: cleaning obsolete backup on {1:s}.').format(
-										stylize(ST_NAME, self.name), volume))
+		logging.info(_(u'{0}: cleaning obsolete backup on {1}.').format(
+										self.pretty_name, volume))
 
 		self.__remove_old_backups(volume, older_than='1Y')
 
-		logging.info(_(u'{0:s}: obsolete backup cleaned on {1:s}.').format(
-									stylize(ST_NAME, self.name), volume))
+		logging.info(_(u'{0}: obsolete backup cleaned on {1}.').format(
+									self.pretty_name, volume))
 	def time_before_next_automatic_backup(self):
 		""" Returns the time until next automatic backup, as a nicely formatted
 			and localized string. If ``as_string`` is ``False``, the time will
@@ -931,16 +931,16 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		LicornEvent('backup_started', volume=volume).emit()
 
-		logging.notice(_(u'{0}: running backup on {1:s}, '
+		logging.notice(_(u'{0}: running backup on {1}, '
 						u'please wait…').format(
-							stylize(ST_NAME, self.name), volume))
+							self.pretty_name, volume))
 
 		backup_directory = self.backup_dir(volume)
 
 		if not os.path.exists(backup_directory):
 			os.mkdir(backup_directory)
-			logging.progress(_(u'{0:s}: created directory {1}.').format(
-				stylize(ST_NAME, self.name), stylize(ST_PATH, backup_directory)))
+			logging.progress(_(u'{0}: created directory {1}.').format(
+				self.pretty_name, stylize(ST_PATH, backup_directory)))
 
 		command = self.commands.ionice[:]
 		command.extend(self.commands.nice[:])
@@ -961,7 +961,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 			else:
 				logging.warning(_(u'{0}: configuration file {1} '
 									u'does not exist.').format(
-										stylize(ST_NAME, self.name),
+										self.pretty_name,
 										stylize(ST_PATH, config_file)))
 
 		command.extend(rdiff_command)
@@ -1000,7 +1000,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		LicornEvent('backup_ended', volume=volume, log=output).emit()
 
 		logging.notice(_(u'{0}: backup procedure terminated on {1}.').format(
-									stylize(ST_NAME, self.name), volume))
+									self.pretty_name, volume))
 	# NOTE: do not protect this one: all called methods are already protected.
 	def __backup_check_space(self, volume, force=False):
 
@@ -1016,13 +1016,13 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		else:
 			nb_backups = self._held_backups(volume)
 
-			logging.progress(_(u'{0:s}: computing needed space for next '
-									u'backup, please wait.').format(stylize(ST_NAME, self.name)))
+			logging.progress(_(u'{0}: computing needed space for next '
+									u'backup, please wait.').format(self.pretty_name))
 
 			while not self._has_enough_free_space(volume):
 				if nb_backups < 2:
 					# TODO: implement an alert mechanism !!
-					raise RdiffbackupException(_(u'Volume {0:s} does not have '
+					raise RdiffbackupException(_(u'Volume {0} does not have '
 							u'enough free space or is not big enough to hold '
 							u'more than two backups. '
 							u'Space needed: {1}; free space: {2}.').format(
@@ -1056,7 +1056,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 									+ '/' + self.paths.last_backup_file)
 		open(last_backup_file, 'w').write(str(time.time()))
 		logging.progress(_(u'{0}: updated last backup file {1}.').format(
-			stylize(ST_NAME, self.name), stylize(ST_PATH, last_backup_file)))
+			self.pretty_name, stylize(ST_PATH, last_backup_file)))
 	@if_not_already_running_on_this_volume
 	def __rdiff_statistics(self, volume, *args, **kwargs):
 		""" Compute statistics on a given volume. This method internally
@@ -1070,7 +1070,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
 		logging.notice(_(u'{0}: computing statistics on {1}, '
-			u'please wait…').format(stylize(ST_NAME, self.name), volume))
+			u'please wait…').format(self.pretty_name, volume))
 
 		LicornEvent('backup_statistics_started', volume=volume).emit()
 
@@ -1124,8 +1124,8 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		LicornEvent('backup_statistics_ended', volume=volume).emit()
 
 		logging.notice(_(u'{0}: statistics computation '
-						u'finished on {1:s}.').format(
-							stylize(ST_NAME, self.name), volume))
+						u'finished on {1}.').format(
+							self.pretty_name, volume))
 
 		return True
 	def __record_statistics_duration(self, volume, duration):
