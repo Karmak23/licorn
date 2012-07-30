@@ -53,7 +53,7 @@ cregex['ether_addr']   = re.compile(regex['ether_addr'],   re.IGNORECASE)
 cregex['duration']     = re.compile(regex['duration'],     re.IGNORECASE)
 cregex['api_key']      = re.compile(regex['api_key'],      re.IGNORECASE)
 
-def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.'):
+def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.', replace_by=None):
 	""" make a valid login or group name from a random string.
 		Replace accentuated letters with non-accentuated ones, replace spaces, lower the name, etc.
 	"""
@@ -107,7 +107,7 @@ def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.'):
 
 	else:
 		# keep dashes (or custom characters)
-		s = re.sub('[^%sa-z0-9]' % custom_keep, '', s)
+		s = re.sub('[^%sa-z0-9]' % custom_keep, replace_by or '', s)
 
 	# strip remaining doubles punctuations signs
 	s = re.sub( r'([-._])[-._]*', r'\1', s)

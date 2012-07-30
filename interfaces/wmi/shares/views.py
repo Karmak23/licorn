@@ -137,9 +137,14 @@ def index(request, sort="date", order="asc", **kwargs):
 # to serve shares to anonymous web visitors and make them download/upload them.
 def serve(request, login, shname):
 	""" Serve a share to web visitors. """
+	try:
+		user  = LMC.users.by_login(login)
+	except KeyError:
+		return HttpResponseNotFound(_('No Web share for this user, sorry.'))
 
-	user  = LMC.users.by_login(login)
 	share = user.find_share(shname)
+	if share is None:
+		return HttpResponseNotFound(_('No Web share at this URI, sorry.'))
 
 	session_key = 'can_access_share_{0}'.format(share.shid)
 
@@ -195,7 +200,6 @@ def serve(request, login, shname):
 			})
 			return render(request, 'shares/serve-share.html', _d)
 
-	return HttpResponseNotFound(_('No Web share at this URI, sorry.'))
 def download(request, login, shname, filename):
 	"""
 		.. todo:: merge this view with system.views.download() (see there).

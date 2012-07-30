@@ -78,7 +78,8 @@ class SimpleShare(PicklableObject):
 		# We've got to create an ID which is somewhat unique, but non-moving
 		# when re-instanciating the share over time. The ctime makes a good
 		# canditate to help the name, which can collide if used alone.
-		self.__shid = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
+		self.__shid = hlstr.validate_name(self.__name, custom_keep='', replace_by='_') \
+									 + str(int(os.stat(directory).st_ctime))
 
 		# a method used to encrypt passwords
 		self.compute_password = coreobj.backend.compute_password
@@ -478,7 +479,7 @@ class SimpleSharingUser(object):
 				logging.warning(_(u'User {0} does not accept simple '
 									u'shares, check skipped.').format(
 										stylize(ST_LOGIN, self.login)))
-	def list_shares(self):
+	def list_shares(self, share_hidden_dirs=False):
 		""" List a user shares, via a generator yielding every share found
 			in the user shares directory. """
 
@@ -487,6 +488,15 @@ class SimpleSharingUser(object):
 		with self.lock:
 			try:
 				for entry in os.listdir(self.shares_directory):
+					if entry.startswith('.') and not share_hidden_dirs:
+						# skip dotdirs. This is not done in the SimpleShare's
+						# `__init__()` because technically this is a perfectly
+						# valid case. We just don't share them *in Licorn®*.
+						#
+						# Anyone else could use the simplesharing facilities
+						# outside Licorn®, and share dotdirs if they want.
+						continue
+
 					try:
 						shares.append(SimpleShare(directory=os.path.join(
 												self.shares_directory, entry),

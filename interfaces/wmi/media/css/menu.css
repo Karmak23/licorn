@@ -30,7 +30,9 @@ div#dynamic_mainnav_list {
 	font-size: 120%;
 	width: @menu_width;
 }
-
+div#dynamic_mainnav_list {
+	margin:0;
+}
 #auxnav {
 	border: none;
 	font: inherit;

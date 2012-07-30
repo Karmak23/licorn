@@ -45,8 +45,9 @@ uninstall:
 	@rm -f "$(DESTDIR)"/usr/bin/{add,mod,del,get,chk}
 	@rm -f "$(DESTDIR)"/usr/sbin/licornd*
 	@rm -rf "$(SHARE_DIR)" "$(CACHE_DIR)" "$(PROJECT_LIB_DIR)"
-	# don't delete CONF_DIR !! "$(CONF_DIR)"
-	@rm -rf /usr/lib/python*/{dist,site}-packages/licorn || true
+	@rm -rf /usr/lib/python*/dist-packages/licorn /usr/lib/python*/site-packages/licorn
+	# CONF_DIR "$(CONF_DIR)" has been left in place in case
+	# you had custom configuration. Delete it if you wish.
 
 # In developer install, the first 'make lang' will fail because Django
 # is not yet installed. But this will go far enough to compile the PO
