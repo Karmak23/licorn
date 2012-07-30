@@ -809,7 +809,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 			this method enqueues the private :meth:`__backup_procedure` method
 			in the Service Queue.
 
-			.. note:: 
+			.. note::
 				* if a backup is already running, another will not be launched
 				  over it.
 
@@ -854,7 +854,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 					time.time() - self._last_backup_time(volume) < minimum_interval):
 
 				logging.notice(_(u'{0}: not backing up on {1}, last backup is '
-								u'less than {2}.').format(self.pretty_name,	volume, 
+								u'less than {2}.').format(self.pretty_name,	volume,
 									pyutils.format_time_delta(minimum_interval)))
 				return
 
