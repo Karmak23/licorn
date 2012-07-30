@@ -14,7 +14,9 @@
 	font-size: 120%;
 	width: @menu_width;
 }
-
+div#dynamic_mainnav_list {
+	margin:0;
+}
 #auxnav {
 	border: none;
 	font: inherit;
@@ -70,7 +72,7 @@
 	cursor: pointer;
 	opacity:0.5;
 }
-.menu_link {
+.menu_link, .menu_link:hover {
 	text-decoration: none;
 }
 .menu-content-text {
