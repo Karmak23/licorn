@@ -905,6 +905,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# FIXME: flush the listener??
 				#sys.stdout.flush()
 
+			if not groups_to_add:
+				data_to_export_to_html[profile.group.name] = {}
+
 		else:
 			if wmi_output:
 				fct_output(_(u'Fields order:'), _wmi_display=True)
@@ -960,6 +963,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 								'%s%s' % (u['lastname'], u['firstname'])
 							] = [ u['firstname'], u['lastname'],
 									user.login, password ]
+
+					if not in_groups:
+						data_to_export_to_html[profile.group.name][
+								'%s%s' % (u['lastname'], u['firstname'])
+							] = [ u['firstname'], u['lastname'],
+									user.login, password ]
+
 				else:
 					# Why make_login() for examples and not prepare the logins
 					# when loading CSV file? this is a pure arbitrary choice.
