@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Check non-watched core objects once a day. Correct them in batch mode
+# to avoid cluterring the CRON mail report, but not in quiet mode to
+# allow the administrator notice what changed.
+chk users -Wb
+chk groups -Wb

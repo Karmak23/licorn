@@ -1,6 +1,6 @@
 (function( $ ){
 
-  $.fn.checkbox = function( options ) {  
+  $.fn.checkbox = function( options ) {
 
     // Create some defaults, extending them with any options that were provided
     var settings = $.extend( {
@@ -11,13 +11,13 @@
       'off_text'   : 'OFF'
     }, options);
 
-    return this.each(function() {        
+    return this.each(function() {
 
     	var checkbox = this
     	var checkbox_wrapper = $('<span class="jquery_checkbox"><span class="jquery_checkbox_text"></span></span>')
 
     	$(checkbox).css({position: 'absolute', zIndex: -1, visibility: 'hidden'}).after(checkbox_wrapper)
-    	
+
     	checkbox_wrapper.click(function(event) {
           $(checkbox).trigger('click')
           event.preventDefault();
@@ -25,7 +25,6 @@
     	});
 
     	$(checkbox).change(function() {
-       console.log('change')
         if ($(this).is(':checked')) {
        			checkbox_wrapper
     				.css({background: "url('"+settings.on_image+"')"})

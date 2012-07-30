@@ -279,14 +279,22 @@ class Volume(PicklableObject, SharedResource):
 
 			# avoid overmounting another volume with the same label.
 			mount_point_base = self.mount_point
-			counter = 1
-			while os.path.exists(self.mount_point):
-				self.mount_point = _(u'{base} {counter}').format(
-								base=mount_point_base, counter=counter)
+			counter          = 1
+
+			# but accept already existing empty-directories,
+			# which are not already used as mount points.
+			while os.path.exists(self.mount_point) and (
+							os.listdir(self.mount_point) != []
+							or self.mount_point
+								in self.controller.cache.proc_mounts.values()):
+				self.mount_point = _(u'{0} {1}').format(
+													mount_point_base, counter)
 				counter += 1
 
 		else:
-			# overmounting is very unlikely to happen with guid...
+			# Overmounting is very unlikely to happen with guid…
+			# Even if it happens, it won't destroy the underlying
+			# data, so we accept the risk and low probability.
 			self.mount_point = Volume.mount_base_path + self.guid
 	@automount
 	def stats(self):
