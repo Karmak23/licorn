@@ -190,7 +190,7 @@ set servname={8}
 			# user.sambaHomeDirectory should be something
 			# like ~user/.samba/windows/ or ~user/windows
 
-			logging.progress(_('{0}: Windows® profile rewrite for user {1} '
+			logging.progress(_(u'{0}: Windows® profile rewrite for user {1} '
 								u'based on {2}…').format(pretty_name,
 									stylize(ST_LOGIN, user.login),
 									stylize(ST_PATH, potential_overwriter)))
@@ -237,7 +237,7 @@ set servname={8}
 				# fail to log him in if it can't access some dirs.
 				user._fast_aclcheck(destination, expiry_check=True)
 
-			logging.info(_('{0}: user {1} Windows® profile overwritten '
+			logging.info(_(u'{0}: user {1} Windows® profile overwritten '
 								u'by {2}.').format(pretty_name,
 									stylize(ST_LOGIN, user.login),
 									stylize(ST_PATH, potential_overwriter)))
@@ -257,12 +257,12 @@ set servname={8}
 			if e.errno != errno.ENOENT:
 				logging.exception(_(u'{0}: exception while removing old '
 									u'script {1}, this will probably lead to '
-									u'inconsistencies in {2}\'s Windows session.'),
+									u'inconsistencies in {2}\'s Windows® session.'),
 										pretty_name, (ST_PATH, script_filename),
 										(ST_NAME, user.login))
 
 
-		logging.progress(_('{0}: creating netlogon script for '
+		logging.progress(_(u'{0}: creating netlogon script for '
 							u'user {1} with levels {2}…').format(pretty_name,
 								stylize(ST_LOGIN, user.login),
 								u','.join(stylize(ST_ATTRVALUE, x)
