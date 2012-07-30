@@ -17,7 +17,9 @@ class MachineForm(forms.Form):
 		self.fields['input3']   = forms.CharField(label=_("Input 3"), help_text='100 characters max.', max_length=64, required=False)
 
 
+# key : (id, text, active)
 machine_form_blocks = {
-    'machine_id'              : ('general', u'General information'),
-    'input3'              : ('second', u'Second Part'),
+    'machine_id'              : ('general', u'General information', True),
+    'input3'              : ('second', u'Second Part', False),
+
 }

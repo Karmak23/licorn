@@ -49,7 +49,7 @@ def edit(request, mid, *args, **kwargs):
 
 	edit_dict = {
 		'machine'     : LMC.machines.guess_one(mid),
-		'form'        : MachineForm(tab=False),
+		'form'        : MachineForm(tab=True),
 		'form_blocks' : machine_form_blocks,
 	}
 

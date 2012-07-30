@@ -34,16 +34,12 @@
 	{%- if form.tab -%}
 		<ul class="nav nav-tabs" id="myTab">
 			{% for block in form_blocks %}
-				<li><a href="#{{ form_blocks[block][0] }}" data-toggle="tab">{{ form_blocks[block][1] }}</a></li>
+				<li {{ 'class="active"' if form_blocks[block][2] }}><a href="#{{ form_blocks[block][0] }}" data-toggle="tab">{{ form_blocks[block][1] }}</a></li>
 			{% endfor %}
 		</ul>
 		<script language="javascript">
 			$(document).ready(function(){
-				// $('#myTab a:last').tab('show');
-				$('#myTab a').click(function (e) {
-					  e.preventDefault();
-					  $(this).tab('show');
-					})
+
 			});
 
 			</script>
@@ -69,7 +65,7 @@
 				{%- else -%}
 					{%- do first.append(1) -%}
 				{%- endif -%}
-	    		<div class="tab-pane" id="{{ form_blocks[field.name][0] }}">
+	    		<div class="tab-pane {{ 'active' if form_blocks[field.name][2] }}" id="{{ form_blocks[field.name][0] }}">
 	    	{% else %}
 				{%  do header_displayed.append(1)  -%}
 		    	{% if first %}
