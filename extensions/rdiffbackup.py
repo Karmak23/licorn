@@ -801,8 +801,13 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		"""
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
-		#return LMC.tasks.by_name(RDIFF_TASK_NAME).next_running_time
-		return LMC.tasks.by_name(RDIFF_TASK_NAME).thread.remaining_time()
+		try:
+			return LMC.tasks.by_name(RDIFF_TASK_NAME).thread.remaining_time()
+
+		except:
+			logging.exception(u'{0}: autobackup task seems not scheduled',
+															self.pretty_name)
+			return -1
 	def backup(self, volume=None, force=False):
 		""" Start a backup in the background (`NORMAL` priority) and reset the
 			backup timer, if no other backup is currently running. Internally,
