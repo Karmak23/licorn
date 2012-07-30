@@ -20,6 +20,9 @@ div#banner {
 
 @menu_link_font_size: 16px;
 
+div#dynamic_mainnav_list {
+	margin : 0;
+}
 
 #mainnav {
 	border: none;
@@ -83,7 +86,7 @@ div#banner {
 	cursor: pointer;
 	opacity:0.5;
 }
-.menu_link {
+.menu_link, .menu_link:hover {
 	text-decoration: none;
 }
 .menu-content-text {
