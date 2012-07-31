@@ -295,7 +295,9 @@ set servname={8}
 
 				script_buffer += script_out('setlocal')
 				script_buffer += script_out()
-				script_buffer += script_out('set {0}_osver={0}_{1}'.format(var_prefix, client_arch))
+				script_buffer += script_out('set {0}_osver={0}_{1}'.format(
+								# CMD variables can't have '-' in their name.
+								var_prefix.replace('-', '_'), client_arch))
 				script_buffer += script_out()
 				script_buffer += open(script).read().replace('\n', '\r\n')
 				script_buffer += script_out('endlocal')
