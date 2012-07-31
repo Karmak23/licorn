@@ -1,24 +1,45 @@
 # -*- coding: utf-8 -*-
-from django                       import forms
-from django.utils.translation     import ugettext_lazy as _
-
 from django                     import forms
 from django.utils.translation   import ugettext as _
 
+from licorn.foundations         import exceptions
+
+
 class LicornTextbox(forms.Widget):
-	def __init__(self, instant_apply_url=None, handler=None, handler_id=None, *args, **kwargs):
+	""" Special Licorn textbox. Provide parameters to setup 'instant edit/apply'
+	mecanism. """
+
+	def __init__(self, instant_url=None, handler=None, handler_id=None, *args, **kwargs):
 		super(LicornTextbox, self).__init__(*args, **kwargs)
 
-		self.instant_apply_url     = instant_apply_url
-		self.handler = handler
-		self.handler_id = handler_id
+		# url to contact to edit field
+		self.instant_url = instant_url
+		# event that will be thrown when edit action is completed
+		self.handler     = handler
+		# who has to react for this change
+		self.handler_id  = handler_id
+
+		if instant_url is not None and (handler is None or handler_id is None):
+			raise exceptions.BadArgumentError('You have to set handler and '
+				'handler_id.')
 
 	def render(self, name, value, attrs=None):
-		return "<input type='text' name='{0}' value='{1}' {2} {3}>".format(
-			name, value, 
-			' '.join([ '{0}=\'{1}\''.format(k,v) for k,v in attrs.iteritems() ]),
-			'class=\'instant_apply_textbox\' data-instant-url=\'{0}\' data-handler=\'{1}\' data-handler-id=\'{2}\''.format(
-				self.instant_apply_url, self.handler, self.handler_id) if self.instant_apply_url is not None else "")
+
+
+		if self.instant_url is not None:
+
+			attrs.update({
+				'class'            : 'instant',
+				'data-instant-url' : self.instant_url
+				})
+
+		template = "<input type='text' name='{0}' value='{1}' {2}>"
+
+		return template.format(name, value,
+			' '.join([ '{0}=\'{1}\''.format(k,v) for k,v in attrs.iteritems() ]))
+
+
+
 
 class MachineForm(forms.Form):
 
@@ -33,7 +54,7 @@ class MachineForm(forms.Form):
 
 		self.fields['machine_hostname']   = forms.CharField(
 			widget= LicornTextbox(
-					instant_apply_url='/machines/instant_edit/{0}/hostname/'.format(machine.mid), 
+					instant_url='/machines/instant_edit/{0}/hostname/'.format(machine.mid), 
 					handler='machine_hostname_changed',
 					handler_id=machine.mid),
 			label=_("Hostname"), 

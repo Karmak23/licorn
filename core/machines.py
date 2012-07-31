@@ -247,6 +247,8 @@ class Machine(CoreStoredObject, SharedResource):
 
 		Machine.by_hostname[hostname] = self
 
+		LicornEvent('machine_hostname_changed', host=self).emit()
+
 	name = hostname
 	def add_link(self, licorn_object):
 		""" TODO. """
@@ -388,9 +390,6 @@ class Machine(CoreStoredObject, SharedResource):
 
 			try:
 				self.hostname = socket.gethostbyaddr(self.mid)[0]
-
-				LicornEvent('machine_hostname_changed', host=self).emit()
-
 			except Exception:
 				logging.exception(_(u'Could not resolve machine name for '
 									u'address {0}'), self.mid)

@@ -1,3 +1,11 @@
+function emit(handler, id, value) {
+	$('.'+handler).each(function() {
+		if ($(this).data('id') === id) {
+			$(this).html(value)
+		}
+	});
+}
+
 var page_cleaner_interval;
 
 function update_instance(model, iid, new_html, callback) {
