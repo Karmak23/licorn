@@ -254,17 +254,25 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 						path=smb_path,
 						uid=0, gid=acls_conf.gid,
 						root_dir_acl=True,
-						root_dir_perm = '{0},{1},{2}{3}'.format(
+						root_dir_perm = '{0},{1},{2},{3}{4}'.format(
 							acls_conf.acl_base,
-							acls_conf.acl_admins_ro,
+							# Licorn® admins have full access, always.
+							acls_conf.acl_admins_rw,
+							# Windows / Samba admins have full access
+							# too, to modify and customize scripts.
+							acls_conf.acl_admins_rw.replace(
+									settings.defaults.admin_group,
+									self.groups.admins),
+							# Users have limited or no access, given the share.
 							('g:%s:%s,' % (users_group, users_access))
 								if users_access else '',
+							# There is always an ACL mask.
 							acls_conf.acl_mask)))
 
-		# The user profile 'rwx' access will be eventually restricted
-		# by Samba itself with the fake_perms module. But without
-		# fake_perms (which is the default), users need write access
-		# to their profile for Windows to load and update it.
+		# The user profile 'rwx' permissions will be eventually restricted
+		# by Samba itself with the fake_perms module. But without fake_perms
+		# (which is the default), users need write access to their profile
+		# for Windows to load and update it.
 
 		for user in LMC.users.select(filters.STD):
 			dir_info      = user.check_rules._default.copy()
