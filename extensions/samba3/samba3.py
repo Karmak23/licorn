@@ -54,10 +54,15 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 
 		self.__build_default_paths()
 
+		self.users               = LicornConfigObject()
 		self.groups              = LicornConfigObject()
 
-		# The administrator can change groups names if desired.
-		# Defaults are 'machines' and 'responsibles'.
+		self.users.data       = settings.get(
+										'extensions.samba3.users.data',
+										'samba-data')
+		self.groups.data       = settings.get(
+										'extensions.samba3.groups.data',
+										'samba-data')
 		self.groups.admins     = settings.get(
 										'extensions.samba3.groups.admins',
 										'samba-admins')
@@ -126,7 +131,9 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			that we don't do anything needing a check in it. """
 		assert ltrace_func(TRACE_SAMBA3)
 
-		group_descrs = {
+		descriptions = {
+			self.users.data          : _('Samba/Windows® data holder'),
+			self.groups.data         : _('Windows® data holder for shared programs directories'),
 			self.groups.admins       : _('Windows®(-only) domain administrators'),
 			self.groups.machines     : _('Windows® workstations members of the MS domain'),
 			self.groups.responsibles : _('Users responsible of at least one group'),
@@ -137,12 +144,32 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 				if batch or logging.ask_for_repair(_(u'{0}: group {1} must be '
 									u'created. Do it?').format(
 									self.pretty_name,
-									stylize(ST_NAME, self.group)),
+									stylize(ST_NAME, group)),
 								auto_answer=auto_answer):
 
 					LMC.groups.add_Group(name=group,
-										description=group_descrs[group],
+										description=descriptions[group],
 										system=True, batch=batch)
+				else:
+					raise exceptions.LicornCheckError(_(u'{0}: group {1} must '
+										u'exist before continuing.').format(
+											self.pretty_name,
+											stylize(ST_NAME, group)))
+
+		for user in self.users:
+			if not LMC.users.exists(login=user):
+				if batch or logging.ask_for_repair(_(u'{0}: user {1} must be '
+									u'created. Do it?').format(
+									self.pretty_name,
+									stylize(ST_NAME, user)),
+								auto_answer=auto_answer):
+
+					LMC.users.add_User(login=user,
+										gecos=descriptions[user],
+										disabled_password=True,
+										shell='/bin/false',
+										primary_group=LMC.groups.by_name(self.groups.data),
+										system=True, batch=batch, force=True)
 				else:
 					raise exceptions.LicornCheckError(_(u'{0}: group {1} must '
 										u'exist before continuing.').format(
@@ -163,7 +190,6 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		self.paths.windows_base_dir = settings.get(
 									'extensions.samba3.paths.windows_base_dir',
 									os.path.join(settings.defaults.home_base_path, 'windows'))
-
 
 		# NETLOGON .CMD scripts
 		self.paths.netlogon_base_dir = settings.get(
@@ -465,13 +491,6 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 	def user_logged_in(self, event, *args, **kwargs):
 
 		assert ltrace_func(TRACE_SAMBA3)
-
-		#samba_params = dict(key.split('_', 1)[1], value
-		#						for key, value in kwargs.iteritems()
-		#							if key.startswith('smb_')
-		#								or key.startswith('samba_'))
-
-		#print '>>', event, event.kwargs
 
 		if event.kwargs.get('event_source', None) == 'samba3-netlogon':
 			netlogon.netlogon(*event.args, **event.kwargs)

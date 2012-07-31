@@ -1721,6 +1721,8 @@ def get_file_encoding(filename):
 		ret_encoding = "ISO-8859-15"
 	elif encoding[0] == "UTF-8" and encoding[1] == "Unicode":
 		ret_encoding = "UTF-8"
+	elif encoding[1] == "UTF-16" and encoding[2] == "Unicode":
+		ret_encoding = "UTF-16"
 	elif encoding[0] == "Non-ISO" and encoding[1] == "extended-ASCII":
 		# FIXME: find the correct encoding when a file comme from Windows ?
 		ret_encoding = None

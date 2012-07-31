@@ -629,6 +629,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			return self._import_users(opts, args, background)
 	def _import_users(self, opts, args=None, wmi_output=False):
+		try:
+			self.__import_users__(opts, args, wmi_output)
+
+		except Exception, e:
+			if wmi_output:
+				LicornEvent('users_import_failed', error=str(e)).emit(priorities.HIGH)
+
+			else:
+				raise
+	def __import_users__(self, opts, args=None, wmi_output=False):
 		""" Massively import user accounts from a CSV file."""
 
 		# already done in dispatch_*
@@ -663,6 +673,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.profile is None:
 			raise exceptions.BadArgumentError(_(u'You must specify a profile.'))
+
 		else:
 			profile = opts.profile
 
@@ -716,9 +727,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		try:
 			profile = self.select(LMC.profiles,
 				include_id_lists=[ (profile, LMC.profiles.guess_one) ])[0]
+
 		except KeyError:
 			raise exceptions.LicornRuntimeException(_(u'The profile "%s" does '
-				'not exist.') % stylize(ST_NAME, profile))
+								u'not exist.') % stylize(ST_NAME, profile))
 
 		import math, csv
 		from licorn.core.users  import User
@@ -729,6 +741,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if lcndialect.delimiter != opts.separator and opts.separator != None:
 			separator = opts.separator
+
 		else:
 			separator = lcndialect.delimiter
 
@@ -779,21 +792,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							user[column] = cleaned_field
 
 				except IndexError, e:
-					err = _(u'Import error '
-						'on line {0}: no {1} specified or bad separator used'
-						'(was: {2}).').format(i + 1, column, e)
-
-					if wmi_output:
-						LicornEvent('users_import_failed', error=err).emit()
-
-					raise exceptions.LicornRuntimeError('\n'+err)
+					raise exceptions.LicornRuntimeError(_(u'Import error on '
+							u'line {0}: no {1} specified or bad separator used'
+							u'(was: {2}).').format(i + 1, column, e))
 
 				except UnicodeEncodeError, e:
-					err = _(u'Encoding not '
-						'supported for input filename (was: %s).') % str(e)
-					if wmi_output:
-						LicornEvent('users_import_failed', error=err).emit()
-					raise exceptions.LicornRuntimeError('\n'+err)
+					raise exceptions.LicornRuntimeError(_(u'Encoding not '
+						u'supported for input filename (was: %s).') % str(e))
 			try:
 				if opts.login_col is None:
 					user['login'] = User.make_login(
@@ -803,44 +808,28 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					user['login'] =	User.make_login(
 										inputlogin=user['login'])
 			except IndexError, e:
-				err =  _(u'Import error '
-					'on line {0}: no group specified or bad {2} data '
-					'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
-						if opts.login_col is None else _(u'login')))
-				if wmi_output:
-						LicornEvent('users_import_failed', error=err).emit()
-
-				raise exceptions.LicornRuntimeError('\n' +err)
+				raise exceptions.LicornRuntimeError(_(u'Import error '
+					u'on line {0}: no group specified or bad {2} data '
+					u'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
+						if opts.login_col is None else _(u'login'))))
 
 			except exceptions.LicornRuntimeError, e:
-				err = _(u'Import error '
-					'on line {0} (was: {1}).').format(i+1, e)
-				if wmi_output:
-						LicornEvent('users_import_failed', error=err).emit()
-
-				raise exceptions.LicornRuntimeError('\n' + err)
+				raise exceptions.LicornRuntimeError(_(u'Import error '
+								u'on line {0} (was: {1}).').format(i+1, e))
 
 			try:
 
 				user['group'] = [Group.make_name(g) for g in user['group'].split(',') if g != '']
 
 			except IndexError, e:
-				err =  _(u'Import error '
-					'on line {0}: no group specified or bad {2} data '
-					'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
-						if opts.login_col is None else _(u'login')))
-				if wmi_output:
-						LicornEvent('users_import_failed', error=err).emit()
-
-				raise exceptions.LicornRuntimeError('\n' +err)
+				raise exceptions.LicornRuntimeError(_(u'Import error '
+					u'on line {0}: no group specified or bad {2} data '
+					u'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
+						if opts.login_col is None else _(u'login'))))
 
 			except exceptions.LicornRuntimeError, e:
-				err = _(u'Import error '
-					'on line {0} (was: {1}).').format(i+1, e)
-				if wmi_output:
-						LicornEvent('users_import_failed', error=err).emit()
-
-				raise exceptions.LicornRuntimeError('\n' + err)
+				raise exceptions.LicornRuntimeError(_(u'Import error '
+								u'on line {0} (was: {1}).').format(i+1, e))
 
 			groups_to_add.extend([g for g in user['group'] if g not in groups_to_add])
 
@@ -916,6 +905,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# FIXME: flush the listener??
 				#sys.stdout.flush()
 
+			if not groups_to_add:
+				data_to_export_to_html[profile.group.name] = {}
+
 		else:
 			if wmi_output:
 				fct_output(_(u'Fields order:'), _wmi_display=True)
@@ -971,6 +963,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 								'%s%s' % (u['lastname'], u['firstname'])
 							] = [ u['firstname'], u['lastname'],
 									user.login, password ]
+
+					if not in_groups:
+						data_to_export_to_html[profile.group.name][
+								'%s%s' % (u['lastname'], u['firstname'])
+							] = [ u['firstname'], u['lastname'],
+									user.login, password ]
+
 				else:
 					# Why make_login() for examples and not prepare the logins
 					# when loading CSV file? this is a pure arbitrary choice.
@@ -980,10 +979,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					else:
 						try:
 							login = User.make_login(u['lastname'], u['firstname'])
+
 						except exceptions.LicornRuntimeError, e:
 							raise exceptions.LicornRuntimeError(_(u'Import '
-								'error on line {0}.\n{1}').format(
-									u['linenumber'], e))
+											u'error on line {0}.\n{1}').format(
+												u['linenumber'], e))
 					if wmi_output:
 						fct_output(_(u'<tr>'), _wmi_display=True)
 
@@ -992,17 +992,20 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 								u['lastname'],
 								login,
 								u['group'],
-								u['password'] if u['password'] else _(u'(autogenerated upon creation)')
+								u['password']
+									if u['password']
+									else _(u'(autogenerated upon creation)')
 							]:
 
 							fct_output(_(u'<td>{0}</td>').format(text), _wmi_display=True)
 						fct_output(_(u'</tr>'), _wmi_display=True)
+
 					else:
 						fct_output("%s%s%s%s%s\n" % (
 							string.ljust(u['firstname'], col_width),
 							string.ljust(u['lastname'], col_width),
 							string.ljust(login, col_width),
-							string.ljust(u['group'], col_width),
+							string.ljust(','.join(u['group']), col_width),
 							u['password']
 								if u['password']
 								else _(u'(autogenerated upon creation)')),
@@ -1013,6 +1016,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						# to see if his options are correct or not.
 						break
 				progression += delta
+
 			except exceptions.AlreadyExistsException, e:
 				logging.warning(str(e), to_local=False)
 				progression += delta
@@ -1153,7 +1157,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			if wmi_output:
 				LicornEvent('users_import_tested',
-										import_preview=fct_output('', end=True)).emit()
+							import_preview=fct_output('', end=True)).emit()
 
 		gc.collect()
 	def add_user(self, opts, args):
@@ -1212,13 +1216,17 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						profile=opts.profile,
 						backend=opts.in_backend,
 						inotified=opts.set_inotified,
-						skel=opts.skel, batch=opts.batch, force=opts.force,
-						shell=opts.shell, lastname=lastname, firstname=firstname,
-						in_groups=opts.in_groups)
+						skel=opts.skel,
+						batch=opts.batch, force=opts.force,
+						shell='/bin/false'
+							if opts.disabled_login else opts.shell,
+						lastname=lastname, firstname=firstname,
+						in_groups=opts.in_groups,
+						force_badname=opts.force_badname,
+						disabled_password=opts.disabled_password)
 				except (exceptions.AlreadyExistsException,
 						exceptions.BadArgumentError), e:
 					logging.warning(str(e), to_local=False)
-
 		gc.collect()
 		assert ltrace(TRACE_ADD, '< add_user()')
 	def add_user_in_groups(self, opts, args):

@@ -11,7 +11,9 @@ Licensed under the terms of the GNU GPL version 2
 import random, re
 
 import exceptions
+
 from styles import *
+from _settings import settings
 
 # please, just in case: never forget to read http://sed.sourceforge.net/sed1line.txt
 
@@ -23,9 +25,10 @@ regex['profile_name'] = ur'''^[\w]([-_\w ]*[\w])?$'''
 # these characters could lead to potential crash/vulnerabilities. But refering
 # to passwd(5), there are no restrictions concerning the description field.
 # Thus we just disallow “:” to avoid a new field to be accidentally created.
-regex['description']  = u'''^[-@#~*!¡&_…{}—–™®©/'"\w«»“”() ,;.¿?‘’€⋅]*$'''
+regex['description']  = u'''^[-@#~*!¡&_…{}—–™®©/'"\w«»“”() ,;.¿?‘’£$€⋅]*$'''
 regex['group_name']   = '''^[a-z]([-_.a-z0-9]*[a-z0-9][$]?)?$'''
 regex['login']        = '''^[a-z][-_.a-z0-9]*[a-z0-9]$'''
+regex['bad_login']    = settings.get('foundations.hlstr.regex.bad_login', '''^[a-z][-_.a-z0-9]*[a-z0-9]\$$''')
 regex['keyword']      = u'''^[a-z][- _./\w]*[a-z0-9]$'''
 # IP regexxes come from http://stackoverflow.com/questions/319279/how-to-validate-ip-address-in-python/319293#319293
 regex['ipv4']         = r'''^(?:(?:[3-9]\d?|2(?:5[0-5]|[0-4]?\d)?|1\d{0,2}|0x0*[0-9a-f]{1,2}|0+[1-3]?[0-7]{0,2})(?:\.(?:[3-9]\d?|2(?:5[0-5]|[0-4]?\d)?|1\d{0,2}|0x0*[0-9a-f]{1,2}|0+[1-3]?[0-7]{0,2})){3})$'''
@@ -44,6 +47,7 @@ cregex['profile_name'] = re.compile(regex['profile_name'], re.IGNORECASE | re.UN
 cregex['description']  = re.compile(regex['description'],  re.IGNORECASE | re.UNICODE)
 cregex['group_name']   = re.compile(regex['group_name'],   re.IGNORECASE)
 cregex['login']        = re.compile(regex['login'],        re.IGNORECASE)
+cregex['bad_login']    = re.compile(regex['bad_login'],    re.IGNORECASE)
 cregex['keyword']      = re.compile(regex['keyword'],      re.IGNORECASE | re.UNICODE)
 cregex['conf_comment'] = re.compile(regex['conf_comment'], re.IGNORECASE | re.UNICODE)
 cregex['ipv4']         = re.compile(regex['ipv4'],         re.IGNORECASE)
@@ -316,3 +320,8 @@ def clean_path_name(command):
 		'|','_').replace('^','_').replace('%', '_').replace(
 		'(', '_').replace(')', '_').replace ('*', '_').replace(
 		' ', '_').replace('__', '_')
+
+__all__ = ('regex', 'cregex', 'validate_name', 'generate_salt',
+			'generate_password', 'word_fuzzy_match', 'word_match',
+			'multi_word_match', 'statsize2human', 'shell_quote',
+			'clean_path_name')
