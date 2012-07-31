@@ -1,6 +1,8 @@
+<script language="javascript" type="text/javascript" src="/media/js/licorn_form.js"></script>
+
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal">×</button>
-    <h3>{{ _('Edit machine {0}'.format(machine.hostname)) }}</h3>
+    <h3>{{ _('Edit machine <span class=\'handler\' data-handler=\'machine_hostname_changed\' data-handler-id=\'{1}\'>{0}</span>'.format(machine.hostname, machine.mid)) }}</h3>
 </div>
 <div class="modal-body">
 
@@ -24,7 +26,8 @@
 
 	<form class="form-horizontal" action="ACTION" method="post" id="account-creation-form">{% csrf_token %}
 
-	{%- set not_first = []  -%}
+
+	{# Need to use tabs instead of booleans because in the for loop, variable are out of scope adn cannot be reset #}
 	{%- set first = [] -%}
 	{%- set header_displayed = []  -%}
 	{% set one_required = []  %}
@@ -37,24 +40,13 @@
 				<li {{ 'class="active"' if form_blocks[block][2] }}><a href="#{{ form_blocks[block][0] }}" data-toggle="tab">{{ form_blocks[block][1] }}</a></li>
 			{% endfor %}
 		</ul>
-		<script language="javascript">
-			$(document).ready(function(){
-
-			});
-
-			</script>
-
 		<div class="tab-content">
 	{%- endif -%}
 
 
-
-
 	{% for field in form.visible_fields() %}
 		{%- if field.field.required -%}
-
 			{%  do one_required.append(1) %}
-
 		{%- endif -%}
 
 	    {% if field.name in form_blocks %}
@@ -90,7 +82,7 @@
 			</label>
 			<div class="controls">
 				{{ field }}
-				<!--<input type="text" class="input-xlarge" id="input01">-->
+
 				{%-if field.field.help_text -%}
 					<p class="help-block">{{ field.field.help_text }}</p>
 				{%- endif -%}
@@ -103,6 +95,7 @@
 
 
 	{% endfor %}
+
 	{%- if header_displayed -%}
 		{% if form.tab %}
 			</div>
@@ -110,9 +103,12 @@
 			</fieldset>
 		{% endif %}
 	{%- endif -%}
+
 	{%- if form.tab -%}
 		</div> <!-- end tab-content -->
 	{%- endif -%}
+
+
 	{%- if one_required -%}
 		<p class="required_field">*&nbsp;: champ obligatoire.</p>
 	{%- endif -%}

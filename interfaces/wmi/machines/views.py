@@ -49,7 +49,7 @@ def edit(request, mid, *args, **kwargs):
 
 	edit_dict = {
 		'machine'     : LMC.machines.guess_one(mid),
-		'form'        : MachineForm(tab=True),
+		'form'        : MachineForm(tab=True, machine=LMC.machines.guess_one(mid)),
 		'form_blocks' : machine_form_blocks,
 	}
 
@@ -75,9 +75,15 @@ def upgrade(request, mid, *args, **kwargs):
 	return HttpResponse("OK")
 
 def massive_select_template(request, action_name, mids, *args, **kwargs):
-	print [ LMC.machines.guess_one(m) for m in mids.split(',') ]
 	return HttpResponse(
 		render_to_string('machines/parts/massive_{0}.html'.format(action_name),
 			{
 				'machines' : [ LMC.machines.guess_one(m) for m in mids.split(',') ],
 		}))
+
+def instant_edit(request, mid, part, value, *args, **kwargs):
+	""" instant edit function """
+	machine = LMC.machines.guess_one(mid)
+	if part == 'hostname':
+		machine.hostname = value
+		return HttpResponse(value)

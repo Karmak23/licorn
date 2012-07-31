@@ -20,8 +20,8 @@
 		<img src="/media/images/16x16/{{ get_host_status_html[machine.status][0] }}"
 					alt="{{ get_host_status_html[machine.status][1] }}" width="16" height="16" />
 	</td>
-	<td>
-		{{ machine.hostname }}
+	<td data-mid="{{ machine.mid }}">
+		<span class='handler' data-handler='machine_hostname_changed' data-handler-id='{{machine.mid}}'>{{ machine.hostname }}<span>
 
 		{%- if machine.hostname != machine.mid -%}
 			&nbsp; ( {{ machine.mid }} )

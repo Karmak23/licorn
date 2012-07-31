@@ -128,7 +128,12 @@
 				1000);
 		}
 		function func_doubleclick_row(td_element) {
-			$.get('/machines/edit/'+td_element.data('mid'), function(modal_html) {
+			console.log(td_element.parent('tr'))
+			mid = td_element.data('mid')
+			if (mid == null) {
+				mid = td_element.parent('td').data('mid')
+			}
+			$.get('/machines/edit/'+mid, function(modal_html) {
 				$("#machine_modal").html(modal_html).modal()
 			})
 		}

@@ -9,6 +9,9 @@ urlpatterns = patterns('machines.views',
 
     (r'^edit/(?P<mid>.+)/?$', 'edit'),
 
+    (r'^instant_edit/(?P<mid>.+)/(?P<part>.+)/(?P<value>.+)/?$', 'instant_edit'),
+
+
 	(r'^upgrade/(?P<mid>.+)/?$', 'upgrade'),
 	(r'^massive_select_template/(?P<action_name>.+)/(?P<mids>.+)/?$', 'massive_select_template'),
 
