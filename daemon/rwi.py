@@ -1041,16 +1041,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 			import time
 			date_time = time.strftime(_(u'%d %m %Y at %H:%M:%S'), time.gmtime())
-
-			html_file_handler, html_file_filename = tempfile.mkstemp()
-
-			html_file = open(html_file_filename, 'wb+')
-			"""
-			html_file = open('%s/import_%s-%s.html' % (
+			html_file_filename = '%s/import_%s-%s.html' % (
 								settings.home_archive_dir,
 								# don't take the name, it could have spaces in it.
 								profile.groupName,
-								hlstr.validate_name(date_time)), 'w')"""
+								hlstr.validate_name(date_time))
+
+			html_file = open(html_file_filename, 'w')
 			if wmi_output:
 				dl_lnk = _('''This repport is available on the server '''
 					'''at "<code>{0}</code>", you can '''

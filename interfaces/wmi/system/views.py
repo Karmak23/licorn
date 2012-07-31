@@ -25,7 +25,7 @@ from django.shortcuts               import *
 from django.template.loader         import render_to_string
 from django.utils.translation       import ugettext_lazy as _
 
-from licorn.foundations                    import logging, options, fsapi
+from licorn.foundations                    import logging, options, fsapi, settings
 from licorn.foundations.styles             import *
 from licorn.foundations.ltrace             import *
 from licorn.foundations.ltraces            import *
@@ -232,9 +232,8 @@ def download(request, filename, *args, **kwargs):
 		.. todo:: merge this view with shares.views.download(), if url
 			merging is possible.
 	"""
-
 	# check_file_path() will return a cleaned path, or `None` if insecure.
-	filename = fsapi.check_file_path(filename, ('/tmp/', ))
+	filename = fsapi.check_file_path(filename, ('/tmp/', settings.home_archive_dir ))
 
 	if filename:
 		try:
