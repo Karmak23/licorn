@@ -238,8 +238,8 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		for smb_path, users_access in (
 					(self.paths.windows_base_dir,			'--x'),
 					(self.paths.netlogon_base_dir,			'r-x'),
-					(self.paths.netlogon_templates_dir,		None),
-					(self.paths.netlogon_custom_dir,		None),
+					(self.paths.netlogon_templates_dir,		'r-x'),
+					(self.paths.netlogon_custom_dir,		'r-x'),
 
 					(self.paths.profiles_base_dir,					'--x'),
 					(self.paths.profiles_current_dir,				'--x'),
