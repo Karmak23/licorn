@@ -260,8 +260,10 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 
 function sort_items_list(list_name, sort_way, item_sort, only_show) {
 
+	body_wait();
+
 	// keep a trace of the current sorted column
-	$('#'+list_name+'_list').find('.current_sort').removeClass('current_sort');
+	$('#'+ list_name +'_list').find('.current_sort').removeClass('current_sort');
 	$("#"+ list_name +"_list").find('.header_' + item_sort).addClass('current_sort');
 
 	//console.log('sorting on '+ item_sort +', '+ sort_way);
@@ -270,7 +272,6 @@ function sort_items_list(list_name, sort_way, item_sort, only_show) {
 	hidden = 0;
 
 	if (only_show) {
-		console.log('only show');
 		users_list_return = $("#"+ list_name +"_list").find('.row');
 
 	} else {
@@ -334,6 +335,8 @@ function sort_items_list(list_name, sort_way, item_sort, only_show) {
 			cpt += 1;
 		}
 	});
+
+	body_unwait();
 }
 
 function search(list_name, search_string, search_columns, identifier) {

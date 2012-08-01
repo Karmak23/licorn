@@ -6,17 +6,21 @@ from licorn.foundations.constants import filters
 from licorn.interfaces.wmi.libs   import utils
 
 def users_import_started_handler(request, event):
+	yield utils.format_RPC_JS('body_wait', True)
 	yield utils.notify(_(u'Users import started, please wait while processing…'))
 
 def users_import_finished_handler(request, event):
+	yield utils.format_RPC_JS('body_unwait', True)
 	yield utils.notify(_(u'Users import completed successfully.'))
 	yield utils.format_RPC_JS('reload_div', "#sub_content",
 						open(event.kwargs['result_filename'], 'r').read())
 
 def users_import_failed_handler(request, event):
+	yield utils.format_RPC_JS('body_unwait', True)
 	yield utils.notify(_(u'Users import <em>failed</em> : {0}.').format(event.kwargs['error']), 10000)
 
 def users_import_tested_handler(request, event):
+	yield utils.format_RPC_JS('body_unwait', True)
 	yield utils.notify(_(u'Users import test ran fine.'))
 	yield utils.format_RPC_JS('reload_div', "#test_result", event.kwargs['import_preview'])
 
@@ -74,13 +78,11 @@ def user_userPassword_changed_handler(request, event):
 	user = event.kwargs['user']
 
 	yield utils.notify(_(u'Password changed for user account "{0}".').format(user.login))
-
 def user_skel_applyed_handler(request, event):
 
 	user = event.kwargs['user']
 
 	yield utils.notify(_(u'Skel reapplyed for for user account "{0}".').format(user.login))
-
 def user_loginShell_changed_handler(request, event):
 
 	user = event.kwargs['user']

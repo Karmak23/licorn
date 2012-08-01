@@ -18,6 +18,41 @@ var DEBUG_UTILS = false;
 var instant_apply_timeout_textbox;
 var instant_apply_timeout_pwd;
 
+var body = null;
+var body_stay_waiting = false;
+
+function body_wait(maintain) {
+
+	if (typeof maintain === 'undefined'){
+		maintain = false;
+	}
+
+	if (!body.hasClass('waiting')) {
+		body.addClass('waiting');
+	}
+
+	if (maintain) {
+		body_stay_waiting = true;
+	}
+}
+function body_unwait(remove) {
+
+	if (typeof remove === 'undefined'){
+		remove = false;
+	}
+
+	if (body.hasClass('waiting')) {
+
+		if(body_stay_waiting) {
+
+			if (remove) {
+				body.removeClass('waiting');
+			}
+		} else {
+			body.removeClass('waiting');
+		}
+	}
+}
 
 function setup_ajax_togglers(selector) {
 
@@ -130,6 +165,8 @@ $(document).ready(function() {
 
 	setup_ajax_initially_hidden();
 	setup_ajax_togglers();
+
+	body = $('body');
 
 	try {
 		//$.preLoadCSSImages();
@@ -246,6 +283,6 @@ function generate_machine() {
 
 		$.get('/energy/generate_machine_html/'+mid, function(html) {
 			$(v).before($(html));
-		})		
+		})
 	})
 }
