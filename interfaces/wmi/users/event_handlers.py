@@ -45,6 +45,9 @@ def user_added_handler(request, event):
 									'item': user,
 									'name': '%s' % 'users'
 										if user.is_standard else 'sys_users' }))
+	yield utils.format_RPC_JS('init_users_events',
+								'users' if user.is_standard else 'sys_users',
+								user.uid, user.login, 'uidNumber')
 
 	for i in update_users_number(request, event):
 		yield i
