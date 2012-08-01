@@ -11,7 +11,9 @@ Licorn® WMI - users views
 """
 
 import os, time, base64, tempfile, crack, json
+
 from threading import current_thread
+from operator  import attrgetter
 
 from django.shortcuts               import *
 from django.template.loader         import render_to_string
@@ -514,7 +516,9 @@ def main(request, sort="login", order="asc", select=None, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	users_list = LMC.users.select(filters.STANDARD)
+	# auto-sort the users on login, to avoid the first JS sort,
+	# it can take ages if there are many users.
+	users_list = sorted(LMC.users.select(filters.STANDARD), key=attrgetter('login'))
 
 	if request.user.is_superuser:
 		system_users_list = LMC.users.select(filters.SYSTEM)
