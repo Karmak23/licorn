@@ -87,8 +87,6 @@ function refresh_div(div, html, no_effect) {
 	new_html = $(html);
 
 	if (typeof no_effect == 'undefined' || no_effect) {
-
-
 		div.find('._refresh').each(function() {
 			$(this).html(new_html.find('#' + $(this).attr('id')).html());
 		});
@@ -111,6 +109,9 @@ function refresh_div(div, html, no_effect) {
 			}
 		});
 	}
+
+	// Be sure the div is fully visible, in case the animation failed.
+	div.css('opacity', 1.0);
 }
 
 function reload_div(div_id, html, no_effect) {
@@ -130,6 +131,9 @@ function reload_div(div_id, html, no_effect) {
 	} else {
 		div.stop(true, false).html(html);
 	}
+
+	// be sure the div is fully visible, in case the animation failed.
+	div.css('opacity', 1.0);
 }
 
 function lock_sub_content(item_id) {
@@ -269,16 +273,12 @@ function password_helpers(content) {
 				strargs(gettext("<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</code> button, and remember it."), [pwd_generated]),
 				true, function() {
 					content.find('input:password').val(pwd_generated).trigger('keyup');
-
-
 			});
 			gen_pwd_dialog.show();
 		})
 
 	});
 }
-
-
 
 function generate_machine() {
 	$.each($('.licorn_machine'), function(i, v) {
