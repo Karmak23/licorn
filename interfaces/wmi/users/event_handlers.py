@@ -11,19 +11,19 @@ def users_import_started_handler(request, event):
 	yield utils.notify(_(u'Users import started, please wait while processing…'))
 
 def users_import_finished_handler(request, event):
-	yield utils.format_RPC_JS('body_unwait', True)
 	yield utils.notify(_(u'Users import completed successfully.'))
 	yield utils.format_RPC_JS('reload_div', "#sub_content",
 						open(event.kwargs['result_filename'], 'r').read())
+	yield utils.format_RPC_JS('body_unwait', True)
 
 def users_import_failed_handler(request, event):
-	yield utils.format_RPC_JS('body_unwait', True)
 	yield utils.notify(_(u'Users import <em>failed</em> : {0}.').format(event.kwargs['error']), 10000)
+	yield utils.format_RPC_JS('body_unwait', True)
 
 def users_import_tested_handler(request, event):
-	yield utils.format_RPC_JS('body_unwait', True)
 	yield utils.notify(_(u'Users import test ran fine.'))
 	yield utils.format_RPC_JS('reload_div', "#test_result", event.kwargs['import_preview'])
+	yield utils.format_RPC_JS('body_unwait', True)
 
 def update_users_number(request, event):
 	yield utils.format_RPC_JS('reload_div', '#users_list_count',

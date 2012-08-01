@@ -46,7 +46,10 @@ function body_unwait(remove) {
 		if(body_stay_waiting) {
 
 			if (remove) {
-				body.removeClass('waiting');
+				setTimeout(function() {
+					body_stay_waiting = false;
+					body.removeClass('waiting');
+				}, 500);
 			}
 		} else {
 			body.removeClass('waiting');
