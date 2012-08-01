@@ -18,9 +18,11 @@
 
 {%- block main_content -%}
 
+	{%- if users_list|length > 100 -%}
 	<script language="javascript" type="text/javascript">
 		loading_animation();
 	</script>
+	{%- endif -%}
 
 	<!-- standard users list -->
 
@@ -38,6 +40,7 @@
 						{ "name" : "uidNumber", "content" : _('UID'), "sortable" : True, "default_sort" : False},
 						{ "name" : "profile", "content" : _('Profile'), "sortable" : True, "default_sort" : False},
 						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
+
 	{%- set list_items = users_list -%}
 	{%- set macro_row = 'users/user_row.html' -%}
 	{%- set search_columns = [ 'uidNumber', 'gecos', 'login', 'profile' ] -%}
