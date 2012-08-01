@@ -11,7 +11,7 @@ Licorn® WMI - groups views
 """
 
 import os, time, tempfile, json, csv
-
+from operator import attrgetter
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers       import reverse
 from django.shortcuts               import *
@@ -376,17 +376,15 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 @staff_only
 def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 
-	groups = utils.select('groups', default_selection=filters.STANDARD)
-
+	groups = sorted(LMC.groups.select(filters.STANDARD), key=attrgetter('name'))
 
 	if request.user.is_superuser:
-		sys_groups = [ g for g in utils.select('groups',
-							default_selection=filters.SYSTEM)
-								if not g.is_helper ]
+		sys_groups = sorted((g for g in LMC.groups.select(filters.SYSTEM)
+								if not g.is_helper), key=attrgetter('name'))
 	else:
-		sys_groups = utils.select('groups', default_selection=filters.PRIVILEGED)
+		sys_groups = sorted(LMC.groups.select(filters.PRIVILEGED), key=attrgetter('name'))
 
 	return render(request, 'groups/index.html', {
-			'groups_list' : groups,
+			'groups_list' :        groups,
 			'system_groups_list' : sys_groups,
 		})

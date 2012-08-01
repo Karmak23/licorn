@@ -33,6 +33,11 @@ def group_added_handler(request, event):
 									'item': group,
 									'name': '%s' % 'groups'
 										if group.is_standard else 'sys_groups' }))
+
+	yield utils.format_RPC_JS('init_groups_events',
+								'groups' if group.is_standard else 'sys_groups',
+								group.gid, group.name, 'gidNumber')
+
 	for i in update_groups_number(request, event):
 		yield i
 def group_deleted_handler(request, event):
