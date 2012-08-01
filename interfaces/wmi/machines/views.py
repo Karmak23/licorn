@@ -11,6 +11,7 @@ from licorn.foundations.constants import filters, relation, host_status, host_ty
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 
+from collections import OrderedDict
 from licorn.core import LMC
 
 from licorn.interfaces.wmi.libs            import utils
@@ -47,10 +48,15 @@ def scan(request, *args, **kwargs):
 def edit(request, mid, *args, **kwargs):
 	""" machine edit view.  """
 
+	# we need to sort the form_blocks dict to display headers in order
+	sorted_blocks = OrderedDict({})
+	for k in sorted(machine_form_blocks.iterkeys()):
+		sorted_blocks.update({ k: machine_form_blocks[k]})
+
 	edit_dict = {
 		'machine'     : LMC.machines.guess_one(mid),
 		'form'        : MachineForm(tab=True, machine=LMC.machines.guess_one(mid)),
-		'form_blocks' : machine_form_blocks,
+		'form_blocks' : sorted_blocks,
 	}
 
 	if request.is_ajax():
