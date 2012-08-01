@@ -361,7 +361,6 @@ class Machine(CoreStoredObject, SharedResource):
 			else:
 				self.status = host_status.PINGS
 				if old_status not in UP_status:
-					print "host_onlien"
 					LicornEvent('host_back_online'
 									if self.has_already_been_online
 									else 'host_online', host=self).emit()
