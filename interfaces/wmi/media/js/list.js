@@ -8,6 +8,11 @@ order_pic=[];
 order_pic['asc'] = '<img src="/media/images/12x12/sort_asc.png" alt="asc order image">';
 order_pic['desc'] = '<img src="/media/images/12x12/sort_desc.png" alt="desc order image">';
 
+// Beyond this number, animations are disabled to lower CPU usage.
+// This is purely arbitrary, we could maintain them. But wasting
+// CPU cycles consumes our planet.
+var max_items_animate = 100;
+
 // time before the hover views appear
 var list_hover_timeout_value = 250;
 
@@ -21,8 +26,7 @@ var delayed_sort_timers = {};
 
 function init_list_events(list_name, main_column, search_columns, identifier) {
 
-	// initialize the list
-	sort_items_list(list_name, 'asc', main_column, identifier, true);
+	//console.log('init list start: ' + Date());
 
 	// search bar
 	$('#'+list_name+'_list').find('#search_box').keyup(function(event) {
@@ -261,6 +265,11 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 			}
 		});
 	});
+
+	//console.log('init list end: ' + Date());
+
+	// initialize the list
+	delayed_sort(list_name, 'asc', main_column, identifier, true);
 }
 
 function delayed_sort(list_name, sort_way, item_sort, only_show) {
@@ -274,9 +283,11 @@ function delayed_sort(list_name, sort_way, item_sort, only_show) {
 
 	delayed_sort_timers[list_name] = setTimeout(function() {
 		sort_items_list(list_name, sort_way, item_sort, only_show);
-		}, 1000);
+		}, 500);
 }
 function sort_items_list(list_name, sort_way, item_sort, only_show) {
+
+	//console.log('sort start: ' + Date());
 
 	body_wait();
 
@@ -303,15 +314,15 @@ function sort_items_list(list_name, sort_way, item_sort, only_show) {
 
 	// 75ms * number of visible elements seems fine, because a human expects
 	// a list to be sorted faster if there are fewer elements.
-	//effect_duration = 75 * (users_list_return.length - hidden);
+	effect_duration = 75 * (users_list_return.length - hidden);
 
 	// but we need to floor and ceil the values, else it can be
 	// too long or too fast to see the effect.
-	//if (effect_duration == 0)
-	//	effect_duration = 100;
+	if (effect_duration == 0)
+		effect_duration = 100;
 
-	//if (effect_duration > 750)
-	//	effect_duration = 750;
+	if (effect_duration > 750)
+		effect_duration = 750;
 
 	final_width = $('#'+ list_name +'_list_header').width();
 
@@ -323,25 +334,29 @@ function sort_items_list(list_name, sort_way, item_sort, only_show) {
 			'del_classes' : list_name + '_row_even row_even even'
 		})
 
-	$.each(users_list_return, function(key, obj) {
+	animate = users_list_return.length < max_items_animate;
 
-		the_div = $("#"+ list_name +"_list").find('#'+obj.id).filter('.'+list_name+'_row');
+	users_list_return.each(function(key, obj) {
 
-		final_position   = cpt * 51 + 'px';
+		//the_div = $("#" + list_name +"_list").find('#'+obj.id).filter('.'+list_name+'_row');
+		the_div = $(this).filter('.' + list_name + '_row');
+
+		final_position = cpt * 51 + 'px';
 
 		if (final_position == the_div.css('margin-top')) {
 			the_div.css({ 'z-index': 5000 });
 
 		} else {
 			the_div.css({ 'z-index': key });
-
 		}
 
-		the_div.css('margin-top', final_position).width(final_width);
-
-		//the_div.stop(true, true).animate({ 'margin-top': final_position },
-		//				effect_duration * Math.random(),
-		//				'swing').width(final_width);
+		if (animate) {
+			the_div.stop(true, true).animate({ 'margin-top': final_position },
+						effect_duration * Math.random(),
+						'swing').width(final_width);
+		} else {
+			the_div.css('margin-top', final_position).width(final_width);
+		}
 
 		if(! the_div.is(':hidden')) {
 			the_div.find('.odd_even_typed').each(function() {
@@ -355,24 +370,31 @@ function sort_items_list(list_name, sort_way, item_sort, only_show) {
 	});
 
 	body_unwait();
+	//console.log('sort end: ' + Date());
 }
 
 function search(list_name, search_string, search_columns, identifier) {
 
 	var len = search_string.length;
+
 	if (len == 0)
 		len = 0.86;
 
-	//effect_duration = 650 / len;
+	effect_duration = 650 / len;
 
 	search_string = no_accent(search_string.toLowerCase());
 
 	// this is used when reorganizing the visuals.
 	compt = 0;
 
+	items = $("#"+ list_name +"_list").find('.'+ list_name +'_row');
+
+	animate = items.length < max_items_animate;
+
 	// go through all attributes of each item, and keep only items
 	// whose attributes (one or more) match.
-	$("#"+ list_name +"_list").find('.'+ list_name +'_row').each(function() {
+	items.each(function() {
+
 		// OBJECT part of the search.
 		match   = false;
 		the_div = $(this);
@@ -398,15 +420,24 @@ function search(list_name, search_string, search_columns, identifier) {
 
 		if (match) {
 			if (the_div.is(':hidden')) {
-				the_div.stop(true, true).fadeIn(effect_duration).animate({
+				if (animate) {
+					the_div.stop(true, true).fadeIn(effect_duration).animate({
 									'margin-top': compt*51+'px' },
 									effect_duration * Math.random(), 'swing');
-				the_div.show();
+				} else {
+					the_div.show();
+				}
 			} else {
-				//the_div.stop(true, true).animate({
-				//			'margin-top': compt*51+'px' },
-				//			effect_duration * Math.random(), 'swing');
+				if (animate) {
+					the_div.stop(true, true).animate({
+							'margin-top': compt*51+'px' },
+							effect_duration * Math.random(), 'swing');
+				} else {
+					the_div.css('margin-top', compt*51+'px');
+
+				}
 			}
+
 			compt += 1;
 
 			the_div.find('.odd_even_typed').each(function() {
@@ -419,15 +450,13 @@ function search(list_name, search_string, search_columns, identifier) {
 			});
 		}
 		else {
-			//the_div.stop(true, true).fadeOut(effect_duration);
-			the_div.hide();
+			if (animate) {
+				the_div.stop(true, true).fadeOut(effect_duration);
+			} else {
+				the_div.hide();
+			}
 		}
 	});
-
-	// only_show is true because the list is already sorted,
-	// we just need to update item positions.
-	sort_items_list($('#'+list_name+'_list').find('.current_sort').attr('value'),
-		$('#'+list_name+'_list').find('.current_sort').attr('id'), identifier, true);
 }
 
 function my_sort(list_name, sort_way, sort_item) {
