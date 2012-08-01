@@ -14,6 +14,11 @@ var list_hover_timeout_value = 250;
 // holds the global setTimeout() result for the subcontent.
 var hover_timeout = null;
 
+// on multiple add/delete events, we will not try to sort the lists
+// every time, this will render the page unresponsive. The sort is
+// thus delayed.
+var delayed_sort_timers = {};
+
 function init_list_events(list_name, main_column, search_columns, identifier) {
 
 	// initialize the list
@@ -258,6 +263,19 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 	});
 }
 
+function delayed_sort(list_name, sort_way, item_sort, only_show) {
+	// eventually cancel a current planned sort, and plan the next.
+
+	timeout = delayed_sort_timers[list_name];
+
+	if (timeout) {
+		clearTimeout(timeout);
+	}
+
+	delayed_sort_timers[list_name] = setTimeout(function() {
+		sort_items_list(list_name, sort_way, item_sort, only_show);
+		}, 1000);
+}
 function sort_items_list(list_name, sort_way, item_sort, only_show) {
 
 	body_wait();
@@ -345,7 +363,7 @@ function search(list_name, search_string, search_columns, identifier) {
 	if (len == 0)
 		len = 0.86;
 
-	effect_duration = 650 / len;
+	//effect_duration = 650 / len;
 
 	search_string = no_accent(search_string.toLowerCase());
 
@@ -356,7 +374,7 @@ function search(list_name, search_string, search_columns, identifier) {
 	// whose attributes (one or more) match.
 	$("#"+ list_name +"_list").find('.'+ list_name +'_row').each(function() {
 		// OBJECT part of the search.
-		match = false;
+		match   = false;
 		the_div = $(this);
 
 		$.each(search_columns, function(k, v) {
@@ -380,10 +398,14 @@ function search(list_name, search_string, search_columns, identifier) {
 
 		if (match) {
 			if (the_div.is(':hidden')) {
-				the_div.stop(true, true).fadeIn(effect_duration).animate({'margin-top': compt*51+'px' },
+				the_div.stop(true, true).fadeIn(effect_duration).animate({
+									'margin-top': compt*51+'px' },
 									effect_duration * Math.random(), 'swing');
+				the_div.show();
 			} else {
-				the_div.stop(true, true).animate({'margin-top': compt*51+'px' }, effect_duration * Math.random(), 'swing');
+				//the_div.stop(true, true).animate({
+				//			'margin-top': compt*51+'px' },
+				//			effect_duration * Math.random(), 'swing');
 			}
 			compt += 1;
 
@@ -397,12 +419,15 @@ function search(list_name, search_string, search_columns, identifier) {
 			});
 		}
 		else {
-			the_div.stop(true, true).fadeOut(effect_duration);
+			//the_div.stop(true, true).fadeOut(effect_duration);
+			the_div.hide();
 		}
 	});
-	sort_items_list($('#'+list_name+'_list').find('.current_sort').attr('value'),
-		$('#'+list_name+'_list').find('.current_sort').attr('id'), identifier, false);
 
+	// only_show is true because the list is already sorted,
+	// we just need to update item positions.
+	sort_items_list($('#'+list_name+'_list').find('.current_sort').attr('value'),
+		$('#'+list_name+'_list').find('.current_sort').attr('id'), identifier, true);
 }
 
 function my_sort(list_name, sort_way, sort_item) {
@@ -485,7 +510,8 @@ function add_row(list_name, html, append_after) {
 	}
 
 	if (list.hasClass('ajax-sortable')) {
-		sort_items_list(list_name,
+
+		delayed_sort(list_name,
 			list.find('.current_sort').attr('value'),
 			list.find('.current_sort').attr('id'), false);
 	}
@@ -496,7 +522,7 @@ function del_row(list_name, id) {
 	list.find('#'+id).filter('.'+list_name+'_row').remove();
 
 	if (list.hasClass('ajax-sortable')) {
-		sort_items_list(list_name,
+		delayed_sort(list_name,
 			list.find('.current_sort').attr('value'),
 			list.find('.current_sort').attr('id'), false);
 	}
