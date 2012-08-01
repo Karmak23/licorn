@@ -4,6 +4,7 @@ from django.utils.translation     import ugettext as _
 from django.template.loader       import render_to_string
 from licorn.foundations.constants import filters
 from licorn.interfaces.wmi.libs   import utils
+from licorn.core                  import LMC
 
 def users_import_started_handler(request, event):
 	yield utils.format_RPC_JS('body_wait', True)
