@@ -1,9 +1,15 @@
 $(document).ready(function() {
 
-	console.log('licorn_form.js loaded')
+	var instant_timeout;
+	var instant_interval = 1000; // 1 sec
 
 	$('input[type=text].instant').keyup(function() {
-		$.get($(this).data('instant-url')+$(this).val())
+		clearTimeout(instant_timeout);
+		instant_textbox = $(this)
+		instant_timeout = setTimeout(function(){
+			console.log('tata')
+			$.get(instant_textbox.data('instant-url')+instant_textbox.val())
+		}, instant_interval);
 	})
 
 
