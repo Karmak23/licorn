@@ -23,6 +23,7 @@ var hover_timeout = null;
 // every time, this will render the page unresponsive. The sort is
 // thus delayed.
 var delayed_sort_timers = {};
+var search_timer = null;
 
 function init_list_events(list_name, main_column, search_columns, identifier) {
 
@@ -30,7 +31,13 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 
 	// search bar
 	$('#'+list_name+'_list').find('#search_box').keyup(function(event) {
-		search(list_name, $('#'+list_name+'_list').find('#search_box').val(), search_columns, identifier);
+		if (search_timer) {
+			clearTimeout(search_timer);
+		}
+		search_timer = setTimeout(function() {
+			search(list_name, $('#'+list_name+'_list').find('#search_box').val(),
+				search_columns, identifier);
+		}, 750);
 	});
 
 	// header item click : sort
@@ -388,6 +395,11 @@ function search(list_name, search_string, search_columns, identifier) {
 
 	var len = search_string.length;
 
+	// we don't search for 1 letter, this hogs CPU too much
+	// and doens't return anything useful.
+	if (len == 1)
+		return
+
 	if (len == 0)
 		len = 0.86;
 
@@ -411,7 +423,10 @@ function search(list_name, search_string, search_columns, identifier) {
 		the_div = $(this);
 
 		$.each(search_columns, function(k, v) {
-			if (no_accent(the_div.find("."+ list_name +"_" + v).text().toLowerCase()).search(search_string) != -1) {
+
+			if (search_string.length == 0 || no_accent(
+				the_div.find("."+ list_name +"_" + v).text().toLowerCase()
+					).search(search_string) != -1) {
 				match = true;
 
 				// break the $.each(), no need to search further in this item.
