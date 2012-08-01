@@ -179,9 +179,13 @@ def massive(request, uids, action, *args, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	if action == 'delete':
+		no_archive = bool(kwargs.get('no_archive', False))
 		for uid in uids.split(','):
-			delete(request, uid=int(uid),
-					no_archive=bool(kwargs.get('no_archive', False)))
+			delete(request, uid=int(uid), no_archive=no_archive)
+
+			# Get a chance for events to be forwarded,
+			# force thread switch in the interpreter.
+			time.sleep(0)
 
 	if action == 'skel':
 		for uid in uids.split(','):
