@@ -268,8 +268,17 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 
 	//console.log('init list end: ' + Date());
 
-	// initialize the list
-	delayed_sort(list_name, 'asc', main_column, identifier, true);
+	// Start these with a timeout, for the curent page to render *now*
+	// else it will seem unresposive for too long if there are many rows.
+	setTimeout(function() {
+		// initialize the list
+		sort_items_list(list_name, 'asc', main_column, identifier, true);
+
+		setTimeout(function(){
+			// init our rows events (hover, click). This will take time.
+			window[list_name + '_init_row_events']();
+			}, 50);
+	}, 50);
 }
 
 function delayed_sort(list_name, sort_way, item_sort, only_show) {
