@@ -384,6 +384,8 @@ function sort_items_list(list_name, sort_way, item_sort, only_show) {
 
 function search(list_name, search_string, search_columns, identifier) {
 
+	body_wait();
+
 	var len = search_string.length;
 
 	if (len == 0)
@@ -466,6 +468,8 @@ function search(list_name, search_string, search_columns, identifier) {
 			}
 		}
 	});
+
+	body_unwait();
 }
 
 function my_sort(list_name, sort_way, sort_item) {
