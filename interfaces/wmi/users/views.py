@@ -513,9 +513,14 @@ def import_view(request, confirm='', *args, **kwargs):
 def main(request, sort="login", order="asc", select=None, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
-	users_list = utils.select('users', default_selection=filters.STANDARD)
 
-	system_users_list = utils.select('users', default_selection=filters.SYSTEM)
+	users_list = LMC.users.select(filters.STANDARD)
+
+	if request.user.is_superuser:
+		system_users_list = LMC.users.select(filters.SYSTEM)
+
+	else:
+		system_users_list = []
 
 	return render(request, 'users/index.html', {
 			'users_list'        : users_list,

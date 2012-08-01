@@ -17,7 +17,7 @@ var hover_timeout = null;
 function init_list_events(list_name, main_column, search_columns, identifier) {
 
 	// initialize the list
-	sort_items_list(list_name, 'asc', main_column, identifier);
+	sort_items_list(list_name, 'asc', main_column, identifier, true);
 
 	// search bar
 	$('#'+list_name+'_list').find('#search_box').keyup(function(event) {
@@ -43,7 +43,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 			$('#'+list_name+'_list').find(".item_header_sort").html('');
 			$(this).find(".item_header_sort").html(order_pic[sort_way]);
 
-			sort_items_list(list_name, new_sort, item_sort);
+			sort_items_list(list_name, new_sort, item_sort, false);
 		}
 	});
 
@@ -162,7 +162,6 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 		export_dialog.show();
 	});
 
-
 	$('#'+list_name+'_massive_skel').click(function() {
 		users=[]
 		$('#'+list_name+'_list').find(".row").each(function() {
@@ -259,7 +258,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 	});
 }
 
-function sort_items_list(list_name, sort_way, item_sort) {
+function sort_items_list(list_name, sort_way, item_sort, only_show) {
 
 	// keep a trace of the current sorted column
 	$('#'+list_name+'_list').find('.current_sort').removeClass('current_sort');
@@ -267,27 +266,33 @@ function sort_items_list(list_name, sort_way, item_sort) {
 
 	//console.log('sorting on '+ item_sort +', '+ sort_way);
 
-	// get a sorted list
-	users_list_return = my_sort(list_name, sort_way, [item_sort]);
-
+	cpt    = 0;
 	hidden = 0;
-	$.each(users_list_return, function(key, obj) {
-		if ($(this).is(':hidden')) { hidden += 1; }
-	});
 
+	if (only_show) {
+		console.log('only show');
+		users_list_return = $("#"+ list_name +"_list").find('.row');
 
-	// 75ms * number of visible elements seems fine, because a human expects
+	} else {
+		// get a sorted list
+		users_list_return = my_sort(list_name, sort_way, [item_sort]);
+
+		$.each(users_list_return, function(key, obj) {
+			if ($(this).is(':hidden')) { hidden += 1; }
+		});
+	}
+
 	// 75ms * number of visible elements seems fine, because a human expects
 	// a list to be sorted faster if there are fewer elements.
-	effect_duration = 75 * (users_list_return.length - hidden);
+	//effect_duration = 75 * (users_list_return.length - hidden);
 
 	// but we need to floor and ceil the values, else it can be
 	// too long or too fast to see the effect.
-	if (effect_duration == 0)
-		effect_duration = 100;
+	//if (effect_duration == 0)
+	//	effect_duration = 100;
 
-	if (effect_duration > 750)
-		effect_duration = 750;
+	//if (effect_duration > 750)
+	//	effect_duration = 750;
 
 	final_width = $('#'+ list_name +'_list_header').width();
 
@@ -298,22 +303,26 @@ function sort_items_list(list_name, sort_way, item_sort) {
 			'add_classes' : list_name + '_row_odd row_odd odd',
 			'del_classes' : list_name + '_row_even row_even even'
 		})
-	cpt=0;
 
 	$.each(users_list_return, function(key, obj) {
+
 		the_div = $("#"+ list_name +"_list").find('#'+obj.id).filter('.'+list_name+'_row');
 
-		final_position   = cpt*51+'px';
-		current_position = the_div.css('margin-top');
+		final_position   = cpt * 51 + 'px';
 
-		if (final_position == current_position) {
+		if (final_position == the_div.css('margin-top')) {
 			the_div.css({ 'z-index': 5000 });
+
 		} else {
 			the_div.css({ 'z-index': key });
+
 		}
-		the_div.stop(true, true).animate({ 'margin-top': final_position },
-						effect_duration * Math.random(),
-						'swing').width(final_width);
+
+		the_div.css('margin-top', final_position).width(final_width);
+
+		//the_div.stop(true, true).animate({ 'margin-top': final_position },
+		//				effect_duration * Math.random(),
+		//				'swing').width(final_width);
 
 		if(! the_div.is(':hidden')) {
 			the_div.find('.odd_even_typed').each(function() {
@@ -321,7 +330,8 @@ function sort_items_list(list_name, sort_way, item_sort) {
 				$(this).removeClass(classes.del_classes);
 				$(this).addClass(classes.add_classes);
 			});
-			cpt +=1;
+
+			cpt += 1;
 		}
 	});
 }
@@ -388,36 +398,51 @@ function search(list_name, search_string, search_columns, identifier) {
 		}
 	});
 	sort_items_list($('#'+list_name+'_list').find('.current_sort').attr('value'),
-		$('#'+list_name+'_list').find('.current_sort').attr('id'), identifier);
+		$('#'+list_name+'_list').find('.current_sort').attr('id'), identifier, false);
 
 }
 
 function my_sort(list_name, sort_way, sort_item) {
 
-	items = $("#"+ list_name +"_list").find('.row')
+	items = $("#"+ list_name +"_list").find('.row');
 
-	items.sort(function(a, b) {
-		// run through each selector, and return first non-zero match
+	if(sort_way == 'asc'){
+		items.sort(function(a, b) {
+			// run through each selector, and return first non-zero match
 
-			var first = $(a).find("."+ list_name + "_" + sort_item).html().toLowerCase();
-			var second = $(b).find("."+ list_name +"_" + sort_item).html().toLowerCase();
+				var first  = $(a).find("."+ list_name + "_" + sort_item).html().toLowerCase();
+				var second = $(b).find("."+ list_name +"_" + sort_item).html().toLowerCase();
 
-			var isNumeric = Number(first) && Number(second);
-			if(isNumeric) {
-				(sort_way == 'asc') ? diff=first-second : diff=second-first;
+				if(Number(first)) {
+					return first - second;
 
-				if(diff != 0) {
-					return diff;
+				} else {
+					if(first != second) {
+						return ((first < second) ? -1 : 1);
+					}
+
+					return 0;
 				}
-			}
+			});
 
-			else if(first != second) {
-				(sort_way == 'asc') ? r=(first<second) ? -1 : 1 : r=first>second ? -1 : 1;
-				return r;
-		}
+	} else {
+		items.sort(function(a, b) {
 
-		return 0;
-	});
+				var first  = $(a).find("."+ list_name + "_" + sort_item).html().toLowerCase();
+				var second = $(b).find("."+ list_name +"_" + sort_item).html().toLowerCase();
+
+				if(Number(first)) {
+					return second - first;
+
+				} else {
+					if(first != second) {
+						return ((first > second) ? -1 : 1);
+					}
+
+					return 0;
+				}
+			});
+	}
 
 	return items;
 }
@@ -459,7 +484,7 @@ function add_row(list_name, html, append_after) {
 	if (list.hasClass('ajax-sortable')) {
 		sort_items_list(list_name,
 			list.find('.current_sort').attr('value'),
-			list.find('.current_sort').attr('id'));
+			list.find('.current_sort').attr('id'), false);
 	}
 }
 function del_row(list_name, id) {
@@ -470,7 +495,7 @@ function del_row(list_name, id) {
 	if (list.hasClass('ajax-sortable')) {
 		sort_items_list(list_name,
 			list.find('.current_sort').attr('value'),
-			list.find('.current_sort').attr('id'));
+			list.find('.current_sort').attr('id'), false);
 	}
 }
 function update_row_value(list_name, id, col_name, value, css_classes) {

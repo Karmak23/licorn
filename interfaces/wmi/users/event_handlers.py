@@ -22,10 +22,10 @@ def users_import_tested_handler(request, event):
 
 def update_users_number(request, event):
 	yield utils.format_RPC_JS('reload_div', '#users_list_count',
-								len(utils.select('users', default_selection=filters.STANDARD)))
+								len(LMC.users.select(filters.STANDARD)))
 	if request.user.is_staff:
 		yield utils.format_RPC_JS('reload_div', '#sys_users_list_count',
-								len(utils.select('users', default_selection=filters.SYSTEM)))
+								len(LMC.users.select(filters.SYSTEM)))
 
 def user_added_handler(request, event):
 
