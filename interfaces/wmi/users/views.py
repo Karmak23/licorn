@@ -11,7 +11,9 @@ Licorn® WMI - users views
 """
 
 import os, time, base64, tempfile, crack, json
+
 from threading import current_thread
+from operator  import attrgetter
 
 from django.shortcuts               import *
 from django.template.loader         import render_to_string
@@ -177,9 +179,13 @@ def massive(request, uids, action, *args, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	if action == 'delete':
+		no_archive = bool(kwargs.get('no_archive', False))
 		for uid in uids.split(','):
-			delete(request, uid=int(uid),
-					no_archive=bool(kwargs.get('no_archive', False)))
+			delete(request, uid=int(uid), no_archive=no_archive)
+
+			# Get a chance for events to be forwarded,
+			# force thread switch in the interpreter.
+			time.sleep(0)
 
 	if action == 'skel':
 		for uid in uids.split(','):
@@ -513,9 +519,16 @@ def import_view(request, confirm='', *args, **kwargs):
 def main(request, sort="login", order="asc", select=None, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
-	users_list = utils.select('users', default_selection=filters.STANDARD)
 
-	system_users_list = utils.select('users', default_selection=filters.SYSTEM)
+	# auto-sort the users on login, to avoid the first JS sort,
+	# it can take ages if there are many users.
+	users_list = sorted(LMC.users.select(filters.STANDARD), key=attrgetter('login'))
+
+	if request.user.is_superuser:
+		system_users_list = LMC.users.select(filters.SYSTEM)
+
+	else:
+		system_users_list = []
 
 	return render(request, 'users/index.html', {
 			'users_list'        : users_list,

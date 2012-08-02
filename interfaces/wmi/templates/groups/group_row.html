@@ -63,7 +63,5 @@
 	</span>
 </div>
 <script type='text/javascript'>
-	$(document).ready(function() {
-		init_groups_events('{{ name }}', '{{ item.gidNumber }}', '{{ gname }}', 'gidNumber');
-	});
+	groups_list_event_items.push(['{{ name }}', '{{ item.gidNumber }}', '{{ gname }}', 'gidNumber']);
 </script>

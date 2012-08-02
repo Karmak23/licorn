@@ -178,6 +178,22 @@
 
 {%- macro licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) %}
 <div class="list ajax-sortable ajax-content-resizable" id="{{ name }}_list">
+
+	<script language="javascript" type="text/javascript">
+		// will be filled by each user ROW.
+		var {{ name }}_list_event_items = [];
+
+		// this one will be called by init_list_events() at the end.
+		function {{name}}_init_row_events() {
+			for (var i = {{ name }}_list_event_items.length; i--;) {
+				t = {{ name }}_list_event_items[i];
+				init_{{ name }}_events(t[0], t[1], t[2], t[3]);
+			}
+
+			// http://stackoverflow.com/a/1596889
+			delete window.{{ name }}_list_event_items;
+		}
+	</script>
 	<span id='_list_name' style='display: none'>{{ name }}</span>
 	<div class="list_content">
 
@@ -244,7 +260,8 @@
 	</div>
 	<script language="javascript" type="text/javascript">
 	$(document).ready(function() {
-		init_list_events("{{ name }}", '{{ main_column }}', {{ search_columns }}, '{{ identifier }}');
+		init_list_events("{{ name }}", '{{ main_column }}',
+						{{ search_columns }}, '{{ identifier }}');
 	});
 	</script>
 	</div>

@@ -18,7 +18,11 @@ All interfaces connect to the Licorn® daemon via the Pyro channel.
 :license:
 	* GNU GPL version 2.
 """
-import types, Pyro.core, itertools, gc, tempfile, json
+
+try: import simplejson as json
+except: import json
+
+import types, Pyro.core, itertools, gc, tempfile, time
 
 from operator  import attrgetter
 from threading import current_thread
@@ -956,6 +960,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						user.login, user.uidNumber, u['password'], i,
 						length_users, math.ceil(progression)), to_local=False)
 
+					# Get a chance for events to be forwarded,
+					# force thread switch in the interpreter.
+					time.sleep(0)
+
 					# the dictionnary key is forged to have something that is sortable.
 					# like this, the user accounts will be sorted in their group.
 					for _group in in_groups:
@@ -1023,6 +1031,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# FIXME: if user already exists,
 				# don't put it in the data / HTML report.
 				continue
+
 			except exceptions.LicornException, e:
 				# FIXME: flush the listener.?
 				#sys.stdout.flush()
@@ -1039,8 +1048,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			groups = data_to_export_to_html.keys()
 			groups.sort()
 
-			import time
 			date_time = time.strftime(_(u'%d %m %Y at %H:%M:%S'), time.gmtime())
+
 			html_file_filename = '%s/import_%s-%s.html' % (
 								settings.home_archive_dir,
 								# don't take the name, it could have spaces in it.

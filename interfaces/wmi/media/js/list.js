@@ -8,20 +8,36 @@ order_pic=[];
 order_pic['asc'] = '<img src="/media/images/12x12/sort_asc.png" alt="asc order image">';
 order_pic['desc'] = '<img src="/media/images/12x12/sort_desc.png" alt="desc order image">';
 
+// Beyond this number, animations are disabled to lower CPU usage.
+// This is purely arbitrary, we could maintain them. But wasting
+// CPU cycles consumes our planet.
+var max_items_animate = 100;
+
 // time before the hover views appear
 var list_hover_timeout_value = 250;
 
 // holds the global setTimeout() result for the subcontent.
 var hover_timeout = null;
 
+// on multiple add/delete events, we will not try to sort the lists
+// every time, this will render the page unresponsive. The sort is
+// thus delayed.
+var delayed_sort_timers = {};
+var search_timer = null;
+
 function init_list_events(list_name, main_column, search_columns, identifier) {
 
-	// initialize the list
-	sort_items_list(list_name, 'asc', main_column, identifier);
+	//console.log('init list start: ' + Date());
 
 	// search bar
 	$('#'+list_name+'_list').find('#search_box').keyup(function(event) {
-		search(list_name, $('#'+list_name+'_list').find('#search_box').val(), search_columns, identifier);
+		if (search_timer) {
+			clearTimeout(search_timer);
+		}
+		search_timer = setTimeout(function() {
+			search(list_name, $('#'+list_name+'_list').find('#search_box').val(),
+				search_columns, identifier);
+		}, 750);
 	});
 
 	// header item click : sort
@@ -43,7 +59,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 			$('#'+list_name+'_list').find(".item_header_sort").html('');
 			$(this).find(".item_header_sort").html(order_pic[sort_way]);
 
-			sort_items_list(list_name, new_sort, item_sort);
+			sort_items_list(list_name, new_sort, item_sort, false);
 		}
 	});
 
@@ -162,7 +178,6 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 		export_dialog.show();
 	});
 
-
 	$('#'+list_name+'_massive_skel').click(function() {
 		users=[]
 		$('#'+list_name+'_list').find(".row").each(function() {
@@ -257,26 +272,62 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 			}
 		});
 	});
+
+	//console.log('init list end: ' + Date());
+
+	// Start these with a timeout, for the curent page to render *now*
+	// else it will seem unresposive for too long if there are many rows.
+	setTimeout(function() {
+		// initialize the list
+		sort_items_list(list_name, 'asc', main_column, identifier, true);
+
+		setTimeout(function(){
+			// init our rows events (hover, click). This will take time.
+			window[list_name + '_init_row_events']();
+			}, 50);
+	}, 50);
 }
 
-function sort_items_list(list_name, sort_way, item_sort) {
+function delayed_sort(list_name, sort_way, item_sort, only_show) {
+	// eventually cancel a current planned sort, and plan the next.
+
+	timeout = delayed_sort_timers[list_name];
+
+	if (timeout) {
+		clearTimeout(timeout);
+	}
+
+	delayed_sort_timers[list_name] = setTimeout(function() {
+		sort_items_list(list_name, sort_way, item_sort, only_show);
+		}, 500);
+}
+function sort_items_list(list_name, sort_way, item_sort, only_show) {
+
+	//console.log('sort start: ' + Date());
+
+	body_wait();
 
 	// keep a trace of the current sorted column
-	$('#'+list_name+'_list').find('.current_sort').removeClass('current_sort');
+	$('#'+ list_name +'_list').find('.current_sort').removeClass('current_sort');
 	$("#"+ list_name +"_list").find('.header_' + item_sort).addClass('current_sort');
 
 	//console.log('sorting on '+ item_sort +', '+ sort_way);
 
-	// get a sorted list
-	users_list_return = my_sort(list_name, sort_way, [item_sort]);
-
+	cpt    = 0;
 	hidden = 0;
-	$.each(users_list_return, function(key, obj) {
-		if ($(this).is(':hidden')) { hidden += 1; }
-	});
 
+	if (only_show) {
+		users_list_return = $("#"+ list_name +"_list").find('.row');
 
-	// 75ms * number of visible elements seems fine, because a human expects
+	} else {
+		// get a sorted list
+		users_list_return = my_sort(list_name, sort_way, [item_sort]);
+
+		$.each(users_list_return, function(key, obj) {
+			if ($(this).is(':hidden')) { hidden += 1; }
+		});
+	}
+
 	// 75ms * number of visible elements seems fine, because a human expects
 	// a list to be sorted faster if there are fewer elements.
 	effect_duration = 75 * (users_list_return.length - hidden);
@@ -298,22 +349,30 @@ function sort_items_list(list_name, sort_way, item_sort) {
 			'add_classes' : list_name + '_row_odd row_odd odd',
 			'del_classes' : list_name + '_row_even row_even even'
 		})
-	cpt=0;
 
-	$.each(users_list_return, function(key, obj) {
-		the_div = $("#"+ list_name +"_list").find('#'+obj.id).filter('.'+list_name+'_row');
+	animate = users_list_return.length < max_items_animate;
 
-		final_position   = cpt*51+'px';
-		current_position = the_div.css('margin-top');
+	users_list_return.each(function(key, obj) {
 
-		if (final_position == current_position) {
+		//the_div = $("#" + list_name +"_list").find('#'+obj.id).filter('.'+list_name+'_row');
+		the_div = $(this).filter('.' + list_name + '_row');
+
+		final_position = cpt * 51 + 'px';
+
+		if (final_position == the_div.css('margin-top')) {
 			the_div.css({ 'z-index': 5000 });
+
 		} else {
 			the_div.css({ 'z-index': key });
 		}
-		the_div.stop(true, true).animate({ 'margin-top': final_position },
+
+		if (animate) {
+			the_div.stop(true, true).animate({ 'margin-top': final_position },
 						effect_duration * Math.random(),
 						'swing').width(final_width);
+		} else {
+			the_div.css('margin-top', final_position).width(final_width);
+		}
 
 		if(! the_div.is(':hidden')) {
 			the_div.find('.odd_even_typed').each(function() {
@@ -321,14 +380,26 @@ function sort_items_list(list_name, sort_way, item_sort) {
 				$(this).removeClass(classes.del_classes);
 				$(this).addClass(classes.add_classes);
 			});
-			cpt +=1;
+
+			cpt += 1;
 		}
 	});
+
+	body_unwait();
+	//console.log('sort end: ' + Date());
 }
 
 function search(list_name, search_string, search_columns, identifier) {
 
+	body_wait();
+
 	var len = search_string.length;
+
+	// we don't search for 1 letter, this hogs CPU too much
+	// and doens't return anything useful.
+	if (len == 1)
+		return
+
 	if (len == 0)
 		len = 0.86;
 
@@ -339,15 +410,23 @@ function search(list_name, search_string, search_columns, identifier) {
 	// this is used when reorganizing the visuals.
 	compt = 0;
 
+	items = $("#"+ list_name +"_list").find('.'+ list_name +'_row');
+
+	animate = items.length < max_items_animate;
+
 	// go through all attributes of each item, and keep only items
 	// whose attributes (one or more) match.
-	$("#"+ list_name +"_list").find('.'+ list_name +'_row').each(function() {
+	items.each(function() {
+
 		// OBJECT part of the search.
-		match = false;
+		match   = false;
 		the_div = $(this);
 
 		$.each(search_columns, function(k, v) {
-			if (no_accent(the_div.find("."+ list_name +"_" + v).text().toLowerCase()).search(search_string) != -1) {
+
+			if (search_string.length == 0 || no_accent(
+				the_div.find("."+ list_name +"_" + v).text().toLowerCase()
+					).search(search_string) != -1) {
 				match = true;
 
 				// break the $.each(), no need to search further in this item.
@@ -367,11 +446,24 @@ function search(list_name, search_string, search_columns, identifier) {
 
 		if (match) {
 			if (the_div.is(':hidden')) {
-				the_div.stop(true, true).fadeIn(effect_duration).animate({'margin-top': compt*51+'px' },
+				if (animate) {
+					the_div.stop(true, true).fadeIn(effect_duration).animate({
+									'margin-top': compt*51+'px' },
 									effect_duration * Math.random(), 'swing');
+				} else {
+					the_div.show();
+				}
 			} else {
-				the_div.stop(true, true).animate({'margin-top': compt*51+'px' }, effect_duration * Math.random(), 'swing');
+				if (animate) {
+					the_div.stop(true, true).animate({
+							'margin-top': compt*51+'px' },
+							effect_duration * Math.random(), 'swing');
+				} else {
+					the_div.css('margin-top', compt*51+'px');
+
+				}
 			}
+
 			compt += 1;
 
 			the_div.find('.odd_even_typed').each(function() {
@@ -384,40 +476,58 @@ function search(list_name, search_string, search_columns, identifier) {
 			});
 		}
 		else {
-			the_div.stop(true, true).fadeOut(effect_duration);
+			if (animate) {
+				the_div.stop(true, true).fadeOut(effect_duration);
+			} else {
+				the_div.hide();
+			}
 		}
 	});
-	sort_items_list($('#'+list_name+'_list').find('.current_sort').attr('value'),
-		$('#'+list_name+'_list').find('.current_sort').attr('id'), identifier);
 
+	body_unwait();
 }
 
 function my_sort(list_name, sort_way, sort_item) {
 
-	items = $("#"+ list_name +"_list").find('.row')
+	items = $("#"+ list_name +"_list").find('.row');
 
-	items.sort(function(a, b) {
-		// run through each selector, and return first non-zero match
+	if(sort_way == 'asc'){
+		items.sort(function(a, b) {
+			// run through each selector, and return first non-zero match
 
-			var first = $(a).find("."+ list_name + "_" + sort_item).html().toLowerCase();
-			var second = $(b).find("."+ list_name +"_" + sort_item).html().toLowerCase();
+				var first  = $(a).find("."+ list_name + "_" + sort_item).html().toLowerCase();
+				var second = $(b).find("."+ list_name +"_" + sort_item).html().toLowerCase();
 
-			var isNumeric = Number(first) && Number(second);
-			if(isNumeric) {
-				(sort_way == 'asc') ? diff=first-second : diff=second-first;
+				if(Number(first)) {
+					return first - second;
 
-				if(diff != 0) {
-					return diff;
+				} else {
+					if(first != second) {
+						return ((first < second) ? -1 : 1);
+					}
+
+					return 0;
 				}
-			}
+			});
 
-			else if(first != second) {
-				(sort_way == 'asc') ? r=(first<second) ? -1 : 1 : r=first>second ? -1 : 1;
-				return r;
-		}
+	} else {
+		items.sort(function(a, b) {
 
-		return 0;
-	});
+				var first  = $(a).find("."+ list_name + "_" + sort_item).html().toLowerCase();
+				var second = $(b).find("."+ list_name +"_" + sort_item).html().toLowerCase();
+
+				if(Number(first)) {
+					return second - first;
+
+				} else {
+					if(first != second) {
+						return ((first > second) ? -1 : 1);
+					}
+
+					return 0;
+				}
+			});
+	}
 
 	return items;
 }
@@ -457,9 +567,10 @@ function add_row(list_name, html, append_after) {
 	}
 
 	if (list.hasClass('ajax-sortable')) {
-		sort_items_list(list_name,
+
+		delayed_sort(list_name,
 			list.find('.current_sort').attr('value'),
-			list.find('.current_sort').attr('id'));
+			list.find('.current_sort').attr('id'), false);
 	}
 }
 function del_row(list_name, id) {
@@ -468,9 +579,9 @@ function del_row(list_name, id) {
 	list.find('#'+id).filter('.'+list_name+'_row').remove();
 
 	if (list.hasClass('ajax-sortable')) {
-		sort_items_list(list_name,
+		delayed_sort(list_name,
 			list.find('.current_sort').attr('value'),
-			list.find('.current_sort').attr('id'));
+			list.find('.current_sort').attr('id'), false);
 	}
 }
 function update_row_value(list_name, id, col_name, value, css_classes) {
