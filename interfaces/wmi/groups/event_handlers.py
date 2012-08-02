@@ -6,7 +6,7 @@ from django.utils.translation     import ugettext as _
 from licorn.foundations.ltrace    import *
 from licorn.foundations.constants import relation, filters
 from licorn.interfaces.wmi.libs   import utils
-
+from licorn.core                  import LMC
 def memberships(rel):
 	return {
 		# this one should not be needed, else there is something
@@ -18,21 +18,27 @@ def memberships(rel):
 	}[rel]
 def update_groups_number(request, event):
 	yield utils.format_RPC_JS('reload_div', '#groups_list_count',
-								len(utils.select('groups', default_selection=filters.STANDARD)))
+								len(LMC.groups.select(filters.STANDARD)))
 	if request.user.is_staff:
 		yield utils.format_RPC_JS('reload_div', '#sys_groups_list_count',
-								len(utils.select('groups', default_selection=filters.SYSTEM)))
+								len(LMC.groups.select(filters.SYSTEM)))
 def group_added_handler(request, event):
 
 	group = event.kwargs['group']
 
 	yield utils.notify(_(u'Group "{0}" added on the system.').format(group.name))
+
 	yield utils.format_RPC_JS('add_row',
 								'groups' if group.is_standard else 'sys_groups',
 								render_to_string('groups/group_row.html', {
 									'item': group,
 									'name': '%s' % 'groups'
 										if group.is_standard else 'sys_groups' }))
+
+	yield utils.format_RPC_JS('init_groups_events',
+								'groups' if group.is_standard else 'sys_groups',
+								group.gid, group.name, 'gidNumber')
+
 	for i in update_groups_number(request, event):
 		yield i
 def group_deleted_handler(request, event):

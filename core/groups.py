@@ -87,10 +87,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		return gid < LMC.configuration.groups.system_gid_min \
 					or gid > LMC.configuration.groups.gid_max
 	@staticmethod
-	def make_name(inputname=None):
-		""" Make a valid login from  user's firstname and lastname."""
-
-		#TODO: make this a static meth of :class:`Group` ?
+	def make_name(inputname):
+		""" Create a valid group name from the input given."""
 
 		groupname = hlstr.validate_name(inputname,
 						maxlenght=LMC.configuration.groups.name_maxlenght,

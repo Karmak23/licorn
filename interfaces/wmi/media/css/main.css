@@ -116,6 +116,10 @@ div#banner {
     cursor: pointer;
 }
 
+.waiting {
+    cursor: wait;
+}
+
 .cursor-help {
     cursor: help;
 }

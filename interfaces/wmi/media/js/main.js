@@ -18,6 +18,44 @@ var DEBUG_UTILS = false;
 var instant_apply_timeout_textbox;
 var instant_apply_timeout_pwd;
 
+var body = null;
+var body_stay_waiting = false;
+
+function body_wait(maintain) {
+
+	if (typeof maintain === 'undefined'){
+		maintain = false;
+	}
+
+	if (!body.hasClass('waiting')) {
+		body.addClass('waiting');
+	}
+
+	if (maintain) {
+		body_stay_waiting = true;
+	}
+}
+function body_unwait(remove) {
+
+	if (typeof remove === 'undefined'){
+		remove = false;
+	}
+
+	if (body.hasClass('waiting')) {
+
+		if(body_stay_waiting) {
+
+			if (remove) {
+				setTimeout(function() {
+					body_stay_waiting = false;
+					body.removeClass('waiting');
+				}, 500);
+			}
+		} else {
+			body.removeClass('waiting');
+		}
+	}
+}
 
 function setup_ajax_togglers(selector) {
 
@@ -49,8 +87,6 @@ function refresh_div(div, html, no_effect) {
 	new_html = $(html);
 
 	if (typeof no_effect == 'undefined' || no_effect) {
-
-
 		div.find('._refresh').each(function() {
 			$(this).html(new_html.find('#' + $(this).attr('id')).html());
 		});
@@ -73,6 +109,9 @@ function refresh_div(div, html, no_effect) {
 			}
 		});
 	}
+
+	// Be sure the div is fully visible, in case the animation failed.
+	div.css('opacity', 1.0);
 }
 
 function reload_div(div_id, html, no_effect) {
@@ -92,6 +131,9 @@ function reload_div(div_id, html, no_effect) {
 	} else {
 		div.stop(true, false).html(html);
 	}
+
+	// be sure the div is fully visible, in case the animation failed.
+	div.css('opacity', 1.0);
 }
 
 function lock_sub_content(item_id) {
@@ -123,13 +165,15 @@ function clear_sub_content_with_id(_id) {
 
 $(document).ready(function() {
 
-	$('#dialog').hide();
-	$('#dialog-content').hide();
-
-	$('#notification').hide();
+	// They are already hidden by default (class='hidden')
+	//$('#dialog').hide();
+	//$('#dialog-content').hide();
+	//$('#notification').hide();
 
 	setup_ajax_initially_hidden();
 	setup_ajax_togglers();
+
+	body = $('body');
 
 	try {
 		//$.preLoadCSSImages();
@@ -229,8 +273,6 @@ function password_helpers(content) {
 				strargs(gettext("<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</code> button, and remember it."), [pwd_generated]),
 				true, function() {
 					content.find('input:password').val(pwd_generated).trigger('keyup');
-
-
 			});
 			gen_pwd_dialog.show();
 		})
@@ -238,14 +280,12 @@ function password_helpers(content) {
 	});
 }
 
-
-
 function generate_machine() {
 	$.each($('.licorn_machine'), function(i, v) {
 		mid = $(this).attr('id');
 
 		$.get('/energy/generate_machine_html/'+mid, function(html) {
 			$(v).before($(html));
-		})		
+		})
 	})
 }

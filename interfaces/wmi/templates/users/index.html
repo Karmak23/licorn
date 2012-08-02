@@ -18,6 +18,12 @@
 
 {%- block main_content -%}
 
+	{%- if users_list|length > 100 -%}
+	<script language="javascript" type="text/javascript">
+		loading_animation();
+	</script>
+	{%- endif -%}
+
 	<!-- standard users list -->
 
 	{%- set name = "users" -%}
@@ -25,7 +31,7 @@
 	{%- set main_column = "login" -%}
 	{%- set title = _('Users') -%}
 	{%- set massive_actions = [ { "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
-								{ "action_name" : "skel", "icon" : "/media/images/24x24/mass_skel.png"}, 
+								{ "action_name" : "skel", "icon" : "/media/images/24x24/mass_skel.png"},
 							    { "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"} ] -%}
 	{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'users_massive_select\'>", "sortable" : False},
 						{ "name" : "locked", "content" : "<img src=\'/media/images/24x24/locked_header.png\'/>", "sortable" : True, "default_sort" : False},
@@ -34,6 +40,7 @@
 						{ "name" : "uidNumber", "content" : _('UID'), "sortable" : True, "default_sort" : False},
 						{ "name" : "profile", "content" : _('Profile'), "sortable" : True, "default_sort" : False},
 						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
+
 	{%- set list_items = users_list -%}
 	{%- set macro_row = 'users/user_row.html' -%}
 	{%- set search_columns = [ 'uidNumber', 'gecos', 'login', 'profile' ] -%}
@@ -86,7 +93,10 @@
 				});
 			});
 
+			remove_loading_animation();
+
 			$("#search_box").focus();
+
 
 		});
 	</script>
