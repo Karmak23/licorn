@@ -165,10 +165,10 @@ function clear_sub_content_with_id(_id) {
 
 $(document).ready(function() {
 
-	$('#dialog').hide();
-	$('#dialog-content').hide();
-
-	$('#notification').hide();
+	// They are already hidden by default (class='hidden')
+	//$('#dialog').hide();
+	//$('#dialog-content').hide();
+	//$('#notification').hide();
 
 	setup_ajax_initially_hidden();
 	setup_ajax_togglers();
