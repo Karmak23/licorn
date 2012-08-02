@@ -4,28 +4,33 @@ from django.utils.translation     import ugettext as _
 from django.template.loader       import render_to_string
 from licorn.foundations.constants import filters
 from licorn.interfaces.wmi.libs   import utils
+from licorn.core                  import LMC
 
 def users_import_started_handler(request, event):
+	yield utils.format_RPC_JS('body_wait', True)
 	yield utils.notify(_(u'Users import started, please wait while processing…'))
 
 def users_import_finished_handler(request, event):
 	yield utils.notify(_(u'Users import completed successfully.'))
 	yield utils.format_RPC_JS('reload_div', "#sub_content",
 						open(event.kwargs['result_filename'], 'r').read())
+	yield utils.format_RPC_JS('body_unwait', True)
 
 def users_import_failed_handler(request, event):
 	yield utils.notify(_(u'Users import <em>failed</em> : {0}.').format(event.kwargs['error']), 10000)
+	yield utils.format_RPC_JS('body_unwait', True)
 
 def users_import_tested_handler(request, event):
 	yield utils.notify(_(u'Users import test ran fine.'))
 	yield utils.format_RPC_JS('reload_div', "#test_result", event.kwargs['import_preview'])
+	yield utils.format_RPC_JS('body_unwait', True)
 
 def update_users_number(request, event):
 	yield utils.format_RPC_JS('reload_div', '#users_list_count',
-								len(utils.select('users', default_selection=filters.STANDARD)))
+								len(LMC.users.select(filters.STANDARD)))
 	if request.user.is_staff:
 		yield utils.format_RPC_JS('reload_div', '#sys_users_list_count',
-								len(utils.select('users', default_selection=filters.SYSTEM)))
+								len(LMC.users.select(filters.SYSTEM)))
 
 def user_added_handler(request, event):
 
@@ -40,6 +45,9 @@ def user_added_handler(request, event):
 									'item': user,
 									'name': '%s' % 'users'
 										if user.is_standard else 'sys_users' }))
+	yield utils.format_RPC_JS('init_users_events',
+								'users' if user.is_standard else 'sys_users',
+								user.uid, user.login, 'uidNumber')
 
 	for i in update_users_number(request, event):
 		yield i
@@ -74,13 +82,11 @@ def user_userPassword_changed_handler(request, event):
 	user = event.kwargs['user']
 
 	yield utils.notify(_(u'Password changed for user account "{0}".').format(user.login))
-
 def user_skel_applyed_handler(request, event):
 
 	user = event.kwargs['user']
 
 	yield utils.notify(_(u'Skel reapplyed for for user account "{0}".').format(user.login))
-
 def user_loginShell_changed_handler(request, event):
 
 	user = event.kwargs['user']

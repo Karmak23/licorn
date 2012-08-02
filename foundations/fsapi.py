@@ -1307,6 +1307,9 @@ def check_perms(dir_info, file_type=None, is_root_dir=False, check_symlinks=Fals
 			else:
 				all_went_ok = False
 
+	# Get a chance for other threads to grab the CPU.
+	time.sleep(0)
+
 	assert ltrace_func(TRACE_FSAPI, True)
 def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 														full_display=True):

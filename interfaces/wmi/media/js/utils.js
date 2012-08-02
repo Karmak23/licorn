@@ -39,6 +39,12 @@ function loading_animation_func() {
 	$("#loading_information").fadeIn('slow');
 }
 
+function remove_loading_animation() {
+	$('#loading_information').fadeOut('slow', function(){
+		$('body').remove('#loading_information');
+	});
+}
+
 function loading_animation(delay){
 	if (typeof delay == 'undefined') {
 		loading_animation_func();
