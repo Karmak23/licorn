@@ -128,10 +128,10 @@ function setup_table_sorter(sort_list) {
 		})
 		// assign the sortStart event 
 		.bind("sortStart",function(e, t){ 
-			$('body').addClass('waiting')
+			body_wait();
 		})
 		.bind("sortEnd",function(e, t){ 
-			$('body').removeClass('waiting')
+			body_unwait();
 		}); ;
 	//.bind('sortEnd', function(sorter) {
 	//	currentSort = sorter.target.config.sortList;
@@ -256,5 +256,42 @@ function reload_div(div_id, html, no_effect) {
 		});
 	} else {
 		div.stop(true, false).html(html);
+	}
+}
+
+var body_stay_waiting = false;
+function body_wait(maintain) {
+
+	if (typeof maintain === 'undefined'){
+		maintain = false;
+	}
+
+	if (!$('body').hasClass('waiting')) {
+		$('body').addClass('waiting');
+	}
+
+	if (maintain) {
+		body_stay_waiting = true;
+	}
+}
+function body_unwait(remove) {
+
+	if (typeof remove === 'undefined'){
+		remove = false;
+	}
+
+	if ($('body').hasClass('waiting')) {
+
+		if(body_stay_waiting) {
+
+			if (remove) {
+				setTimeout(function() {
+					body_stay_waiting = false;
+					$('body').removeClass('waiting');
+				}, 500);
+			}
+		} else {
+			$('body').removeClass('waiting');
+		}
 	}
 }
