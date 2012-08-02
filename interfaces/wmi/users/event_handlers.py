@@ -17,7 +17,7 @@ def users_import_finished_handler(request, event):
 	yield utils.format_RPC_JS('body_unwait', True)
 
 def users_import_failed_handler(request, event):
-	yield utils.notify(_(u'Users import <em>failed</em> : {0}.').format(event.kwargs['error']), 10000)
+	yield utils.notify(_(u'Users import <em>failed</em>: {0} (check <code>/var/log/licorn.log</code> for details).').format(event.kwargs['error']), 10000)
 	yield utils.format_RPC_JS('body_unwait', True)
 
 def users_import_tested_handler(request, event):
