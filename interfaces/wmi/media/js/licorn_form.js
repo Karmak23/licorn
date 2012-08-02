@@ -7,7 +7,6 @@ $(document).ready(function() {
 		clearTimeout(instant_timeout);
 		instant_textbox = $(this)
 		instant_timeout = setTimeout(function(){
-			console.log('tata')
 			$.get(instant_textbox.data('instant-url')+instant_textbox.val())
 		}, instant_interval);
 	})

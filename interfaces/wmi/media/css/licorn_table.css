@@ -2,10 +2,17 @@
 	
 }
 
+.centered {
+	text-align: center !important;
+}
+
 .table_header_item {
 	width:33%;
 	display: block;
 	float: left;	
+}
+.table_header_filter {
+	text-align: right;
 }
 .table_header_title {
 	
@@ -41,3 +48,4 @@ th.headerSortDown {
 .machine_upgrade {
 	cursor: pointer;
 }
+.waiting {cursor:wait}

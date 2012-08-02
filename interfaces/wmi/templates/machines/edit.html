@@ -3,7 +3,7 @@
 
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal">×</button>
-    <h3>{{ _('Edit machine <span class=\'machine_hostname_changed_handler\' data-id=\'{1}\'>{0}</span>'.format(machine.hostname, machine.mid)) }}</h3>
+    <h3>{{ _('Edit machine <span id="machine_hostname_{1}">{0}</span>'.format(machine.hostname, machine.wid)) }}</h3>
 </div>
 <div class="modal-body">
 

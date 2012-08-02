@@ -91,10 +91,10 @@ def machine_hostname_changed_handler(request, event, reinit=False):
 	yield utils.notify(_(u'Machine with address {0} is now known as {1}.').format(
 												machine.mid, machine.hostname))
 
-	yield utils.format_RPC_JS('emit', 'machine_hostname_changed_handler', machine.mid,
+	yield utils.format_RPC_JS('reload_div', '#machine_hostname_{0}'.format(machine.wid),
 		machine.hostname)
 
-	"""yield utils.format_RPC_JS('update_instance',
+	yield utils.format_RPC_JS('update_instance',
 								'machines',
 								machine.wid,
 								render_to_string('machines/machine_row.html', {
@@ -103,7 +103,7 @@ def machine_hostname_changed_handler(request, event, reinit=False):
 									'get_host_os_html'     : wmi_data.get_host_os_html,
 									'get_host_type_html'   : wmi_data.get_host_type_html}),
 								"setup_row"
-								)"""
+								)
 
 def licorn_host_shutdown_handler(request, event, reinit=False):
 	raise NotImplementedError('TODO.')

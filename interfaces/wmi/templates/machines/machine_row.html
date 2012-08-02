@@ -15,25 +15,25 @@
 	{%- endif -%}
 {%- endmacro -%}
 
-<tr data-mid="{{ machine.mid }}" id='machines_{{ machine.wid }}'>
-	<td data-sort='{{ machine.status }}' data-filter='{{ machine.status }}'>
+<tr class='licorn_row' data-mid="{{ machine.mid }}" id='machines_{{ machine.wid }}'>
+	<td class='centered' data-sort='{{ machine.status }}' data-filter='{{ machine.status }}'>
 		<img src="/media/images/16x16/{{ get_host_status_html[machine.status][0] }}"
 					alt="{{ get_host_status_html[machine.status][1] }}" width="16" height="16" />
 	</td>
-	<td data-mid="{{ machine.mid }}">
-		<span class='machine_hostname_changed_handler' data-id='{{ machine.mid }}'>{{ machine.hostname }}<span>
+	<td>
+		<span class='machine_hostname_changed_handler' id='{{ machine.wid }}' data-mid="{{ machine.mid }}">{{ machine.hostname }}<span>
 
 		{%- if machine.hostname != machine.mid -%}
 			&nbsp; ( {{ machine.mid }} )
 		{%- endif -%}
 
 
-		<span id="machine_status"> {{ updates_status(machine) }} </span>
+		<span id="machine_status" class='no_double_click'> {{ updates_status(machine) }} </span>
 	</td>
-	<td data-sort='{{ machine.system_type }}' data-filter="toto">
+	<td class='centered' data-sort='{{ machine.system_type }}' data-filter="toto">
 		<img src="/media/images/16x16/{{ get_host_type_html(machine.system_type)[0] }}" alt="{{ get_host_type_html(machine.system_type)[1] }}" width="16" height="16" />
 	</td>
-	<td data-sort='{{ machine.system_type }}'>
+	<td class='centered' data-sort='{{ machine.system_type }}'>
 		<img src="/media/images/16x16/{{ get_host_os_html(machine.system_type)[0] }}"
 						alt="{{ get_host_os_html(machine.system_type)[1] }}" width="16" height="16" />
 	</td>

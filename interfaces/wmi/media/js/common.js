@@ -1,11 +1,3 @@
-function emit(handler, id, value) {
-	$('.'+handler).each(function() {
-		if ($(this).data('id') === id) {
-			$(this).html(value)
-		}
-	});
-}
-
 var page_cleaner_interval;
 
 function update_instance(model, iid, new_html, callback) {
@@ -128,10 +120,19 @@ function page_cleaner() {
 }
 function setup_table_sorter(sort_list) {
 	if (sort_list == null) { sort_list = [[0, 0], [1, 0]]; }
-	$("table.sortable").tablesorter({
-		sortList: sort_list,
-		textExtraction: table_sort_extractor,
-	});
+	$("table.sortable")
+		//init table sorter
+		.tablesorter({
+			sortList: sort_list,
+			textExtraction: table_sort_extractor,
+		})
+		// assign the sortStart event 
+		.bind("sortStart",function(e, t){ 
+			$('body').addClass('waiting')
+		})
+		.bind("sortEnd",function(e, t){ 
+			$('body').removeClass('waiting')
+		}); ;
 	//.bind('sortEnd', function(sorter) {
 	//	currentSort = sorter.target.config.sortList;
 	//});
@@ -240,6 +241,7 @@ $(document).ready(function() {
 
 function reload_div(div_id, html, no_effect) {
 	div = $(div_id);
+	console.log(">> div ",div_id,  div)
 
 	// orig: true2 > false2 	> can made the div not fadeIn() completely
 	//								in some fast-mouse-movement cases.

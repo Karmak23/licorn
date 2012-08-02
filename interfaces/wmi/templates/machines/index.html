@@ -44,7 +44,7 @@
 		</span>
 
 		<span class='table_header_filter table_header_item'>
-			<div class="input-prepend">
+			<div class="input-prepend" >
 				<span class="add-on">{{ _('Filter') }}</i></span><input type='text' id="list_filter"/>
 			</div>
 		</span>
@@ -52,10 +52,10 @@
 	<table class="table sortable" id="model_machines_table">
 		<thead>
 			<tr>
-				<th style="width: 5%">{{ _('Status') }}</th>
-				<th style="width: 75%">{{ _('Hostname') }}</th>
-				<th style="width: 5%">{{ _('Type') }}</th>
-				<th style="width: 5%">{{ _('Operating System') }}</th>
+				<th class='table_column_header centered' style="width: 5%">{{ _('Status') }}</th>
+				<th class='table_column_header' style="width: 75%">{{ _('Hostname') }}</th>
+				<th class='table_column_header centered' style="width: 5%">{{ _('Type') }}</th>
+				<th class='table_column_header centered' style="width: 5%">{{ _('Operating System') }}</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -128,14 +128,16 @@
 				1000);
 		}
 		function func_doubleclick_row(td_element) {
-			console.log(td_element.parent('tr'))
-			mid = td_element.data('mid')
-			if (mid == null) {
-				mid = td_element.parent('td').data('mid')
+			if (! $(td_element).hasClass('no_double_click')) {
+				mid = td_element.data('mid')
+				if (mid == null) {
+					mid = td_element.parent('.licorn_row').data('mid')
+				}
+
+				$.get('/machines/edit/'+mid, function(modal_html) {
+					$("#machine_modal").html(modal_html).modal()
+				})
 			}
-			$.get('/machines/edit/'+mid, function(modal_html) {
-				$("#machine_modal").html(modal_html).modal()
-			})
 		}
 
 		function setup_massive_actions() {
