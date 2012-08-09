@@ -98,7 +98,7 @@ translation_map = (
 	(u'©',u''),   (u'®',u''),
 )
 
-def validate_name(s, aggressive=False, maxlenght=128, custom_keep=None, replace_by=None):
+def validate_name(stest, aggressive=False, maxlenght=128, custom_keep=None, replace_by=None):
 	""" make a valid login or group name from a random string.
 		Replace accentuated letters with non-accentuated ones, replace spaces,
 		lower the name, etc.
@@ -111,37 +111,47 @@ def validate_name(s, aggressive=False, maxlenght=128, custom_keep=None, replace_
 		custom_keep = '-.'
 
 	for elem, repl in translation_map:
-		s = s.replace(elem, repl)
+		stest = stest.replace(elem, repl)
 
-	# delete any strange (or forgotten by translation map…) char left
-	if aggressive:
-		s = re.sub('[^.a-z0-9]', '', s, flags=re.I)
-
-	else:
+	if not aggressive:
 		# For this `.sub()`, any '-' in `custom_keep` must be the first char,
 		# else the operation will fail with "bad character range".
 		if '-' in custom_keep:
 			custom_keep = '-' + custom_keep.replace('-', '')
 
+
+	# We compile the expression to be able to use the `flags` argument,
+	# which doesn't exist on Python 2.6 (cf.
+	# 						http://dev.licorn.org/ticket/876#comment:3)
+	cre = re.compile('[^%sa-z0-9]' % ('.' if aggressive
+											else custom_keep), flags=re.I)
+
+	# delete any strange (or forgotten by translation map…) char left
+	if aggressive:
+		stest = cre.sub('', stest)
+
+	else:
 		# keep dashes (or custom characters)
-		s = re.sub('[^%sa-z0-9]' % custom_keep, replace_by or '', s, flags=re.I)
+		stest = re.sub(replace_by or '', stest)
 
 	# For next substitutions, we must be sure `custom_keep` doesn't
 	# include "-" at all, else it will fail again with "bad character range".
 	custom_keep = custom_keep.replace('-', '')
 
-	# strip remaining doubles punctuations signs
-	s = re.sub( r'([-._%s])[-._%s]*' % (custom_keep, custom_keep), r'\1', s, flags=re.I)
+	# Strip remaining doubles punctuations signs
+	stest = re.sub( r'([-._%s])[-._%s]*' % (custom_keep, custom_keep), r'\1', stest)
 
-	# strip left and rights punct signs
-	s = re.sub( r'(^[-._%s]*|[-._%s*]*$)' % (custom_keep, custom_keep), '', s, flags=re.I)
+	# Strip left and rights punct signs
+	stest = re.sub( r'(^[-._%s]*|[-._%s*]*$)' % (custom_keep, custom_keep), '', stest)
 
-	if len(s) > maxlenght:
-		raise exceptions.LicornRuntimeError("String %s too long (%d characters, but must be shorter or equal than %d)." % (s, len(s), maxlenght))
+	if len(stest) > maxlenght:
+		raise exceptions.LicornRuntimeError("String %s too long (%d "
+			"characters, but must be shorter or equal than %d)." % (
+				stest, len(stest), maxlenght))
 
 	# return a standard string (not unicode), because a login/group_name don't include
 	# accentuated letters or such strange things.
-	return str(s)
+	return str(stest)
 def generate_salt(maxlen = 12):
 	"""Generate a random password."""
 
