@@ -132,7 +132,7 @@ def validate_name(stest, aggressive=False, maxlenght=128, custom_keep=None, repl
 
 	else:
 		# keep dashes (or custom characters)
-		stest = re.sub(replace_by or '', stest)
+		stest = cre.sub(replace_by or '', stest)
 
 	# For next substitutions, we must be sure `custom_keep` doesn't
 	# include "-" at all, else it will fail again with "bad character range".
