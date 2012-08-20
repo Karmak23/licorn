@@ -15,8 +15,6 @@ import exceptions
 from styles import *
 from _settings import settings
 
-# please, just in case: never forget to read http://sed.sourceforge.net/sed1line.txt
-
 # common regexs used in various places of licorn.core.*
 regex = {}
 regex['uri']          = r'''^(?P<protocol>\w+s?)://(?P<host>\S+)(?P<port>(:\d+)?).*$'''
@@ -57,74 +55,103 @@ cregex['ether_addr']   = re.compile(regex['ether_addr'],   re.IGNORECASE)
 cregex['duration']     = re.compile(regex['duration'],     re.IGNORECASE)
 cregex['api_key']      = re.compile(regex['api_key'],      re.IGNORECASE)
 
-def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.', replace_by=None):
+# Have a look at http://sed.sourceforge.net/sed1line.txt
+
+translation_map = (
+	# lower-case
+	(u'á', u'a'), (u'à', u'a'), (u'â', u'a'), (u'ä', u'a'),
+	(u'ã', u'a'), (u'å', u'a'), (u'ă', u'a'), (u'ā', u'a'), (u'æ', u'ae'),
+	(u'ç', u'c'),
+	(u'é', u'e'), (u'è', u'e'), (u'ê', u'e'), (u'ë', u'e'), (u'ẽ', u'e'),
+	(u'í', u'i'), (u'ì', u'i'), (u'î', u'i'), (u'ï', u'i'), (u'ĩ', u'i'),
+	(u'ñ', u'n'),
+	(u'ó', u'o'), (u'ò', u'o'), (u'ô', u'o'), (u'ö', u'o'),
+	(u'õ', u'o'), (u'ø', u'o'), (u'œ', u'oe'),
+	(u'ú', u'u'), (u'ù', u'u'), (u'û', u'u'), (u'ü', u'u'), (u'ũ', u'u'),
+	(u'ý', u'y'), (u'ỳ', u'y'), (u'ŷ', u'y'), (u'ÿ', u'y'), (u'ỹ', u'y'),
+
+	# Upper-case
+	(u'Á', u'A'), (u'À', u'A'), (u'Â', u'A'), (u'Ä', u'A'),
+	(u'Ã', u'A'), (u'Å', u'A'), (u'Ă', u'A'), (u'Ā', u'A'), (u'Æ', u'AE'),
+	(u'Ç', u'C'),
+	(u'É', u'E'), (u'È', u'E'), (u'Ê', u'E'), (u'Ë', u'E'), (u'Ẽ', u'E'),
+	(u'Í', u'I'), (u'Ì', u'i'), (u'Î', u'i'), (u'Ï', u'i'), (u'Ĩ', u'i'),
+	(u'Ñ', u'N'),
+	(u'Ó', u'O'), (u'Ò', u'O'), (u'Ô', u'O'), (u'Ö', u'O'),
+	(u'Õ', u'O'), (u'Ø', u'O'), (u'Œ', u'OE'),
+	(u'Ú', u'U'), (u'Ù', u'U'), (u'Û', u'U'), (u'Ü', u'U'), (u'Ũ', u'U'),
+	(u'Ý', u'Y'), (u'Ỳ', u'Y'), (u'Ŷ', u'Y'), (u'Ÿ', u'Y'), (u'Ỹ', u'Y'),
+
+	# no-special-case chars
+	(u'ß', u'ss'), (u'þ', u''), (u'ð', u''),
+
+	# typographic chars
+	(u"'", u''), (u'"', u''),
+	(u'«', u''), (u'»', u''),
+	(u'“', u''), (u'”', u''),
+	(u'‘', u''), (u'’', u''),
+
+	# standard space and non-breaking
+	(u' ', u'_'), (u' ', u'_'),
+
+	# Other special
+	(u'©',u''),   (u'®',u''),
+)
+
+def validate_name(stest, aggressive=False, maxlenght=128, custom_keep=None, replace_by=None):
 	""" make a valid login or group name from a random string.
-		Replace accentuated letters with non-accentuated ones, replace spaces, lower the name, etc.
+		Replace accentuated letters with non-accentuated ones, replace spaces,
+		lower the name, etc.
+
+		.. todo:: use http://docs.python.org/library/string.html#string.translate
+			, but this could be more complicated than it seems.
 	"""
-	s = s.lower()
 
-	# TODO: see if there are not any special characters to replace…
-	translation_map = {
-						u'à': u'a',
-						u'â': u'a',
-						u'ä': u'a',
-						u'ã': u'a',
-						u'æ': u'ae',
-						u'ç': u'c',
-						u'é': u'e',
-						u'è': u'e',
-						u'ê': u'e',
-						u'ë': u'e',
-						u'î': u'i',
-						u'ï': u'i',
-						u'ì': u'i',
-						u'í': u'i',
-						u'ñ': u'n',
-						u'ô': u'o',
-						u'ö': u'o',
-						u'ò': u'o',
-						u'õ': u'o',
-						u'œ': u'oe',
-						u'ú': u'u',
-						u'ù': u'u',
-						u'û': u'u',
-						u'ü': u'u',
-						u'ŷ': u'y',
-						u'ÿ': u'y',
-						u'ý': u'y',
-						u'ß': u'ss',
-						u"'": u'',
-						u'"': u'',
-						u' ': u'_',
-						u'©':u'',
-						u'®':u'',
-						u'':u'',
-						u'':u'',
-						}
+	if custom_keep is None:
+		custom_keep = '-.'
 
-	for elem in translation_map:
-		s = s.replace(elem, translation_map[elem])
+	for elem, repl in translation_map:
+		stest = stest.replace(elem, repl)
+
+	if not aggressive:
+		# For this `.sub()`, any '-' in `custom_keep` must be the first char,
+		# else the operation will fail with "bad character range".
+		if '-' in custom_keep:
+			custom_keep = '-' + custom_keep.replace('-', '')
+
+
+	# We compile the expression to be able to use the `flags` argument,
+	# which doesn't exist on Python 2.6 (cf.
+	# 						http://dev.licorn.org/ticket/876#comment:3)
+	cre = re.compile('[^%sa-z0-9]' % ('.' if aggressive
+											else custom_keep), flags=re.I)
 
 	# delete any strange (or forgotten by translation map…) char left
 	if aggressive:
-		s = re.sub('[^.a-z0-9]', '', s)
+		stest = cre.sub('', stest)
 
 	else:
 		# keep dashes (or custom characters)
-		s = re.sub('[^%sa-z0-9]' % custom_keep, replace_by or '', s)
+		stest = cre.sub(replace_by or '', stest)
 
-	# strip remaining doubles punctuations signs
-	s = re.sub( r'([-._])[-._]*', r'\1', s)
+	# For next substitutions, we must be sure `custom_keep` doesn't
+	# include "-" at all, else it will fail again with "bad character range".
+	custom_keep = custom_keep.replace('-', '')
 
-	# strip left and rights punct signs
-	s = re.sub( r'(^[-._]*|[-._*]*$)', '', s)
+	# Strip remaining doubles punctuations signs
+	stest = re.sub( r'([-._%s])[-._%s]*' % (custom_keep, custom_keep), r'\1', stest)
 
-	if len(s) > maxlenght:
-		raise exceptions.LicornRuntimeError("String %s too long (%d characters, but must be shorter or equal than %d)." % (s, len(s), maxlenght))
+	# Strip left and rights punct signs
+	stest = re.sub( r'(^[-._%s]*|[-._%s*]*$)' % (custom_keep, custom_keep), '', stest)
+
+	if len(stest) > maxlenght:
+		raise exceptions.LicornRuntimeError("String %s too long (%d "
+			"characters, but must be shorter or equal than %d)." % (
+				stest, len(stest), maxlenght))
 
 	# return a standard string (not unicode), because a login/group_name don't include
 	# accentuated letters or such strange things.
-	return str(s)
+	return str(stest)
 def generate_salt(maxlen = 12):
 	"""Generate a random password."""
 

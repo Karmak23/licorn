@@ -638,10 +638,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		except Exception, e:
 			if wmi_output:
+				# Let the web user know something went wrong.
 				LicornEvent('users_import_failed', error=str(e)).emit(priorities.HIGH)
 
-			else:
-				raise
+			# In any case, raise, for the exception
+			# to be fully dumped in the daemon's log.
+			raise
 	def __import_users__(self, opts, args=None, wmi_output=False):
 		""" Massively import user accounts from a CSV file."""
 
