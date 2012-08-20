@@ -28,7 +28,7 @@ def main(request, sort="login", order="asc", select=None, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	machines_list = LMC.machines.select(host_status.ALL)
+	machines_list = LMC.machines.select(host_status.ONLINE)
 
 	return render(request, 'machines/index.html', {
 			'machines'        : machines_list,
