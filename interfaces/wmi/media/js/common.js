@@ -4,14 +4,13 @@ function update_instance(model, iid, new_html, callback) {
 	// This function will work with anything, but best for replacing a <tr>
 	// with a new one, already rendered.
 	//
-	
+
 	new_  = $(new_html);
 
 	table = $('#model_' + model + '_table');
 
 	old   = $('#' + model + '_' + iid);
 
-	
 	if (old.length) {
 		// this instance was already known.
 		// remove the old corresponding ROW.
@@ -54,19 +53,19 @@ function update_instance(model, iid, new_html, callback) {
 
 	}
 
-	/* OLD CALBACK 
+	/* OLD CALBACK
 	// don't forget links, modals, popoversâ€¦
 	setup_everything(new_);
 
 	//console.log('re-sort on ' + [table.get(0).config.sortList]);
 	*/
-	
+
 	// re-sort the table.
 	table.trigger("update")
 		.trigger("sorton", [table.get(0).config.sortList]);
 	  //.trigger("appendCache");
 	  //.trigger("applyWidgets");
-	
+
 
 	// remove old stuff marked as such.
 	page_cleaner();
@@ -106,7 +105,7 @@ function page_cleaner() {
 	try {
 		$('body').find('.to-remove').each(function(){
 			$(this).remove();
-			
+
 		});
 
 	} catch (err) {
@@ -126,11 +125,11 @@ function setup_table_sorter(sort_list) {
 			sortList: sort_list,
 			textExtraction: table_sort_extractor,
 		})
-		// assign the sortStart event 
-		.bind("sortStart",function(e, t){ 
+		// assign the sortStart event
+		.bind("sortStart",function(e, t){
 			body_wait();
 		})
-		.bind("sortEnd",function(e, t){ 
+		.bind("sortEnd",function(e, t){
 			body_unwait();
 		}); ;
 	//.bind('sortEnd', function(sorter) {
@@ -229,7 +228,7 @@ function setup_auto_cleaner() {
 	page_cleaner_interval = setInterval(page_cleaner, 600000);
 }
 
-/* this is now a librairy 
+/* this is now a librairy
 
 $(document).ready(function() {
 	setup_everything();
