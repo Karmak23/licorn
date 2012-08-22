@@ -172,6 +172,9 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 
 		with self.lock:
 			self.__status |= host_status.UPGRADING
+
+			machine.status = host_status.UPGRADING
+
 			LicornEvent('software_upgrades_started', host=machine).emit()
 
 		# no need to try/except, apt_do_upgrade() does it already.
@@ -179,6 +182,9 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 
 		with self.lock:
 			self.__status -= host_status.UPGRADING
+
+			machine.status = self.__status
+
 			LicornEvent('software_upgrades_finished', host=machine).emit()
 
 		# reset the status, anyway

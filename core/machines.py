@@ -64,8 +64,20 @@ def myself_or_system_forward(func):
 				logging.exception(_('Failed to call `{0}()` on machine {1}!').format(
 					stylize(ST_NAME, func.__name__), stylize(ST_NAME, self.hostname)))
 		else:
-			logging.warning(_('Cannot call `{0}` on non-connected machine {1}!').format(
-				stylize(ST_NAME, func.__name__), stylize(ST_NAME, self.hostname)))
+			msg = _('Cannot call `{0}` on non-connected machine {1}!').format(
+				stylize(ST_NAME, func.__name__), stylize(ST_NAME, self.hostname))
+			logging.warning(msg)
+
+			try:
+				print kw
+				print kw['raise_exception']
+				if kw['raise_exception']:
+					print "raising"
+					raise exceptions.LicornWebCommandException(msg)
+			except KeyError:
+				print "KeyError"
+				pass
+				# raise_exception is not a valid kwarg
 	return wrap
 
 class Machine(CoreStoredObject, SharedResource):

@@ -109,7 +109,6 @@ host_status.LOADED         =  0x00001000
 host_status.OP_IN_PROGRESS =  0xffff0000
 host_status.UPGRADING      =  0x00010000
 
-
 # FIXME: merge this with distros (don't duplicate)
 host_types = EnumDict('host_types')
 host_types.ALL        =  0xffffffffffffffff

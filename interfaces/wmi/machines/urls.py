@@ -15,6 +15,7 @@ urlpatterns = patterns('machines.views',
 	(r'^upgrade/(?P<mid>.+)/?$', 'upgrade'),
 	(r'^massive_select_template/(?P<action_name>.+)/(?P<mids>.+)/?$', 'massive_select_template'),
 
+    (r'^massive/(?P<action_name>.+)/(?P<mids>.+)/?$', 'massive'),
 
 
     # NOT YET READY FOR MACHINES

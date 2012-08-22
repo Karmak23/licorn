@@ -16,13 +16,14 @@ from licorn.foundations.constants import host_status, host_types
 
 
 get_host_status_html = {
-	host_status.ONLINE    : [ 'online.png', _('This machine is online') ],
-	host_status.PINGS     : [ 'online.png', _('This machine is online') ],
-	host_status.UNKNOWN   : [ 'unknown.png', _('The state of the machine is unknown') ],
-	host_status.OFFLINE   : [ 'offline.png', _('This machine is offline') ],
-	host_status.IDLE      : [ 'idle.png', _('This machine is online') ],
-	host_status.ACTIVE    : [ 'active.png', _('This machine is online') ],
-	host_status.UPGRADING : [ 'active.png', _('This machine is upgrating its packages') ],
+	host_status.ONLINE        : [ 'online.png', _('This machine is online') ],
+	host_status.PINGS         : [ 'online.png', _('This machine is online') ],
+	host_status.UNKNOWN       : [ 'unknown.png', _('The state of the machine is unknown') ],
+	host_status.OFFLINE       : [ 'offline.png', _('This machine is offline') ],
+	host_status.IDLE          : [ 'idle.png', _('This machine is in idle mode') ],
+	host_status.ACTIVE        : [ 'active.png', _('This machine is online and can be managed') ],
+	host_status.UPGRADING     : [ 'oip.png', _('This machine is upgrating its packages') ],
+	host_status.PYRO_SHUTDOWN : [ 'online.png', _('Pyro shutdown')]
 }
 
 def get_host_os_html(mtype):

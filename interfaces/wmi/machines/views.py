@@ -14,6 +14,8 @@ from licorn.foundations.ltraces   import *
 from collections import OrderedDict
 from licorn.core import LMC
 
+
+from licorn.interfaces.wmi.app            import wmi_event_app
 from licorn.interfaces.wmi.libs            import utils
 from licorn.interfaces.wmi.libs.decorators import staff_only
 
@@ -29,9 +31,11 @@ def main(request, sort="login", order="asc", select=None, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	machines_list = LMC.machines.select(host_status.ONLINE)
-
+	#machines_list.append()
+	print LMC.machines.select(host_status.PYRO_SHUTDOWN)
 	return render(request, 'machines/index.html', {
 			'machines'        : machines_list,
+			'host_status'     : host_status,
 			'get_host_status_html' : wmi_data.get_host_status_html,
 			'get_host_os_html'     : wmi_data.get_host_os_html,
 			'get_host_type_html'   : wmi_data.get_host_type_html
@@ -44,6 +48,7 @@ def scan(request, *args, **kwargs):
 
 	LMC.machines.scan_network()
 	return HttpResponse('Processing network scan')
+
 
 def edit(request, mid, *args, **kwargs):
 	""" machine edit view.  """
@@ -77,7 +82,13 @@ def edit(request, mid, *args, **kwargs):
 	return HttpResponse()
 
 def upgrade(request, mid, *args, **kwargs):
-	LMC.machines.guess_one(mid).do_upgrade()
+	try:
+		LMC.machines.guess_one(mid).do_upgrade(raise_exception=True)
+	except exceptions.LicornWebCommandException, e:
+		wmi_event_app.queue(request).put(utils.notify(_("Error while running "
+			"command <em>upgrade</em> on machine {0} : <strong>the machine "
+			"is not connected</strong>").format(mid)))
+
 	return HttpResponse("OK")
 
 def massive_select_template(request, action_name, mids, *args, **kwargs):
@@ -86,6 +97,14 @@ def massive_select_template(request, action_name, mids, *args, **kwargs):
 			{
 				'machines' : [ LMC.machines.guess_one(m) for m in mids.split(',') ],
 		}))
+
+def massive(request, action_name, mids, *args, **kwargs):
+	for m in LMC.machines.guess_list(mids.split(',')):
+		if action_name == 'upgrade':
+			upgrade(request, m.mid)
+		elif action_name == 'shutdown':
+			m.shutdown()
+	return HttpResponse('OK')
 
 def instant_edit(request, mid, part, value, *args, **kwargs):
 	""" instant edit function """

@@ -10,18 +10,19 @@ function update_instance(model, iid, new_html, callback) {
 	table = $('#model_' + model + '_table');
 
 	old   = $('#' + model + '_' + iid);
-
+	
 	if (old.length) {
 		// this instance was already known.
 		// remove the old corresponding ROW.
 		old.attr('id', 'old_' + old.attr('id'));
 		old.addClass('to-remove');
 
-		old.before(new_);
-
+		old.after(new_);
+		
 		old.hide();
 
 	} else {
+
 		// we've got a new challenger, insert it at the end.
 		last = table.find('tr:last');
 		last.after(new_);
