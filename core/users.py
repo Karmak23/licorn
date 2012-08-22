@@ -1158,7 +1158,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		return '''		<user>
 			<login>%s</login>
 			<uidNumber>%d</uidNumber>
-			<gidNumber>%d</gidNumber>
+			<profile>%s</profile>
 			<gecos>%s</gecos>
 			<homeDirectory>%s</homeDirectory>
 			<loginShell>%s</loginShell>
@@ -1167,7 +1167,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		</user>''' % (
 						self.__login,
 						self.__uidNumber,
-						self.__gidNumber,
+						LMC.groups.guess_one(self.__gidNumber).name,
 						self.__gecos,
 						self.__homeDirectory,
 						self.__loginShell,
@@ -1935,7 +1935,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 					[
 						self[uid].gecos,
 						self[uid].login,
-						str(self[uid].gidNumber),
+						LMC.groups.guess_one(self[uid].gidNumber).name,
 						','.join([ g.name for g in self[uid].groups]),
 						self[uid].backend.name
 					]
