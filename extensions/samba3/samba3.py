@@ -178,6 +178,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 
 		self.__check_paths(batch=batch, auto_answer=auto_answer)
 		self.__check_responsibles(batch=batch, auto_answer=auto_answer)
+		self.__check_group_mappings(batch=batch, auto_answer=auto_answer)
 
 		# TODO:
 		#	- check smb.conf
@@ -300,7 +301,71 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).
 			pass
+	def __check_group_mappings(self, batch=False, auto_answer=None):
 
+		# NOTE: don't use ntgroup="%s", this would search/add the group
+		# "Group" (with quotes) instead of `Group`, and would produce
+		# unwanted and unusable mappings.
+		list_cmd = ('net', 'groupmap', 'list', 'ntgroup=%s')
+		add_cmd  = ('net', 'groupmap', 'add', 'ntgroup=%s', 'rid=%s',
+											'unixgroup=%s', 'type=domain')
+
+		for ntgroup, rid, unixgroup in (
+				("Domain Admins", 512, self.groups.admins),
+				("Domain Users",  513, LMC.configuration.users.group),
+			):
+
+			mapping = process.execute(list_cmd[0:-1] + (list_cmd[-1] % (ntgroup,),))[0]
+
+			# Example of 'net groupmap list' output:
+			# Domain Users (S-1-5-21-1341506796-2682833043-2368010448-513) -> users
+
+			if '-%s)' % (rid,) in mapping:
+				# The mapping exists.
+
+				if mapping.endswith(unixgroup + '\n'):
+					# Our group is mapped. Good.
+					continue
+
+				logging.warning2(_(u'{0}: unexpected samba group mapping for '
+						u'group {1}. Leaving untouched, but this could produce '
+						u'unwanted behavior.').format(self.pretty_name,
+							stylize(ST_NAME, ntgroup)))
+
+			else:
+				# The mapping doesn't currently exist. Create it.
+
+				if batch or logging.ask_for_repair(_(u'{0}: samba group mapping '
+									u'{1} > {2} must be created. Do it?').format(
+									self.pretty_name,
+									stylize(ST_NAME, ntgroup),
+									stylize(ST_NAME, unixgroup)),
+								auto_answer=auto_answer):
+
+					out, err = process.execute(add_cmd[0:-4]
+												+ ( add_cmd[-4] % (ntgroup,), )
+												+ ( add_cmd[-3] % (rid,), )
+												+ ( add_cmd[-2] % (unixgroup,), )
+												+ ( add_cmd[-1], )
+											)
+					if out:
+						logging.info('%s: %s' % (self.pretty_name, out[:-1]))
+
+					if err:
+						logging.warning('%s: %s' % (self.pretty_name, err[:-1]))
+
+					logging.info(_(u'{0}: created samba group mapping '
+									u'{1} > {2}.').format(self.pretty_name,
+													stylize(ST_NAME, ntgroup),
+													stylize(ST_NAME, unixgroup)))
+
+				else:
+					logging.warning(_(u'{0}: samba group mapping {1} > {2} NOT '
+						u'created. We can live without it, but I still '
+						u'recommend to create it at some point, unless you '
+						u'know exactly what you do.').format(self.pretty_name,
+													stylize(ST_NAME, ntgroup),
+													stylize(ST_NAME, unixgroup)))
 	def is_enabled(self):
 		""" Always return the value of :attr:`self.available`, because we make
 			no difference between beiing available and beiing enable in this very
