@@ -126,7 +126,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			self.available = False
 
 		return self.available
-	def check(self, batch=False, auto_answer=None):
+	def check(self, batch=False, auto_answer=None, force=False):
 		""" Currently, this method does nothing: this extension is so simple
 			that we don't do anything needing a check in it. """
 		assert ltrace_func(TRACE_SAMBA3)
@@ -176,9 +176,9 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 											self.pretty_name,
 											stylize(ST_NAME, group)))
 
-		self.__check_paths(batch=batch, auto_answer=auto_answer)
-		self.__check_responsibles(batch=batch, auto_answer=auto_answer)
-		self.__check_group_mappings(batch=batch, auto_answer=auto_answer)
+		self.__check_paths(batch=batch, auto_answer=auto_answer, force=force)
+		self.__check_responsibles(batch=batch, auto_answer=auto_answer, force=force)
+		self.__check_group_mappings(batch=batch, auto_answer=auto_answer, force=force)
 
 		# TODO:
 		#	- check smb.conf
@@ -224,13 +224,13 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		self.paths.profiles_templates_machines_dir = settings.get(
 										'extensions.samba3.paths.profiles_templates_machines_dir',
 										os.path.join(self.paths.windows_base_dir, 'profiles', 'templates', 'Machines'))
-	def __check_responsibles(self, batch=False, auto_answer=None):
+	def __check_responsibles(self, batch=False, auto_answer=None, force=False):
 
 		allresps = LMC.groups.by_name(self.groups.responsibles)
 
 		for group in LMC.groups.select(filters.RESPONSIBLE):
 			allresps.add_Users(group.members)
-	def __check_paths(self, batch=False, auto_answer=None):
+	def __check_paths(self, batch=False, auto_answer=None, force=False):
 
 		acls_conf      = LMC.configuration.acls
 		users_group    = LMC.configuration.users.group
@@ -301,7 +301,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).
 			pass
-	def __check_group_mappings(self, batch=False, auto_answer=None):
+	def __check_group_mappings(self, batch=False, auto_answer=None, force=False):
 
 		# NOTE: don't use ntgroup="%s", this would search/add the group
 		# "Group" (with quotes) instead of `Group`, and would produce
@@ -327,12 +327,13 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 					# Our group is mapped. Good.
 					continue
 
-				logging.warning2(_(u'{0}: unexpected samba group mapping for '
+				elif not force:
+					logging.warning2(_(u'{0}: unexpected samba group mapping for '
 						u'group {1}. Leaving untouched, but this could produce '
-						u'unwanted behavior.').format(self.pretty_name,
-							stylize(ST_NAME, ntgroup)))
+						u'unwanted behavior. use --force to override.').format(
+							self.pretty_name, stylize(ST_NAME, ntgroup)))
+					continue
 
-			else:
 				# The mapping doesn't currently exist. Create it.
 
 				if batch or logging.ask_for_repair(_(u'{0}: samba group mapping '
