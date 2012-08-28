@@ -64,19 +64,26 @@ for root, dirs, files in os.walk(upgrades_root):
 										stylize(ST_NAME, '{0}.{1}'.format(
 												module_dir,module_name))))
 
-					# Raising the verbose level to display a full stack trace.
-					# No need to save / restore the previous level, we will die.
-					options.SetVerbose(verbose.PROGRESS)
+					if settings.experimental.enabled:
+						# on "experimental" systems, we will die. Hoping this is
+						# always the case on developer systems. Killing us right
+						# here should avoid chained-false-negative bugs due to
+						# errors in chained upgrades modules.
 
-					logging.exception(_(u'Please fix it before continuing '
-										u'{0}').format(stylize(ST_IMPORTANT,
-											_(u'(killing myself -9 NOW)'))))
+						# Raise the verbose level to display a full stack trace.
+						# No need to save / restore the previous level, we will
+						# die anyway.
+						options.SetVerbose(verbose.PROGRESS)
 
-					# This is the only way to terminate "abruptly": as we are
-					# in plain daemon bootstrapping phase, any try to
-					# terminate(), raise SystemExit or sys.exit() will fail
-					# with more errors and crashes than the one we just avoided.
-					os.kill(os.getpid(), 9)
+						logging.exception(_(u'Please fix it before continuing '
+											u'{0}').format(stylize(ST_IMPORTANT,
+												_(u'(killing myself -9 NOW)'))))
+
+						# This is the only way to terminate "abruptly": as we are
+						# in plain daemon bootstrapping phase, any try to
+						# terminate(), raise SystemExit or sys.exit() will fail
+						# with more errors and crashes than the one we just avoided.
+						os.kill(os.getpid(), 9)
 
 # clean up unused variables, for when EventManager runs `dir()`
 # on the current Python module. This is easier than constructing
