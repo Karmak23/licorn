@@ -358,6 +358,32 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		return all_ok
 	@events.handler_method
 	@only_if_enabled
+	def group_post_add(self, *args, **kwargs):
+		""" Add some Samba specific permissions to some special system groups. """
+
+		assert ltrace_func(TRACE_SAMBA3)
+
+		group = kwargs.pop('group')
+
+		if group.name != self.groups.admins or not group.is_system:
+			return
+
+		try:
+			out, err = process.execute(('net', 'rpc', 'rights', 'grant',
+							self.groups.admins, 'SeMachineAccountPrivilege'))
+			if out:
+				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+
+			if err:
+				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
+
+		except:
+			logging.exception(_(u'{0}: Exception in group_post_add({1})'),
+									self.pretty_name, (ST_LOGIN, group.name))
+
+		return True
+	@events.handler_method
+	@only_if_enabled
 	def user_post_change_password(self, *args, **kwargs):
 		""" Update the user's password in samba3. """
 
