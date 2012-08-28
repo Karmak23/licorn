@@ -394,10 +394,10 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			out, err = process.execute([ self.paths.smbpasswd, '-a', user.login, '-s' ],
 										'%s\n%s\n' % (password, password))
 			if out:
-				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+				logging.info('%s: %s' % (self.pretty_name, out[:-1]))
 
 			if err:
-				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
+				logging.warning('%s: %s' % (self.pretty_name, err[:-1]))
 
 		except:
 			logging.exception(_(u'{0}: Exception in user_post_add({1})'),
@@ -437,11 +437,12 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		try:
 			out, err = process.execute(('net', 'rpc', 'rights', 'grant',
 							self.groups.admins, 'SeMachineAccountPrivilege'))
+
 			if out:
-				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+				logging.info('%s: %s' % (self.pretty_name, out[:-1]))
 
 			if err:
-				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
+				logging.warning('%s: %s' % (self.pretty_name, err[:-1]))
 
 		except:
 			logging.exception(_(u'{0}: Exception in group_post_add({1})'),
@@ -465,11 +466,12 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		try:
 			out, err = process.execute([ self.paths.smbpasswd, user.login, '-s' ],
 										"%s\n%s\n" % (password, password))
+
 			if out:
-				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+				logging.info('%s: %s' % (self.pretty_name, out[:-1]))
 
 			if err:
-				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
+				logging.warning('%s: %s' % (self.pretty_name, err[:-1]))
 
 		except:
 			logging.exception(_(u'{0}: Exception in user_post_change_password({1})'),
@@ -496,7 +498,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			out, err = process.execute([ self.paths.smbpasswd, '-x', user.login ])
 
 			if out:
-				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+				logging.info('%s: %s' % (self.pretty_name, out[:-1]))
 
 			if err:
 				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
