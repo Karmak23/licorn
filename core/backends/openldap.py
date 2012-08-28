@@ -114,10 +114,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 						(ST_PATH, 'chk config -evb'))
 
 			elif e.errno == 2:
-				# ldap.conf is not present
-				#	> libpam-ldap is not installed
-				# 	> the OpenLDAP backend will be completely discarded.
-				pass
+				# /etc/ldap.conf is not present, probably because
+				# lib{pam,nss}-ldap are not installed.
+				logging.info(_(u'{0}: backend not available because {1} '
+									u'not found.').format(self.pretty_name,
+									stylize(ST_PATH, self.files.openldap_conf)))
 
 			else:
 				# another problem worth noticing.
@@ -513,13 +514,18 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			# we should not reach here.
 			raise exceptions.LicornRuntimeError(_(u'Cannot continue '
 							u'without altering slapd configuration.'))
-	def modify_schema(self, schema, batch=False,
+	def modify_schema(self, schema=None, mod_list=None, batch=False,
 									auto_answer=None, full_display=True):
 		""" WARNING: This method can only modify one object at a time for
 			the moment. Eg. an attribute of a schema, but no more.
 
+			Specify either a `schema` (for which 2 files must exist) or a
+			`mod_list`. `mod_list` has always precedence.
+
 			If you need to modify many attributes, call it multiple times
 			with multiple schema names.
+
+			see http://www.python-ldap.org/doc/html/ldap.html#ldap.LDAPObject.modify
 		"""
 
 		replacement_table = self.replacement_table()
@@ -538,14 +544,20 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 								stylize(ST_PATH, schema),
 								stylize(ST_NAME, 'slapd')))
 
-			# NOTE: the "dn" variable is overwritten, this is intended: it's
-			# the same in both files. We just need it, with "old" and "new".
-			dn, old = ldaputils.LicornSmallLDIFParser(
-									schema + '_old', replacement_table).get()[0]
-			dn, new = ldaputils.LicornSmallLDIFParser(
-									schema + '_new', replacement_table).get()[0]
+			if mod_list:
+				raise NotImplemented('using mod_list is not implemented.')
+			else:
+				# NOTE: the "dn" variable is overwritten, this is intended: it's
+				# the same in both files. We just need it, with "old" and "new".
+				dn, old = ldaputils.LicornSmallLDIFParser(
+										schema + '_old', replacement_table).get()[0]
+				dn, new = ldaputils.LicornSmallLDIFParser(
+										schema + '_new', replacement_table).get()[0]
+
+				mod_list = ldaputils.modifyModlist(old, new)
+
 			try:
-				self.openldap_conn.modify_s(dn, ldaputils.modifyModlist(old, new))
+				self.openldap_conn.modify_s(dn, mod_list)
 
 				if full_display:
 					logging.info(_(u'{0}: updated schema {1} in '
@@ -939,13 +951,13 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 									'(uid=%s)' % orig_user.login)[0]
 
 				assert ltrace(TRACE_OPENLDAP, 'update user %s: %s\n%s' % (
-					stylize(ST_LOGIN, orig_user.login),
-					old_entry,
-					ldaputils.modifyModlist(old_entry, user,
-						ignore_oldexistent=1)))
+										stylize(ST_LOGIN, orig_user.login),
+										old_entry,
+										ldaputils.modifyModlist(old_entry, user,
+													ignore_oldexistent=1)))
 
 				self.openldap_conn.modify_s(dn, ldaputils.modifyModlist(
-					old_entry, user, ignore_oldexistent=1))
+										old_entry, user, ignore_oldexistent=1))
 
 			elif mode == backend_actions.CREATE:
 
