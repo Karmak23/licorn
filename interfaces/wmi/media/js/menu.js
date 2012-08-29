@@ -62,7 +62,7 @@ function setup_ajaxized_links(selector, exclude) {
 				// run the href link action in the background.
 				$.get(href_url, function(data) {
 
-						console.log('ajaxized! ' + href_url);
+						//console.log('ajaxized! ' + href_url);
 
 						return true;
 					});
