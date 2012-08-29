@@ -213,10 +213,10 @@ $(document).keyup(function(e) {
 
 
 function password_helpers(content) {
-	console.log("init password helpers")
-	console.log(content.find('input:password'))
+	//console.log("init password helpers")
+	//console.log(content.find('input:password'))
 	content.find('input:password').keyup(function() {
-		console.log('keyup')
+		//console.log('keyup')
 
 		var empty = false;
 		content.find('input:password').each(function() {

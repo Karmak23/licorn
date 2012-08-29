@@ -113,8 +113,8 @@ function push_evaluate(data) {
 			if (push_active) {
 				eval(curobj.method + "(" + curobj.arguments.join(',') + ")");
 			} else {
-				console.log('PUSH inactive, but should have executed '
-					+ curobj.method + "(" + curobj.arguments.join(',') + ")");
+				//console.log('PUSH inactive, but should have executed '
+				//	+ curobj.method + "(" + curobj.arguments.join(',') + ")");
 			}
 
 		} catch (err) {

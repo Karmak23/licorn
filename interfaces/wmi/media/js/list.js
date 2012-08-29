@@ -124,7 +124,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 				items.push($.trim($(this).find('.'+list_name+'_'+main_column).text()));
 			}
 		});
-		console.log(items)
+		//console.log(items)
 		html = '<ul>'
 		$.each(items, function(k, item) {
 			html += '<li>'+item+'</li>';
@@ -159,7 +159,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 						}
 					});
 
-					console.log($("#id_export_type"))
+					//console.log($("#id_export_type"))
 					type = $("#id_export_type").val().toString();
 					page_url = "/"+list_name+"/massive/export/" + $.URLEncode(items.join(',')) + "/"+ type;
 					$.get(page_url, function(data) {
