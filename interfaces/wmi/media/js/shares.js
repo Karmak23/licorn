@@ -1,14 +1,14 @@
 
 function setup_popover_clicks() {
 	$(document).click(function(event) {
-		
+
 		if (! $(event.target).hasClass('no-click-event')) {
-		console.log('clickkkkkkkk ', event.target)
-		
+
+			//console.log('clickkkkkkkk ', event.target)
 
 			$('.popover').each(function(i, popover) {
 
-				console.log("hidden ", $(popover).is(':hidden'));
+				//console.log("hidden ", $(popover).is(':hidden'));
 
 				// If the popover is not hidden, we will close it but we need
 				// to correctly set the checkbox state.

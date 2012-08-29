@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-30 09:18+0200\n"
+"POT-Creation-Date: 2012-08-28 17:38+0200\n"
 "PO-Revision-Date: 2012-07-26 18:35+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -260,21 +260,21 @@ msgstr ""
 msgid "No extinction task created yet."
 msgstr "Aucune tâche d'extinction enregistrée."
 
-#: groups/event_handlers.py:15 system/views.py:183 system/views.py:319
+#: groups/event_handlers.py:15 system/views.py:183 system/views.py:318
 #: templates/groups/users_list.html:64 templates/users/groups_list.html:43
-#: users/views.py:393
+#: users/views.py:399
 msgid "member"
 msgstr "membre"
 
 #: groups/event_handlers.py:16 groups/views.py:266 system/views.py:189
-#: system/views.py:325 templates/groups/users_list.html:59
-#: templates/users/groups_list.html:38 users/views.py:398
+#: system/views.py:324 templates/groups/users_list.html:59
+#: templates/users/groups_list.html:38 users/views.py:404
 msgid "guest"
 msgstr "invité(e)"
 
 #: groups/event_handlers.py:17 groups/views.py:256 system/views.py:177
-#: system/views.py:313 templates/groups/users_list.html:68
-#: templates/users/groups_list.html:47 users/views.py:388
+#: system/views.py:312 templates/groups/users_list.html:68
+#: templates/users/groups_list.html:47 users/views.py:394
 msgid "responsible"
 msgstr "responsable"
 
@@ -282,35 +282,35 @@ msgstr "responsable"
 msgid "Group \"{0}\" added on the system."
 msgstr "Groupe « {0} » ajouté sur le système."
 
-#: groups/event_handlers.py:44
+#: groups/event_handlers.py:50
 msgid "Group \"{0}\" deleted from the system."
 msgstr "Groupe « {0} » supprimé du système."
 
-#: groups/event_handlers.py:57
+#: groups/event_handlers.py:63
 msgid "User \"{0}\" has no more relationship with group \"{1}\"."
 msgstr "L'utilisateur « {0} » n'a plus aucune relation avec le groupe « {1} »."
 
-#: groups/event_handlers.py:73
+#: groups/event_handlers.py:79
 msgid "User \"{0}\" is now a {1} of group \"{2}\"."
 msgstr "Le compte utilisateur « {0} » est maintenant {1} du groupe « {2} »."
 
-#: groups/event_handlers.py:84
+#: groups/event_handlers.py:90
 msgid "Group \"{0}\" is now {1}."
 msgstr "Le groupe « {0} » est maintenant {1}."
 
-#: groups/event_handlers.py:85
+#: groups/event_handlers.py:91
 msgid "permissive"
 msgstr "permissif"
 
-#: groups/event_handlers.py:85
+#: groups/event_handlers.py:91
 msgid "not permissive"
 msgstr "non permissif"
 
-#: groups/event_handlers.py:90
+#: groups/event_handlers.py:96
 msgid "Group \"{0}\" description has changed to {1}."
 msgstr "La description du groupe « {0} » est maintenant « {1} »."
 
-#: groups/event_handlers.py:96
+#: groups/event_handlers.py:102
 msgid "No description"
 msgstr "Aucune description"
 
@@ -396,7 +396,7 @@ msgstr "Ajouter un groupe"
 msgid "Standard users"
 msgstr "Utilisateurs standards"
 
-#: groups/views.py:343 templates/users/index.html:47
+#: groups/views.py:343 templates/users/index.html:54
 msgid "System users"
 msgstr "Utilisateurs système"
 
@@ -708,7 +708,7 @@ msgid "Manage user accounts."
 msgstr "Gérer les comptes utilisateurs."
 
 #: libs/old_utils.py:525 templates/gettext.html:17
-#: templates/users/index.html:26
+#: templates/users/index.html:32
 msgid "Users"
 msgstr "Utilisateurs"
 
@@ -728,7 +728,7 @@ msgid "Manage groups and shared data."
 msgstr "Gérer les groupes et les données partagées"
 
 #: libs/old_utils.py:527 templates/gettext.html:23
-#: templates/groups/index.html:26
+#: templates/groups/index.html:32
 msgid "Groups"
 msgstr "Groupes"
 
@@ -946,41 +946,46 @@ msgid "Could not change password of your share {0} (was: {1})."
 msgstr ""
 "Impossible de modifier le mot de passe de votre partage {0} (erreur : {1})."
 
-#: shares/views.py:172
-msgid "This user has no visible shares."
-msgstr "Cet utilisateur n'a pas de partages publics."
+#: shares/views.py:143
+#, fuzzy
+msgid "No Web share for this user, sorry."
+msgstr "Aucun partage à cette adresse, désolé."
 
-#: shares/views.py:178
-msgid "This share has expired. It is no more available."
-msgstr "Ce partage a expiré, il n'est plus disponible."
-
-#: shares/views.py:198
+#: shares/views.py:147
 msgid "No Web share at this URI, sorry."
 msgstr "Aucun partage à cette adresse, désolé."
 
-#: shares/views.py:216
+#: shares/views.py:177
+msgid "This user has no visible shares."
+msgstr "Cet utilisateur n'a pas de partages publics."
+
+#: shares/views.py:183
+msgid "This share has expired. It is no more available."
+msgstr "Ce partage a expiré, il n'est plus disponible."
+
+#: shares/views.py:220
 msgid "Uploaded files are not downloadable."
 msgstr "Les fichiers déposés ne sont pas téléchargeables."
 
-#: shares/views.py:225 system/views.py:244
+#: shares/views.py:229 system/views.py:243
 msgid "Error while sending file {0}"
 msgstr "Erreur pendant l'envoi du fichier {0}"
 
-#: shares/views.py:227 system/views.py:246
+#: shares/views.py:231 system/views.py:245
 msgid "Problem occured while sending file. Please try again later."
 msgstr ""
 "Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
 "tard."
 
-#: shares/views.py:231 system/views.py:250
+#: shares/views.py:235 system/views.py:249
 msgid "Bad file specification or path."
 msgstr "Mauvais chemin ou spécification de fichier."
 
-#: shares/views.py:264
+#: shares/views.py:268
 msgid "Incorrect password!"
 msgstr "Mot de passe incorrect !"
 
-#: shares/views.py:267
+#: shares/views.py:271
 msgid "Uploads disabled for this share!"
 msgstr "Les dépôts sont interdits sur ce partage !"
 
@@ -1007,35 +1012,35 @@ msgid "Unhandled exception in Django WMI code for request {0}"
 msgstr ""
 "Exception non traitée dans le code Django de la WMI pour la requête {0}"
 
-#: system/views.py:145 users/views.py:294
+#: system/views.py:145 users/views.py:300
 msgid "Edit user {0}"
 msgstr "Édition du compte {0}"
 
-#: system/views.py:175 system/views.py:311 users/views.py:387
+#: system/views.py:175 system/views.py:310 users/views.py:393
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
-#: system/views.py:181 system/views.py:317 users/views.py:392
+#: system/views.py:181 system/views.py:316 users/views.py:398
 msgid "Memberships"
 msgstr "Appartenances"
 
-#: system/views.py:187 system/views.py:323 users/views.py:397
+#: system/views.py:187 system/views.py:322 users/views.py:403
 msgid "Invitations"
 msgstr "Invitations"
 
-#: system/views.py:193 system/views.py:329 users/views.py:402
+#: system/views.py:193 system/views.py:328 users/views.py:408
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: system/views.py:195 system/views.py:331 users/views.py:403
+#: system/views.py:195 system/views.py:330 users/views.py:409
 msgid "privileged member"
 msgstr "membre privilégié"
 
-#: system/views.py:199 system/views.py:335 users/views.py:407
+#: system/views.py:199 system/views.py:334 users/views.py:413
 msgid "Other system groups"
 msgstr "Autres groupes système"
 
-#: system/views.py:201 system/views.py:337 users/views.py:408
+#: system/views.py:201 system/views.py:336 users/views.py:414
 msgid "system member"
 msgstr "membre système"
 
@@ -1635,7 +1640,7 @@ msgstr "Supprimer le groupe {0}"
 msgid "Groups management"
 msgstr "Gestion des groupes"
 
-#: templates/groups/index.html:48 users/views.py:318
+#: templates/groups/index.html:55 users/views.py:324
 msgid "System groups"
 msgstr "Groupes système"
 
@@ -2317,23 +2322,23 @@ msgstr "Rendu graphique des extensions non implémenté dans la WMI2"
 msgid "This user is not {0} of any group yet."
 msgstr "Cet utilisateur n'est encore {0} d'aucun groupe."
 
-#: templates/widgets/common.html:191
+#: templates/widgets/common.html:207
 msgid "Mass actions:"
 msgstr "Actions massives :"
 
-#: templates/widgets/common.html:198
+#: templates/widgets/common.html:214
 msgid "Massive {0} icon"
 msgstr "Icône de {0} massive"
 
-#: templates/widgets/common.html:199
+#: templates/widgets/common.html:215
 msgid "Massive {0} on selected rows"
 msgstr "{0} massif(ve) sur la(es) rangée(s) sélectionnée(s)"
 
-#: templates/widgets/common.html:223
+#: templates/widgets/common.html:239
 msgid "Click to sort on this column"
 msgstr "Cliquez pour classer sur cette colonne"
 
-#: templates/widgets/common.html:230
+#: templates/widgets/common.html:246
 msgid "Descending order image"
 msgstr "Image de classement descendant"
 
@@ -2408,57 +2413,59 @@ msgstr "Dim."
 msgid "Extinction of "
 msgstr "Excetinction de "
 
-#: users/event_handlers.py:9
+#: users/event_handlers.py:11
 msgid "Users import started, please wait while processing…"
 msgstr ""
 "L'import des utilisateurs a démarré, merci d'attendre la fin du traitement…"
 
-#: users/event_handlers.py:12
+#: users/event_handlers.py:14
 msgid "Users import completed successfully."
 msgstr "L'import des comptes utilisateurs s'est terminé avec succès."
 
-#: users/event_handlers.py:17
-msgid "Users import <em>failed</em> : {0}."
-msgstr "L'import des comptes a échoué : {0}."
+#: users/event_handlers.py:20
+msgid ""
+"Users import <em>failed</em>: {0} (check <code>/var/log/licorn.log</code> "
+"for details)."
+msgstr ""
 
-#: users/event_handlers.py:21
+#: users/event_handlers.py:24
 msgid "Users import test ran fine."
 msgstr "Le test d'import des comptes est un succès."
 
-#: users/event_handlers.py:35
+#: users/event_handlers.py:39
 msgid "User account \"{0}\" added on the system."
 msgstr "Compte utilisateur « {0} » ajouté sur le système."
 
-#: users/event_handlers.py:53
+#: users/event_handlers.py:60
 msgid "User account \"{0}\" deleted from the system."
 msgstr "Compte utilisateur « {0} » supprimé du système."
 
-#: users/event_handlers.py:65
+#: users/event_handlers.py:72
 msgid "User account \"{0}\" full name has been changed to \"{1}\"."
 msgstr ""
 "Le compte utilisateur « {0} » est maintenant connu sous le nom de « {1} »."
 
-#: users/event_handlers.py:71
+#: users/event_handlers.py:78
 msgid "No name given"
 msgstr "Aucun nom donné"
 
-#: users/event_handlers.py:77
+#: users/event_handlers.py:84
 msgid "Password changed for user account \"{0}\"."
 msgstr "Mot de passe changé pour le compte « {0} »."
 
-#: users/event_handlers.py:83
+#: users/event_handlers.py:89
 msgid "Skel reapplyed for for user account \"{0}\"."
 msgstr "Squelette ré-appliqué sur le compte « {0} »."
 
-#: users/event_handlers.py:89
+#: users/event_handlers.py:94
 msgid "Shell of user account \"{0}\" was changed to \"{1}\"."
 msgstr "Les shell de l'utilisateur « {0} » est maintenant « {1} »."
 
-#: users/event_handlers.py:96
+#: users/event_handlers.py:101
 msgid "User account \"{0}\" has been locked."
 msgstr "Compte utilisateur « {0} » verrouillé."
 
-#: users/event_handlers.py:100
+#: users/event_handlers.py:105
 msgid "User account \"{0}\" has been unlocked."
 msgstr "Compte utilisateur « {0} » déverrouillé."
 
@@ -2498,29 +2505,32 @@ msgstr "Colonne de l'identifiant"
 msgid "Password column"
 msgstr "Colonne du mot de passe"
 
-#: users/views.py:255
+#: users/views.py:261
 msgid "Unable to add user"
 msgstr "Impossible d'ajouter l'utilisateur"
 
-#: users/views.py:256
+#: users/views.py:262
 msgid "Unable to add user: {0}."
 msgstr "Impossible d'ajouter le compte : {0}."
 
-#: users/views.py:300
+#: users/views.py:306
 msgid "Add new user"
 msgstr "Ajouter un utilisateur"
 
-#: users/views.py:306
+#: users/views.py:312
 msgid "Standard groups"
 msgstr "Groupes standard"
 
-#: users/views.py:311
+#: users/views.py:317
 msgid "Privileged groups"
 msgstr "Privilèges"
 
-#: users/views.py:361
+#: users/views.py:367
 msgid "Standard account"
 msgstr "Compte standard"
+
+#~ msgid "Users import <em>failed</em> : {0}."
+#~ msgstr "L'import des comptes a échoué : {0}."
 
 #~ msgid "OH MY!"
 #~ msgstr "OUPS !"

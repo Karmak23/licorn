@@ -9,7 +9,136 @@
 	</div>
 	<form id="LoadCSV_form" method='post' enctype='multipart/form-data' target='result'>
 		{% csrf_token %}
-		{%- for field in form.visible_fields() -%}
+
+		<div class='sub_content_line big_line'>
+			<div class='sub_content_third_line'>
+				<strong>{{ _("File (csv format)") }}</strong>
+			</div>
+			<div class='sub_content_two_third_line align_right'>
+				{{ form['file']}}
+			</div>
+		</div>
+
+		<div class='sub_content_line big_line'>
+			<div class='sub_content_third_line'>
+				<strong>{{ _("Columns separator") }}</strong>
+			</div>
+			<div class='sub_content_two_third_line align_right'>
+				{{ form['separator']}}
+			</div>
+		</div>
+
+		<div class='sub_content_line big_line'>
+			<div class='sub_content_third_line'>
+				{{ _("The file contains") }}
+			</div>
+			<div class='sub_content_two_third_line'>
+				<input class="input_choose" id="__name" type="checkbox" value="name">
+				<label for="__name">{{ _("Firstname and lastname") }}</label> <br>
+				<input class="input_choose" id="__gecos" type="checkbox" value="gecos">
+				<label for="__gecos">{{ _("Gecos") }}</label> <br>
+				<input class="input_choose" id="__group" type="checkbox" value="group">
+				<label for="__group">{{ _("Group") }}</label><br>
+				<input class="input_choose" id="__login" type="checkbox" value="login">
+				<label for="__login">{{ _("Login") }}</label><br>
+				<input class="input_choose" id="__profile" type="checkbox" value="profile">
+				<label for="__profile">{{ _("Profile") }}</label><br>
+				<input class="input_choose" id="__password" type="checkbox" value="password">
+				<label for="__password">{{ _("Password") }}</label><br>
+
+			</div>
+		</div>
+		<div id="contains_name" class="contains_choose">
+			<div class='sub_content_line big_line'>
+				<div class='sub_content_third_line'>
+					<strong>{{ _('Firstname column') }}</strong>
+				</div>
+				<div class='sub_content_two_third_line align_right'>
+					{{ form['firstname'] }}
+				</div>
+			</div>
+			<div class='sub_content_line big_line'>
+				<div class='sub_content_third_line'>
+					<strong>{{ _('Lastname column') }}</strong>
+				</div>
+				<div class='sub_content_two_third_line align_right'>
+					{{ form['lastname'] }}
+				</div>
+			</div>
+		</div>
+		<div id="contains_gecos" class="contains_choose">
+			<div class='sub_content_line big_line'>
+				<div class='sub_content_third_line'>
+					<strong>{{ _('Gecos column') }}</strong>
+				</div>
+				<div class='sub_content_two_third_line align_right'>
+					{{ form['gecos'] }}
+				</div>
+			</div>
+		</div>
+
+		<div id="contains_group" class="contains_choose">
+			<div class='sub_content_line big_line'>
+				<div class='sub_content_third_line'>
+					<strong>{{ _('Group column') }}</strong>
+				</div>
+				<div class='sub_content_two_third_line align_right'>
+					{{ form['group'] }}
+				</div>
+			</div>
+		</div>
+
+		<div id="contains_login" class="contains_choose">
+			<div class='sub_content_line big_line'>
+				<div class='sub_content_third_line'>
+					<strong>{{ _('Login column') }}</strong>
+				</div>
+				<div class='sub_content_two_third_line align_right'>
+					{{ form['login'] }}
+				</div>
+			</div>
+		</div>
+
+		<div id="contains_profile" class="contains_choose">
+			<div class='sub_content_line big_line'>
+				<div class='sub_content_third_line'>
+					<strong>{{ _('Profile column') }}</strong>
+				</div>
+				<div class='sub_content_two_third_line align_right'>
+					{{ form['profile_col'] }}
+				</div>
+			</div>
+		</div>
+
+		<div id="contains_password" class="contains_choose">
+			<div class='sub_content_line big_line'>
+				<div class='sub_content_third_line'>
+					<strong>{{ _('Password column') }}</strong>
+				</div>
+				<div class='sub_content_two_third_line align_right'>
+					{{ form['password'] }}
+				</div>
+			</div>
+		</div>
+
+
+		<br />
+		<br />
+
+		<div id='global_profile'class='sub_content_line big_line'>
+			<div class='sub_content_third_line'>
+				<strong>{{ _('Global profile') }}</strong>
+			</div>
+			<div class='sub_content_two_third_line align_right'>
+				{{ form['profile'] }}
+			</div>
+		</div>
+
+
+
+
+
+		<!--{%- for field in form.visible_fields() -%}
 			<div class='sub_content_line big_line'>
 				<div class='sub_content_third_line'>
 					<strong>{{ field.label_tag() }}</strong></div>
@@ -17,7 +146,7 @@
 					{{ field }}
 				</div>
 			</div>
-		{%- endfor -%}
+		{%- endfor -%}-->
 
 		<input type='hidden' id='csv_filepath'/>
 		<div id='new_item_actions' class="one_line">
@@ -41,14 +170,17 @@
 <script type="text/javascript">
 	$(document).ready(function() {
 		$('#TestCSV_button').click(function() {
-			if ($('#csv_filepath').attr('value') == '') { show_message_through_notification(_('Please select a CSV file first.')); }
+			if ($('#csv_filepath').attr('value') == '') { show_message_through_notification("{{ _('Please select a CSV file first.') }}"); }
 			else {
 				$.post("/users/import/", {
-					'lastname'           : $('input[name$="lastname"]').val(),
-					'firstname'          : $('input[name$="firstname"]').val(),
-					'group'              : $('input[name$="group"]').val(),
-					'login'              : $('input[name$="login"]').val(),
-					'password'           : $('input[name$="password"]').val(),
+					'lastname_col'           : $('input[name$="lastname"]').val(),
+					'firstname_col'          : $('input[name$="firstname"]').val(),
+					'group_col'              : $('input[name$="group"]').val(),
+					'gecos_col'              : $('input[name$="gecos"]').val(),
+					'profile_col'            : $('input[name$="profile_col"]').val(),
+					'login_col'              : $('input[name$="login"]').val(),
+					'password_col'           : $('input[name$="password"]').val(),
+					
 					'csv_filepath'       : $('#csv_filepath').attr('value'),
 					'csrfmiddlewaretoken': $('input[name$="csrfmiddlewaretoken"]').attr('value'),
 					'profile'            : $('select[name$="profile"] option:selected').val(),
@@ -59,14 +191,17 @@
 			return false;
 		});
 		$('#ImportCSV_button').click(function() {
-			if ($('#csv_filepath').attr('value') == '') { show_message_through_notification(_('Please select a CSV file first.')); }
+			if ($('#csv_filepath').attr('value') == '') { show_message_through_notification("{{ _('Please select a CSV file first.') }}"); }
 			else {
 				$.post("/users/import/True", {
-					'lastname'           : $('input[name$="lastname"]').val(),
-					'firstname'          : $('input[name$="firstname"]').val(),
-					'group'              : $('input[name$="group"]').val(),
-					'login'              : $('input[name$="login"]').val(),
-					'password'           : $('input[name$="password"]').val(),
+					'lastname_col'           : $('input[name$="lastname"]').val(),
+					'firstname_col'          : $('input[name$="firstname"]').val(),
+					'group_col'              : $('input[name$="group"]').val(),
+					'gecos_col'              : $('input[name$="gecos"]').val(),
+					'profile_col'            : $('input[name$="profile_col"]').val(),
+					'login_col'              : $('input[name$="login"]').val(),
+					'password_col'           : $('input[name$="password"]').val(),
+
 					'csv_filepath'       : $('#csv_filepath').attr('value'),
 					'csrfmiddlewaretoken': $('input[name$="csrfmiddlewaretoken"]').attr('value'),
 					'profile'            : $('select[name$="profile"] option:selected').val(),
@@ -76,7 +211,6 @@
 			// disable submit button
 			return false;
 		});
-
 
 		// upload the file when selected
 		$('#id_file').ajaxfileupload({
@@ -89,5 +223,30 @@
 			  },
 
 		});
+
+
+		$('.contains_choose').hide()
+		// input choose
+		$('.input_choose').change(function() {
+			console.log('#contains_'+$(this).attr('value') , $(this).is(':checked'))
+			container = $('#contains_'+$(this).attr('value'))
+
+			if ($(this).is(':checked')) {
+				container.show()
+			}
+			else {
+				container.hide()
+			}
+		});
+
+		// when selecting profile column, hide the global profile
+		$("#__profile").change(function() {
+			if ($(this).is(':checked')) {
+				$('#global_profile').hide()
+			}
+			else {
+				$('#global_profile').show()
+			}
+		})
 	});
 

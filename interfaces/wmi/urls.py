@@ -39,7 +39,7 @@ urlpatterns = patterns('',
 
 	# static and minimal app routes (core apps)
 	(r'^system/', include('wmi.system.urls')),
-	(r'^users/', include('wmi.users.urls')),
+	(r'^(users|sys_users)/', include('wmi.users.urls')),
 	(r'^groups/', include('wmi.groups.urls')),
 )
 

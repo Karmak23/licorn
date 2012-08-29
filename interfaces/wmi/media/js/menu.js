@@ -1,7 +1,10 @@
 /*
 * Licorn WMI menu javascript
 *
+* Copyright (C) 2011-2012 Olivier Cortès <olive@licorn.org>
+* Copyright (C) 2011-2012 META IT S.à.S http://meta-it.fr/
 * Copyright (C) 2011 Robin Lucbernet <robinlucbernet@gmail.com>
+*
 * Licensed under the terms of the GNU GPL version 2
 */
 
@@ -15,6 +18,9 @@ function setup_ajaxized_div_loaders(css_selector, div_selector) {
 		the_link = $(this);
 
 		$.get(the_link.attr('href'), function(html) {
+
+			//console.log('reload '+ div_selector);
+
 			reload_div(div_selector, html);
 
 			if (the_link.hasClass('ajax-push-setup')) {
@@ -25,28 +31,46 @@ function setup_ajaxized_div_loaders(css_selector, div_selector) {
 		return false;
 	});
 }
-function setup_ajaxized_links(selector) {
+function setup_ajaxized_links(selector, exclude) {
 
 	if (selector == undefined) {
 		selector = '.ajax-sidebar-menuitem';
+	}
+
+	if (exclude == undefined) {
+		exclude = [];
 	}
 
 	$(selector).each(function() {
 
 		//console.log('background ' + $(this).attr('href'));
 
-		$(this).click(function() {
+		should_apply   = true;
+		current_target = $(this);
 
-			href_url = $(this).attr('href');
-
-			// run the href link action in the background.
-			$.get(href_url, function(data) {
-					return true;
-				});
-
-			// don't follow the link the normal way.
-			return false;
+		exclude.forEach(function(css_klass) {
+			if (current_target.hasClass(css_klass)) {
+				should_apply = false;
+			}
 		});
+
+		if (should_apply) {
+			$(this).click(function() {
+
+				href_url = $(this).attr('href');
+
+				// run the href link action in the background.
+				$.get(href_url, function(data) {
+
+						//console.log('ajaxized! ' + href_url);
+
+						return true;
+					});
+
+				// don't follow the link the normal way.
+				return false;
+			});
+		}
 	});
 }
 function setup_ajaxized_confirms(selector) {
@@ -200,7 +224,8 @@ $(document).ready(function() {
 	});
 
 	// Setup base "normal links". Items which have CSS attr 'ajax-sidebar-menuitem'
-	setup_ajaxized_links();
+	setup_ajaxized_links('.ajax-sidebar-menuitem', ['ajax-load-content',
+		'ajax-load-main-content', 'ajax-load-sub-content', 'ajax-menu-link-item']);
 
 	// setup (main,sub)content special loaders.
 	setup_ajaxized_div_loaders('.ajax-load-content', '#content');

@@ -84,14 +84,19 @@ class ImportForm(forms.Form):
 		self.fields['profile'] = forms.ChoiceField(
 					choices = [(p.gidNumber, p.name) for p in LMC.profiles ])
 
+		self.fields['profile_col'] = forms.CharField(
+				label=_('Profile column'))
+
 		self.fields['lastname'] = forms.CharField(
-				initial='0',
 				label=_('Last name column'))
 		self.fields['firstname'] = forms.CharField(
-				initial='1',
 				label=_('First name column'))
+
+		self.fields['gecos'] = forms.CharField(
+				initial='',
+				label=_('Gecos column'))
+		
 		self.fields['group'] = forms.CharField(
-				initial='2',
 				label=_('Group column'))
 		self.fields['login'] = forms.CharField(
 				initial='',
