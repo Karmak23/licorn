@@ -1174,7 +1174,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 						self.__loginShell,
 						self.backend.name,
 						','.join([group.name for group in self.groups]),
-						self.profile.name					)
+						self.profile.name if self.profile is not None else \
+																	str(None))
 	def to_WMI(self):
 		""" A simplified version of the current object, suitable to be
 			forwarded via Pyro. """
@@ -1932,7 +1933,6 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			assert ltrace(TRACE_USERS, '| ExportCSV(%s)' % uids)
 
 			def build_csv_output_licorn(uid):
-				print self[uid].profile.name
 				return ';'.join(
 					[
 						self[uid].gecos,
@@ -1940,7 +1940,8 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 						str(self[uid].gidNumber),
 						','.join([ g.name for g in self[uid].groups]),
 						self[uid].backend.name,
-						self[uid].profile.name
+						self[uid].profile.name if self[uid].profile is not \
+															None else str(None)
 					]
 					)
 
