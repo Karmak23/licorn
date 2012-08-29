@@ -55,11 +55,11 @@ def myself_or_system_forward(func):
 		if self.myself:
 			kw['machine'] = self
 			return getattr(LMC.system, func.__name__)(*a, **kw)
+		
 
 		if self.system:
 			try:
 				return getattr(self.system, func.__name__)(*a, **kw)
-
 			except:
 				logging.exception(_('Failed to call `{0}()` on machine {1}!').format(
 					stylize(ST_NAME, func.__name__), stylize(ST_NAME, self.hostname)))
@@ -68,16 +68,12 @@ def myself_or_system_forward(func):
 				stylize(ST_NAME, func.__name__), stylize(ST_NAME, self.hostname))
 			logging.warning(msg)
 
-			try:
-				print kw
-				print kw['raise_exception']
-				if kw['raise_exception']:
-					print "raising"
-					raise exceptions.LicornWebCommandException(msg)
-			except KeyError:
-				print "KeyError"
-				pass
-				# raise_exception is not a valid kwarg
+			if kw.get('raise_exception', False):
+				msg = _('Cannot call <strong>{0}</strong> on non-connected '
+					'machine <strong>{1}</strong>!').format( func.__name__,
+																self.hostname)
+				raise exceptions.LicornWebCommandException(msg)
+
 	return wrap
 
 class Machine(CoreStoredObject, SharedResource):
@@ -700,17 +696,22 @@ class Machine(CoreStoredObject, SharedResource):
 		# avoid a potential massive waiting time for the unlucky first
 		# 'get machines' or machines listing in the WMi.
 		self.software_updates()
-	@not_myself
+	"""@not_myself
 	@system_connected
-	def shutdown(self, warn_users=True):
-		""" Shutdown a machine, after having warned the connected user(s) if
-			asked to."""
+	def shutdown(self, warn_users=True, *args, **kwargs):
+		""" """ Shutdown a machine, after having warned the connected user(s) if
+			asked to.""" """
 
 		with self.lock:
-			self.status = host_status.SHUTTING_DOWN
+-			self.status = host_status.SHUTTING_DOWN
 
 		self.system.shutdown()
-		logging.info(_('Shut down machine {0}.').format(self.hostname))
+-		logging.info(_('Shut down machine {0}.').format(self.hostname))"""
+
+	@myself_or_system_forward
+	def shutdown(self, warn_users=True, *args, **kwargs): pass
+
+
 	@not_myself
 	@system_connected
 	def restart(self, condition=None):

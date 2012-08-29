@@ -100,8 +100,11 @@
 			setup_massive_actions();
 
 		}
-		function setup_upgrade_facilities() {
-			$(".machine_upgrade").click(function() {
+		function setup_upgrade_facilities(selector) {
+			if (selector == null) {
+				selector = $(".machine_upgrade")
+			}
+			selector.click(function() {
 				mid = $(this).data('mid')
 				$.get('/machines/upgrade/'+mid)
 			})
@@ -120,7 +123,7 @@
 			// let know the sort plugin that we updated the table
 			$("table.sortable").trigger("update");
 
-
+			setup_upgrade_facilities(row.find('.machine_upgrade'))
 
 			setup_row_timeout = setTimeout( function() {
 				

@@ -218,7 +218,7 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 					self.__status = host_status.ACTIVE
 
 			return False
-	def shutdown(self, delay=1, warn_users=True, reboot=False):
+	def shutdown(self, delay=1, warn_users=True, reboot=False, *args, **kwargs):
 		""" Shutdown the local machine.
 
 			Internally we use screen to detach the programs, because the
