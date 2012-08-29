@@ -140,7 +140,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def select(self, controller, args=None, opts=None, include_id_lists=None,
 		exclude_id_lists=None, default_selection=filters.NONE, all=False):
 
-		if type(controller) == types.StringType:
+		if type(controller) in (types.StringType, types.UnicodeType):
 			controller = SelectableController.instances[controller]
 
 		assert ltrace_func(TRACE_CLI)
@@ -159,11 +159,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			args = ()
 
 		xids = set()
+
 		if all:
-			# if --all: manually included IDs (with --login, --group, --uid, --gid)
-			# will be totally discarded (--all gets precedence). But excluded items
-			# will still be excluded, to allow "--all --exclude-login toto"
-			# semi-complex selections.
+			# if --all, manually included IDs (with --login, --group, --uid,
+			# --gid…) will be totally discarded: --all gets precedence. But
+			# excluded items will still be excluded, to allow
+			# "--all --exclude-login toto" semi-complex selections.
 			ids = set(controller)
 
 		else:
@@ -231,6 +232,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			for oid in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
 				if oid is '':
 					continue
+
 				try:
 					xids.add(resolver(oid))
 
@@ -245,9 +247,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# now return included IDs, minux excluded IDs, in different conditions.
 		if ids != set():
 			selection = list(ids.difference(xids))
+
 		else:
 			if something_tried:
 				selection = []
+
 			else:
 				if default_selection is filters.NONE:
 					logging.warning(_(u'You must specify at least one %s!')
