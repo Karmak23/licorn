@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2011-2012 Olivier Cortès <olive@licorn.org>
+ * Copyright (C) 2011-2012 META IT S.à.S http://meta-it.fr/
+ *
+ * Licensed under the terms of the GNU GPL version 2
+ */
+
 var push_active       = true;
 var push_stream_error = false;
 var push_setup_done   = false;

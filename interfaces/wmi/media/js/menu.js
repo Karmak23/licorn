@@ -1,7 +1,10 @@
 /*
 * Licorn WMI menu javascript
 *
+* Copyright (C) 2011-2012 Olivier Cortès <olive@licorn.org>
+* Copyright (C) 2011-2012 META IT S.à.S http://meta-it.fr/
 * Copyright (C) 2011 Robin Lucbernet <robinlucbernet@gmail.com>
+*
 * Licensed under the terms of the GNU GPL version 2
 */
 
@@ -15,6 +18,9 @@ function setup_ajaxized_div_loaders(css_selector, div_selector) {
 		the_link = $(this);
 
 		$.get(the_link.attr('href'), function(html) {
+
+			//console.log('reload '+ div_selector);
+
 			reload_div(div_selector, html);
 
 			if (the_link.hasClass('ajax-push-setup')) {

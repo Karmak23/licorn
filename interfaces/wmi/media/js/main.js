@@ -1,9 +1,10 @@
 /*
 * Licorn WMI main javascript
 *
-* Copyright (C) 2011 Olivier Cortès <olive@deep-ocean.net>
-* Copyright (C) 2011 META IT S.à.S <dev@meta-it.fr>
+* Copyright (C) 2011-2012 Olivier Cortès <olive@licorn.org>
+* Copyright (C) 2011-2012 META IT S.à.S http://meta-it.fr/
 * Copyright (C) 2011 Robin Lucbernet <robinlucbernet@gmail.com>
+*
 * Licensed under the terms of the GNU GPL version 2
 */
 
