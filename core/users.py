@@ -1094,8 +1094,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 								- len(self.__primaryGroup().name)
 								- len(str(self.__gidNumber)))
 
-			accountdata = [ u'{login}: ✎{uid} ✐{pri_group} '
-							u'{backend}	{gecos} {inotified}'.format(
+			accountdata = [ u'{login}: #{uid} &{pri_group} '
+							u'@{backend}	{gecos} {inotified}'.format(
 								login=stylize(
 									_locked_colors[self.__locked],
 									(self.__login).rjust(label_width)),
