@@ -671,8 +671,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		def clean_csv_field(field):
 			return field.replace("'", "").replace('"', '')
 
-		# check args :
-		# filename has to be set
 		if opts.filename is None:
 			raise exceptions.BadArgumentError(
 									_(u'You must specify an import filename.'))
@@ -701,7 +699,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			gecos_col = opts.gecos_col
 			firstname_col = None
 			lastname_col = None
-		elif opts.firstname_col is not None and opts.lastname_col is not None:
+		else:
 			firstname_col = opts.firstname_col
 			lastname_col = opts.lastname_col
 			gecos_col = None
@@ -721,16 +719,22 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# check the number of columns
 		maxval = 0
 		columns_dict = []
+		
 		if lastname_col is not None:
 			columns_dict.append(lastname_col)
+
 		if firstname_col is not None:
 			columns_dict.append(firstname_col)
+
 		if gecos_col is not None:
 			columns_dict.append(gecos_col)
+
 		if profile_col is not None:
 			columns_dict.append(profile_col)
+
 		if group_col is not None:
 			columns_dict.append(group_col)
+
 		for number in columns_dict:
 			maxval = max(maxval, number)
 
@@ -752,7 +756,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				'encoding, assuming iso-8859-15 (latin-1)!'), to_local=False)
 			encoding = 'iso-8859-15'
 
-		# if a global profile is set, check if it really exists
 		if profile is not None:
 			try:
 				profile = LMC.profiles.guess_one(profile)
@@ -800,6 +803,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						('login', opts.login_col),
 						('password', opts.password_col)
 					]
+
+			# GECOS *always* takes precedence on first/last names. This is
+			# arbitrary but documented at http://docs..... /
 			if opts.gecos_col is not None:
 				columns_.append(('gecos', opts.gecos_col))
 			else:
@@ -822,6 +828,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							# for small children, make the password as simple
 							# as the login to type. tell validate_name() to be
 							# aggressive to achieve this.
+
+							# depending on the encoding, sometimes we cannot
+							# convert unicode into unicode, so check if it is 
+							# already unicode.
+
 							if type(line[number]) == types.UnicodeType:
 								user[column] = hlstr.validate_name(
 										line[number], True)

@@ -173,13 +173,14 @@
 			if ($('#csv_filepath').attr('value') == '') { show_message_through_notification("{{ _('Please select a CSV file first.') }}"); }
 			else {
 				$.post("/users/import/", {
-					'lastname'           : $('input[name$="lastname"]').val(),
-					'firstname'          : $('input[name$="firstname"]').val(),
-					'group'              : $('input[name$="group"]').val(),
-					'gecos'              : $('input[name$="gecos"]').val(),
-					'profile_col'        : $('input[name$="profile_col"]').val(),
-					'login'              : $('input[name$="login"]').val(),
-					'password'           : $('input[name$="password"]').val(),
+					'lastname_col'           : $('input[name$="lastname"]').val(),
+					'firstname_col'          : $('input[name$="firstname"]').val(),
+					'group_col'              : $('input[name$="group"]').val(),
+					'gecos_col'              : $('input[name$="gecos"]').val(),
+					'profile_col'            : $('input[name$="profile_col"]').val(),
+					'login_col'              : $('input[name$="login"]').val(),
+					'password_col'           : $('input[name$="password"]').val(),
+					
 					'csv_filepath'       : $('#csv_filepath').attr('value'),
 					'csrfmiddlewaretoken': $('input[name$="csrfmiddlewaretoken"]').attr('value'),
 					'profile'            : $('select[name$="profile"] option:selected').val(),
@@ -193,13 +194,14 @@
 			if ($('#csv_filepath').attr('value') == '') { show_message_through_notification("{{ _('Please select a CSV file first.') }}"); }
 			else {
 				$.post("/users/import/True", {
-					'lastname'           : $('input[name$="lastname"]').val(),
-					'firstname'          : $('input[name$="firstname"]').val(),
-					'group'              : $('input[name$="group"]').val(),
-					'gecos'              : $('input[name$="gecos"]').val(),
-					'profile_col'        : $('input[name$="profile_col"]').val(),
-					'login'              : $('input[name$="login"]').val(),
-					'password'           : $('input[name$="password"]').val(),
+					'lastname_col'           : $('input[name$="lastname"]').val(),
+					'firstname_col'          : $('input[name$="firstname"]').val(),
+					'group_col'              : $('input[name$="group"]').val(),
+					'gecos_col'              : $('input[name$="gecos"]').val(),
+					'profile_col'            : $('input[name$="profile_col"]').val(),
+					'login_col'              : $('input[name$="login"]').val(),
+					'password_col'           : $('input[name$="password"]').val(),
+
 					'csv_filepath'       : $('#csv_filepath').attr('value'),
 					'csrfmiddlewaretoken': $('input[name$="csrfmiddlewaretoken"]').attr('value'),
 					'profile'            : $('select[name$="profile"] option:selected').val(),
