@@ -805,7 +805,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					]
 
 			# GECOS *always* takes precedence on first/last names. This is
-			# arbitrary but documented at http://docs..... /
+			# arbitrary but documented at 
+			# http://docs.licorn.org/cli/add.en.html#massive-accounts-imports-from-files
 			if opts.gecos_col is not None:
 				columns_.append(('gecos', opts.gecos_col))
 			else:
