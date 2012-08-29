@@ -198,16 +198,16 @@
 	<div class="list_content">
 
 		<div class="search_bar">
-			<div class="list_title">
+			<div class="list_title" data-list='{{ name }}_list'>
 				{{ title }} (<span id="{{ name }}_list_count" class='list_count'>{{ list_items|length }}</span>)
 			</div>
 
-			<div id="search_bar_nav">
+			<div id="search_bar_nav" class="bar_nav">
 				<div id="search_bar_nav_title">
 				 {{ _("Mass actions:") }}
 				</div>
 
-				<div id="search_bar_nav_content">
+				<div id="search_bar_nav_content ">
 					{%- for action in massive_actions -%}
 					<img src="{{ action['icon'] }}"
 						id="{{ name }}_massive_{{ action['action_name'] }}"
@@ -218,7 +218,7 @@
 				</div>
 			</div>
 
-			<div id="search_bar_search">
+			<div id="search_bar_search" class="bar_nav">
 				<input type="text" name="search" id="search_box" accesskey="f">
 			</div>
 		</div>
@@ -262,7 +262,11 @@
 	$(document).ready(function() {
 		init_list_events("{{ name }}", '{{ main_column }}',
 						{{ search_columns }}, '{{ identifier }}');
+
 	});
+		function sort_{{name}}_list() {
+			sort_items_list("{{ name }}", 'asc', '{{ main_column }}', '{{ identifier }}', true);
+		}
 	</script>
 	</div>
 </div>
