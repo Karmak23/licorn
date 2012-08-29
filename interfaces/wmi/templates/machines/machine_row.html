@@ -28,12 +28,8 @@
 		{%- endif -%}
 
 
-		<span id="machine_status" class='no_double_click'> 
-			{% if machine.status == host_status.UPGRADING %}
-				&nbsp; <img src='/media/images/throbber.gif'>
-			{% else %}
-				{{ updates_status(machine) }} 
-			{% endif %}
+		<span id="machine_status" class='no_double_click'>
+			{{ updates_status(machine) }}
 		</span>
 	</td>
 	<td class='centered' data-sort='{{ machine.system_type }}' data-filter="toto">
