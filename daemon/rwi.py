@@ -719,7 +719,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# check the number of columns
 		maxval = 0
 		columns_dict = []
-		
+
 		if lastname_col is not None:
 			columns_dict.append(lastname_col)
 
@@ -1138,6 +1138,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			date_time = time.strftime(_(u'%d %m %Y at %H:%M:%S'), time.gmtime())
 
 			if profile is None:
+				# final name of the file contains all impacted profiles
 				_profile_ = '_'.join(all_profiles)
 			else:
 				_profile_ = profile.groupName
