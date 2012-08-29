@@ -151,4 +151,17 @@ update-po: update-pot
 cleandoc:
 	(cd docs && make clean)
 
+compressjs: js
+
+uglifyjs: js
+
+js:
+	( \
+	cd interfaces/wmi/media/js; \
+	for file in `ls *.js | grep -vE '\.min\.'`; \
+	do \
+		uglifyjs -nc $${file} > `echo $${file} | sed -e 's/\.js/\.min\.js/'`; \
+	done \
+	)
+
 .PHONY: all clean install build configure binary-install doc installdoc cleandoc devinstall

@@ -307,6 +307,15 @@ def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 		action   = 'new'
 		user_id  = ''
 
+	# inform the user that the UI will take time to build,
+	# to avoid re-clicks and (perfectly justified) grants.
+	ngroups = len(LMC.groups.keys())
+	if ngroups > 50:
+		# TODO: make the notification sticky and remove it just
+		# before returning the rendered template result.
+		utils.notification(request, _('Building user {0} form, please wait…').format(
+			_('edit') if edit_mod else _('creation')), 3000 + 5 * ngroups, 'wait_for_rendering')
+
 	f = UserForm(edit_mod, user)
 
 	groups_list = [ (_('Standard groups'),{
