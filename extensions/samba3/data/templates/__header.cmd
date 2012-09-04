@@ -47,19 +47,28 @@ regedit /s \\%servname%\netlogon\templates\registry\networked_mydocuments.reg >n
 goto __header_end
 
 :__header_Vista
-rd /S /Q "%userprofile%\Documents"
-mklink /d "%userprofile%\Documents" \\%servname%\%username%\Documents
+mkdir %appdata%\microsoft\windows\libraries
+xcopy \\%servname%\netlogon\local\libraries\*.* %appdata%\microsoft\windows\libraries /I /Y
+
+rem "Domain Users" need the createlink permission for this to work.
+
+rem rd /S /Q "%userprofile%\Documents"
+rem mklink /d "%userprofile%\Documents" H:\Documents
+rem mklink /d "%userprofile%\Documents" \\%servname%\%username%\Documents
 
 rem removing "Pictures" doesn't produce the expected result: Windows
 rem re-creates the directory afterwards.
-rem rd /S /Q "%userprofile%\Pictures"
 rem rd /S /Q "%userprofile%\Mes Images"
-rem mklink /d "%userprofile%\Mes Images" \\%servname%\%username%\Images
+rem rd /S /Q "%userprofile%\Pictures"
+rem mklink /d "%userprofile%\Pictures" H:\Images
+rem mklink /d "%userprofile%\Pictures" \\%servname%\%username%\Images
 
-rem rd /S /Q "%userprofile%\Ma Musique"
-rem mklink /d "%userprofile%\Ma Musique" \\%servname%\%username%\Musique
+rem rd /S /Q "%userprofile%\Music"
+rem mklink /d "%userprofile%\Music" H:\Musique
+rem mklink /d "%userprofile%\Music" \\%servname%\%username%\Musique
 
 rem rd /S /Q "%userprofile%\Downloads"
+rem mklink /d "%userprofile%\Downloads" H:\Téléchargements
 rem mklink /d "%userprofile%\Downloads" \\%servname%\%username%\Téléchargements
 goto __header_end
 
