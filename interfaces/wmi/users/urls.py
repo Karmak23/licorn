@@ -37,6 +37,7 @@ urlpatterns = patterns('users.views',
     (r'^massive/skel/(?P<uids>[,\d]+)/(?P<skel>.*)/?$', 'massive', {'action': 'skel'}),
     (r'^massive/export/(?P<uids>[,\d]+)(?:/(?P<type>.*))?/?$', 'massive', {'action': 'export'}),
     (r'^massive/lock/(?P<uids>[,\d]+)/?$', 'massive', {'action': 'lock'}),
+    (r'^massive/edit/(?P<uids>[,\d]+)/?$', 'massive', {'action': 'edit'}),
 
     (r'^import/(?P<confirm>.*)/?$', 'import_view'),
     (r'^upload/?$', 'upload_file'),

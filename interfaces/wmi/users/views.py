@@ -186,7 +186,6 @@ def massive(request, uids, action, *args, **kwargs):
 			# Get a chance for events to be forwarded,
 			# force thread switch in the interpreter.
 			time.sleep(0)
-
 	if action == 'lock':
 		for uid in uids.split(','):
 			user = LMC.users.guess_one(uid)
@@ -197,12 +196,10 @@ def massive(request, uids, action, *args, **kwargs):
 				mod(request, uid=user.uid, action='unlock', value=True)
 			else:
 				mod(request, uid=user.uid, action='lock', value=True)
-
 	if action == 'skel':
 		for uid in uids.split(','):
 			if uid != '':
 				mod(request, uid=uid, action='skel', value=kwargs.get('skel'))
-
 	if action == 'export':
 
 		_type = kwargs.get('type', False)
@@ -226,6 +223,48 @@ def massive(request, uids, action, *args, **kwargs):
 		os.close(export_handler)
 
 		return HttpResponse(json.dumps({ "file_name" : export_filename, "preview": export}))
+
+	if action == 'shell':
+		# massively mod shell
+		for uid in uids.split(','):
+			mod(request, uid=uid, action='shell', value=kwargs.get('shell'))
+	if action == 'groups':
+		for uid in uids.split(','):
+			mod(request, uid=uid, action='groups', value=kwargs.get('group'))
+			# group is : group_id/rel_id
+	
+	if action == 'edit':
+
+		# TODO : remove it
+		user = LMC.users.guess_one('robin')
+
+		groups_list = [ (_('Standard groups'),{
+						'user': user,
+						'name': 'standard',
+						'groups' : utils.select("groups", default_selection=filters.STANDARD)
+					}),
+					(_('Privileged groups'), {
+						'user': user,
+						'name': 'privileged',
+						'groups' : utils.select("groups", default_selection=filters.PRIVILEGED)
+					}) ]
+
+		if request.user.is_superuser:
+			groups_list.append( ( _('System groups') ,  {
+				'user': user,
+				'name': 'system',
+				'groups' : [ group for group in
+					utils.select("groups", default_selection=filters.SYSTEM)
+						if not group.is_helper and not group.is_privilege ]
+			}))
+
+		_dict = {
+					'_mode'                 : "masiv",
+					'form'                  : UserForm("massiv", user),
+					'groups_lists'          : groups_list,
+					'title'                 : _("Massive edit")
+				}
+		return render(request, 'users/user.html', _dict)
 
 	return HttpResponse('MASSIVE DONE.')
 
@@ -307,15 +346,13 @@ def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 
 
 	if action == 'edit':
-		edit_mod = True
+		_mode    = 'edit'
 		title    = _('Edit user {0}').format(user.login)
-		action   = 'edit'
 		user_id  = user.uidNumber
 
 	else:
-		edit_mod = False
+		_mode    = 'new'
 		title    = _('Add new user')
-		action   = 'new'
 		user_id  = ''
 
 	# inform the user that the UI will take time to build,
@@ -325,9 +362,9 @@ def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 		# TODO: make the notification sticky and remove it just
 		# before returning the rendered template result.
 		utils.notification(request, _('Building user {0} form, please wait…').format(
-			_('edit') if edit_mod else _('creation')), 3000 + 5 * ngroups, 'wait_for_rendering')
+			_('edit') if _mode else _('creation')), 3000 + 5 * ngroups, 'wait_for_rendering')
 
-	f = UserForm(edit_mod, user)
+	f = UserForm(_mode, user)
 
 	groups_list = [ (_('Standard groups'),{
 					'user': user,
@@ -351,8 +388,7 @@ def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 
 	_dict = {
 				'user_uid'              : user_id,
-				'action'                : action,
-				'edit_mod'              : edit_mod,
+				'_mode'                 : _mode,
 				'title'                 : title,
 				'form'                  : f,
 				'groups_lists'          : groups_list

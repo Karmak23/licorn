@@ -117,6 +117,42 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 		delete_dialog.show();
 	});
 
+	$('#'+list_name+'_massive_edit').click(function() {
+		users=[]
+		$('#'+list_name+'_list').find(".row").each(function() {
+			if ($(this).find('.users_checkbox').is(':checked') == true) {
+				users.push($(this).find('.users_login').text());
+			}
+		});
+
+		users_selected_html = '<ul>'
+		$.each(users, function(k, g) {
+			users_selected_html += '<li>'+g+'</li>';
+		});
+		users_selected_html += '</ul>';
+		mass_lock_dialog_title = gettext("Massive users lock toggle");
+
+		if (users_selected_html == '<ul></ul>') {
+			mass_lock_dialog_content =  gettext("Please select at least one user.");
+			mass_lock_dialog = new dialog(mass_lock_dialog_title, mass_lock_dialog_content);
+			mass_lock_dialog.show();
+		}
+		else {
+
+			uids=[]
+			$('#'+list_name+'_list').find(".row").each(function() {
+				if ($(this).find('.users_checkbox').is(':checked') == true) {
+						uids.push($(this).find('.users_uidNumber').text());
+				}
+			});
+			// show the mass edit view in the sub-content
+			$.get('/users/massive/edit/' + $.URLEncode(uids.join(',')), function(html) {
+				reload_div('#sub_content', html)
+			});
+		}
+	});
+
+
 	$('#'+list_name+'_massive_export').click(function() {
 		items=[]
 		$('#'+list_name+'_list').find(".row").each(function() {
