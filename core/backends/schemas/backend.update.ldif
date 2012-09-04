@@ -25,6 +25,9 @@ olcDbIndex: uniqueMember eq
 add: olcDbCheckpoint
 olcDbCheckpoint: 512 30
 -
+add: olcSizeLimit
+olcSizeLimit: unlimited
+-
 replace: olcAccess
 olcAccess: to attrs=userPassword
  by dn="@@rootbinddn@@" write

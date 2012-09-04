@@ -12,14 +12,17 @@ Main audience of Licorn® are system administrators.
 	quickstart.en
 	../cli/index.en
 	../wmi/index.en
-	../configuration.en
-	../daemon/index.en
-	../extensions/index.en
+	../groups/index.en
+	simplesharing.en
+	windows.en
 
-«Lights on…»
-============
+Licorn® management
+==================
 
 .. toctree::
 	:maxdepth: 2
 
-	../groups/index.en
+	../configuration.en
+	../daemon/index.en
+	../extensions/index.en
+

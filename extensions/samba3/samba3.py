@@ -126,7 +126,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			self.available = False
 
 		return self.available
-	def check(self, batch=False, auto_answer=None):
+	def check(self, batch=False, auto_answer=None, force=False):
 		""" Currently, this method does nothing: this extension is so simple
 			that we don't do anything needing a check in it. """
 		assert ltrace_func(TRACE_SAMBA3)
@@ -176,8 +176,9 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 											self.pretty_name,
 											stylize(ST_NAME, group)))
 
-		self.__check_paths(batch=batch, auto_answer=auto_answer)
-		self.__check_responsibles(batch=batch, auto_answer=auto_answer)
+		self.__check_paths(batch=batch, auto_answer=auto_answer, force=force)
+		self.__check_responsibles(batch=batch, auto_answer=auto_answer, force=force)
+		self.__check_group_mappings(batch=batch, auto_answer=auto_answer, force=force)
 
 		# TODO:
 		#	- check smb.conf
@@ -223,13 +224,13 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		self.paths.profiles_templates_machines_dir = settings.get(
 										'extensions.samba3.paths.profiles_templates_machines_dir',
 										os.path.join(self.paths.windows_base_dir, 'profiles', 'templates', 'Machines'))
-	def __check_responsibles(self, batch=False, auto_answer=None):
+	def __check_responsibles(self, batch=False, auto_answer=None, force=False):
 
 		allresps = LMC.groups.by_name(self.groups.responsibles)
 
 		for group in LMC.groups.select(filters.RESPONSIBLE):
 			allresps.add_Users(group.members)
-	def __check_paths(self, batch=False, auto_answer=None):
+	def __check_paths(self, batch=False, auto_answer=None, force=False):
 
 		acls_conf      = LMC.configuration.acls
 		users_group    = LMC.configuration.users.group
@@ -300,7 +301,72 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).
 			pass
+	def __check_group_mappings(self, batch=False, auto_answer=None, force=False):
 
+		# NOTE: don't use ntgroup="%s", this would search/add the group
+		# "Group" (with quotes) instead of `Group`, and would produce
+		# unwanted and unusable mappings.
+		list_cmd = ('net', 'groupmap', 'list', 'ntgroup=%s')
+		add_cmd  = ('net', 'groupmap', 'add', 'ntgroup=%s', 'rid=%s',
+											'unixgroup=%s', 'type=domain')
+
+		for ntgroup, rid, unixgroup in (
+				("Domain Admins", 512, self.groups.admins),
+				("Domain Users",  513, LMC.configuration.users.group),
+			):
+
+			mapping = process.execute(list_cmd[0:-1] + (list_cmd[-1] % (ntgroup,),))[0]
+
+			# Example of 'net groupmap list' output:
+			# Domain Users (S-1-5-21-1341506796-2682833043-2368010448-513) -> users
+
+			if '-%s)' % (rid,) in mapping:
+				# The mapping exists.
+
+				if mapping.endswith(unixgroup + '\n'):
+					# Our group is mapped. Good.
+					continue
+
+				elif not force:
+					logging.warning2(_(u'{0}: unexpected samba group mapping for '
+						u'group {1}. Leaving untouched, but this could produce '
+						u'unwanted behavior. use --force to override.').format(
+							self.pretty_name, stylize(ST_NAME, ntgroup)))
+					continue
+
+				# The mapping doesn't currently exist. Create it.
+
+				if batch or logging.ask_for_repair(_(u'{0}: samba group mapping '
+									u'{1} > {2} must be created. Do it?').format(
+									self.pretty_name,
+									stylize(ST_NAME, ntgroup),
+									stylize(ST_NAME, unixgroup)),
+								auto_answer=auto_answer):
+
+					out, err = process.execute(add_cmd[0:-4]
+												+ ( add_cmd[-4] % (ntgroup,), )
+												+ ( add_cmd[-3] % (rid,), )
+												+ ( add_cmd[-2] % (unixgroup,), )
+												+ ( add_cmd[-1], )
+											)
+					if out:
+						logging.info('%s: %s' % (self.pretty_name, out[:-1]))
+
+					if err:
+						logging.warning('%s: %s' % (self.pretty_name, err[:-1]))
+
+					logging.info(_(u'{0}: created samba group mapping '
+									u'{1} > {2}.').format(self.pretty_name,
+													stylize(ST_NAME, ntgroup),
+													stylize(ST_NAME, unixgroup)))
+
+				else:
+					logging.warning(_(u'{0}: samba group mapping {1} > {2} NOT '
+						u'created. We can live without it, but I still '
+						u'recommend to create it at some point, unless you '
+						u'know exactly what you do.').format(self.pretty_name,
+													stylize(ST_NAME, ntgroup),
+													stylize(ST_NAME, unixgroup)))
 	def is_enabled(self):
 		""" Always return the value of :attr:`self.available`, because we make
 			no difference between beiing available and beiing enable in this very
@@ -328,10 +394,10 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			out, err = process.execute([ self.paths.smbpasswd, '-a', user.login, '-s' ],
 										'%s\n%s\n' % (password, password))
 			if out:
-				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+				logging.info('%s: %s' % (self.pretty_name, out[:-1]))
 
 			if err:
-				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
+				logging.warning('%s: %s' % (self.pretty_name, err[:-1]))
 
 		except:
 			logging.exception(_(u'{0}: Exception in user_post_add({1})'),
@@ -358,6 +424,33 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		return all_ok
 	@events.handler_method
 	@only_if_enabled
+	def group_post_add(self, *args, **kwargs):
+		""" Add some Samba specific permissions to some special system groups. """
+
+		assert ltrace_func(TRACE_SAMBA3)
+
+		group = kwargs.pop('group')
+
+		if group.name != self.groups.admins or not group.is_system:
+			return
+
+		try:
+			out, err = process.execute(('net', 'rpc', 'rights', 'grant',
+							self.groups.admins, 'SeMachineAccountPrivilege'))
+
+			if out:
+				logging.info('%s: %s' % (self.pretty_name, out[:-1]))
+
+			if err:
+				logging.warning('%s: %s' % (self.pretty_name, err[:-1]))
+
+		except:
+			logging.exception(_(u'{0}: Exception in group_post_add({1})'),
+									self.pretty_name, (ST_LOGIN, group.name))
+
+		return True
+	@events.handler_method
+	@only_if_enabled
 	def user_post_change_password(self, *args, **kwargs):
 		""" Update the user's password in samba3. """
 
@@ -373,11 +466,12 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 		try:
 			out, err = process.execute([ self.paths.smbpasswd, user.login, '-s' ],
 										"%s\n%s\n" % (password, password))
+
 			if out:
-				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+				logging.info('%s: %s' % (self.pretty_name, out[:-1]))
 
 			if err:
-				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))
+				logging.warning('%s: %s' % (self.pretty_name, err[:-1]))
 
 		except:
 			logging.exception(_(u'{0}: Exception in user_post_change_password({1})'),
@@ -404,7 +498,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			out, err = process.execute([ self.paths.smbpasswd, '-x', user.login ])
 
 			if out:
-				logging.info('%s: %s' % (stylize(ST_NAME, self.name), out[:-1]))
+				logging.info('%s: %s' % (self.pretty_name, out[:-1]))
 
 			if err:
 				logging.warning('%s: %s' % (stylize(ST_NAME, self.name), err[:-1]))

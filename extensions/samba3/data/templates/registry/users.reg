@@ -9,6 +9,7 @@ REGEDIT4
 "NoSetTaskbar"=dword:00000001
 "NoFind"=dword:00000001
 "NoDrives"=hex:07,00,80,01
+"NoViewOnDrive"=hex:07,00,80,01
 "NoSaveSettings"=dword:00000001
 
 [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System]

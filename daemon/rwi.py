@@ -140,7 +140,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def select(self, controller, args=None, opts=None, include_id_lists=None,
 		exclude_id_lists=None, default_selection=filters.NONE, all=False):
 
-		if type(controller) == types.StringType:
+		if type(controller) in (types.StringType, types.UnicodeType):
 			controller = SelectableController.instances[controller]
 
 		assert ltrace_func(TRACE_CLI)
@@ -159,11 +159,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			args = ()
 
 		xids = set()
+
 		if all:
-			# if --all: manually included IDs (with --login, --group, --uid, --gid)
-			# will be totally discarded (--all gets precedence). But excluded items
-			# will still be excluded, to allow "--all --exclude-login toto"
-			# semi-complex selections.
+			# if --all, manually included IDs (with --login, --group, --uid,
+			# --gid…) will be totally discarded: --all gets precedence. But
+			# excluded items will still be excluded, to allow
+			# "--all --exclude-login toto" semi-complex selections.
 			ids = set(controller)
 
 		else:
@@ -231,6 +232,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			for oid in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
 				if oid is '':
 					continue
+
 				try:
 					xids.add(resolver(oid))
 
@@ -245,9 +247,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# now return included IDs, minux excluded IDs, in different conditions.
 		if ids != set():
 			selection = list(ids.difference(xids))
+
 		else:
 			if something_tried:
 				selection = []
+
 			else:
 				if default_selection is filters.NONE:
 					logging.warning(_(u'You must specify at least one %s!')
@@ -677,39 +681,65 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			import_filename = opts.filename
 
-		if opts.profile is None:
+		# a global profile or the profile column has to be set
+		if opts.profile is None and opts.profile_col is None:
 			raise exceptions.BadArgumentError(_(u'You must specify a profile.'))
 
-		else:
+		if opts.profile_col is not None:
+			profile = None
+			profile_col = opts.profile_col
+		elif opts.profile is not None:
 			profile = opts.profile
+			profile_col = None
 
-		if opts.firstname_col is None:
-			raise exceptions.BadArgumentError(
-							_(u'You must specify a firstname column number.'))
+		# The gecos or the firstname AND lastname has to be set
+		if (opts.firstname_col is None or opts.lastname_col is None) and \
+			opts.gecos_col is None:
+				raise exceptions.BadArgumentError(
+						_(u'You must specify the gecos column or the '\
+							'lastname column and the firstname column '))
+
+		if opts.gecos_col is not None:
+			gecos_col = opts.gecos_col
+			firstname_col = None
+			lastname_col = None
 		else:
 			firstname_col = opts.firstname_col
-
-		if opts.lastname_col is None:
-			raise exceptions.BadArgumentError(
-							_(u'You must specify a lastname column number.'))
-		else:
 			lastname_col = opts.lastname_col
+			gecos_col = None
 
-		if opts.group_col is None:
-			raise exceptions.BadArgumentError(
-								_(u'You must specify a group column number.'))
-		else:
-			group_col = opts.group_col
 
-		if (firstname_col == lastname_col
+		# The group column can be unset
+		group_col = opts.group_col
+
+		"""if (firstname_col == lastname_col
 			or firstname_col == group_col
 			or lastname_col == group_col):
 			raise exceptions.BadArgumentError(_(u'Two columns have the same '
 				'number (lastname={0}, firstname={1}, group={2})').format(
-				lastname_col, firstname_col, group_col))
+				lastname_col, firstname_col, group_col))"""
 
+
+		# check the number of columns
 		maxval = 0
-		for number in (lastname_col, firstname_col, group_col):
+		columns_dict = []
+
+		if lastname_col is not None:
+			columns_dict.append(lastname_col)
+
+		if firstname_col is not None:
+			columns_dict.append(firstname_col)
+
+		if gecos_col is not None:
+			columns_dict.append(gecos_col)
+
+		if profile_col is not None:
+			columns_dict.append(profile_col)
+
+		if group_col is not None:
+			columns_dict.append(group_col)
+
+		for number in columns_dict:
 			maxval = max(maxval, number)
 
 		if maxval > 127:
@@ -730,30 +760,33 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				'encoding, assuming iso-8859-15 (latin-1)!'), to_local=False)
 			encoding = 'iso-8859-15'
 
-		try:
-			profile = self.select(LMC.profiles,
-				include_id_lists=[ (profile, LMC.profiles.guess_one) ])[0]
+		if profile is not None:
+			try:
+				profile = LMC.profiles.guess_one(profile)
 
-		except KeyError:
-			raise exceptions.LicornRuntimeException(_(u'The profile "%s" does '
-								u'not exist.') % stylize(ST_NAME, profile))
+				"""self.select(LMC.profiles,
+					include_id_lists=[ (profile, LMC.profiles.guess_one) ])[0]"""
+			except KeyError:
+				raise exceptions.LicornRuntimeException(_(u'The profile "%s" does '
+									u'not exist.') % stylize(ST_NAME, profile))
 
 		import math, csv
 		from licorn.core.users  import User
 		from licorn.core.groups import Group
 
+		# try to detect the separator
 		firstline  = open(import_filename).readline()
 		lcndialect = csv.Sniffer().sniff(firstline)
 
+		# if a delimiter has been set, use it
 		if lcndialect.delimiter != opts.separator and opts.separator != None:
 			separator = opts.separator
-
 		else:
 			separator = lcndialect.delimiter
 
+		# open the file
 		try:
 			import_fd = open(import_filename, 'rb')
-
 		except (OSError, IOError), e:
 			raise exceptions.LicornRuntimeException(
 					_(u'Cannot load CSV file (was: %s).') % e)
@@ -770,14 +803,25 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 			line = fdline[:-1].split(separator)
 
+			columns_ = [('group', group_col),
+						('login', opts.login_col),
+						('password', opts.password_col)
+					]
+
+			# GECOS *always* takes precedence on first/last names. This is
+			# arbitrary but documented at 
+			# http://docs.licorn.org/cli/add.en.html#massive-accounts-imports-from-files
+			if opts.gecos_col is not None:
+				columns_.append(('gecos', opts.gecos_col))
+			else:
+				columns_.append(('firstname', firstname_col))
+				columns_.append(('lastname', lastname_col))
+
+			if opts.profile_col is not None:
+				columns_.append(('profile', profile_col))
+
 			user = {}
-			for (column, number) in (
-					('firstname', firstname_col),
-					('lastname', lastname_col),
-					('group', group_col),
-					('login', opts.login_col),
-					('password', opts.password_col)
-				):
+			for (column, number) in columns_:
 
 				try:
 					if number is None:
@@ -789,7 +833,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							# for small children, make the password as simple
 							# as the login to type. tell validate_name() to be
 							# aggressive to achieve this.
-							user[column] = hlstr.validate_name(
+
+							# depending on the encoding, sometimes we cannot
+							# convert unicode into unicode, so check if it is 
+							# already unicode.
+
+							if type(line[number]) == types.UnicodeType:
+								user[column] = hlstr.validate_name(
+										line[number], True)
+							else:
+								user[column] = hlstr.validate_name(
 										unicode(line[number], encoding), True)
 						else:
 							cleaned_field = clean_csv_field(line[number])
@@ -805,11 +858,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				except UnicodeEncodeError, e:
 					raise exceptions.LicornRuntimeError(_(u'Encoding not '
 						u'supported for input filename (was: %s).') % str(e))
+
 			try:
+				if opts.gecos_col is not None:
+					user['firstname'] = user['gecos'].split(' ')[0]
+					user['lastname']  = " ".join(user['gecos'].split(' ')[1:])
+
 				if opts.login_col is None:
 					user['login'] = User.make_login(
-										firstname=user['firstname'],
-										lastname=user['lastname'])
+										firstname=str(user['firstname']).lower(),
+										lastname=str(user['lastname']).lower())
 				else:
 					user['login'] =	User.make_login(
 										inputlogin=user['login'])
@@ -824,8 +882,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 								u'on line {0} (was: {1}).').format(i+1, e))
 
 			try:
-
-				user['group'] = [Group.make_name(g) for g in user['group'].split(',') if g != '']
+				if user['group'] is not None:
+					user['group'] = [Group.make_name(g) for g in \
+						user['group'].split(',') if g != '']
 
 			except IndexError, e:
 				raise exceptions.LicornRuntimeError(_(u'Import error '
@@ -837,7 +896,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError(_(u'Import error '
 								u'on line {0} (was: {1}).').format(i+1, e))
 
-			groups_to_add.extend([g for g in user['group'] if g not in groups_to_add])
+			if user['group'] is not None:
+				groups_to_add.extend([g for g in user['group'] if g not in groups_to_add])
 
 			users_to_add.append(user)
 
@@ -853,6 +913,18 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			users_to_add, groups_to_add))
 
 		import_fd.close()
+
+		if profile is not None:
+			for u in users_to_add:
+				u['profile'] = profile.name
+
+		else:
+			all_profiles = []
+			print  users_to_add
+			for u in users_to_add:
+				if u['profile'] not in all_profiles:
+					all_profiles.append(u['profile'])
+
 		fct_output(_(u' done.') + '\n')
 
 		# this will be used to recursive build an HTML page of all groups / users
@@ -912,7 +984,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				#sys.stdout.flush()
 
 			if not groups_to_add:
-				data_to_export_to_html[profile.group.name] = {}
+				if profile is None:
+					print all_profiles
+					for p in all_profiles:
+						data_to_export_to_html[p] = {}
+				else:
+					data_to_export_to_html[profile.group.name] = {}
 
 		else:
 			if wmi_output:
@@ -945,16 +1022,24 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			try:
 				i += 1
 				if opts.confirm_import:
+					in_groups = [LMC.groups.guess_one(g) for g in u['group']] \
+						if u['group'] is not None else []
 
-					in_groups = [LMC.groups.guess_one(g) for g in u['group']]
+					_kwargs = {}
+					if u.get('gecos', None) is not None:
+						_kwargs.update({'gecos' : u['gecos']})
+					else:
+						_kwargs.update({'firstname' : u['firstname'],
+							'lastname' : u['lastname']})
 
-					user, password = LMC.users.add_User(lastname=u['lastname'],
-											firstname=u['firstname'],
+
+
+					user, password = LMC.users.add_User(
 											login=u['login'],
 											password=u['password'],
-											profile=profile,
+											profile=LMC.profiles.guess_one(u['profile']),
 											in_groups=in_groups,
-											batch=opts.no_sync)
+											batch=opts.no_sync, **_kwargs)
 
 					logging.progress('\r' + _(u'Added user {0} {1} '
 						'[login={2}, uid={3}, passwd={4}] ({5}/{6}); '
@@ -975,7 +1060,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 									user.login, password ]
 
 					if not in_groups:
-						data_to_export_to_html[profile.group.name][
+						if profile is None:
+							_profile = u['profile']
+						else:
+							_profile = profile.group.name
+
+						data_to_export_to_html[_profile][
 								'%s%s' % (u['lastname'], u['firstname'])
 							] = [ u['firstname'], u['lastname'],
 									user.login, password ]
@@ -1052,10 +1142,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 			date_time = time.strftime(_(u'%d %m %Y at %H:%M:%S'), time.gmtime())
 
+			if profile is None:
+				# final name of the file contains all impacted profiles
+				_profile_ = '_'.join(all_profiles)
+			else:
+				_profile_ = profile.groupName
+
 			html_file_filename = '%s/import_%s-%s.html' % (
 								settings.home_archive_dir,
 								# don't take the name, it could have spaces in it.
-								profile.groupName,
+								_profile_,
 								hlstr.validate_name(date_time))
 
 			html_file = open(html_file_filename, 'w')
@@ -1090,7 +1186,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					{download_link}
 					<div class="secflaw">{security_flaw}</div>
 					<div>{direct_access}'''.format(
-					title=_(u'{0} accounts and passwords').format(profile.name),
+					title=_(u'{0} accounts and passwords').format(_profile_),
 					import_on_date=_(u'Import made on {0}.').format(date_time),
 					security_flaw=_(u'Keeping passwords in any written form '
 						'is a major security flaw for you information system.'
