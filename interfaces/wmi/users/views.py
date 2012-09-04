@@ -187,6 +187,17 @@ def massive(request, uids, action, *args, **kwargs):
 			# force thread switch in the interpreter.
 			time.sleep(0)
 
+	if action == 'lock':
+		for uid in uids.split(','):
+			user = LMC.users.guess_one(uid)
+			print "working on user {0}({1}) ; is locked : {2}".format(user.login, user.uid, user.is_locked)
+
+
+			if user.is_locked:
+				mod(request, uid=user.uid, action='unlock', value=True)
+			else:
+				mod(request, uid=user.uid, action='lock', value=True)
+
 	if action == 'skel':
 		for uid in uids.split(','):
 			if uid != '':
