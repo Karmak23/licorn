@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<libraryDescription xmlns="http://schemas.microsoft.com/windows/2009/library">
+  <ownerSID>S-1-5-21-2728088464-4223794023-483250071-1560</ownerSID>
+  <version>5</version>
+  <isLibraryPinned>true</isLibraryPinned>
+  <iconReference>imageres.dll,-1003</iconReference>
+  <templateInfo>
+    <folderType>{B3690E58-E961-423B-B687-386EBFD83239}</folderType>
+  </templateInfo>
+  <propertyStore>
+    <property name="HasModifiedLocations" type="boolean"><![CDATA[true]]></property>
+    <property name="ShowNonIndexedLocationsInfoBar" type="boolean"><![CDATA[false]]></property>
+  </propertyStore>
+  <searchConnectorDescriptionList>
+    <searchConnectorDescription>
+      <isDefaultSaveLocation>true</isDefaultSaveLocation>
+      <isSupported>false</isSupported>
+      <simpleLocation>
+        <url>H:\Images</url>
+        <serialized>MBAAAEAFCAAAAAAAADAAAAAAAY0gAAQBQAAAAwi0/tZyw1cAOQE6SaphNHALS/3mJDXzBAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAA8HAUAwHQB+TQDi66kGEiiNCAsCMw0ZGA8CS6wFAAAAAAAAAAAAAAAAAAAAAAAAAQBQMAAAAAAgAB5YgQAQStF2ZlNHAAoDAIAABA8uvCEkjB6RQRBlKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAkEAtBQYAcGAlBwcAAAAWAAAAoEAAAAHAAAACAAAAAAAAAAAAAAAcAAAAMEAAAwJAAAADAAAAQBAAAAJAAAAAAgAAwFXtVGdh1CMxwFav1WZzBAS6AQStF2ZlNHAoAAAAkAAAAKHAAAAxMFUTJuiYZEvMhzQ7y/ETaCmt5MAAAAAAAAAAAGAAAwAAAAoYBAAAAAAAAQblRXYtATMAAAAAAAAAAAAjhVF050K7amA1vWcjXLkEBA/AAAAAAAAUGgNAAAAAAgYYVBdOtyumJQ9rF341CJRAwPAAAAAAAAlBYDAAAAAAAAAAAA</serialized>
+      </simpleLocation>
+    </searchConnectorDescription>
+  </searchConnectorDescriptionList>
+</libraryDescription>
