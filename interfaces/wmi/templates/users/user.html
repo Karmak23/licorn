@@ -58,7 +58,6 @@
 		content = $('#sub_content_area');
 		var passwords_match = false;
 		var check_user_pwd;
-		
 		// from main.js
 		password_helpers(content)
 
@@ -104,7 +103,38 @@
 			select_row($('.current_list').find('#_list_name').text(),
 						"{{ user_uid }}");
 
-		{%- else -%}
+		{%- endif -%}
+		{%- if _mode == 'massiv' -%}
+			// init massive mode
+
+			// for shell :
+			$('#id_shell').change(function() {
+				console.log('/users/massive/shell/'+$.URLEncode("{{uids}}")+'/'+$.URLEncode($('#id_shell').val()))
+				$.get('/users/massive/shell/'+$.URLEncode("{{uids}}")+'/'+$.URLEncode($('#id_shell').val()))
+			})
+
+			// for groups :
+			var rel_ids = {
+				'no_membership' : 0,
+				'guest'         : 1,
+				'member'        : 2,
+				'resp'          : 3 }
+
+			$('.instant_apply_click').click(function() {
+				console.log('group click '+$('#sub_content').attr('value'))
+				div = $('#sub_content').find('#'+$(this).attr('id')).filter('.click_item');
+				console.log(div)
+				div.find('.item_hidden_input').addClass('item_currently_selected');
+
+				url = '/users/massive/groups/'+$.URLEncode("{{uids}}")+'/'+$(this).attr('id')
+							+ '/' + rel_ids[$(this).attr('value')]
+				console.log(url)
+				$.get(url);
+			});
+
+
+		{%- endif -%}
+		{%- if _mode == 'new' -%}
 			// unselect row in case a user has been selected
 			unselect_row();
 			lock_sub_content();

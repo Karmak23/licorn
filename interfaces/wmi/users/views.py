@@ -18,7 +18,7 @@ from operator  import attrgetter
 from django.shortcuts               import *
 from django.template.loader         import render_to_string
 from django.utils.encoding          import smart_str
-from django.utils.translation       import ugettext_lazy as _
+from django.utils.translation       import ugettext as _
 from django.core.servers.basehttp   import FileWrapper
 from django.contrib.auth.decorators import login_required
 
@@ -236,7 +236,7 @@ def massive(request, uids, action, *args, **kwargs):
 	if action == 'edit':
 
 		# TODO : remove it
-		user = LMC.users.guess_one('robin')
+		user = None
 
 		groups_list = [ (_('Standard groups'),{
 						'user': user,
@@ -258,12 +258,25 @@ def massive(request, uids, action, *args, **kwargs):
 						if not group.is_helper and not group.is_privilege ]
 			}))
 
+		# inform the user that the UI will take time to build,
+		# to avoid re-clicks and (perfectly justified) grants.
+		ngroups = len(LMC.groups.keys())
+		if ngroups > 50:
+			# TODO: make the notification sticky and remove it just
+			# before returning the rendered template result.
+			utils.notification(request, _('Building user massiv form, please '
+							'wait…'), 3000 + 5 * ngroups, 'wait_for_rendering')
+
 		_dict = {
-					'_mode'                 : "masiv",
+					'uids'                  : uids,
+					'users'                 : [ LMC.users.guess_one(u) for \
+														u in uids.split(',')],
+					'_mode'                 : "massiv",
 					'form'                  : UserForm("massiv", user),
 					'groups_lists'          : groups_list,
 					'title'                 : _("Massive edit")
 				}
+
 		return render(request, 'users/user.html', _dict)
 
 	return HttpResponse('MASSIVE DONE.')

@@ -147,7 +147,16 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 			});
 			// show the mass edit view in the sub-content
 			$.get('/users/massive/edit/' + $.URLEncode(uids.join(',')), function(html) {
-				reload_div('#sub_content', html)
+				reload_div('#sub_content', html);
+				lock_sub_content();
+				for(i=0;i<uids.length;i++) {
+					if (i==0) {
+						select_row(list_name, uids[i])
+					}
+					else {
+						select_row(list_name, uids[i], false)
+					}
+				}
 			});
 		}
 	});
@@ -608,8 +617,13 @@ function my_sort(list_name, sort_way, sort_item) {
 	return items;
 }
 
-function select_row(list_name, id) {
-	unselect_row();
+function select_row(list_name, id, unselect_previus_row) {
+	if (unselect_previus_row == null) {
+		unselect_previus_row = true;
+	}
+	if (unselect_previus_row) {
+		unselect_row();
+	}
 	div = $('#'+list_name+'_list').find('.row').filter("#"+id);
 	div.addClass('item_selected');
 	div.children().addClass('bkg_selected');
