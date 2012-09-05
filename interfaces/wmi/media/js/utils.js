@@ -203,11 +203,14 @@ function dialog(title, content, yes_no, yes_action, content_has_to_be_loaded, ur
 		$("#dialog-close-button").click(function() {
 			_DIALOG.hide();
 		});
-		$('body').keyup(function() {
+		$('body').keyup(function(event) {
 			//console.log("keycode "+event.keyCode);
 			if (event.keyCode == 27) { // escape key
 				if (!$('#dialog').is(':hidden')) {
 					_DIALOG.hide();
+
+					// stop propagation : fix #781
+					event.stopPropagation();
 				}
 			}
 			if (_DIALOG.yes_no == true) {
