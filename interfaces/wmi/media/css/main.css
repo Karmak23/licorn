@@ -207,7 +207,7 @@ div#banner {
 	text-align: center;
 }
 
-.push_reconnection_notification, .backup_in_progress {
+.push_reconnection_notification, .backup_in_progress, .wait_for_rendering {
 	padding-left: 35px;
 	background-image: url('/media/images/throbber.gif');
 	background-position: left center;

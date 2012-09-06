@@ -1,4 +1,4 @@
-.. _groups:
+.. _groups.en:
 
 ======
 Groups

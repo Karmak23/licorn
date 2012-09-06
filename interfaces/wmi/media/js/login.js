@@ -26,7 +26,7 @@ $(document).ready(function() {
 			table   = $('#login_table');
 			cur_pos = table.position().left;
 
-			console.log('cur: ' + cur_pos);
+			//console.log('cur: ' + cur_pos);
 
 			// we've got to manually set margin-left to the current
 			// position, else it will start sliding from 0px — producing

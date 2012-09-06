@@ -1,4 +1,6 @@
 
+echo "START responsibles script"
+
 regedit /s \\%servname%\netlogon\templates\registry\reset-mini.reg >nul
 regedit /s \\%servname%\netlogon\templates\registry\responsibles.reg >nul
 
@@ -27,5 +29,9 @@ goto responsibles_end
 :responsibles_WinXP
 goto responsibles_end
 
+:responsibles_Vista
+goto responsibles_end
+
 :responsibles_end
 
+echo "END responsibles script"

@@ -31,7 +31,7 @@
 	{%- set main_column = "name" -%}
 	{%- set title = _('Groups') -%}
 	{%- set massive_actions = [ { "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
-								{ "action_name" : "permissiveness", "icon" : "/media/images/24x24/mass_perm.png"},
+								{ "action_name" : "permissiveness", "icon" : "/media/images/24x24/mass_lock.png"},
 								{ "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"} ] -%}
 
 	{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'groups_massive_select\'>", "sortable" : False},
@@ -50,7 +50,7 @@
 
 	{%- if request.user.is_superuser -%}
 		<!-- system groups list -->
-
+		<br>
 		{%- set name = "sys_groups" -%}
 		{%- set title = _('System groups') -%}
 		{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'sys_groups_massive_select\'>", "sortable" : False},
@@ -67,31 +67,60 @@
 
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
+
 			number_of_list = {{ 2 if request.user.is_superuser else 1 }};
 
 			//init size of lists
-			$(".list_content").hide();
+			//$(".list_content").hide();
+
+			// hide everything
+			$(".list_header").hide();
+			$(".list_items").hide();
+			$(".bar_nav").hide();
+
+			// show only the first list
+			$(".list_header:first").show();
+			$(".list_items:first").show();
+			$(".bar_nav:first").show();
+
+
 
 			height = $("#main_content").height() - number_of_list * ($(".list_title").height());
 			content = $(".list:first").find(".list_content");
 			content.show()
 			$(".list:first").addClass('current_list');
-
+			//content.show().height(height);
 			$('.list_items').height(height - content.find('.search_bar').height() - content.find('.list_header').height() - 100);
 			$('.row').width(content.find('.list_header').width());
 
 			// init click event on list title
-			$(".list_title").each(function() {
-				$(this).click(function() {
-					$(".list_content").hide();
-					$(this).addClass('current_list');
-					$(this).parent().find(".list_content").show();
+			if ($(".list_title").length > 1) {
+				
+				$(".list_title").click(function() {
+					var list = $('#'+$(this).data('list'))
+					$('.current_list').removeClass('current_list');
+					list.addClass('current_list');
+					// hide everything
+					$(".list_header").hide();
+					$(".list_items").hide();
+					$(".bar_nav").hide();
+
+					// show only the good list
+					list.find(".list_header").show();
+					list.find(".list_items").show();
+					list.find(".bar_nav").show();
+
+					// re sort the list
+					window["sort_"+$(this).data('list')]();
+					
 				});
-			});
+			}
 
 			remove_loading_animation();
 
 			$("#search_box").focus();
+
+
 		});
 	</script>
 

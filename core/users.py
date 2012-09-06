@@ -1094,8 +1094,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 								- len(self.__primaryGroup().name)
 								- len(str(self.__gidNumber)))
 
-			accountdata = [ u'{login}: ✎{uid} ✐{pri_group} '
-							u'{backend}	{gecos} {inotified}'.format(
+			accountdata = [ u'{login}: #{uid} &{pri_group} '
+							u'@{backend}	{gecos} {inotified}'.format(
 								login=stylize(
 									_locked_colors[self.__locked],
 									(self.__login).rjust(label_width)),
@@ -1164,6 +1164,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			<loginShell>%s</loginShell>
 			<backend>%s</backend>
 			<groups>%s</groups>
+			<profile>%s</profile>
 		</user>''' % (
 						self.__login,
 						self.__uidNumber,
@@ -1172,8 +1173,9 @@ class User(CoreStoredObject, CoreFSUnitObject):
 						self.__homeDirectory,
 						self.__loginShell,
 						self.backend.name,
-						','.join([group.name for group in self.groups])
-					)
+						','.join([group.name for group in self.groups]),
+						self.profile.name if self.profile is not None else \
+																	str(None))
 	def to_WMI(self):
 		""" A simplified version of the current object, suitable to be
 			forwarded via Pyro. """
@@ -1937,7 +1939,9 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 						self[uid].login,
 						str(self[uid].gidNumber),
 						','.join([ g.name for g in self[uid].groups]),
-						self[uid].backend.name
+						self[uid].backend.name,
+						self[uid].profile.name if self[uid].profile is not \
+															None else str(None)
 					]
 					)
 

@@ -1,0 +1,9 @@
+# Unused file in its current form, its contents are generated in
+# upgrades/…/bbb_olcSizeLimit_unlimited.py. It's kept here only
+# for reference. It's functionnal when used on CLI with ldapmodify
+# (see http://dev.licorn.org/ticket/864 for details).
+
+dn: olcDatabase={-1}frontend,cn=config
+changetype: modify
+replace: olcSizeLimit
+olcSizeLimit: unlimited

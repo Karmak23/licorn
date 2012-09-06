@@ -764,8 +764,8 @@ def add_user_parse_arguments(app):
 	(Will automatically create users groups during the process)
 
 	{0} users --filename=<file> --profile=<profile_name|profile_group|profile_gid>
-		[--lastname-column=<COL>] [--firstname-column=<COL>]
-		[--group-column=<COL>] [--login-column=<COL>]
+		[--lastname-column=<COL>] [--firstname-column=<COL>] [ --gecos-column=<COL>]
+		[--group-column=<COL>] [--login-column=<COL>] [--profile-column=<COL>]
 		[--password-column=<COL>]
 		[--separator=<SEP>]
 		[--confirm-import]
@@ -937,6 +937,16 @@ def add_user_parse_arguments(app):
 		action="store", type="int", dest="firstname_col", default = 1,
 		help=_(u"firstname column number in CSV (default is %s).") %
 			stylize(ST_DEFAULT, "1"))
+
+	addimport.add_option("--gecos-column",
+		action="store", type="int", dest="gecos_col", default = None,
+		help=_(u"gecos column number in CSV (default is %s).") %
+			stylize(ST_DEFAULT, "None"))
+
+	addimport.add_option("--profile-column",
+		action="store", type="int", dest="profile_col", default = None,
+		help=_(u"profile column (default is %s).") %
+			stylize(ST_DEFAULT, "None"))
 
 	addimport.add_option("--group-column",
 		action="store", type="int", dest="group_col", default = 2,

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-30 09:18+0200\n"
+"POT-Creation-Date: 2012-08-28 17:38+0200\n"
 "PO-Revision-Date: 2012-06-18 09:59+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -18,15 +18,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
-#: media/js/gettext.js:5 media/js/utils.js:155
+#: media/js/gettext.js:5 media/js/utils.js:161
 msgid "Confirm"
 msgstr "Confirmer"
 
-#: media/js/gettext.js:6 media/js/utils.js:162
+#: media/js/gettext.js:6 media/js/utils.js:168
 msgid "Cancel"
 msgstr "Annuler"
 
-#: media/js/gettext.js:7 media/js/utils.js:165
+#: media/js/gettext.js:7 media/js/utils.js:171
 msgid "Close"
 msgstr "Fermer"
 
@@ -90,58 +90,58 @@ msgstr "Confirmation de suppression"
 msgid "Skeleton reapplying confirmation"
 msgstr "Confirmation de ré-application de skelette"
 
-#: media/js/list.js:64
+#: media/js/list.js:80
 msgid "Massive removal"
 msgstr "Suppression massive"
 
-#: media/js/list.js:67 media/js/list.js.c:120
+#: media/js/list.js:83 media/js/list.js.c:136
 msgid "Please select at least one account."
 msgstr "Sélectionnez au moins un compte."
 
-#: media/js/list.js:71
+#: media/js/list.js:87
 msgid "Are you sure you want to remove these account(s):"
 msgstr "Récapitulatif des comptes à supprimer :"
 
-#: media/js/list.js:73
+#: media/js/list.js:89
 msgid "Definitely remove account data (no archiving)"
 msgstr "Supprimer définitivement les données (pas d'archivage)"
 
-#: media/js/list.js:117
+#: media/js/list.js:133
 msgid "Massive export"
 msgstr "Export Massif"
 
-#: media/js/list.js:124
+#: media/js/list.js:140
 msgid "Are you sure you want to export these account(s):"
 msgstr "Récapitulatif des comptes à exporter :"
 
-#: media/js/list.js:127
+#: media/js/list.js:143
 msgid "Please choose the export format : "
 msgstr "Choisissez le format d'export :"
 
-#: media/js/list.js:179
+#: media/js/list.js:194
 msgid "Massive skeleton reapplying"
 msgstr "Ré-application massive d'un skelette"
 
-#: media/js/list.js:182
+#: media/js/list.js:197
 msgid "Please select at least one user account."
 msgstr "Merci de sélectionner au moins un compte utilisateur."
 
-#: media/js/list.js:187
+#: media/js/list.js:202
 msgid ""
 "Are you sure you want to reapply their skeleton to these user account(s):"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir ré-appliquer leur skelette initial aux compte(s) "
 "utilisateur(s) suivant(s)&nbsp;:"
 
-#: media/js/list.js:221
+#: media/js/list.js:236
 msgid "Massive group premissiveness"
 msgstr "Basculement massif de permissivité"
 
-#: media/js/list.js:224
+#: media/js/list.js:239
 msgid "Please select at least one group."
 msgstr "Merci de sélectionner au moins un groupe."
 
-#: media/js/list.js:229
+#: media/js/list.js:244
 msgid "Are you sure you want to toggle permissiveness of group(s):"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir basculer la permissivité du(des) groupe(s) "
@@ -163,11 +163,11 @@ msgstr "Verrouiller le compte %1"
 msgid "Lock account "
 msgstr "Verrouiller le compte"
 
-#: media/js/main.js:228
+#: media/js/main.js:272
 msgid "Random password generator"
 msgstr "Générateur de mot de passe aléatoire"
 
-#: media/js/main.js:229
+#: media/js/main.js:273
 msgid ""
 "<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</"
 "strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</"
