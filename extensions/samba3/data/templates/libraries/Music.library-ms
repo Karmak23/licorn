@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<libraryDescription xmlns="http://schemas.microsoft.com/windows/2009/library">
+  <ownerSID>S-1-5-21-2728088464-4223794023-483250071-1560</ownerSID>
+  <version>5</version>
+  <isLibraryPinned>true</isLibraryPinned>
+  <iconReference>imageres.dll,-1004</iconReference>
+  <templateInfo>
+    <folderType>{94D6DDCC-4A68-4175-A374-BD584A510B78}</folderType>
+  </templateInfo>
+  <propertyStore>
+    <property name="HasModifiedLocations" type="boolean"><![CDATA[true]]></property>
+    <property name="ShowNonIndexedLocationsInfoBar" type="boolean"><![CDATA[false]]></property>
+  </propertyStore>
+  <searchConnectorDescriptionList>
+    <searchConnectorDescription>
+      <isDefaultSaveLocation>true</isDefaultSaveLocation>
+      <isSupported>false</isSupported>
+      <simpleLocation>
+        <url>H:\Musique</url>
+        <serialized>MBAAAEAFCAAAAAAAADAAAAAAAY0gAAQBQAAAAwi0/tZyw1cAFJ3uFaphNHALS/3mJDXzBAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAEIAUAwHQB+TQDi66kGEiiNCAsCMw0ZGA8CS6wFAAAAAAAAAAAAAAAAAAAAAAAAASBQMAAAAAAgAB5YgQAQT1NXaxVXZAwDAIAABA8uvCEkjB6RQGBlKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0EA1BwcAkGAxBQdAUGAAAgFAAAALBAAAwBAAAgAAAAAAAAAAAAAAAAHAAAADBAAAcCAAAwAAAAAUAAAAQCAAAAAAIAAcxVblRXYtATMch2btV2cAgkOA0UdzlWc1VGAoAAAAkAAAAKHAAAAxMFUTJuiYZEvMhzQ7y/ETaCmt5MAAAAAAAAAAAGAAAwAAAAoYBAAAAAAAAQblRXYtATMAAAAAAAAAAAAjhVF050K7amA1vWcjXLkEBA/AAAAAAAATGgNAAAAAAgYYVBdOtyumJQ9rF341CJRAwPAAAAAAAwkBYDAAAAAAAAAAAA</serialized>
+      </simpleLocation>
+    </searchConnectorDescription>
+  </searchConnectorDescriptionList>
+</libraryDescription>

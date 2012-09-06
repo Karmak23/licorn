@@ -332,6 +332,15 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 		title    = _('Add new group')
 		group_id = ''
 
+	# inform the user that the UI will take time to build,
+	# to avoid re-clicks and (perfectly justified) grants.
+	nusers = len(LMC.users.keys())
+	if nusers > 50:
+		# TODO: make the notification sticky and remove it just
+		# before returning the rendered template result.
+		utils.notification(request, _('Building group {0} form, please wait…').format(
+			_('edit') if edit_mod else _('creation')), 3000 + 5 * nusers, 'wait_for_rendering')
+
 	users_list = [ (_('Standard users'),{
 					'group' : group,
 					'name'  : 'standard',
@@ -355,6 +364,8 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 			}
 
 	if request.is_ajax():
+
+		# TODO: use utils.format_RPC_JS('remove_notification', "wait_for_rendering")
 		return render(request, 'groups/group.html', _dict)
 
 	else:
@@ -371,6 +382,7 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 											default_selection=filters.STANDARD),
 				'system_groups_list'     : sys_groups})
 
+		# TODO: use utils.format_RPC_JS('remove_notification', "wait_for_rendering")
 		return render(request, 'groups/group_template.html', _dict)
 
 @staff_only

@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2011-2012 Olivier Cortès <olive@licorn.org>
+ * Copyright (C) 2011-2012 META IT S.à.S http://meta-it.fr/
+ *
+ * Licensed under the terms of the GNU GPL version 2
+ */
+
 var push_active       = true;
 var push_stream_error = false;
 var push_setup_done   = false;
@@ -113,8 +120,8 @@ function push_evaluate(data) {
 			if (push_active) {
 				eval(curobj.method + "(" + curobj.arguments.join(',') + ")");
 			} else {
-				console.log('PUSH inactive, but should have executed '
-					+ curobj.method + "(" + curobj.arguments.join(',') + ")");
+				//console.log('PUSH inactive, but should have executed '
+				//	+ curobj.method + "(" + curobj.arguments.join(',') + ")");
 			}
 
 		} catch (err) {

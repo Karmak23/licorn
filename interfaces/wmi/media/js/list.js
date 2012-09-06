@@ -124,7 +124,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 				items.push($.trim($(this).find('.'+list_name+'_'+main_column).text()));
 			}
 		});
-		console.log(items)
+		//console.log(items)
 		html = '<ul>'
 		$.each(items, function(k, item) {
 			html += '<li>'+item+'</li>';
@@ -159,7 +159,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 						}
 					});
 
-					console.log($("#id_export_type"))
+					//console.log($("#id_export_type"))
 					type = $("#id_export_type").val().toString();
 					page_url = "/"+list_name+"/massive/export/" + $.URLEncode(items.join(',')) + "/"+ type;
 					$.get(page_url, function(data) {
@@ -217,6 +217,46 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 					});
 				skel_dialog.show();
 			});
+		}
+	});
+
+	$('#'+list_name+'_massive_lock').click(function() {
+		users=[]
+		$('#'+list_name+'_list').find(".row").each(function() {
+			if ($(this).find('.users_checkbox').is(':checked') == true) {
+				users.push($(this).find('.users_login').text());
+			}
+		});
+
+		users_selected_html = '<ul>'
+		$.each(users, function(k, g) {
+			users_selected_html += '<li>'+g+'</li>';
+		});
+		users_selected_html += '</ul>';
+		mass_lock_dialog_title = gettext("Massive users lock toggle");
+
+		if (users_selected_html == '<ul></ul>') {
+			mass_lock_dialog_content =  gettext("Please select at least one user.");
+			mass_lock_dialog = new dialog(mass_lock_dialog_title, mass_lock_dialog_content);
+			mass_lock_dialog.show();
+		}
+		else {
+			mass_lock_dialog_content = gettext("Are you sure you want to toggle lock of selected user(s):");
+			mass_lock_dialog_content += users_selected_html;
+
+			mass_lock_dialog = new dialog(mass_lock_dialog_title, mass_lock_dialog_content,
+				true, function() {
+					users=[]
+					$('#'+list_name+'_list').find(".row").each(function() {
+						if ($(this).find('.users_checkbox').is(':checked') == true) {
+								users.push($(this).find('.users_uidNumber').text());
+						}
+					});
+					page_url = "/users/massive/lock/" + $.URLEncode(users.join(','));
+					$.get(page_url);
+				});
+			mass_lock_dialog.show();
+
 		}
 	});
 

@@ -32,7 +32,8 @@
 	{%- set title = _('Users') -%}
 	{%- set massive_actions = [ { "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
 								{ "action_name" : "skel", "icon" : "/media/images/24x24/mass_skel.png"},
-							    { "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"} ] -%}
+							    { "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"},
+							    { "action_name" : "lock", "icon" : "/media/images/24x24/mass_lock.png"} ] -%}
 	{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'users_massive_select\'>", "sortable" : False},
 						{ "name" : "locked", "content" : "<img src=\'/media/images/24x24/locked_header.png\'/>", "sortable" : True, "default_sort" : False},
 						{ "name" : "login", "content" : _('Login'), "sortable" : True, "default_sort" : True},
@@ -49,6 +50,7 @@
 
 	{%- if request.user.is_superuser -%}
 		<!-- system users list -->
+		<br>
 
 		{%- set name = "sys_users" -%}
 		{%- set title = _('System users') -%}
@@ -73,7 +75,19 @@
 			number_of_list = {{ 2 if request.user.is_superuser else 1 }};
 
 			//init size of lists
-			$(".list_content").hide();
+			//$(".list_content").hide();
+
+			// hide everything
+			$(".list_header").hide();
+			$(".list_items").hide();
+			$(".bar_nav").hide();
+
+			// show only the first list
+			$(".list_header:first").show();
+			$(".list_items:first").show();
+			$(".bar_nav:first").show();
+
+
 
 			height = $("#main_content").height() - number_of_list * ($(".list_title").height());
 			content = $(".list:first").find(".list_content");
@@ -84,14 +98,27 @@
 			$('.row').width(content.find('.list_header').width());
 
 			// init click event on list title
-			$(".list_title").each(function() {
-				$(this).click(function() {
+			if ($(".list_title").length > 1) {
+				
+				$(".list_title").click(function() {
+					var list = $('#'+$(this).data('list'))
 					$('.current_list').removeClass('current_list');
-					$(this).parent().addClass('current_list');
-					$(".list_content").hide();
-					$(this).parent().find(".list_content").show();
+					list.addClass('current_list');
+					// hide everything
+					$(".list_header").hide();
+					$(".list_items").hide();
+					$(".bar_nav").hide();
+
+					// show only the good list
+					list.find(".list_header").show();
+					list.find(".list_items").show();
+					list.find(".bar_nav").show();
+
+					// re sort the list
+					window["sort_"+$(this).data('list')]();
+					
 				});
-			});
+			}
 
 			remove_loading_animation();
 

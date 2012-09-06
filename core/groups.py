@@ -1645,13 +1645,12 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			return self.__cg_precalc_full
 
 		except AttributeError:
-
 			# NOTE: 5 = len(str(65535)) == len(max_uid) == len(max_gid)
 			label_width    = Group._cw_name
 			align_space    = ' ' * (label_width + 2)
 			gid_label_rest = 5 - len(str(self.__gidNumber))
 
-			accountdata = [ u'{group_name}: ✎{gid} {backend}	'
+			accountdata = [ u'{group_name}: #{gid} @{backend}	'
 								u'{descr} {inotified}'.format(
 								group_name=stylize(
 									Group._permissive_colors[self.__is_permissive]
@@ -1687,8 +1686,10 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						# colors..
 						if self.__is_permissive is None:
 							accountdata.append(_(u"UNKNOWN"))
+
 						elif self.__is_permissive:
 							accountdata.append(_(u"permissive"))
+
 						else:
 							accountdata.append(_(u"NOT permissive"))
 
@@ -1707,7 +1708,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					members = []
 					try:
 						members.extend([ (user.login, '%s%s' % (
-									stylize(ST_COMMENT, '✍'),
+									stylize(ST_COMMENT, '+'),
 									user._cli_get_small()))
 									for user in self.__responsible_group().members ])
 					except Exception, e:
@@ -1716,7 +1717,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 					try:
 						members.extend([ (user.login, '%s%s' % (
-									stylize(ST_BAD, '×'),
+									stylize(ST_BAD, '-'),
 									user._cli_get_small()))
 									for user in self.__guest_group().members ])
 					except Exception, e:
@@ -1739,6 +1740,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					# resps and guest are combined with the std group, don't
 					# display them at all.
 					return ''
+
 				else:
 					if len(self.__members) > 0:
 						accountdata.append('%s%s' % (
@@ -1757,14 +1759,14 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		try:
 			return self.__cg_precalc_small
-		except AttributeError:
 
+		except AttributeError:
 			is_priv = self.is_privilege
 
 			if self.__is_helper:
 				self.__cg_precalc_small = '%s%s(%s)' % (
-					stylize(ST_COMMENT, '✍') if self.is_responsible
-						else stylize(ST_BAD, '×'),
+					stylize(ST_COMMENT, '+') if self.is_responsible
+						else stylize(ST_BAD, '-'),
 					stylize(
 						Group._permissive_colors[self.standard_group.is_permissive],
 						self.standard_group.name),
@@ -1774,7 +1776,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					stylize(Group._permissive_colors[self.__is_permissive]
 						if self.is_standard
 						else (ST_COMMENT if is_priv else ST_NAME)
-						, '%s%s' % ('⚑' if is_priv else '', self.__name)),
+						, '%s%s' % ('%' if is_priv else '', self.__name)),
 					stylize(ST_UGID, self.__gidNumber))
 			return self.__cg_precalc_small
 

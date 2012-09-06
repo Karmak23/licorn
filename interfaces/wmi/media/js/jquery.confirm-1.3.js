@@ -42,7 +42,7 @@ jQuery.fn.confirm = function(options) {
     var $target = jQuery(target);
     var timer;
     var saveHandlers = function() {
-      var events = jQuery.data(target, 'events');
+      var events = jQuery._data(target, 'events');
       if (!events && target.href) {
         // No handlers but we have href
         $target.bind('click', function() {document.location = target.href});

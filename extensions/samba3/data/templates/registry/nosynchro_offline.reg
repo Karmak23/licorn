@@ -10,6 +10,7 @@ Windows Registry Editor Version 5.00
 
 ;Disable "Offline Files and Folders"
 [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\NetCache]
+"Enabled"=dword:00000000
 "SyncAtLogon"=dword:00000000
 "SyncAtLogoff"=dword:00000000
 "NoReminders"=dword:00000001

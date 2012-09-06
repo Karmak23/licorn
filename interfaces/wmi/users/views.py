@@ -187,6 +187,17 @@ def massive(request, uids, action, *args, **kwargs):
 			# force thread switch in the interpreter.
 			time.sleep(0)
 
+	if action == 'lock':
+		for uid in uids.split(','):
+			user = LMC.users.guess_one(uid)
+			print "working on user {0}({1}) ; is locked : {2}".format(user.login, user.uid, user.is_locked)
+
+
+			if user.is_locked:
+				mod(request, uid=user.uid, action='unlock', value=True)
+			else:
+				mod(request, uid=user.uid, action='lock', value=True)
+
 	if action == 'skel':
 		for uid in uids.split(','):
 			if uid != '':
@@ -306,6 +317,15 @@ def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 		title    = _('Add new user')
 		action   = 'new'
 		user_id  = ''
+
+	# inform the user that the UI will take time to build,
+	# to avoid re-clicks and (perfectly justified) grants.
+	ngroups = len(LMC.groups.keys())
+	if ngroups > 50:
+		# TODO: make the notification sticky and remove it just
+		# before returning the rendered template result.
+		utils.notification(request, _('Building user {0} form, please wait…').format(
+			_('edit') if edit_mod else _('creation')), 3000 + 5 * ngroups, 'wait_for_rendering')
 
 	f = UserForm(edit_mod, user)
 
@@ -485,16 +505,20 @@ def import_view(request, confirm='', *args, **kwargs):
 		opts.confirm_import = bool(confirm)
 		opts.no_sync        = False
 		opts.separator      = request.POST['separator']
-		opts.lastname_col   = int(request.POST['lastname']) \
-								if request.POST['lastname'] != '' else None
-		opts.firstname_col  = int(request.POST['firstname']) \
-								if request.POST['firstname'] != '' else None
-		opts.group_col      = int(request.POST['group']) \
-								if request.POST['group'] != '' else None
-		opts.login_col      = int(request.POST['login']) \
-								if request.POST['login'] != '' else None
-		opts.password_col   = int(request.POST['password']) \
-								if request.POST['password'] != '' else None
+		opts.lastname_col   = int(request.POST['lastname_col']) \
+								if request.POST['lastname_col'] != '' else None
+		opts.firstname_col  = int(request.POST['firstname_col']) \
+								if request.POST['firstname_col'] != '' else None
+		opts.gecos_col   = int(request.POST['gecos_col']) \
+								if request.POST['gecos_col'] != '' else None
+		opts.profile_col   = int(request.POST['profile_col']) \
+								if request.POST['profile_col'] != '' else None
+		opts.group_col      = int(request.POST['group_col']) \
+								if request.POST['group_col'] != '' else None
+		opts.login_col      = int(request.POST['login_col']) \
+								if request.POST['login_col'] != '' else None
+		opts.password_col   = int(request.POST['password_col']) \
+								if request.POST['password_col'] != '' else None
 
 		# Execute the import in background in order to return instantly
 		# remote:
