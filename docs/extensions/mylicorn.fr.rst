@@ -88,3 +88,10 @@ Résolution
 La résolution des autres causes est hors sujet sur ce site dédié à la documentation de Licorn®. Les actions nécessaires doivent être menées à bien par du personnel qualifié.
 
 .. seealso:: Voyez la :ref:`documentation pour les développeurs <extensions.mylicorn.dev.en>` (en anglais) pour plus de détails.
+
+
+
+Documentation pour les développeurs
+===================================
+
+Voyez la :ref:`documentation dédiée de l'extension mylicorn <extensions.mylicorn.dev.en>` (en anglais).

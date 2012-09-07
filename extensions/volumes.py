@@ -196,8 +196,7 @@ class Volume(PicklableObject, SharedResource):
 	""" A single volume object.
 
 		.. note:: This class is individually locked because :class:`Volume`
-			can be accessed through multiple extensions (most notably
-			:class:`rdiff-backup <licorn.extensions.rdiffbackup.RdiffbackupExtension>`
+			can be accessed through multiple extensions (most notably :class:`rdiff-backup <licorn.extensions.rdiffbackup.RdiffbackupExtension>`
 			which can take ages to complete).
 
 		.. versionadded:: 1.2.4

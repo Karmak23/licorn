@@ -485,17 +485,20 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 	@cache.cached(cache.one_week)
 	@lazy_mounted
 	def operations_status(self, volume=None, *args, **kwargs):
-		""" Get the status of lastly ran operations. Return it as a dict of
-			tuples, containing data organized like this:
+		"""
+			.. highlight:: python
 
-			{
-				op_code_name: ('Op Friendly Name', (True, False or None), 'operation log'),
-				...
-			}
-					),
-				([ 'rdiff-backup', '--list-increments', '--parsable-output',
-											self.backup_dir(volume) ],
-					),
+			Get the status of lastly ran operations. Return it as a dict of
+			tuples, containing data organized like this::
+
+				{
+					op_code_name: ('Op Friendly Name', (True, False or None), 'operation log'),
+					...
+				}
+						),
+					([ 'rdiff-backup', '--list-increments', '--parsable-output',
+												self.backup_dir(volume) ],
+						),
 
 		"""
 
@@ -853,7 +856,8 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 			logging.warning(_(u'{0}: minimum backup interval cannot be less than {1}, '
 				u'clipping.').format(self.pretty_name, pyutils.format_time_delta(3600)))
 			# TODO: rewrite settings when the primitive exists.
-			minimum_interval = 360
+			minimum_interval = 3600
+
 		if volume:
 			if not force and (
 					time.time() - self._last_backup_time(volume) < minimum_interval):
@@ -880,11 +884,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 			* computing the space needed for the backup, and eventually
 			  cleaning the backup volume before proceeding, if needed.
 			* updating the last backup time: it's the time of the backup
-			  **start**, not the end, to be sure one backup per
-			  :term:`backup.interval` is
-			  executed, not one backup per :term:`backup.interval` +
-			  backup_duration, which could
-			  greatly delay future backups if they take a long time.
+			  **start**, not the end.
 			* doing the rdiff-backup.
 			* updating the average statistics for the backup volume (this
 			  permits finer accuracy when computing needed space).
@@ -894,9 +894,9 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 				or ``None`` if you want the method to search for the first
 				available volume.
 
-			:param force: a boolean, used to force a backup, even if the last
-				backup has been done in less than the configured
-				:term:`backup interval <backup.interval>`.
+			:param force: a boolean, used to force a backup, even if there is
+				enough space on the backup volume, or if the last
+				backup was run in less than the configured :ref:`minimum_interval <extensions.rdiffbackup.backup.minimum_interval.en>`.
 
 			.. warning::
 				* **DO NOT CALL THIS METHOD DIRECTLY**. Instead, run
@@ -1282,15 +1282,8 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 	@events.handler_method
 	@only_if_enabled
 	def settings_changed(self, *args, **kwargs):
-		""" Trigerred when the Licorn® main configuration file changed. If the
-			:ref:`backup.interval <backup.interval.en>` changed and the
-			timer thread is running, it will be reset with the new interval
-			value.
-
-			.. note:: when a dynamic change occur, the timer will be simply
-				reset. No sophisticated computation will be done to substract
-				the already-passed time from the new interval.
-		"""
+		""" Trigerred when the Licorn® main configuration file changed, to
+			reload internal settings value. """
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 

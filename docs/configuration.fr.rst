@@ -7,11 +7,11 @@
 Configuration
 =============
 
-Vous pouvez à tout moment consulter la configuration actuelle avec la commande suivante::
+Vous pouvez à tout moment consulter la configuration actuelle avec la commande suivante ::
 
 	get config
 
-La liste des `backends <core/backends.fr>`_ et des `extensions <extensions/index.fr>`_ n'est pas loin::
+La liste des :ref:`backends <core.backends.fr>` et des :ref:`extensions <extensions.fr>` n'est pas loin ::
 
 	get config backends
 	get config extensions
@@ -24,14 +24,20 @@ Situé à l'emplacement :file:`/etc/licorn/licorn.conf`, le fichier de configura
 
 .. note:: les directives sont listées dans l'ordre alphabétique, pas dans l'ordre d'importance.
 
+.. _settings.extensions.rdiffbackup.fr:
 
 Système de sauvegardes
 ----------------------
 
-.. _backup.interval.fr:
+.. _extensions.rdiffbackup.backup_time.fr:
 
-	**backup.interval**
-		Définit l'intervale entre deux sauvegardes du système, en secondes (valeur d'usine: ``3600``, c'est à dire une heure).  Cette directive définit la valeur pour tous les modules de sauvegarde, mais certains peuvent avoir des paramètres dédiés plus spécifiques.
+	**extensions.rdiffbackup.backup_time**
+		L'heure du jour à laquelle la sauvegarde incrémentale est lancée. Valeur d'usine : ``02:00`` (du matin). Spéficiez-la comme une heure sur 24H sous forme de chaîne de texte, comme ``13:45``. Les autres formats d'heure ne sont pas encore supportés.
+
+.. _extensions.rdiffbackup.backup_week_day.fr:
+
+	**extensions.rdiffbackup.backup_week_day**
+		Les jours de la semaine où la sauvegarde sera lancée. Valeur d'usine : ``*``, ce qui signifie « tous les jours ». Cette directive doit être une chaîne de texte contenant des chiffres de l'ensemble ``0-6`` séparés par des virgules. ``0`` est dimanche.
 
 
 Configuration générale
@@ -54,7 +60,7 @@ Configuration générale
 .. _settings.threads.service_max.fr:
 
 	**threads.service_max**
-		Le nombre maximum de threads de service concurrents. Valeur d'usine: **150 threads** tourneront pendant les périodes de plus forte charge du daemon. Dès que le nombre de tâches décroit, les threads de service supplémentaires (au delà de :ref:`licornd.threads.service_min <licornd.threads.service_min.fr>`) se terminent au fûr et à mesure, automatiquement.
+		Le nombre maximum de threads de service concurrents. Valeur d'usine: **150 threads** tourneront pendant les périodes de plus forte charge du daemon. Dès que le nombre de tâches décroit, les threads de service supplémentaires (au delà de :ref:`threads.service_min <settings.threads.service_min.fr>`) se terminent au fûr et à mesure, automatiquement.
 
 .. 	_settings.threads.wipe_time.fr:
 
@@ -127,7 +133,7 @@ Directives liées à la WMI
 .. _settings.wmi.port.fr:
 
 	**wmi.port**
-		Port ``3356`` par défaut. Définissez-le en tant que nombre entier, par exemple `wmi.port = 8282`. Il n'y a pas de restriction particulière, à part que ce port doit être différent de celui de Pyro — cf. :term:`pyro.port`, et évidemment ne pas être en conflit avec un autre port système.
+		Port ``3356`` par défaut. Définissez-le en tant que nombre entier, par exemple `wmi.port = 8282`. Il n'y a pas de restriction particulière, à part que ce port doit être différent de celui de Pyro — cf. :ref:`pyro.port <settings.pyro.port.fr>`, et évidemment ne pas être en conflit avec un autre port système.
 
 
 
@@ -144,7 +150,7 @@ Utilisateurs et aux groupes
 .. _settings.users.check_config_file.fr:
 
 	**users.check_config_file**
-		Defines the path where the user customization file for checks will be looked for. Default is `check.conf` in :term:`users.config_dir`, or with full path: :file:`~/.licorn/check.conf`.
+		Defines the path where the user customization file for checks will be looked for. Default is `check.conf` in :ref:`users.config_dir <settings.users.config_dir.fr>`, or with full path: :file:`~/.licorn/check.conf`.
 
 
 
@@ -186,7 +192,7 @@ But **ces noms sont invalides** ::
 	* Certains fichiers, comme :file:`users.00_default.conf` et :file:`groups.00_default.conf` sont spéciaux : ils sont la configuration d'usine minimale. **Ne les renommez jamais**. Vous pouvez les modifier selon vos besoins mais seulement si vous savez ce que vous faites !
 	* Ces fichiers `*00_default*` **DOIVENT** contenir **au moins UNE ligne au maximum DEUX**, en excluant les commentaires (qui peuvent être aussi nombreux que nécessaire). Les autres fichiers de configuration n'ont pas de restrictions de ce type.
 
-	Si vous n'observez pas ces recommendations, « a huge blue godzilla-like dinosaur will appear from another dimension to destroy the big-loved-teddybear of your damn-cute-face-looking little sister (and she will hate you if she happens to know it's all your fault) » (en anglais dans le texte), ou alors les vérifications et :ref:`chk` ne fonctionnera plus, ou le daemon Licorn® plantera. Vous êtes prévenu(e).
+	Si vous n'observez pas ces recommendations, « a huge blue godzilla-like dinosaur will appear from another dimension to destroy the big-loved-teddybear of your damn-cute-face-looking little sister (and she will hate you if she happens to know it's all your fault) » (en anglais dans le texte), ou alors les vérifications et :ref:`chk <chk.fr>` ne fonctionnera plus, ou le daemon Licorn® plantera. Vous êtes prévenu(e).
 
 
 
@@ -196,7 +202,7 @@ But **ces noms sont invalides** ::
 User-level customizations
 -------------------------
 
-Put your own customizations in the path designed by :term:`users.check_config_file`. User customizations cannot override any system rules, except the one for :file:`~` (`$HOME`) (see :ref:`random_notes` below).
+Put your own customizations in the path designed by :ref:`users.check_config_file <settings.users.check_config_file.fr>`. User customizations cannot override any system rules, except the one for :file:`~` (`$HOME`) (see :ref:`random_notes` below).
 
 
 Check files syntax

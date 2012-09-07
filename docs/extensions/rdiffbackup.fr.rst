@@ -23,7 +23,7 @@ Opérations de sauvegarde
 
 À l'heure actuelle, **toutes les opérations de sauvegarde sont automatiques**, dès qu'un volume de sauvegarde est branché. Il est cependant possible de déclencher une sauvegarde manuellement depuis la WMI.
 
-L'intervale de sauvegarde est configuré via la directive :ref:`backup.interval <backup.interval.fr>`, et c'est tout.
+Les sauvegardes peuvent être paramétrées par jour/heure/intervalle via des :ref:`directives de configuration <settings.extensions.rdiffbackup.fr>`.
 
 .. note::
 	* Si vous devez débrancher le volume dédié aux sauvegardes, celles-ci s'arrêtent. Elles reprennent dès que vous le rebranchez, sans action particulière de votre part.

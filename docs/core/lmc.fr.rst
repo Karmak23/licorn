@@ -5,4 +5,4 @@
 Le contrôleur maître de Licorn® (Licorn® Master Controller, aka LMC)
 ====================================================================
 
-à venir...
+À venir… Référez-vous à la :ref:`documentation de la LMC en anglais <core.lmc.en>` pour l'instant.

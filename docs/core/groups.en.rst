@@ -1,4 +1,4 @@
-.. _core.groups:
+.. _core.groups.en:
 
 ===========
 Core.groups

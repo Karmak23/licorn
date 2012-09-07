@@ -1,4 +1,4 @@
-.. _cmdlistener.dev.en:
+.. _cmdlistener.en:
 
 ===============
 CommandListener

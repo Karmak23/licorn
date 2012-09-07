@@ -60,13 +60,13 @@ Utiliser Licorn®
 Développer pour ou avec Licorn®
 ===============================
 
-Cette section n'est pas traduite. Voici la table des matières de la version anglaise.
+Ces sections ne sont pas encore intégralement traduites. Elles font référence à la documentation en anglais au besoin.
 
 .. toctree::
 	:maxdepth: 2
 
-	concepts.en
-	api.en
+	concepts.fr
+	api.fr
 	specs/index.en
 
 Index et tables

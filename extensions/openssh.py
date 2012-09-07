@@ -127,18 +127,18 @@ class OpensshExtension(ObjectSingleton, ServiceExtension):
 		assert ltrace(self._trace_name, '| is_enabled() → %s' % must_be_running)
 		return must_be_running
 	def check(self, batch=False, auto_answer=None):
-		""" check our OpenSSH needed things (the ``remotessh`` group and our
+		""" Check our OpenSSH needed things (the ``remotessh`` group and our
 			predefined configuration directives and values), and
 			:meth:`reload <~licorn.extensions.ServiceExtension.service>` the
 			service on any change.
 
-		.. note:: TODO: i'm not sure if creating the group really implies
-			``SSHd`` to be reloaded. If it resolves the GID on start for
-			performance consideration, we should. But if the ``AllowGroups``
-			check is purely dynamic (which I think, because members could
-			easily change during an ``SSHd`` run), the reload on group creation
-			is useless. Go into sshd sources and see for ourselves... One day,
-			When I've got time. As of now, stay as much careful as we can.
+			.. note:: TODO: i'm not sure if creating the group really implies
+				``SSHd`` to be reloaded. If it resolves the GID on start for
+				performance consideration, we should. But if the ``AllowGroups``
+				check is purely dynamic (which I think, because members could
+				easily change during an ``SSHd`` run), the reload on group creation
+				is useless. Go into sshd sources and see for ourselves... One day,
+				When I've got time. As of now, stay as much careful as we can.
 		"""
 
 		assert ltrace_func(TRACE_OPENSSH)
