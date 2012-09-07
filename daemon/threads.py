@@ -388,6 +388,12 @@ class GQWSchedulerThread(BaseLicornThread):
 				# dump_status() to hang.
 				sleep_time = self.sleep_time
 
+			if sleep_time < 0:
+				# Circumvent #901: in some very rare conditions, sleep_time
+				# seems to be negative, which raises an "IOError:
+				# Invalid Argument" exception on Unixes (cf. http://bytes.com/topic/python/answers/29389-behaviour-time-sleep-negative-arg).
+				sleep_time = 0
+
 			time.sleep(sleep_time)
 		assert ltrace_func(TRACE_THREAD, True)
 	def stop(self):
