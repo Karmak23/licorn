@@ -255,15 +255,17 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		""" Do whatever is needed on the underlying system for the LDAP backend
 		to be fully operational (this is really a "force_enable" method).
 		This includes:
-			- verify everything is installed
-			- setup PAM-LDAP system files (the system must follow the licorn
-				configuration and vice-versa)
-			- setup slapd
-			- setup nsswitch.conf
 
-		-> raise an exception at any level if anything goes wrong.
-		-> return True if succeed (this is probably useless due to to previous
-		point).
+		- verify everything is installed
+		- setup PAM-LDAP system files (the system must follow the licorn
+			configuration and vice-versa)
+		- setup slapd
+		- setup nsswitch.conf
+
+		This methode will raise an exception at any level if anything goes wrong.
+		It returns ``True`` if it succeeds to enable the backend in the system
+		configuration.
+
 		"""
 
 		assert ltrace_func(TRACE_OPENLDAP)
