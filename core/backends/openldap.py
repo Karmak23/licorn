@@ -1096,6 +1096,18 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			logging.progress(_(u'{0}: deleted group {1} from the '
 								u'directory.').format(self.pretty_name,
 									stylize(ST_NAME, group.name)))
-	def compute_password(self, password, salt=None):
+	def compute_password(self, password, salt=None, ascii=False):
+		""" The OpenLDAP backend makes a difference between `ascii` and non-ascii
+			computed passwords, because the backend stores them as binary
+			(mandatory for console/X logins to work), whereas some extensions
+			need it as ascii (ex. :ref:`simplesharing <extensions.simplesharing.en>`)
+			because their storage is incompatible with binary digests.
+		"""
+
 		assert ltrace_func(TRACE_OPENLDAP)
-		return hashlib.sha1(password).digest()
+
+		if ascii:
+			return hashlib.sha1(password).hexdigest()
+
+		else:
+			return hashlib.sha1(password).digest()

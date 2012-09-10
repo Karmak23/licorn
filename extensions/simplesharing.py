@@ -211,7 +211,7 @@ class SimpleShare(PicklableObject):
 			It can be an issue if the user places sensitive data in the share,
 			but then we can do nothing if the user is dumb or makes mistakes.
 		"""
-		self.__password = self.compute_password(newpass) if newpass else None
+		self.__password = self.compute_password(newpass, ascii=True) if newpass else None
 
 		self.__save_share_configuration(password=self.__password)
 
@@ -318,7 +318,7 @@ class SimpleShare(PicklableObject):
 			stored password, after having run the necessary ``crypt()``
 			mechanisms because the current password is always stored
 			encrypted. """
-		return self.__password == self.compute_password(pw_to_check, self.__password)
+		return self.__password == self.compute_password(pw_to_check, salt=self.__password, ascii=True)
 	def __request_short_url(self):
 		""" request a short URL (http://lsha.re/xxxxxxxx) from the central
 			server.
