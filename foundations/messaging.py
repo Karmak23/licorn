@@ -140,9 +140,10 @@ class ListenerObject(object):
 			must be really changed here.
 
 			.. note:: the verbosity level is protected by a :class:`RLock`, to
-			avoid reading it in the output-thread, while changing it in another
-			thread (for each client connection, there might be multiple threads
-			on the server, depending on the operation).
+				avoid reading it in the output-thread, while changing it in
+				another thread (for each client connection, there might be
+				multiple threads on the server, depending on the operation).
+
 		"""
 
 		found = None

@@ -9,7 +9,9 @@ Gestionnaire de backends
 
 Le gestionnaire de backends (voir :class:`~licorn.core.backends.BackendsManager`, en anglais) héberge toutes les instances des backends. Il les charge et les décharge, les active et les désactive.
 
-Il hérite du gestionnaire de modules (voir :class:`~licorn.core.classes.ModulesManager`, en anglais), et a pas mal de choses en commun avec le gestionnaire d'extensions (voir :class:`~licorn.extensions.ExtensionsManager`, en anglais) (voyez :ref:`core.modules.fr` pour plus de détails).
+Il hérite du gestionnaire de modules (voir :class:`~licorn.core.classes.ModulesManager`, en anglais), et a pas mal de choses en commun avec le gestionnaire d'extensions (voir :class:`~licorn.extensions.ExtensionsManager`, en anglais).
+
+.. seealso:: La documentation des :ref:`modules abstraits <core.modules.en>` (en anglais) pour plus de détails.
 
 
 Backends
@@ -20,9 +22,9 @@ Voici les backends en eux-mêmes. Ils héritent tous des :ref:`classes abstraite
 .. toctree::
 	:maxdepth: 2
 
-	backends/shadow.fr
-	backends/openldap.fr
-	backends/dnsmasq.fr
+	shadow.fr
+	openldap.fr
+	dnsmasq.fr
 
 .. _core.backends.abstract.fr:
 

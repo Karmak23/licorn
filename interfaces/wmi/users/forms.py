@@ -6,60 +6,67 @@ from django.utils.translation    import ugettext_lazy as _
 from licorn.core                 import LMC
 
 class UserForm(forms.Form):
-	def __init__(self, edit_mod, user, *args, **kwargs):
+	def __init__(self, mode, user, *args, **kwargs):
+		# mode = None => basic mode, new user(blank field)
+		#		 "edit" => edit mode (fill field with defaults values)
+		# 		 "massiv" => massiv mode (only show shell and groups)
 
 		super(self.__class__, self).__init__(*args, **kwargs)
 
-		if edit_mod:
-			user_login = user.login
-			user_gecos = user.gecos
-			if user.profile:
-				user_profile = user.profile.name
+		if mode=="massiv":
+			user_shell = LMC.configuration.users.default_shell
+		else:
+			if mode=='edit':
+				user_login = user.login
+				user_gecos = user.gecos
+				if user.profile:
+					user_profile = user.profile.name
+
+				else:
+					user_profile = _('No profile')
+
+				user_shell = user.shell
+
+				self.immutables = [ 'uid', 'login', 'profile' ]
+
+				self.fields['uid'] = forms.CharField(
+					widget=forms.forms.TextInput(attrs={'readonly':'readonly'}),
+					max_length=100,
+					initial=user.uidNumber,
+					label=_('UID'))
 
 			else:
-				user_profile = _('No profile')
+				self.immutables = [ ]
 
-			user_shell = user.shell
+				user_login = ''
+				user_id = ''
+				user_gecos = ''
+				user_profile = ''
+				user_shell = ''
 
-			self.immutables = [ 'uid', 'login', 'profile' ]
-
-			self.fields['uid'] = forms.CharField(
-				widget=forms.forms.TextInput(attrs={'readonly':'readonly'}),
+			self.fields['login'] = forms.CharField(
+				widget=forms.TextInput(),
 				max_length=100,
-				initial=user.uidNumber,
-				label=_('UID'))
+				initial=user_login,
+				label=_('Login'))
 
-		else:
-			self.immutables = [ ]
+			self.fields['profile'] = forms.ChoiceField(
+				widget=forms.Select(attrs={'readonly':'readonly'}),
+						choices = [(p.gidNumber, p.name) for p in LMC.profiles ],
+						initial = user_profile)
 
-			user_login = ''
-			user_id = ''
-			user_gecos = ''
-			user_profile = ''
-			user_shell = ''
+			self.fields['gecos'] = forms.CharField(
+				max_length=100,
+				initial=user_gecos,
+				label=_('Full name'))
 
-		self.fields['login'] = forms.CharField(
-			widget=forms.TextInput(),
-			max_length=100,
-			initial=user_login,
-			label=_('Login'))
-
-		self.fields['profile'] = forms.ChoiceField(
-			widget=forms.Select(attrs={'readonly':'readonly'}),
-					choices = [(p.gidNumber, p.name) for p in LMC.profiles ],
-					initial = user_profile)
-
-		self.fields['gecos'] = forms.CharField(
-			max_length=100,
-			initial=user_gecos,
-			label=_('Full name'))
-
-		self.fields['password'] = forms.CharField(widget=forms.PasswordInput)
-		self.fields['password_confim'] = forms.CharField(widget=forms.PasswordInput)
+			self.fields['password'] = forms.CharField(widget=forms.PasswordInput)
+			self.fields['password_confim'] = forms.CharField(widget=forms.PasswordInput)
 
 		self.fields['shell'] = forms. ChoiceField(
-			choices = [(p, p) for p in LMC.configuration.users.shells ],
-			initial = user_shell)
+				choices = [(p, p) for p in LMC.configuration.users.shells ],
+				initial = user_shell)
+
 class SkelInput(forms.Form):
 	def __init__(self, initial_skel='', class_name='', *args, **kwargs):
 		super(self.__class__, self).__init__(*args, **kwargs)

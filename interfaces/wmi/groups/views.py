@@ -129,9 +129,77 @@ def massive(request, gids, action, value='', *args, **kwargs):
 			destination.close()
 
 		return HttpResponse(json.dumps({ "file_name" : export_filename }))
+	
+	elif action == 'skel':
+		# massively mod shell
+		for gid in gids.split(','):
+			mod(request, gid=gid, action='skel', value=value)
+	elif action == 'apply_skel':
+		# massively apply shell
+		for gid in gids.split(','):
+			mod(request, gid=gid, action='apply_skel', value=None)
+	elif action == 'users':
+		print "mod users ",gids, value
+		for gid in gids.split(','):
+			mod(request, gid=gid, action='users', value=value)
+			# group is : group_id/rel_id
+	elif action == 'edit':
+		groups = []
+		for gid in gids.split(','):
+			groups.append(LMC.groups.guess_one(gid))
 
-	return HttpResponse('MASSIVE DONE.')
+		# inform the user that the UI will take time to build,
+		# to avoid re-clicks and (perfectly justified) grants.
+		nusers = len(LMC.users.keys())
+		if nusers > 50:
+			# TODO: make the notification sticky and remove it just
+			# before returning the rendered template result.
+			utils.notification(request, _('Building group {0} form, please wait…').format(
+				_('edit') if _mode == 'edit' else _('creation')), 3000 + 5 * nusers, 'wait_for_rendering')
 
+		users_list = [ (_('Standard users'),{
+						'groups' : groups,
+						'name'  : 'standard',
+						'users' : utils.select('users', default_selection=filters.STANDARD)
+					}) ]
+
+		# if super user append the system users list
+		if request.user.is_superuser:
+			users_list.append( ( _('System users') ,  {
+				'groups' : groups,
+				'name'  : 'system',
+				'users' : utils.select('users', default_selection=filters.SYSTEM)
+			}))
+
+		_dict = {
+					'gids'        : gids,
+					'mode'    	  : "massiv",
+					'title'       : _("Massive edit"),
+					'form'        : GroupForm("massiv", group),
+					'users_lists' : users_list
+				}
+
+		if request.is_ajax():
+			# TODO: use utils.format_RPC_JS('remove_notification', "wait_for_rendering")
+			return render(request, 'groups/group.html', _dict)
+
+		else:
+
+			if request.user.is_superuser:
+				sys_groups = [ g for g in utils.select('groups',
+								default_selection=filters.SYSTEM)
+									if not g.is_helper ]
+			else:
+				sys_groups = utils.select('groups', default_selection=filters.PRIVILEGED)
+
+			_dict.update({
+					'groups_list'            : utils.select('groups',
+												default_selection=filters.STANDARD),
+					'system_groups_list'     : sys_groups})
+
+			# TODO: use utils.format_RPC_JS('remove_notification', "wait_for_rendering")
+			return render(request, 'groups/group_template.html', _dict)
+	return HttpResponse('MASSIVE')
 @staff_only
 @check_groups('mod')
 def mod(request, gid, action, value, *args, **kwargs):
@@ -323,12 +391,12 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 				group = None
 
 	if action == 'edit':
-		edit_mod = True
+		mode    = "edit"
 		title    = _('Edit group {0}').format(group.name)
 		group_id = group.gidNumber
 
 	else:
-		edit_mod = False
+		mode    = 'new'
 		title    = _('Add new group')
 		group_id = ''
 
@@ -339,7 +407,7 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 		# TODO: make the notification sticky and remove it just
 		# before returning the rendered template result.
 		utils.notification(request, _('Building group {0} form, please wait…').format(
-			_('edit') if edit_mod else _('creation')), 3000 + 5 * nusers, 'wait_for_rendering')
+			_('edit') if _mode == 'edit' else _('creation')), 3000 + 5 * nusers, 'wait_for_rendering')
 
 	users_list = [ (_('Standard users'),{
 					'group' : group,
@@ -357,9 +425,9 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 
 	_dict = {
 				'group_gid'   : group_id,
-				'edit_mod'    : edit_mod,
+				'mode'    	  : mode,
 				'title'       : title,
-				'form'        : GroupForm(edit_mod, group),
+				'form'        : GroupForm(mode, group),
 				'users_lists' : users_list
 			}
 

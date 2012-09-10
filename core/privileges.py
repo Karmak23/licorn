@@ -113,12 +113,12 @@ class PrivilegesWhiteList(Singleton, LockedController):
 		self.conf_hint = L_inotifier_watch_conf(self.conf_file, self)
 
 	def reload(self, *args, **kwargs):
-		""" Reload internal data. the event, *args and **kwargs catch the eventual
+		""" Reload internal data. the event, ``*args`` and ``**kwargs`` catch the eventual
 			inotify events.
 
-			:param *args: receive an eventual pathname from an inotifier event.
-			:param **kwargs: same thing (neither of them are used in any other
-				case)
+			:param args: receive an eventual pathname from an inotifier event.
+			:param kwargs: same thing (neither of them are used in any other
+				case).
 		"""
 
 		with self.lock:

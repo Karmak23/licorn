@@ -20,8 +20,8 @@ Essayer de résumer les fonctionnalités de Licorn® en quelques mots tient de l
 	Groupes et partage de données
 		* Groupes Unix ou LDAP
 		* Partages pour les membres des groupes (accès simplifié via un lien dans le répertoire personnel)
-			* les partages peuvent être :ref:`permissifs ou pas <groupspermissions>`
-			* chaque groupe a des invités et des responsables, avec des :ref:`permissions spéciales <groupspermissions>`.
+			* les partages peuvent être :ref:`permissifs ou pas <permissiveness.fr>`
+			* chaque groupe a des invités et des responsables, avec des :ref:`permissions spéciales <permissiveness.fr>`.
 			* les partages sont surveillés par le daemon Licorn® et les permissions et ACLs sont appliqués en live
 			* L'outil ref:`chk` garantit et répare les permissions sur demande, vérifie et répare les liens symboliques dans les répertoires utilisateurs, et autres joyeusetés
 		* Attributs de groupes optionnels via les :ref:`extensions <extensions.fr>`
@@ -40,13 +40,13 @@ Essayer de résumer les fonctionnalités de Licorn® en quelques mots tient de l
 		* L'on peut leur appliquer des paramètres système génériques (par exemple le proxy), leur configuration est centralisée (en développement)
 
 	Sauvegardes
-		* Les sauvegardes sont automatiquement gérées sur :ref:`disques externes <extensions.volumes.fr>` et sont :ref:`exécutées automatiquement <extensions.rdiffbackup>` à :term:`intervalles configurés <backup.interval>`.
+		* Les sauvegardes sont automatiquement gérées sur :ref:`disques externes <extensions.volumes.fr>` et sont :ref:`exécutées automatiquement <extensions.rdiffbackup.fr>` à des heures / jours réguliers.
 
 	Imprimantes
 		* Support et intégration complète de CUPS (en développement)
 
 	Système et configuration
-		* Licorn® centralise et modifie les paramètres systèmes et la configuration des autres daemons (samba, calendrier, :program:`apache`, :program:`postfix`, :program:`dnsmasq`…)
+		* Licorn® centralise et modifie les paramètres systèmes et la configuration des autres daemons (samba, calendrier, :program:`apache`, :program:`postfix`, :program:`dnsmasq`, etc)
 		* les :ref:`backends <core.backends.fr>` et les :ref:`extensions <extensions.fr>` sont activables et désactivables pendant l'exécution
 		* Le système peut être contrôlé et configuré à distance
 
@@ -55,9 +55,11 @@ Pour complémenter cette liste de fonctionnalités et obtenir de plus amples inf
 .. toctree::
 	:maxdepth: 1
 
-	core/backends.fr
+	core/backends/index.fr
 	extensions/index.fr
-	implementation.fr
+
+.. comment
+ implementation.fr
 
 
 Technologies
@@ -67,9 +69,9 @@ Ces logiciels ou services sont utilisés ou supportés dans le système de base,
 
 Actuellement supportés:
 
-- :ref:`Shadow (backend) <core.backends.shadow>`
-- :ref:`OpenLDAP (backend) <core.backends.openldap>`
-- :ref:`DNSmasq (backend) <core.backends.dnsmasq>`
+- :ref:`Shadow (backend) <core.backends.shadow.fr>`
+- :ref:`OpenLDAP (backend) <core.backends.openldap.fr>`
+- :ref:`DNSmasq (backend) <core.backends.dnsmasq.fr>`
 - SaMBa (intégration basique directement dans le code)
 - :ref:`caldavd (extension) <extensions.caldavd.fr>`
 - :ref:`squid (extension) <extensions.squid.fr>`

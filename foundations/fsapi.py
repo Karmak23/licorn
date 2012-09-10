@@ -12,7 +12,7 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, posix1e, time, shutil, errno, re, types
+import sys, os, posix1e, time, shutil, errno, re, types
 from stat import *
 
 # ================================================= Licorn® foundations imports
@@ -924,6 +924,9 @@ def check_perms(dir_info, file_type=None, is_root_dir=False, check_symlinks=Fals
 
 		if __raise_or_return(stylize(ST_PATH, path), batch, auto_answer):
 			return
+	# taken from /usr/lib/python2.7/test/test_support.py, to try to avoid #902.
+
+	path = path.encode(sys.getfilesystemencoding() or 'ascii')
 
 	pretty_path = stylize(ST_PATH, path)
 

@@ -104,8 +104,8 @@ class LockedController(SelectableController):
 		The :meth:`__getitem__`, :meth:`__setitem__`, and :meth:`__delitem__`
 		methods automatically aquire and release the global  :attr:`lock`.
 
-		.. note:: the :attr:`lock` attribute is really a method returning the
-			:class:`~threading.RLock` object, because the lock object itself is not stored
+		.. note:: the :attr:`lock` attribute is really a method returning the :class:`~threading.RLock`
+			object, because the lock object itself is not stored
 			inside the instance: as Pyro can't pickle a :class:`~threading.RLock` object,
 			it must be stored in the :class:`LockManager` and looked up
 			everytime, until we found a better solution.
@@ -301,7 +301,7 @@ class CoreController(LockedController):
 			We use a copy, in case there is no prefered yet: LMC.backends
 			will change and this would crash the for_loop.
 
-			.. note:: TODO: this method may soon move into the
+			.. todo:: this method may soon move into the
 				:class:`~licorn.core.backends.BackendsManager` instead of the
 				controller.
 			"""

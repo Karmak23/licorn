@@ -31,7 +31,7 @@
 		{%- include 'groups/users_list.html' -%}
 	{%- endfor -%}
 
-	{%- if not edit_mod -%}
+	{%- if mode == 'new' -%}
 	<div id='new_item_actions' class="one_line">
 		<span class='sub_content_half_line'>
 			<div id='cancel_button' class="interface_button float_left">{{ _('Cancel') }}</div>
@@ -64,7 +64,7 @@
 			div.find('.item_hidden_input').attr('value', ''); // erase old membership
 			div.find('input[name$="'+new_rel+'_users"]').attr('value', user_id); // update new membership
 
-			{%- if not edit_mod -%}
+			{%- if mode == 'new' -%}
 				// visual feedback on users because no instant_apply in new
 				update_relationship('user', user_id, null, new_rel) ;
 			{%- endif -%}
@@ -73,12 +73,32 @@
 			$(".click_item#"+user_id).popover('hide');
 		});
 
-		{%- if edit_mod -%}
+		{%- if mode == 'edit' -%}
 			init_instant_apply('groups');
 
 			lock_sub_content("{{ group_gid }}");
 			select_row("groups", "{{ group_gid }}");
-		{%- else -%}
+		{%- elif mode == 'massiv' -%}
+			// init massive mode
+
+			// for groups :
+			var rel_ids = {
+				'no_membership' : 0,
+				'guest'         : 1,
+				'member'        : 2,
+				'resp'          : 3 }
+
+			$('.instant_apply_click').click(function() {
+				div = $('#sub_content').find('#'+$(this).attr('id')).filter('.click_item');
+				div.find('.item_hidden_input').addClass('item_currently_selected');
+
+				url = '/groups/massive/users/'+$.URLEncode("{{ gids }}")+'/'+$(this).attr('id')
+							+ '/' + rel_ids[$(this).attr('value')]
+				console.log(url)
+				$.get(url);
+			});
+
+		{%- elif mode == 'new' -%}
 			unlock_sub_content();
 
 			function post_form() {
@@ -107,7 +127,7 @@
 		// we need to wait a small amount of time, else the subcontent is
 		// not yet reloaded and the focus won't work.
 		setTimeout(function() {
-			{%- if edit_mod -%}
+			{%- if mode == 'edit' -%}
 				$('#id_description').focus();
 
 			{%- else -%}

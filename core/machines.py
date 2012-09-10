@@ -947,7 +947,7 @@ class MachinesController(DictSingleton, CoreController):
 	def initial_scan(self):
 		""" Called on daemon start, this method create objects for all LAN
 			hosts, if not disabled by configuration directive
-			:ref:`licornd.network.lan_scan.en`.
+			:ref:`network.lan_scan <settings.network.lan_scan.en>`.
 		"""
 		caller = current_thread().name
 

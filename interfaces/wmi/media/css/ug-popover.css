@@ -39,6 +39,11 @@
 	background: url('/media/images/24x24/member+3px.png') no-repeat right @member_color;
 	.popover_attrs(@member_color, @popover_img_padding);
 }
+.incomplete_bkg {
+	/* http://www.binaryturf.com/free-software/stripe-generator/ */
+	background: url('/media/images/stripe.png');
+	.popover_attrs(@member_color, @popover_std_padding);
+}
 
 @rsp_color: #B9121B;
 
