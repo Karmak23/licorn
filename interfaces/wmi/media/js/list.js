@@ -133,9 +133,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 		mass_lock_dialog_title = gettext("Massive users lock toggle");
 
 		if (users_selected_html == '<ul></ul>') {
-			mass_lock_dialog_content =  gettext("Please select at least one user.");
-			mass_lock_dialog = new dialog(mass_lock_dialog_title, mass_lock_dialog_content);
-			mass_lock_dialog.show();
+			show_message_through_notification(gettext("Please select at least one user."));
 		}
 		else {
 
@@ -761,6 +759,6 @@ function update_relationship(name, user_id, group_id, rel_id) {
 	//console.log(2);
 
 	div.find('.item_title')
-		.removeClass('no_membership_bkg guest_bkg member_bkg resp_bkg')
+		.removeClass('no_membership_bkg guest_bkg member_bkg resp_bkg incomplete_bkg')
 		.addClass(new_rel+'_bkg');
 }
