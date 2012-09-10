@@ -135,7 +135,7 @@ def massive(request, gids, action, value='', *args, **kwargs):
 		for gid in gids.split(','):
 			mod(request, gid=gid, action='skel', value=value)
 	elif action == 'apply_skel':
-		# massively mod shell
+		# massively apply shell
 		for gid in gids.split(','):
 			mod(request, gid=gid, action='apply_skel', value=None)
 	elif action == 'users':

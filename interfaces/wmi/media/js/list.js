@@ -276,7 +276,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 				skel_dialog_content = gettext("Are you sure you want to reapply their skeleton to these user account(s):");
 			}
 			else {
-				item_name = "group"
+				skel_dialog_content = gettext("Are you sure you want to reapply their skeleton to members of following group(s):");
 			}
 			skel_dialog_content += users_selected_html;
 			$.get('/users/message/massive_skel/', function(html) {
@@ -284,13 +284,25 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 				skel_dialog = new dialog(skel_dialog_title,	skel_dialog_content,
 					true, function() {
 						users=[]
-						$('#users_list').find(".row").each(function() {
-							if ($(this).find('.users_checkbox').is(':checked') == true) {
-								users.push($(this).find('.users_uidNumber').text());
+						$('#'+list_name+'_list').find(".row").each(function() {
+							if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+								if (list_name == 'users') {
+									common_identifier = "users_uidNumber"
+								}
+								else {
+									common_identifier = "groups_gidNumber"
+								}
+								users.push($(this).find('.'+common_identifier).text());
 							}
 						});
 						skel = $("#id_skel_to_apply").attr('value').toString();
-						page_url = "/"+list_name+"/massive/skel/" + $.URLEncode(users.join(',')) + '/' + $.URLEncode(skel)
+						if (list_name == 'users') {
+							page_url = "/"+list_name+"/massive/skel/" + $.URLEncode(users.join(',')) + '/' + $.URLEncode(skel)
+						}
+						else {
+							page_url = "/"+list_name+"/massive/apply_skel/" + $.URLEncode(users.join(',')) + '/' + $.URLEncode(skel)
+						}
+						console.log(page_url)
 						$.get(page_url);
 					});
 				skel_dialog.show();
