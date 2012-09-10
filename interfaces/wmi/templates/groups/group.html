@@ -2,7 +2,7 @@
     Distributed under the terms of the GNU GPL version 2. -#}
 
 <div id='sub_content_header'>
-	<h1 id='sub_content_title'>{{ title }}</h1>
+	<h1 id='sub_content_title'>{{mode}}{{ title }}</h1>
 </div>
 
 <div id='sub_content_area'>
@@ -31,7 +31,7 @@
 		{%- include 'groups/users_list.html' -%}
 	{%- endfor -%}
 
-	{%- if not edit_mod -%}
+	{%- if mode == 'new' -%}
 	<div id='new_item_actions' class="one_line">
 		<span class='sub_content_half_line'>
 			<div id='cancel_button' class="interface_button float_left">{{ _('Cancel') }}</div>
@@ -64,7 +64,7 @@
 			div.find('.item_hidden_input').attr('value', ''); // erase old membership
 			div.find('input[name$="'+new_rel+'_users"]').attr('value', user_id); // update new membership
 
-			{%- if not edit_mod -%}
+			{%- if mode == 'new' -%}
 				// visual feedback on users because no instant_apply in new
 				update_relationship('user', user_id, null, new_rel) ;
 			{%- endif -%}
@@ -73,12 +73,12 @@
 			$(".click_item#"+user_id).popover('hide');
 		});
 
-		{%- if edit_mod -%}
+		{%- if mode == 'edit' -%}
 			init_instant_apply('groups');
 
 			lock_sub_content("{{ group_gid }}");
 			select_row("groups", "{{ group_gid }}");
-		{%- else -%}
+		{%- elif mode == 'new' -%}
 			unlock_sub_content();
 
 			function post_form() {
@@ -107,7 +107,7 @@
 		// we need to wait a small amount of time, else the subcontent is
 		// not yet reloaded and the focus won't work.
 		setTimeout(function() {
-			{%- if edit_mod -%}
+			{%- if mode == 'edit' -%}
 				$('#id_description').focus();
 
 			{%- else -%}

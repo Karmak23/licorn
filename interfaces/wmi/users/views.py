@@ -235,9 +235,6 @@ def massive(request, uids, action, *args, **kwargs):
 	
 	if action == 'edit':
 
-		# TODO : remove it
-		user = None
-
 		groups_list = [ (_('Standard groups'),{
 						'user': user,
 						'name': 'standard',

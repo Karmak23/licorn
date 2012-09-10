@@ -120,8 +120,14 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 	$('#'+list_name+'_massive_edit').click(function() {
 		users=[]
 		$('#'+list_name+'_list').find(".row").each(function() {
-			if ($(this).find('.users_checkbox').is(':checked') == true) {
-				users.push($(this).find('.users_login').text());
+			if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+				if (list_name == "users") {
+					common_name = '.'+list_name+'_login'
+				}
+				else if (list_name == "groups") {
+					common_name = '.'+list_name+'_name'
+				}
+				users.push($(this).find(common_name).text());
 			}
 		});
 
@@ -130,21 +136,34 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 			users_selected_html += '<li>'+g+'</li>';
 		});
 		users_selected_html += '</ul>';
-		mass_lock_dialog_title = gettext("Massive users lock toggle");
+		mass_lock_dialog_title = gettext("Massive '.'"+list_name+" lock toggle");
 
 		if (users_selected_html == '<ul></ul>') {
-			show_message_through_notification(gettext("Please select at least one user."));
+			if (list_name == "users") {
+				name = "user"
+			}
+			else if (list_name == "groups") {
+				name = "group"
+			}
+			
+			show_message_through_notification(gettext("Please select at least one "+name+"."));
 		}
 		else {
 
 			uids=[]
 			$('#'+list_name+'_list').find(".row").each(function() {
-				if ($(this).find('.users_checkbox').is(':checked') == true) {
-						uids.push($(this).find('.users_uidNumber').text());
+				if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+					if (list_name == "users") {
+						common_id = '.'+list_name+'_uidNumber'
+					}
+					else if (list_name == "groups") {
+						common_id = '.'+list_name+'_gidNumber'
+					}
+					uids.push($(this).find(common_id).text());
 				}
 			});
 			// show the mass edit view in the sub-content
-			$.get('/users/massive/edit/' + $.URLEncode(uids.join(',')), function(html) {
+			$.get('/'+list_name+'/massive/edit/' + $.URLEncode(uids.join(',')), function(html) {
 				reload_div('#sub_content', html);
 				lock_sub_content();
 				for(i=0;i<uids.length;i++) {
