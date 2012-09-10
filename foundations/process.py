@@ -209,8 +209,6 @@ def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
 			u'aborting. Please manually relaunch this program with root '
 			u'privileges to automatically create this group.') % group)
 
-	print '>>', whoami(), gmembers
-
 	if whoami() in gmembers:
 
 		cmd = [ process_title ]
