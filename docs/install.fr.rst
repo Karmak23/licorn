@@ -68,7 +68,7 @@ Noms de paquetages
 .. _licorn-ldap-server.fr:
 
 	licorn-ldap-server
-		L'installation la plus commune de nos jours : ce paquet installe tous les composants « serveur » de Licorn® et le :ref:`backend LDAP <core.backends.ldap.fr>`. La configuration LDAP est celle d' `Ubuntu`/`Debian` (via :program:`debconf`), comme sur n'importe quelle installation sans Licorn®. Après avoir installé ce paquetage, Licorn® est **prêt à être utilisé**.
+		L'installation la plus commune de nos jours : ce paquet installe tous les composants « serveur » de Licorn® et le :ref:`backend LDAP <core.backends.openldap.fr>`. La configuration LDAP est celle d' `Ubuntu`/`Debian` (via :program:`debconf`), comme sur n'importe quelle installation sans Licorn®. Après avoir installé ce paquetage, Licorn® est **prêt à être utilisé**.
 
 .. _licorn-server.fr:
 

@@ -1,4 +1,4 @@
-.. _api:
+.. _api.en:
 
 =================================
 Developping for Licorn® (the API)
@@ -8,7 +8,7 @@ Developping for Licorn® (the API)
 	:maxdepth: 2
 
 	core/index.en
-	core/backends.en
+	core/backends/index.en
 	extensions/index.dev.en
 	foundations.en
 	ltrace.en

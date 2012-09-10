@@ -89,8 +89,8 @@ Ces scripts sont tous personnalisables et sont initialement livrés dans le rép
 		dans le panneau de configuration, etc).
 
 		.. warning:: Si vous dupliquez ce script pour le modifier, veillez
-		à conserver les appels aux fichiers REG qui assurent les restrictions
-		des postes, sinon vos utilisateurs auront plus de droits que prévu.
+			à conserver les appels aux fichiers REG qui assurent les restrictions
+			des postes, sinon vos utilisateurs auront plus de droits que prévu.
 
 .. note:: Si vous copiez puis modifiez un script fourni par Licorn® pour le
 	personnaliser, le script d'origine ne sera plus exécuté du tout : le vôtre

@@ -52,7 +52,7 @@ class Profile(CoreStoredObject):
 			if both are given, ``groupName`` is ignored.
 		:param groupName: optional :class:`str`, used to find the ``group``.
 			Used in loading phase, by the backends. **Ignored if ``group`` if
-			also present.
+			also present**.
 
 		:param profileShell: The profile shell, as :class:`str`, assigned to
 			new users created from this profile.

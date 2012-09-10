@@ -48,7 +48,7 @@ Béatrice a perdu son mot de passe::
 	# la même en version lisible par un humain:
 	sudo mod user beatrice --change-password
 
-Le groupe ``Partage`` n'est pas :ref:`permissif <groups/permissions.fr>` à sa création, ce qui signifie que ses membres ne peuvent pas modifier les documents des autres, mais seulement les lire (:ref:`plus de détails sur les permissions <groups.permissions.fr>` ?). Pour que tous les membres puissent modifier tous les fichiers contenus dans le répertoire sans distinction, rendons le groupe permissif::
+Le groupe ``Partage`` n'est pas :ref:`permissif <permissiveness.fr>` à sa création, ce qui signifie que ses membres ne peuvent pas modifier les documents des autres, mais seulement les lire (:ref:`plus de détails sur les permissions <permissiveness.fr>` ?). Pour que tous les membres puissent modifier tous les fichiers contenus dans le répertoire sans distinction, rendons le groupe permissif::
 
 	mod group Partage -p
 	# version humainement lisible:
@@ -61,7 +61,7 @@ Créons un nouveau partage permissif, dédié à tous les utilisateurs du résea
 	# l'application est immédiate pour les utilisateurs existants :
 	mod profile users --add-groups Commun
 
-En fait nous venons de modifier le :ref:`profil <profiles.fr>` ``Users``, qui est un composant « d'usine », livré avec Licorn® ::
+En fait nous venons de modifier le :ref:`profil <core.profiles.fr>` ``Users``, qui est un composant « d'usine », livré avec Licorn® ::
 
 	# lister les profils utilisateurs
 	get profiles
@@ -85,7 +85,7 @@ Nettoyons maintenant tous les exemples utilisés dans cette prise en main::
 	# (j'espère que vous n'en aviez pas créé avant la prise en main…)
 	del group --not-system
 
-Maintenant, vous pouvez passer à :ref:`la documentation complète de la CLI <cli/index.fr>` pour en découvrir toutes les fonctionnalités.
+Maintenant, vous pouvez passer à :ref:`la documentation complète de la CLI <cli.fr>` pour en découvrir toutes les fonctionnalités.
 
 .. _quickstart.wmi.fr:
 

@@ -1,4 +1,4 @@
-.. _chk:
+.. _chk.en:
 
 .. highlight:: bash
 
@@ -35,7 +35,7 @@ Check the base system, create required groups, check base directories ACLs (but 
 	chk configuration --verbose --batch
 	chk config -vb
 
-Check the same, with base directories contents, and backends configuration (e.g. load missing schemata in :ref:`openldap backend <core.backends.openldap>` LINK_TO_BACKEND_USERDOC_PLEASE)::
+Check the same, with base directories contents, and backends configuration (e.g. load missing schemata in :ref:`openldap backend <core.backends.openldap.en>`)::
 
 	# check and repair backends too.
 	chk configuration --extended --verbose --batch

@@ -84,7 +84,7 @@ WebSockets:
 	http://websocket.org/quantum.html
 	http://pypi.python.org/pypi/gevent-websocket/
 	http://blog.chromium.org/2011/08/new-websocket-protocol-secure-and.html
-		dans chrome depuis la version 14.x
+	dans chrome depuis la version 14.x
 
 Reconnection during a long-polling phase:
 	très long: http://jsguy.com/?p=103

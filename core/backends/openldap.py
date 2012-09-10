@@ -255,15 +255,17 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		""" Do whatever is needed on the underlying system for the LDAP backend
 		to be fully operational (this is really a "force_enable" method).
 		This includes:
-			- verify everything is installed
-			- setup PAM-LDAP system files (the system must follow the licorn
-				configuration and vice-versa)
-			- setup slapd
-			- setup nsswitch.conf
 
-		-> raise an exception at any level if anything goes wrong.
-		-> return True if succeed (this is probably useless due to to previous
-		point).
+		- verify everything is installed
+		- setup PAM-LDAP system files (the system must follow the licorn
+			configuration and vice-versa)
+		- setup slapd
+		- setup nsswitch.conf
+
+		This methode will raise an exception at any level if anything goes wrong.
+		It returns ``True`` if it succeeds to enable the backend in the system
+		configuration.
+
 		"""
 
 		assert ltrace_func(TRACE_OPENLDAP)
@@ -1094,6 +1096,18 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			logging.progress(_(u'{0}: deleted group {1} from the '
 								u'directory.').format(self.pretty_name,
 									stylize(ST_NAME, group.name)))
-	def compute_password(self, password, salt=None):
+	def compute_password(self, password, salt=None, ascii=False):
+		""" The OpenLDAP backend makes a difference between `ascii` and non-ascii
+			computed passwords, because the backend stores them as binary
+			(mandatory for console/X logins to work), whereas some extensions
+			need it as ascii (ex. :ref:`simplesharing <extensions.simplesharing.en>`)
+			because their storage is incompatible with binary digests.
+		"""
+
 		assert ltrace_func(TRACE_OPENLDAP)
-		return hashlib.sha1(password).digest()
+
+		if ascii:
+			return hashlib.sha1(password).hexdigest()
+
+		else:
+			return hashlib.sha1(password).digest()

@@ -1,4 +1,4 @@
-.. _core.profiles:
+.. _core.profiles.en:
 
 =============
 Core.profiles

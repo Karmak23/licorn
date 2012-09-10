@@ -30,6 +30,12 @@ Pour inscrire un poste Windows 7 sur le domaine Samba/Licorn® :
 * parcourir le réseau et fusionner à minima le fichier ``win7.reg`` (dans ``\\SERVEUR\netlogon\templates\registry\``) ;
 * fusionner éventuellement d'autres fichiers de registre en fonction des fonctionnalités voulues :
 	* pour supprimer la pré-sélection du dernier utilisateur précédement identifié sur le poste, utilisez :file:`Dont_display_last_username.reg`,
+
+	  .. note:: Afin de pouvoir fusionner les fichiers en double-cliquant dessus, il est nécessaire :
+		* soit de connecter ``\\SERVEUR\netlogon`` comme un lecteur réseau, et de les exécuter explicitement à partir du lecteur ainsi connecté,
+		* soit de copier les fichiers localement (sur le bureau par exemple) si vous parcourez le partage via le réseau.
+
+		Sans celà, vous obtiendrez une erreur de type « *Impossible d'importer fichier.reg : une erreur imputable au disque ou au système de fichiers s'est produite lors de l'ouverture de ce fichier* ».
 * redémarrer le poste une seconde fois ;
 * ré-ouvrir une session *administrateur local* ;
 * joindre le nouveau domaine configuré sur le serveur (par ex. ``CYBER-BASE``). Windows® vous demandera un identifiant et mot de passe habilité à joindre le domaine :

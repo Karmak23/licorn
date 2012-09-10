@@ -1,8 +1,8 @@
 .. _extensions.postfix:
 
-===============
+=================
 Postfix extension
-===============
+=================
 
 *NOTE: this is a work in progress.*
 

@@ -60,9 +60,9 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	#: in Ubuntu (don't know why they don't just use the plain 127.0.0.1).
 	local_interfaces = [ '127.0.0.1', '127.0.1.1' ]
 
-	#: :attr:`pyro_port` will be filled by :term:`pyro.port` value
-	#: before the thread starts. See :ref:`configuration` object for details
-	#: about port numbers.
+	#: :attr:`pyro_port` will be filled by :ref:`pyro.port <settings.pyro.port.en>`
+	#: value before the thread starts. See :ref:`configuration <configuration.en>`
+	# object for details about port numbers.
 	pyro_port = None
 
 	#: The main server IP address. Can be overidden by the environment variable
@@ -87,9 +87,6 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 
 	def __init__(self, role):
 		Pyro.protocol.DefaultConnValidator.__init__(self)
-
-		#: A local copy of :ref:`settings.role`, to avoid importing LMC here.
-		self.role = role
 	def acceptHost(self, daemon, connection):
 		""" Basic check of the connection. See :class:`LicornPyroValidator` for
 			details. """
@@ -121,7 +118,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 
 				return accept, reason
 		else:
-			if self.role == roles.SERVER:
+			if settings.role == roles.SERVER:
 				# connect to the client's Pyro daemon and make sure the request
 				# originates from a valid user.
 				#
@@ -415,7 +412,7 @@ class CommandListener(LicornBasicThread):
 			return
 
 		Pyro.core.initServer()
-		Pyro.config.PYRO_PORT=settings.pyro.port
+		Pyro.config.PYRO_PORT = settings.pyro.port
 
 		count = 0
 

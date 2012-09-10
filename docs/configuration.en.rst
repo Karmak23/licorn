@@ -11,7 +11,7 @@ You can always access your current configuration by issuing the following comman
 
 	get config
 
-`Backends <core/backends.en>`_ and `extensions <extensions/index.en>`_ list and current status can be reached here::
+:ref:`Backends <core.backends.en>` and :ref:`extensions <extensions.en>` list and current status can be reached here::
 
 	get config backends
 	get config extensions
@@ -24,15 +24,25 @@ Generally located at :file:`/etc/licorn/licorn.conf` the main configuration file
 
 .. note:: directives are listed in alphabetical order, not order of importance.
 
+.. _settings.extensions.rdiffbackup.en:
 
 Backup
 ------
 
-.. _backup.interval.en:
+.. _extensions.rdiffbackup.backup_time.en:
 
-	**backup.interval**
-		Defines the interval of system backups, in seconds (default: ``3600`` = one hour). Backups are incremental and don't take much space. This directive defines the default interval for all backup :ref:`extensions`, but some can have dedicated parameters.
+	**extensions.rdiffbackup.backup_time**
+		Defines the hour of the day at which the incremental backup will be launched. Defaults to ``02:00 A.M.``. Specify it as a 24H string, like ``13:45``. Other formats are not yet supported.
 
+.. _extensions.rdiffbackup.backup_week_day.en:
+
+	**extensions.rdiffbackup.backup_week_day**
+		Defines the day(s) of the week on which the back will be run. Defaults to ``*``, which means every day. Can be a list of numbers specifying days. Valid numbers are in range ``0-6``, ``0`` beeing ``Sunday``.
+
+.. _extensions.rdiffbackup.backup.minimum_interval.en:
+
+	**extensions.rdiffbackup.backup.minimum_interval**
+		Minimum interval between 2 backups. Useful only when backups are trigerred from outside the daemon and you want Licorn® to make more than one backup per day. Defaults to ``6`` hours, can't be less than ``1`` hour.
 
 Experimental functionnalities
 -----------------------------
@@ -52,7 +62,7 @@ Global configuration
 	**network.lan_scan**
 		Enable or disable the *automagic* network features. This includes network discovery (LAN and further), Reverse DNS resolution, ARP resolution and *server-based* status updates (polling from server to clients).
 
-		.. note:: even with ``licornd.network.enabled=False``, LAN connections to the :ref:`daemon <daemondoc>` are still authorized: **client-initiated connections (inter-daemon synchronization, client status updates, and so on…) continue to work**, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
+		.. note:: even with ``licornd.network.enabled=False``, LAN connections to the :ref:`daemon <daemon.en>` are still authorized: **client-initiated connections (inter-daemon synchronization, client status updates, and so on…) continue to work**, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
 
 
 .. _settings.pyro.port.en:
@@ -70,23 +80,45 @@ Global configuration
 	**role**
 		Role of your current Licorn® installation. This directive **must** be set to either *CLIENT* or *SERVER*, before daemon launch. If it is unset, the daemon will remind you.
 
+.. _settings.threads.aclchecker_min.en:
+
+	**threads.aclchecker_min**
+		The minimal number of launched ACL checker threads (they become spare threads if not running, waiting for jobs). Default: **1 thread** will be started. Can't specify more than ``5`` for memory consumption safety reasons.
+
+
+.. _settings.threads.aclchecker_max.en:
+
+	**threads.aclchecker_max**
+		The maximum number of concurrent ACL checker threads. Default: **4 threads** will be running at most busy periods of the daemon's life. Once the jobs to do start to decrease, service threads > :ref:`threads.aclchecker_min <settings.threads.aclchecker_min.en>` are automatically terminated. Can't specify more than ``10`` for safety reasons: you should not have more than 2 of them for each physical volume holding users data, plus the root volume: if :file:`/home/` is a separate volume of :file:`/`, 4 is fine. If you have separate physical volumes for :file:`/home/users/` and :file:`/home/groups/` (eg 2 different RAID volumes, apart from :file:`/`), you can set 6 ACL checker threads (8 if your volumes are fast and your system not loaded). Setting too much will be counter-productive and will slow down your hard drives too much.
+
 
 .. _settings.threads.service_min.en:
 
 	**threads.service_min**
-		The minimal number of launched service threads (they become spare threads if not running, waiting for jobs). Default: **10 threads** will be started.
+		The minimal number of launched service threads (they become spare threads if not running, waiting for jobs). Default: **4 threads** will be started. Can't specify more than ``16`` for memory consumption safety reasons.
 
 
 .. _settings.threads.service_max.en:
 
 	**threads.service_max**
-		The maximum number of concurrent service threads. Default: **150 threads** will be running at most busy periods of the daemon's life. Once the jobs to do start to decrease, service threads > :ref:`licornd.threads.service_min <licornd.threads.service_min.en>` are automatically terminated.
+		The maximum number of concurrent service threads. Default: **24 threads** will be running at most busy periods of the daemon's life. Once the jobs to do start to decrease, service threads > :ref:`threads.service_min <settings.threads.service_min.en>` are automatically terminated. Can't specify more than ``50`` for safety reasons: too much threads means the daemon will be less responsive to outside events, which is not good.
+
+.. _settings.threads.network_min.en:
+
+	**threads.network_min**
+		The minimal number of launched network threads (they become spare threads if not running, waiting for jobs). Default: **12 threads** will be started. Can't specify more than ``24`` for memory consumption safety reasons.
+
+
+.. _settings.threads.network_max.en:
+
+	**threads.network_max**
+		The maximum number of concurrent network threads. Default: **80 threads** will be running at most busy periods of the daemon's life. Once the jobs to do start to decrease, network threads > :ref:`threads.network_min <settings.threads.network_min.en>` are automatically terminated. Can't specify more than ``160`` for safety reasons: too much threads means the daemon will be less responsive to outside events, which is not good. Network thread usually run lightweight CPU operations, but these operations can block and timeout for network reasons, so we need more network threads than standard service ones.
 
 
 .. _settings.threads.wipe_time.en:
 
 	**threads.wipe_time**
-		The cycle delay of :term:`PeriodicThreadsCleaner` and :term:`QueuesEmptyer` threads. How long will they wait between each iteration of their cleaning loop. (Default: **600 seconds**, = 10 minutes). This doesn't affect their first run, which is always 30 seconds after daemon start.
+		The cycle delay of the :term:`PeriodicThreadsCleaner` thread. How long will they wait between each iteration of their cleaning loop. (Default: **600 seconds**, = 10 minutes). This doesn't affect their first run, which is always 30 seconds after daemon start.
 
 
 .. _settings.wmi.enabled.en:
@@ -121,7 +153,7 @@ Global configuration
 .. _settings.wmi.port.en:
 
 	**wmi.port**
-		Port ``3356`` by default. Set it as an integer, for example `licornd.wmi.port = 8282`. There is no particular restriction, except that this port must be different from the Pyro one (see :term:`licornd.pyro.port`).
+		Port ``3356`` by default. Set it as an integer, for example ``licornd.wmi.port = 8282``. There is no particular restriction, except that this port must be different from the Pyro one (see :ref:`pyro.port <settings.pyro.port.en>`).
 
 Users and groups related
 ------------------------
@@ -138,7 +170,7 @@ Users and groups related
 .. _settings.users.check_config_file.en:
 
 	**users.check_config_file**
-		Defines the path where the user customization file for checks will be looked for. Default is `check.conf` in :term:`users.config_dir`, or with full path: :file:`~/.licorn/check.conf`.
+		Defines the path where the user customization file for checks will be looked for. Default is `check.conf` in :ref:`users.config_dir <settings.users.config_dir.en>`, or with full path: :file:`~/.licorn/check.conf`.
 
 
 
@@ -176,7 +208,7 @@ But **these names are not**::
 User-level customizations
 -------------------------
 
-Put your own customizations in the path designed by :term:`users.check_config_file`. User customizations cannot override any system rules, except the one for :file:`~` (`$HOME`) (see :ref:`random_notes` below).
+Put your own customizations in the path designed by :ref:`users.check_config_file <settings.users.check_config_file.en>`. User customizations cannot override any system rules, except the one for :file:`~` (`$HOME`) (see :ref:`random_notes` below).
 
 
 Check files syntax

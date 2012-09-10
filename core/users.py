@@ -1331,13 +1331,8 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				for backend in self.backends:
 					backend.save_Users(self)
 	def select(self, filter_string):
-		""" Filter user accounts on different criteria.
-		Criteria are:
-			- 'system users': show only «system» users (root, bin, daemon,
-				apache…), not normal user account.
-			- 'normal users': keep only «normal» users, which includes Licorn
-				administrators
-			- more to come…
+		""" Filter user accounts on different criteria. ``filter_string`` can in
+			fact be a filter constant (see :py:mod:`foundations.constants`).
 		"""
 
 		with self.lock:

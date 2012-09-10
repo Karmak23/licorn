@@ -6,30 +6,20 @@ Licorn® CLI : interface en ligne de commande
 
 La CLI est composée de 5 outils, à travers lesquels on gère l'intégralité du système:
 
-.. _get.fr:
-
 	**get**
 		lister, sélectionner et afficher les objets système
-
-.. _add.fr:
 
 	**add**
 		ajouter des objets
 
-.. _mod.fr:
-
 	**mod**
 		modifier des objets système
-
-.. _del.fr:
 
 	**del**
 		effacer des objets du système
 
-.. _chk.fr:
-
 	**chk**
-		vérifier ou réparer des objets, des chemins, la configuration.
+		vérifier ou réparer des objets, des chemins ou la configuration.
 
 Toutes ces commandes incluent une aide intégrée, visible quand vous lancez le programme avec l'argument :option:`--help` (ou :option:`-h`), ou automatiquement affichée lorsque le programme détecte une erreur dans les options que vous lui passez.
 

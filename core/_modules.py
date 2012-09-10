@@ -32,7 +32,7 @@ class ModulesManager(LockedController):
 	""" The basics of a module manager. Backends and extensions are just
 		particular cases of this class.
 
-		.. note:: TODO: implement module_sym_path auto-detection, for the day
+		.. todo:: implement module_sym_path auto-detection, for the day
 			we will use it. For now we don't care about it.
 
 		.. versionadded:: 1.3
@@ -88,7 +88,7 @@ class ModulesManager(LockedController):
 			If we are on a client, activate module only if module is enable
 			on the server.
 
-			.. note:: TODO: implement module dependancies resolution. this is
+			.. todo:: implement module dependancies resolution. this is
 				needed for the upcoming rdiff-backup/volumes extensions
 				couple (at least).
 		"""
@@ -566,18 +566,17 @@ class CoreModule(CoreUnitObject, NamedObject):
 		* controllers_compat: a list of controller names which will get data
 		  (methods or contents) from the current module.
 
-		.. note:: [**work in progress**] if :attr:`self.controllers_compat`
+		.. note:: **work in progress** if :attr:`self.controllers_compat`
 			contains ``system`` (name
 			of :class:`~licorn.core.system.SystemController` global instance),
 			the current class must implement the special :meth:`system_load`
-			method. This method will be called *after* module load and *after*
-			:class:`~licorn.core.system.SystemController` instanciation, to
-			reconnect the module data to its controller.
+			method. This method will be called *after* module load and *after* :class:`~licorn.core.system.SystemController`
+			instanciation, to reconnect the module data to its controller.
 
-			This is mainly because extensions are loaded after the
-			:class:`~licorn.core.system.SystemController` instanciation in
-			``LMC``, and we currently can't do it differently, ``system`` needs
-			to be up very early in the inter-daemon connection process.
+			This is mainly because extensions are loaded after the :class:`~licorn.core.system.SystemController`
+			instanciation in ``LMC``, and we currently can't do it differently,
+			``system`` needs to be up very early in the inter-daemon connection
+			process.
 
 		.. versionadded:: 1.2
 
@@ -755,11 +754,10 @@ class CoreModule(CoreUnitObject, NamedObject):
 			* if installed, change :attr:`self.available` value to ``True`` and
 			  return it, too.
 
-			.. note:: For more specific details, see classes
-				:class:`~licorn.extensions.LicornExtension` and derivatives, and
-				:class:`~licorn.core.backends.CoreBackend` and derivatives,
-				because there are other things to take in consideration when
-				implementing *end-of-road* modules.
+			.. note:: For more specific details, see classes :class:`~licorn.extensions.LicornExtension`
+				and derivatives, and :class:`~licorn.core.backends.CoreBackend`
+				and derivatives, because there are other things to take in
+				consideration when implementing *end-of-road* modules.
 
 		"""
 

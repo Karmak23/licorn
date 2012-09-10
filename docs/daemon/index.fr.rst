@@ -1,4 +1,3 @@
-
 .. _daemon.fr:
 
 .. highlight:: bash
@@ -148,5 +147,5 @@ Please refer to integrated help for an exhaustive listing of the daemon's CLI ar
 .. seealso::
 	En anglais pour l'instant, en attendant la traduction:
 
-	* :ref:`La documentation développeur du daemon <daemon.index.dev.fr>`.
+	* :ref:`La documentation développeur du daemon <daemon.dev.fr>`.
 	* :ref:`L'infrastructure de services <daemon.services.en>`.
