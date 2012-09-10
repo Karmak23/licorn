@@ -55,6 +55,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		self.paths.main_dir      = '/etc/caldavd'
 		self.paths.accounts      = self.paths.main_dir + '/accounts.xml'
+		self.paths.resources      = self.paths.main_dir + '/resources.xml'
 		self.paths.configuration = self.paths.main_dir + '/caldavd.plist'
 		self.paths.sudoers       = self.paths.main_dir + '/sudoers.plist'
 		self.paths.pid_file      = '/var/run/caldavd/caldavd.pid'
@@ -122,7 +123,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		self.data.service_defaults = readers.shell_conf_load_dict(
 					self.paths.service_defaults)
 
-		self.data.accounts = readers.xml_load_tree(self.paths.accounts)
+		self.data.accounts  = readers.xml_load_tree(self.paths.accounts)
+		self.data.resources = readers.xml_load_tree(self.paths.resources)
 
 		self.data.configuration = readers.plist_load_dict(
 											self.paths.configuration)
@@ -242,13 +244,23 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		writers.xml_write_from_tree(self.data.accounts, self.paths.accounts, mode=0640)
 		# TODO: self.locks.accounts.release()
 		return True
-	def __write_accounts_and_reload(self):
+	def __write_resources(self):
+		""" Write the XML resources file to disk, after having backed it up. """
+		assert ltrace_func(TRACE_CALDAVD)
+
+		# TODO: assert self.locks.accounts.is_locked()
+		writers.xml_write_from_tree(self.data.resources, self.paths.resources, mode=0640)
+		# TODO: self.locks.accounts.release()
+		return True
+	
+	def __write_elements_and_reload(self):
 		""" Write the accounts file and reload the caldavd service.	A reload
 			is needed, else caldavd doesn't see new user accounts and resources.
 		"""
 		assert ltrace_func(TRACE_CALDAVD)
 
 		self.__write_accounts()
+		self.__write_resources()
 
 		# fu...ing caldavd service which doesn't understand reload.
 		# we put this in a service thread to avoid the long wait.
@@ -265,36 +277,42 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		assert ltrace_func(TRACE_CALDAVD)
 		return True
-	def __create_account(self, acttype, uid, guid, name):
+	def __create_xml_element(self, acttype, uid, guid, name):
 		""" Create the XML ElementTree object base for a caldav account (can be
 			anything), then return it for the caller to add specific
 			SubElements to it.
 		"""
 		assert ltrace_func(TRACE_CALDAVD)
 
-		account = ET.SubElement(self.data.accounts.getroot(), acttype)
-		account.text = '\n	'
-		account.tail = '\n'
+		if acttype in ("resource", "location"):
+			# special treatment, search in correct file
+			xml_elem = ET.SubElement(self.data.resources.getroot(), acttype)
+		else:
+			# users, groups
+			xml_elem = ET.SubElement(self.data.accounts.getroot(), acttype)
+		
+		xml_elem.text = '\n	'
+		xml_elem.tail = '\n'
 
-		xmluid = ET.SubElement(account, 'uid')
+		xmluid = ET.SubElement(xml_elem, 'uid')
 		xmluid.text = uid
 		xmluid.tail = '\n	'
 
-		xmlguid = ET.SubElement(account, 'guid')
+		xmlguid = ET.SubElement(xml_elem, 'guid')
 		xmlguid.text = guid
 		xmlguid.tail = '\n	'
 
-		xmlname = ET.SubElement(account, 'name')
+		xmlname = ET.SubElement(xml_elem, 'name')
 		xmlname.text = name
 		xmlname.tail = '\n	'
 
-		return account
+		return xml_elem
 	def add_user(self, uid, guid, name, password, **kwargs):
 		""" Create a caldav user account. """
 
 		assert ltrace_func(TRACE_CALDAVD)
 
-		user = self.__create_account('user', uid, guid, name)
+		user = self.__create_xml_element('user', uid, guid, name)
 
 		xmlpwd = ET.SubElement(user, 'password')
 		xmlpwd.text = password
@@ -305,7 +323,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		assert ltrace_func(TRACE_CALDAVD)
 
-		group = self.__create_account('group', uid, guid, name)
+		group = self.__create_xml_element('group', uid, guid, name)
 
 		xmlmembers = ET.SubElement(group, 'members')
 		xmlmembers.text = '\n	'
@@ -316,9 +334,9 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		assert ltrace_func(TRACE_CALDAVD)
 
-		resource = self.__create_account('resource', uid, guid, name)
+		resource = self.__create_xml_element('resource', uid, guid, name)
 
-		xmlproxies = ET.SubElement(resource, 'proxies')
+		"""xmlproxies = ET.SubElement(resource, 'proxies')
 		xmlproxies.text = '\n		'
 		xmlproxies.tail = '\n'
 
@@ -335,7 +353,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			xmlromember = ET.SubElement(xmlroproxies, 'member')
 			xmlromember.set('type', type)
 			xmlromember.text = gst_uid
-			xmlromember.tail = '\n	'
+			xmlromember.tail = '\n	'"""
 
 		return True
 	def add_member(self, name, login, **kwargs):
@@ -429,16 +447,16 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			# create an internal guest group to hold R/O proxies.
 			# do not call it 'gst-$USER' in case the user has the name of
 			# a group, this would conflict with the genuine gst-$GROUP.
-			gst_uid = '.org.%s.%s%s' % (self.name,
+			"""gst_uid = '.org.%s.%s%s' % (self.name,
 									LMC.configuration.groups.guest_prefix,
-									user.login)
+									user.login)"""
 
 			if (
 					self.add_user(uid=user.login,
 									guid=str(uuid.uuid1()),
 									password=password,
-									name=user.gecos)
-				and
+									name=user.gecos)):
+				"""and
 					self.add_group(uid=gst_uid,
 									guid=str(uuid.uuid1()),
 									name=_(u'R/O holder for user %s.')
@@ -447,10 +465,9 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					self.add_resource(uid=user.login,
 									guid=str(uuid.uuid1()),
 									name=user.gecos, type='users',
-									gst_uid=gst_uid)
-					):
+									gst_uid=gst_uid)"""
 
-				self.__write_accounts_and_reload()
+				self.__write_elements_and_reload()
 
 			return True
 
@@ -458,6 +475,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			logging.warning(_(u'{0}: {1}').format(stylize(ST_NAME, self.name), e))
 			print_exc()
 			return False
+	
 	@events.handler_method
 	@only_if_enabled
 	def user_pre_change_password(self, *args, **kwargs):
@@ -484,7 +502,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			if self.mod_account(acttype='user', uid=user.login,
 							attrname='password', value=password):
 
-				self.__write_accounts_and_reload()
+				self.__write_elements_and_reload()
 				#logging.progress('%s: changed user %s password.' % (
 				#	self.name, self.paths.accounts))
 			return True
@@ -519,7 +537,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					self.del_account(acttype='user', uid=user.login)
 					):
 
-				self.__write_accounts_and_reload()
+				self.__write_elements_and_reload()
 				#logging.progress('%s: deleted user and resource in %s.' % (
 				#	self.name, self.paths.accounts))
 
@@ -546,9 +564,10 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		group = kwargs.pop('group')
 
-		if not (group.is_standard or group.is_guest):
+		if not (group.is_responsible or group.is_standard or group.is_guest):
 			return
 
+		resource_uuid = str(uuid.uuid1())
 		try:
 			if (
 				self.add_group(uid=group.name, guid=str(uuid.uuid1()),
@@ -558,7 +577,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					(
 					group.is_standard
 					and
-					self.add_resource(uid=group.name, guid=str(uuid.uuid1()),
+					self.add_resource(uid="resource_"+group.name, guid=resource_uuid,
 										name=group.description,
 										type='groups',
 										# we've got to construct the guest group
@@ -566,15 +585,45 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 										# exist yet (it is created *after* the
 										# standard group.
 										gst_uid=group.guest_group.name)
-					) or (
+					)
+				)):
+				"""
+					 or (
 					group.is_guest
 					and
 					self.add_resource(uid=group.name,
 										guid=str(uuid.uuid1()),
 										name=group.description, type='groups')
 					)
-				)):
-				self.__write_accounts_and_reload()
+				"""
+				self.__write_elements_and_reload()
+
+				# deal with proxies
+				from calendarserver.tools.principals import action_addProxy, addProxy, principalForPrincipalID
+				from calendarserver.tools.util import getDirectory, loadConfig, setupMemcached
+				from twistedcaldav.config import config
+				from twistedcaldav.directory.directory import DirectoryRecord
+				loadConfig(None)
+				config.directory = getDirectory()
+				setupMemcached(config)
+				# the standard group ressource is the principal
+				#principal = config.directory.recordWithShortName("resources", "resource_"+group.sortName)
+				principal = principalForPrincipalID('resources:resource_'+group.name.replace('gst-', '').replace('rsp-',''))
+
+				guid = principalForPrincipalID('groups:'+group.name)
+				gst_guid = principalForPrincipalID('groups:gst-'+group.name)
+				rsp_guid = principalForPrincipalID('groups:rsp-'+group.name)
+				#guid = config.directory.recordWithShortName("groups", group.name)
+
+
+				action_addProxy(principal, 'read', ('groups:gst-'+group.name))
+				action_addProxy(principal, 'write', ('groups:rsp-'+group.name))
+				action_addProxy(principal, 'write', ('groups:'+group.name))
+
+
+
+
+
 				#logging.progress('%s: added group and resource in %s.' % (
 				#	self.name, self.paths.accounts))
 
@@ -605,7 +654,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				self.del_account(acttype='group', uid=group.name)
 				):
 
-				self.__write_accounts_and_reload()
+				self.__write_elements_and_reload()
 				#logging.progress('%s: deleted group and resource in %s.' % (
 				#	self.name, self.paths.accounts))
 
@@ -640,7 +689,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		try:
 			#TODO: self.locks.accounts.acquire()
 			if self.add_member(name=group.name, login=user.login):
-				self.__write_accounts_and_reload()
+				self.__write_elements_and_reload()
 				#logging.progress('%s: added user %s in group %s in %s.' % (
 				#	self.name, login, name, self.paths.accounts))
 
@@ -665,10 +714,12 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		if user.is_system or not (group.is_standard or group.is_guest):
 			return True
 
-		try:
+
+		#call manage_principals
+		"""try:
 			#TODO: self.locks.accounts.acquire()
 			if self.del_member(name=group.name, login=user.login):
-				self.__write_accounts_and_reload()
+				self.__write_elements_and_reload()
 				#logging.progress('%s: removed user %s from group %s in %s.' % (
 				#	self.name, login, name, self.paths.accounts))
 
@@ -677,7 +728,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			logging.warning(_(u'{0}: {1}').format(
 							stylize(ST_NAME, self.name), e))
 			print_exc()
-			return False
+			return False"""
 	@events.handler_method
 	@only_if_enabled
 	def group_post_del_user(self, *args, **kwargs):
