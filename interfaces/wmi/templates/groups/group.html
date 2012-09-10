@@ -2,7 +2,7 @@
     Distributed under the terms of the GNU GPL version 2. -#}
 
 <div id='sub_content_header'>
-	<h1 id='sub_content_title'>{{mode}}{{ title }}</h1>
+	<h1 id='sub_content_title'>{{ title }}</h1>
 </div>
 
 <div id='sub_content_area'>
@@ -78,6 +78,26 @@
 
 			lock_sub_content("{{ group_gid }}");
 			select_row("groups", "{{ group_gid }}");
+		{%- elif mode == 'massiv' -%}
+			// init massive mode
+
+			// for groups :
+			var rel_ids = {
+				'no_membership' : 0,
+				'guest'         : 1,
+				'member'        : 2,
+				'resp'          : 3 }
+
+			$('.instant_apply_click').click(function() {
+				div = $('#sub_content').find('#'+$(this).attr('id')).filter('.click_item');
+				div.find('.item_hidden_input').addClass('item_currently_selected');
+
+				url = '/groups/massive/users/'+$.URLEncode("{{ gids }}")+'/'+$(this).attr('id')
+							+ '/' + rel_ids[$(this).attr('value')]
+				console.log(url)
+				$.get(url);
+			});
+
 		{%- elif mode == 'new' -%}
 			unlock_sub_content();
 

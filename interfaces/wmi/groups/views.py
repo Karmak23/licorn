@@ -129,8 +129,21 @@ def massive(request, gids, action, value='', *args, **kwargs):
 			destination.close()
 
 		return HttpResponse(json.dumps({ "file_name" : export_filename }))
+	
+	elif action == 'skel':
+		# massively mod shell
+		for gid in gids.split(','):
+			mod(request, gid=gid, action='skel', value=value)
+	elif action == 'apply_skel':
+		# massively mod shell
+		for gid in gids.split(','):
+			mod(request, gid=gid, action='apply_skel', value=None)
+	elif action == 'users':
+		print "mod users ",gids, value
+		for gid in gids.split(','):
+			mod(request, gid=gid, action='users', value=value)
+			# group is : group_id/rel_id
 	elif action == 'edit':
-		
 		groups = []
 		for gid in gids.split(','):
 			groups.append(LMC.groups.guess_one(gid))
@@ -159,7 +172,7 @@ def massive(request, gids, action, value='', *args, **kwargs):
 			}))
 
 		_dict = {
-					'groups'      : [],
+					'gids'        : gids,
 					'mode'    	  : "massiv",
 					'title'       : _("Massive edit"),
 					'form'        : GroupForm("massiv", group),
@@ -167,7 +180,6 @@ def massive(request, gids, action, value='', *args, **kwargs):
 				}
 
 		if request.is_ajax():
-
 			# TODO: use utils.format_RPC_JS('remove_notification', "wait_for_rendering")
 			return render(request, 'groups/group.html', _dict)
 

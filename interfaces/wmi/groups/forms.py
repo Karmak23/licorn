@@ -15,9 +15,10 @@ class GroupForm(forms.Form):
 
 
 		if _mode == 'massiv':
-			self.fields['permissive'] = forms.BooleanField(
-				initial = True,
-				label=_('Is the dir permissive ?'))
+			self.fields['skel'] = forms.ChoiceField(
+					choices = [(s, os.path.basename(s)) for s in LMC.configuration.users.skels ],
+					initial = LMC.configuration.users.default_skel,
+					label=_('Group skel'))
 
 		else:
 

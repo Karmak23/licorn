@@ -243,8 +243,14 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 	$('#'+list_name+'_massive_skel').click(function() {
 		users=[]
 		$('#'+list_name+'_list').find(".row").each(function() {
-			if ($(this).find('.users_checkbox').is(':checked') == true) {
-				users.push($(this).find('.users_login').text());
+			if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+				if (list_name == 'users') {
+					common_name = "users_login"
+				}
+				else {
+					common_name = "groups_name"
+				}
+				users.push($(this).find('.'+common_name).text());
 			}
 		});
 
@@ -256,12 +262,22 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 		skel_dialog_title = gettext("Massive skeleton reapplying");
 
 		if (users_selected_html == '<ul></ul>') {
-			skel_dialog_content =  gettext("Please select at least one user account.");
-			skel_dialog = new dialog(skel_dialog_title,	skel_dialog_content);
-			skel_dialog.show();
+			if (list_name == 'users') {
+				item_name = "user"
+			}
+			else {
+				item_name = "group"
+			}
+			show_message_through_notification(gettext("Please select at least one "+item_name+"."));
+
 		}
 		else {
-			skel_dialog_content = gettext("Are you sure you want to reapply their skeleton to these user account(s):");
+			if (list_name == 'users') {
+				skel_dialog_content = gettext("Are you sure you want to reapply their skeleton to these user account(s):");
+			}
+			else {
+				item_name = "group"
+			}
 			skel_dialog_content += users_selected_html;
 			$.get('/users/message/massive_skel/', function(html) {
 				skel_dialog_content += html;
@@ -274,7 +290,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 							}
 						});
 						skel = $("#id_skel_to_apply").attr('value').toString();
-						page_url = "/users/massive/skel/" + $.URLEncode(users.join(',')) + '/' + $.URLEncode(skel)
+						page_url = "/"+list_name+"/massive/skel/" + $.URLEncode(users.join(',')) + '/' + $.URLEncode(skel)
 						$.get(page_url);
 					});
 				skel_dialog.show();

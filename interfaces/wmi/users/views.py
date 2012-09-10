@@ -236,19 +236,19 @@ def massive(request, uids, action, *args, **kwargs):
 	if action == 'edit':
 
 		groups_list = [ (_('Standard groups'),{
-						'user': user,
+						'user': None,
 						'name': 'standard',
 						'groups' : utils.select("groups", default_selection=filters.STANDARD)
 					}),
 					(_('Privileged groups'), {
-						'user': user,
+						'user': None,
 						'name': 'privileged',
 						'groups' : utils.select("groups", default_selection=filters.PRIVILEGED)
 					}) ]
 
 		if request.user.is_superuser:
 			groups_list.append( ( _('System groups') ,  {
-				'user': user,
+				'user': None,
 				'name': 'system',
 				'groups' : [ group for group in
 					utils.select("groups", default_selection=filters.SYSTEM)
@@ -269,7 +269,7 @@ def massive(request, uids, action, *args, **kwargs):
 					'users'                 : [ LMC.users.guess_one(u) for \
 														u in uids.split(',')],
 					'_mode'                 : "massiv",
-					'form'                  : UserForm("massiv", user),
+					'form'                  : UserForm("massiv", None),
 					'groups_lists'          : groups_list,
 					'title'                 : _("Massive edit")
 				}

@@ -21,11 +21,11 @@
 
 					{%- set rel_ref = [] -%}
 					{%- set same_rel = [] -%}
-					{% for u in groups %}
+					{% for g in users_list.groups %}
 						{% if rel_ref == [] %}
-							{%- do rel_ref.append(u.get_relationship(item.gidNumber)) -%}
+							{%- do rel_ref.append(g.get_relationship(item.uidNumber)) -%}
 						{% else %}
-							{% if rel_ref[0] != u.get_relationship(item.gidNumber) %}
+							{% if rel_ref[0] != g.get_relationship(item.uidNumber) %}
 								{%- do same_rel.append(0) -%}
 							{% endif %}
 						{% endif %}
