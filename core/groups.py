@@ -30,6 +30,7 @@ from licorn.foundations.constants import filters, backend_actions, \
 
 from licorn.core                import LMC
 from licorn.core.classes        import CoreFSController, CoreStoredObject, CoreFSUnitObject
+from licorn.contrib             import getent
 #from licorn.core.users          import User
 
 class Group(CoreStoredObject, CoreFSUnitObject):
@@ -1969,9 +1970,8 @@ class GroupsController(DictSingleton, CoreFSController):
 			# the needed information by another mean.
 			#
 			# FIXME: verify this is still needed.
-			import grp
-			users_gid = grp.getgrnam(
-						LMC.configuration.users.group).gr_gid
+			users_gid = getent.group(LMC.configuration.users.group).gid
+
 		try:
 
 			for line in posix1e.ACL(file=groups_home):
