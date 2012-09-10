@@ -16,7 +16,7 @@ Trying to sum up Licorn® features in a few words is a hard task: simply put, he
 	Users management
 		* LDAP or Unix shadow account
 			* :term:`chk` enforces permissions and ACLs inside the home dir
-		* Optional users attributes via :ref:`extensions`
+		* Optional users attributes via :ref:`extensions.en`
 			* individual calendar & delegations
 			* mail addresses, aliases
 			* personnal web folder
@@ -24,9 +24,9 @@ Trying to sum up Licorn® features in a few words is a hard task: simply put, he
 	Groups and data sharing
 		* Unix or LDAP groups
 		* Shares for member (via one special directory linked to all member's homes)
-			* shares can be :ref:`permissive or not <groupspermissions>`
+			* shares can be :ref:`permissive or not <permissiveness.en>`
 			* shares are inotified by daemon, permissions are live-enforced
-			* ref:`chk` enforces permissions, checks symlink in member's homes and other sanitizations
+			* ref:`chk.en` enforces permissions, checks symlink in member's homes and other sanitizations
 		* optional attributes via extensions
 
 	System profiles
@@ -44,13 +44,13 @@ Trying to sum up Licorn® features in a few words is a hard task: simply put, he
 			* coming feature: remote generic settings apply (env / gconf / KDE / win32)
 
 	Backups
-		* handles automatically :ref:`external mass storage <extensions.volumes>` devices and :ref:`runs automatic backup <extensions.rdiffbackup>` at :term:`configured intervals <backup.interval>`.
+		* handles automatically :ref:`external mass storage <extensions.volumes.en>` devices and :ref:`runs automatic backup <extensions.rdiffbackup.en>` at regular date/time.
 
 	Printers
 		* coming feature: complete and transparent CUPS integration
 
 	Configuration and System
-		* centralize and alter system-wide parameters and other daemons configuration (:program:`apache`, :program:`postfix`, :program:`dnsmasq`…)
+		* centralize and alter system-wide parameters and other daemons configuration (:program:`apache`, :program:`postfix`, :program:`dnsmasq`, etc)
 		* enable or disable backends and extensions at runtime
 		* remote execution and configuration
 
@@ -60,7 +60,7 @@ To complement this feature list or to have more detailled information, you can r
 .. toctree::
 	:maxdepth: 1
 
-	backends/index.en
+	core/backends/index.en
 	extensions/index.en
 	implementation.en
 
@@ -72,14 +72,14 @@ These software or services are used or supported as base of the system, or via e
 
 Currently supported:
 
-- :ref:`Shadow (backend) <core.backends.shadow>`
-- :ref:`OpenLDAP (backend) <core.backends.openldap>`
-- :ref:`DNSmasq (backend) <core.backends.dnsmasq>`
+- :ref:`Shadow (backend) <core.backends.shadow.en>`
+- :ref:`OpenLDAP (backend) <core.backends.openldap.en>`
+- :ref:`DNSmasq (backend) <core.backends.dnsmasq.en>`
 - SaMBa (currently: basic integration in the controllers)
-- :ref:`caldavd (extension) <extensions.caldavd>`
-- :ref:`squid (extension) <extensions.squid>`
-- :ref:`basic volumes management (extension) <extensions.volumes>`
-- :ref:`Rdiff Backup (extension) <extensions.rdiffbackup>`
+- :ref:`caldavd (extension) <extensions.caldavd.en>`
+- :ref:`squid (extension) <extensions.squid.en>`
+- :ref:`basic volumes management (extension) <extensions.volumes.en>`
+- :ref:`Rdiff Backup (extension) <extensions.rdiffbackup.en>`
 
 Under development or planned:
 

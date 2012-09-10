@@ -1,8 +1,6 @@
-.. _extensions.volumes:
-
+.. _extensions.volumes.en:
 
 .. highlight:: bash
-
 
 =================
 Volumes extension
@@ -13,7 +11,7 @@ Description
 
 The `Volumes` extension takes care of external mass storage devices.
 
-It watches when you plug them in and out, offers ability to mount/unmount/autodiscover them, and makes the attached volumes available to other parts of Licorn® (e.g. :ref:`extensions.rdiffbackup` and possibly others).
+It watches when you plug them in and out, offers ability to mount/unmount/autodiscover them, and makes the attached volumes available to other parts of Licorn® (e.g. :ref:`rdiffbackup <extensions.rdiffbackup.en>` and possibly others).
 
 .. _extensions.volumes.compatible.en:
 
@@ -123,4 +121,4 @@ Configuration directives
 
 .. seealso::
 
-	The :ref:`volumes dedicated developer documentation <extensions.volumes.dev>` can give you additionnal information, if you fit in its audience.
+	The :ref:`volumes dedicated developer documentation <extensions.volumes.dev.en>` can give you additionnal information, if you fit in its audience.

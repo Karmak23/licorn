@@ -54,7 +54,7 @@ The CoreStoredObject
 	:members:
 	:undoc-members:
 
-.. _core.modules:
+.. _core.modules.en:
 
 Modules abstract classes
 ========================

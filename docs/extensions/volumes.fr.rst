@@ -124,4 +124,4 @@ Directives de configuration
 
 .. seealso::
 
-	La :ref:`documentation des volumes dédiée aux développeurs <extensions.volumes.dev>` (en anglais), qui pourra vous donner de plus amples détails, si vous êtes développeur.
+	La :ref:`documentation des volumes dédiée aux développeurs <extensions.volumes.dev.en>` (en anglais), qui pourra vous donner de plus amples détails, si vous êtes développeur.

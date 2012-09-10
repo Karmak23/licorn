@@ -503,11 +503,11 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		logging.progress(_(u'{0}: saved groups data to disk.').format(self.pretty_name))
 
 		assert ltrace_func(TRACE_SHADOW, True)
-	def compute_password(self, password, salt=None):
+	def compute_password(self, password, salt=None, ascii=False):
 
 		assert ltrace_func(TRACE_SHADOW)
 
-		#return '$6$' + hashlib.sha512(password).hexdigest()
+		# In the shadow backend there is no difference between 'ascii' and not.
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt()
 												if salt is None else salt)
 	def _inotifier_install_watches(self, inotifier):

@@ -388,6 +388,12 @@ class GQWSchedulerThread(BaseLicornThread):
 				# dump_status() to hang.
 				sleep_time = self.sleep_time
 
+			if sleep_time < 0:
+				# Circumvent #901: in some very rare conditions, sleep_time
+				# seems to be negative, which raises an "IOError:
+				# Invalid Argument" exception on Unixes (cf. http://bytes.com/topic/python/answers/29389-behaviour-time-sleep-negative-arg).
+				sleep_time = 0
+
 			time.sleep(sleep_time)
 		assert ltrace_func(TRACE_THREAD, True)
 	def stop(self):
@@ -736,7 +742,25 @@ class GenericQueueWorkerThread(AbstractTimerThread):
 
 		while not self._stop_event.is_set():
 
-			self.priority, self.job, self.job_args, self.jobs_kwargs = q.get()
+			# We need to store the item in a separate variable in case it is
+			# badly formed (see #898). Without this, we won't be able to
+			# display it in the message in case of an exception.
+			temp_data = q.get()
+
+			try:
+				self.priority, self.job, self.job_args, self.jobs_kwargs = temp_data
+
+			except ValueError:
+				logging.warning(_(u'{0}: invalid queue item "{1}", '
+								u'terminating.').format(self.name, temp_data))
+
+				# Even with a bad-built item, we successfully poped it from the
+				# queue. Notify any waiters before quitting.
+				q.task_done()
+				break
+
+			else:
+				del temp_data
 
 			if self.job is None:
 				# None is a fake message to unblock the q.get(), when the

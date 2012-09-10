@@ -200,15 +200,15 @@ class LicornBaseDaemon:
 
 			# ACLChecker will ruin I/O performance if we create too much.
 			'licornd.threads.aclcheck.min' : 1,
-			'licornd.threads.aclcheck.max' : 10,
+			'licornd.threads.aclcheck.max' : 4,
 
 			# ServiceWorker is a generic thread, we could need much of them.
-			'licornd.threads.service.min'  : 1,
-			'licornd.threads.service.max'  : 50,
+			'licornd.threads.service.min'  : 4,
+			'licornd.threads.service.max'  : 24,
 
 			# NetWorkWorker is a consuming service, for short operations, we need a lot.
-			'licornd.threads.network.min'     : 1,
-			'licornd.threads.network.max'     : 100,
+			'licornd.threads.network.min'     : 12,
+			'licornd.threads.network.max'     : 80,
 
 			# Wipe dead thread every 10 minutes
 			'licornd.threads.wipe_time'       : 600,
@@ -311,17 +311,17 @@ class LicornBaseDaemon:
 		err_message = ''
 
 		for directive, vmin, vmax, directive_name in (
-				(settings.licornd.threads.aclcheck.min, 1,   5,
+				(settings.licornd.threads.aclcheck.min, 1,   4,
 									'licornd.threads.aclcheck.min'),
-				(settings.licornd.threads.aclcheck.max, 1,   10,
+				(settings.licornd.threads.aclcheck.max, 4,   12,
 									'licornd.threads.aclcheck.max'),
-				(settings.licornd.threads.service.min,  1,   25,
+				(settings.licornd.threads.service.min,  1,   12,
 									'licornd.threads.service.min'),
-				(settings.licornd.threads.service.max,  25,  100,
+				(settings.licornd.threads.service.max,  24,  88,
 									'licornd.threads.service.max'),
-				(settings.licornd.threads.network.min,  1,   50,
+				(settings.licornd.threads.network.min,  2,   24,
 									'licornd.threads.network.min'),
-				(settings.licornd.threads.network.max,  50,  200,
+				(settings.licornd.threads.network.max,  32,  160,
 									'licornd.threads.network.max')
 				):
 			if directive < vmin or directive > vmax:

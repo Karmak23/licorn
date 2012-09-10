@@ -39,11 +39,11 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 		informations (status, uptime, load, etc) to the caller.
 
 		.. note:: all extensions attached to this controller must implement
-			a :meth:`system_load` method, which will be called by the
-			:meth:`reload` method. This is to make extensions load their
+			a :meth:`system_load` method, which will be called by the :meth:`reload`
+			method. This is to make extensions load their
 			**data**, which is different than loading their *configuration*,
-			which must have been done at
-			:meth:`~licorn.core.classes.CoreModule.initialize` time.
+			which must have been done at :meth:`~licorn.core.classes.CoreModule.initialize`
+			time.
 		"""
 	init_ok = False
 	@property

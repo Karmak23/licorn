@@ -1,4 +1,4 @@
-.. _concepts:
+.. _concepts.en:
 
 Understanding Licorn®
 =====================

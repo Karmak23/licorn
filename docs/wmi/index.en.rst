@@ -1,4 +1,4 @@
-.. _wmi:
+.. _wmi.en:
 
 ======================================
 Licorn® WMI (Web Management Interface)
