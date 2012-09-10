@@ -98,9 +98,9 @@ class SimpleShare(PicklableObject):
 				data.update(json.load(open(self.share_configuration_file)))
 
 			except:
-				logging.warning(_(u'{0}: configuration file {1} seems '
-								u'corrupt; removing it.').format(self,
-							stylize(ST_PATH, self.share_configuration_file)))
+				logging.exception(_(u'{0}: configuration file {1} seems '
+								u'corrupt; removing it.'), self,
+							stylize(ST_PATH, self.share_configuration_file))
 				try:
 					os.unlink(self.share_configuration_file)
 
