@@ -743,7 +743,7 @@ class CoreFSUnitObject(object):
 		self.__load_check_rules()
 
 		# put this in the queue, to avoid taking too much time at daemon start.
-		workers.service_enqueue(priorities.HIGH,
+		workers.aclcheck_enqueue(priorities.NORMAL,
 					self.__watch_directory, self.homeDirectory, initial=True)
 
 		self.__watches_installed = True
