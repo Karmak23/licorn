@@ -1146,11 +1146,14 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		minimum : login;uid;prigroup;gecos;memberships;backend """
 
 		groups = []
+
 		for g in self.groups:
 			if g.is_responsible:
 				groups.append(LMC.configuration.groups.resp_prefix + g.name)
+
 			elif g.is_guest:
 				groups.append(LMC.configuration.groups.guest_prefix + g.name)
+
 			else:
 				groups.append(g.name)
 
