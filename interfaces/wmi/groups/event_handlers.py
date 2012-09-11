@@ -22,6 +22,15 @@ def update_groups_number(request, event):
 	if request.user.is_staff:
 		yield utils.format_RPC_JS('reload_div', '#sys_groups_list_count',
 								len(LMC.groups.select(filters.SYSTEM)))
+def group_groupSkel_changed_handler(request, event):
+	group = event.kwargs['group']
+
+	yield utils.notify(_(u'Group "{0}" depends now on the skel {1}.').format(group.name, group.groupSkel))
+	yield utils.format_RPC_JS('update_row_value',
+								'groups' if group.is_standard
+									else 'sys_groups', group.gidNumber,
+								"skel", group.groupSkel)
+	
 def group_added_handler(request, event):
 
 	group = event.kwargs['group']

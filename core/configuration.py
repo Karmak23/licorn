@@ -571,8 +571,12 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		for skel_path in ("%s/skels" % \
 			settings.defaults.home_base_path, "/usr/share/skels"):
+
 			if os.path.exists(skel_path):
 				try:
+					# depth is 2 because we have 'factory' and 'local' 
+					# folders. They include package maintainer profile and 
+					# admin custom profile.
 					for new_skel in fsapi.minifind(path=skel_path,
 						itype=(stat.S_IFDIR,), mindepth=2, maxdepth=2):
 						self.users.skels.append(new_skel)
