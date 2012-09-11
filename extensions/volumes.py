@@ -12,7 +12,7 @@ import os, dbus, pyudev, select, re, errno, functools, itertools
 
 from collections import deque
 
-from licorn.foundations           import logging, exceptions
+from licorn.foundations           import logging, exceptions, settings
 from licorn.foundations           import process, pyutils, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.base      import DictSingleton, MixedDictObject, Enumeration
@@ -1008,17 +1008,8 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 				supported = True
 			else:
 				supported = False
-				return_now = False
-				try:
-					if not LMC.configuration.extensions.volumes.mount_all_fs:
-						return_now = True
 
-				except AttributeError:
-					# if LMC.configuration.extensions.volumes.mount_all_fs
-					# doesn't exist, we don't mount unsupported FS by default.
-					return_now = True
-
-				if return_now:
+				if not settings.get('extensions.volumes.mount_all_fs', False):
 					logging.progress(_(u'{0}: skipped partition {1} (excluded '
 						u'{2} filesystem).').format(stylize(ST_NAME, self.name),
 							stylize(ST_DEVICE, kernel_device),
