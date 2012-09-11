@@ -349,6 +349,9 @@ class WmiEventApplication(ObjectSingleton):
 			except Empty:
 				break
 
+		displayed_notifications = 0
+		skipped_notifications   = 0
+
 		tojson = []
 
 		for data in content:
@@ -363,7 +366,16 @@ class WmiEventApplication(ObjectSingleton):
 												stylize(ST_NAME, handler.__name__))
 
 							for json_output in handler(request, data):
-								tojson.append(json_output)
+
+								if displayed_notifications > 2 \
+									and json_output['method'] == 'show_message_through_notification':
+									skipped_notifications += 1
+
+								else:
+									if json_output['method'] == 'show_message_through_notification':
+										displayed_notifications += 1
+
+									tojson.append(json_output)
 
 					except:
 						logging.exception(_(u'Unexpected exception in Event '
@@ -384,6 +396,11 @@ class WmiEventApplication(ObjectSingleton):
 													request.META['REMOTE_ADDR'])
 
 				tojson.append(data)
+
+		if skipped_notifications:
+			tojson.append(utils.notify(_(u'… And {0} previous notification(s), '
+							u'suppressed for your visual comfort.').format(
+								skipped_notifications), 3500))
 
 		result = json.dumps({ 'data': tojson })
 
