@@ -340,6 +340,11 @@ class WmiEventApplication(ObjectSingleton):
 		else:
 			content = [ data ]
 
+		# Don't send PUSH events more than every half-second. Eventually wait
+		# for more events to populate the user queue, to send them at once.
+		# This will make the JS side much happier and feel less doggy slow.
+		time.sleep(0.5)
+
 		# once we unblock, try to read as many items as possible, to avoid
 		# many consequent small request from the client.
 		while 1:
@@ -398,9 +403,9 @@ class WmiEventApplication(ObjectSingleton):
 				tojson.append(data)
 
 		if skipped_notifications:
-			tojson.append(utils.notify(_(u'… And {0} previous notification(s), '
-							u'suppressed for your visual comfort.').format(
-								skipped_notifications), 3500))
+			tojson.append(utils.notify(_(u'… And {0} other notification(s), '
+								u'skipped for your visual comfort.').format(
+									skipped_notifications)))
 
 		result = json.dumps({ 'data': tojson })
 
