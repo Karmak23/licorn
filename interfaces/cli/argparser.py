@@ -114,7 +114,7 @@ def common_filter_group(app, parser, tool, mode):
 				help=_(u'Monitor a given number of count. Default: %s.') %
 					stylize(ST_DEFAULT, _(u'infinite')))
 
-			filtergroup.add_option('-t', '--time', '--monitor-time',
+			filtergroup.add_option('-d', '--duration', '--monitor-duration',
 				action="store", type="int", dest="monitor_time", default=None,
 				help=_(u'Monitor during a time period, in seconds. Default: %s.') %
 					stylize(ST_DEFAULT, _(u'infinite')))
@@ -491,7 +491,7 @@ def __get_output_group(app, parser, mode):
 				'Default: %s, output for CLI, human-readable.') %
 				stylize(ST_DEFAULT, _(u"NO XML")))
 
-		outputgroup.add_option('-d', "--dump",
+		outputgroup.add_option("--dump",
 			action="store_true", dest="dump", default=False,
 			help=_(u'Dump nearly RAW data on stdout. Used for debugging '
 				'internal data structures. WARNING: dump output can easily '
