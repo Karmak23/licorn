@@ -141,7 +141,7 @@ def main(request, *args, **kwargs):
 		except IndexError:
 			user = None
 
-		edit_mod = True
+		edit_mod = "edit"
 		title    = _('Edit user {0}').format(user.login)
 		action   = 'edit'
 		user_id  = user.uidNumber
