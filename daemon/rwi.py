@@ -322,7 +322,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					default_selection = self.__default_users_selection(opts, for_get=True),
 					all=opts.all)
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.users.to_script(selected=users_to_get,
+										script_format=opts.to_script,
+										script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.users.to_XML(selected=users_to_get,
 										long_output=opts.long_output)
 		else:
@@ -352,7 +357,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				default_selection=self.__default_groups_selection(opts),
 				all=opts.all)
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.groups.to_script(selected=groups_to_get,
+										script_format=opts.to_script,
+										script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.groups.to_XML(selected=groups_to_get,
 										long_output=opts.long_output)
 		else:
@@ -378,8 +388,14 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				],
 				default_selection=filters.ALL)
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.profiles.to_script(selected=profiles_to_get,
+										script_format=opts.to_script,
+										script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.profiles.to_XML(profiles_to_get)
+
 		else:
 			data = LMC.profiles._cli_get(profiles_to_get)
 
@@ -396,6 +412,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.xml:
 			data = LMC.keywords.ExportXML()
+
 		else:
 			data = LMC.keywords.Export()
 
@@ -410,8 +427,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace(TRACE_GET, '> get_privileges(%s,%s)' % (opts, args))
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.privileges.to_script(script_format=opts.to_script,
+											script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.privileges.ExportXML()
+
 		else:
 			data = LMC.privileges.ExportCLI()
 
@@ -466,13 +488,19 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.mid is not None:
 			try:
 				machines_to_get = LMC.machines.select("mid=" + unicode(opts.mid))
+
 			except KeyError:
 				logging.error("No matching machine found.", to_local=False)
 				return
 		else:
 			machines_to_get = LMC.machines.select(selection, return_ids=True)
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.machines.to_script(selected=machines_to_get,
+											script_format=opts.to_script,
+											script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.machines.ExportXML(selected=machines_to_get,
 											long_output=opts.long_output)
 		else:
@@ -502,15 +530,22 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.all:
 			selection = filters.ALL
+
 		if opts.extinction:
 			selection = filters.EXTINCTION_TASK
+
 		else:
 			# Running, finished
 			pass
 
 		tasks_to_get = LMC.tasks.select(selection)
 
-		data = LMC.tasks._cli_get(selected=tasks_to_get,
+		if opts.to_script:
+			data = LMC.tasks.to_script(selected=tasks_to_get,
+											script_format=opts.to_script,
+											script_separator=opts.script_sep)
+		else:
+			data = LMC.tasks._cli_get(selected=tasks_to_get,
 										long_output=opts.long_output)
 
 		if data and data != '\n':

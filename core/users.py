@@ -1923,26 +1923,29 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				uids = self.users.keys()
 			else:
 				uids = selected
+
 			uids.sort()
 
-			assert ltrace(TRACE_USERS, '| ExportCSV(%s)' % uids)
+		assert ltrace(TRACE_USERS, '| ExportCSV(%s)' % uids)
 
-			def build_csv_output_licorn(uid):
-				return ';'.join(
-					[
-						self[uid].gecos,
-						self[uid].login,
-						str(self[uid].gidNumber),
-						','.join([ g.name for g in self[uid].groups]),
-						self[uid].backend.name,
-						self[uid].profile.name if self[uid].profile is not \
-															None else str(None)
-					]
-					)
+		# TODO: get a user locally from self[uid] and avoid all these lookups.
 
-			data = '\n'.join(map(build_csv_output_licorn, uids)) +'\n'
+		def build_csv_output_licorn(uid):
+			return ';'.join(
+				[
+					self[uid].gecos,
+					self[uid].login,
+					str(self[uid].gidNumber),
+					','.join([ g.name for g in self[uid].groups]),
+					self[uid].backend.name,
+					self[uid].profile.name if self[uid].profile is not \
+														None else str(None)
+				]
+				)
 
-			return data
+		data = '\n'.join(map(build_csv_output_licorn, uids)) +'\n'
+
+		return data
 	def to_XML(self, selected=None, long_output=False):
 		""" Export the user accounts list to XML. """
 
@@ -1954,7 +1957,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			assert ltrace(TRACE_USERS, '| to_XML(%r)' % users)
 
-			return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+		return ('<?xml version="1.0" encoding="UTF-8"?>\n'
 					'<users-list>\n'
 					'%s\n'
 					'</users-list>\n') % '\n'.join(
@@ -1970,7 +1973,18 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			assert ltrace(TRACE_USERS, '| to_JSON(%r)' % users)
 
-			return '[ %s ]' % ','.join(user.to_JSON() for user in users)
+		return '[ %s ]' % ','.join(user.to_JSON() for user in users)
+	def to_script(self, selected=None, script_format=None, script_separator=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				users = self
+			else:
+				users = selected
+
+		return script_separator.join(script_format.format(user=user, u=user, self=user)
+															for user in users)
 	def chk_Users(self, users_to_check=[], minimal=True, batch=False,
 														auto_answer=None):
 		"""Check user accounts and account data consistency."""

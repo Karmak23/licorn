@@ -2161,6 +2161,17 @@ class GroupsController(DictSingleton, CoreFSController):
 				data += str(group)
 
 			return data
+	def to_script(self, selected=None, script_format=None, script_separator=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				groups = self
+			else:
+				groups = selected
+
+		return script_separator.join(script_format.format(group=group, g=group, self=group)
+														for group in groups)
 	def to_XML(self, selected=None, long_output=False):
 		""" Export the groups list to XML. """
 
