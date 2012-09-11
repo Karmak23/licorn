@@ -53,8 +53,17 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 	@staticmethod
 	def _cli_invalidate_all():
-		for user in User.by_login.itervalues():
-			user()._cli_invalidate()
+		for login, user in User.by_login.iteritems():
+			try:
+				user()._cli_invalidate()
+
+			except AttributeError:
+				# NOTE: for details, see groups.py, line 770.
+				if settings.experimental.enabled:
+					logging.warning(_(u'{0}: is `None` in class `core.User`, skipped.').format(login))
+
+				else:
+					raise
 	@staticmethod
 	def _cli_compute_label_width():
 
@@ -307,6 +316,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		if self.__pickled:
 			# avoid useless exception on the WMI remote side.
 			return
+
+		#logging.exception(_(u'{0}: __del__() called!!'), self.__login)
 
 		assert ltrace(TRACE_GC, '| User %s.__del__()' % self.__login)
 
@@ -855,7 +866,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			self._checking.clear()
 
-			LicornEvent('user_skel_applyed', user=self.proxy).emit(priorities.LOW)
+			LicornEvent('user_skel_applyed', user=self.proxy, skel=skel).emit(priorities.LOW)
 
 			logging.notice(_(u'Applyed skel {0} for user {1}').format(
 										skel, stylize(ST_LOGIN, self.__login)))
@@ -1146,11 +1157,14 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		minimum : login;uid;prigroup;gecos;memberships;backend """
 
 		groups = []
+
 		for g in self.groups:
 			if g.is_responsible:
 				groups.append(LMC.configuration.groups.resp_prefix + g.name)
+
 			elif g.is_guest:
 				groups.append(LMC.configuration.groups.guest_prefix + g.name)
+
 			else:
 				groups.append(g.name)
 
@@ -1923,26 +1937,29 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				uids = self.users.keys()
 			else:
 				uids = selected
+
 			uids.sort()
 
-			assert ltrace(TRACE_USERS, '| ExportCSV(%s)' % uids)
+		assert ltrace(TRACE_USERS, '| ExportCSV(%s)' % uids)
 
-			def build_csv_output_licorn(uid):
-				return ';'.join(
-					[
-						self[uid].gecos,
-						self[uid].login,
-						str(self[uid].gidNumber),
-						','.join([ g.name for g in self[uid].groups]),
-						self[uid].backend.name,
-						self[uid].profile.name if self[uid].profile is not \
-															None else str(None)
-					]
-					)
+		# TODO: get a user locally from self[uid] and avoid all these lookups.
 
-			data = '\n'.join(map(build_csv_output_licorn, uids)) +'\n'
+		def build_csv_output_licorn(uid):
+			return ';'.join(
+				[
+					self[uid].gecos,
+					self[uid].login,
+					str(self[uid].gidNumber),
+					','.join([ g.name for g in self[uid].groups]),
+					self[uid].backend.name,
+					self[uid].profile.name if self[uid].profile is not \
+														None else str(None)
+				]
+				)
 
-			return data
+		data = '\n'.join(map(build_csv_output_licorn, uids)) +'\n'
+
+		return data
 	def to_XML(self, selected=None, long_output=False):
 		""" Export the user accounts list to XML. """
 
@@ -1954,7 +1971,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			assert ltrace(TRACE_USERS, '| to_XML(%r)' % users)
 
-			return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+		return ('<?xml version="1.0" encoding="UTF-8"?>\n'
 					'<users-list>\n'
 					'%s\n'
 					'</users-list>\n') % '\n'.join(
@@ -1970,7 +1987,18 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			assert ltrace(TRACE_USERS, '| to_JSON(%r)' % users)
 
-			return '[ %s ]' % ','.join(user.to_JSON() for user in users)
+		return '[ %s ]' % ','.join(user.to_JSON() for user in users)
+	def to_script(self, selected=None, script_format=None, script_separator=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				users = self
+			else:
+				users = selected
+
+		return script_separator.join(script_format.format(user=user, u=user, self=user)
+															for user in users)
 	def chk_Users(self, users_to_check=[], minimal=True, batch=False,
 														auto_answer=None):
 		"""Check user accounts and account data consistency."""

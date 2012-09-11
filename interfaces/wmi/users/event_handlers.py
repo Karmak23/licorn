@@ -85,8 +85,9 @@ def user_userPassword_changed_handler(request, event):
 def user_skel_applyed_handler(request, event):
 
 	user = event.kwargs['user']
+	skel = event.kwargs['skel']
 
-	yield utils.notify(_(u'Skel reapplyed for for user account "{0}".').format(user.login))
+	yield utils.notify(_(u'Skel {1} reapplyed for user account "{0}".').format(user.login, skel))
 def user_loginShell_changed_handler(request, event):
 
 	user = event.kwargs['user']

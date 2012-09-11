@@ -1,7 +1,9 @@
 
 echo "START Users script"
 
-regedit /s \\%servname%\netlogon\templates\registry\users.reg >nul
+rem This currently doesn't work as expected, because the users.cmd script
+rem will lock down the computer again. Waiting for #912 to be resolved.
+rem regedit /s \\%servname%\netlogon\templates\registry\users.reg >nul
 
 rem activate this to mount the writable programs share
 rem net use Y: \\%servname%\programs_rw /yes >nul

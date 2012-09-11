@@ -8,7 +8,7 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, sys, traceback, pwd, grp, time, signal, errno
+import os, sys, traceback, time, signal, errno
 from types     import *
 from threading import current_thread
 
@@ -17,6 +17,8 @@ import exceptions, logging, styles
 from styles  import *
 from ltrace  import *
 from ltraces import *
+
+from licorn.contrib import getent
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
@@ -190,7 +192,7 @@ def already_running(pid_file):
 	return os.path.exists(pid_file) and \
 		os.path.exists('/proc/' + open(pid_file, 'r').read().strip())
 def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
-								group='admins'):
+															group='admins'):
 	""" check if current user is root. if not, check if he/she is member of
 		group "admins" and then refork ourselves with sudo, to gain root
 		privileges, needed for Licorn® daemon.
@@ -200,14 +202,14 @@ def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
 	assert ltrace_func(TRACE_PROCESS)
 
 	try:
-		gmembers = grp.getgrnam(group).gr_mem
+		gmembers = getent.group(group).members
 
 	except KeyError:
 		logging.error(_(u'group %s does not exist and we are not root, '
 			u'aborting. Please manually relaunch this program with root '
 			u'privileges to automatically create this group.') % group)
 
-	if pwd.getpwuid(os.getuid()).pw_name in gmembers:
+	if whoami() in gmembers:
 
 		cmd = [ process_title ]
 		cmd.extend(insert_ltrace())
@@ -224,7 +226,7 @@ def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
 
 	else:
 		raise exceptions.LicornRuntimeError(_(u'You are not a member of group '
-			u'%s; cannot do anything for you, sorry!') % group)
+							u'%s; cannot do anything for you, sorry!') % group)
 def fork_licorn_daemon(pid_to_wake=None):
 	""" Start the Licorn® daemon (fork it). """
 
@@ -324,11 +326,12 @@ def execute_remote(ipaddr, command):
 def whoami():
 	''' Return current UNIX user. Do it with traditionnal syscalls, because the
 		rest of Licorn® is not initialized if we run this function. '''
-	#from subprocess import Popen, PIPE
-	#return (Popen(['/usr/bin/whoami'], stdout=PIPE).communicate()[0])[:-1]
-	assert ltrace(TRACE_PROCESS, u'| whoami() ↣ {0}', (ST_LOGIN, pwd.getpwuid(os.getuid()).pw_name))
 
-	return pwd.getpwuid(os.getuid()).pw_name
+	whoami = getent.passwd(os.getuid()).name
+
+	assert ltrace(TRACE_PROCESS, u'| whoami() ↣ {0}', (ST_LOGIN, whoami))
+
+	return whoami
 def get_traceback():
 	return traceback.format_list(traceback.extract_tb(sys.exc_info()[2]))
 def find_network_client_infos(orig_port, client_port, local=True, pid=False):

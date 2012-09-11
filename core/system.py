@@ -13,7 +13,7 @@ Licorn core: system - http://docs.licorn.org/core/system.html
 
 """
 
-import os, pwd, Pyro.core
+import os, Pyro.core
 
 from threading import current_thread
 from licorn.foundations.threads import RLock
@@ -32,6 +32,7 @@ from licorn.foundations.constants import host_status, host_types, distros, \
 
 from licorn.core                import LMC
 from licorn.daemon              import client
+from licorn.contrib             import getent
 
 class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.ObjBase):
 	""" This class implement a local system controller. It is meant to be used
@@ -190,10 +191,12 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 		""" Called from remote `licornd` to validate incoming Pyro connections. """
 
 		uid, pid = process.find_network_client_infos(
-			settings.pyro.port, client_socket, local=False)
+							settings.pyro.port, client_socket, local=False)
 
 		try:
-			login = pwd.getpwuid(uid).pw_name
+			# `getent` will do more than `pwd` because it will look in
+			# all NSS modules, not just the local `/etc/passwd` file.
+			login = getent.passwd(uid).name
 
 		except KeyError:
 			login = None
