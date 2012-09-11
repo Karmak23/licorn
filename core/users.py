@@ -855,7 +855,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			self._checking.clear()
 
-			LicornEvent('user_skel_applyed', user=self.proxy).emit(priorities.LOW)
+			LicornEvent('user_skel_applyed', user=self.proxy, skel=skel).emit(priorities.LOW)
 
 			logging.notice(_(u'Applyed skel {0} for user {1}').format(
 										skel, stylize(ST_LOGIN, self.__login)))

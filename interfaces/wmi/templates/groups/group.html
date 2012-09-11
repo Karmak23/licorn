@@ -79,8 +79,26 @@
 			lock_sub_content("{{ group_gid }}");
 			select_row("groups", "{{ group_gid }}");
 		{%- elif mode == 'massiv' -%}
+
+			// select rows to be edited
+			var tab_gids = "{{gids}}".split(',');
+			$.each(tab_gids, function(i, gid) {
+				if (i==0) {
+					select_row('groups', gid)
+				}
+				else {
+					select_row('groups', gid, false)
+				}
+			})
+			lock_sub_content();
 			// init massive mode
 
+			// for skel
+			$('#id_skel').change(function() {
+				url = '/groups/massive/skel/'+$.URLEncode("{{gids}}")+'/'+$.URLEncode($('#id_skel').val())
+				//console.log(url)
+				$.get(url)
+			})
 			// for groups :
 			var rel_ids = {
 				'no_membership' : 0,

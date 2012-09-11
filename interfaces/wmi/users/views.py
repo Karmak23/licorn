@@ -189,9 +189,6 @@ def massive(request, uids, action, *args, **kwargs):
 	if action == 'lock':
 		for uid in uids.split(','):
 			user = LMC.users.guess_one(uid)
-			print "working on user {0}({1}) ; is locked : {2}".format(user.login, user.uid, user.is_locked)
-
-
 			if user.is_locked:
 				mod(request, uid=user.uid, action='unlock', value=True)
 			else:
@@ -274,7 +271,16 @@ def massive(request, uids, action, *args, **kwargs):
 					'title'                 : _("Massive edit")
 				}
 
-		return render(request, 'users/user.html', _dict)
+		if request.is_ajax():
+			return render(request, 'users/user.html', _dict)
+
+		else:
+			_dict.update({
+					'users_list'            : utils.select('users', default_selection=filters.STANDARD),
+					'system_users_list'     : utils.select('users', default_selection=filters.SYSTEM)
+				})
+
+			return render(request, 'users/user_template.html', _dict)
 
 	return HttpResponse('MASSIVE DONE.')
 

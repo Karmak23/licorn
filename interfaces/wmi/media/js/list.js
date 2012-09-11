@@ -279,7 +279,8 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 				skel_dialog_content = gettext("Are you sure you want to reapply their skeleton to members of following group(s):");
 			}
 			skel_dialog_content += users_selected_html;
-			$.get('/users/message/massive_skel/', function(html) {
+			msg_url = '/'+list_name+'/message/massive_skel/'
+			$.get(msg_url, function(html) {
 				skel_dialog_content += html;
 				skel_dialog = new dialog(skel_dialog_title,	skel_dialog_content,
 					true, function() {
@@ -295,12 +296,12 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 								users.push($(this).find('.'+common_identifier).text());
 							}
 						});
-						skel = $("#id_skel_to_apply").attr('value').toString();
 						if (list_name == 'users') {
+							skel = $("#id_skel_to_apply").attr('value').toString();
 							page_url = "/"+list_name+"/massive/skel/" + $.URLEncode(users.join(',')) + '/' + $.URLEncode(skel)
 						}
 						else {
-							page_url = "/"+list_name+"/massive/apply_skel/" + $.URLEncode(users.join(',')) + '/' + $.URLEncode(skel)
+							page_url = "/"+list_name+"/massive/apply_skel/" + $.URLEncode(users.join(','))
 						}
 						console.log(page_url)
 						$.get(page_url);

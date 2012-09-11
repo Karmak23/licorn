@@ -1,9 +1,11 @@
 <div>
+	{% if complete_message %}
 	{{ _("Are you sure you want to reapply the skel <strong>%(skel_name)s</strong> to all members of <strong>%(group_name)s</strong>?") % {
-		'group_name': group_name,
-		'skel_name' : skel_name } }}
+		'group_name': group.name,
+		'skel_name' : group.groupSkel } }}
 	<br />
 	<br />
+	{% endif %}
 	{{ _("This will reset the desktops, icons and menus of all members of the group, according to the content of the skel you choose. This will NOT alter any of the user personnal data, nor the group shared data.") }}
 	<br />
 	<br />

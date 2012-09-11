@@ -48,6 +48,7 @@ def message(request, part, gid=None, *args, **kwargs):
 	if gid != None:
 		group = LMC.groups.by_gid(gid)
 
+
 	if part == 'delete':
 		html = render_to_string('groups/delete_message.html', {
 			'group_name'  : group.name,
@@ -57,8 +58,12 @@ def message(request, part, gid=None, *args, **kwargs):
 
 	elif part == 'skel':
 		html = render_to_string('groups/skel_message.html', {
-				'group_name'        : group.name,
-				'skel_name'         : group.groupSkel
+				'group'            : group,
+				'complete_message' : True
+			})
+	elif part == 'massive_skel':
+		html = render_to_string('groups/skel_message.html', {
+				'complete_message'         : False
 			})
 
 	return HttpResponse(html)

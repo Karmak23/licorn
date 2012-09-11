@@ -105,11 +105,23 @@
 
 		{%- endif -%}
 		{%- if _mode == 'massiv' -%}
+			// select rows to be edited
+			var tab_uids = "{{uids}}".split(',');
+			$.each(tab_uids, function(i, uid) {
+				if (i==0) {
+					select_row('users', uid)
+				}
+				else {
+					select_row('users', uid, false)
+				}
+			})
+			lock_sub_content();
+
 			// init massive mode
 
 			// for shell :
 			$('#id_shell').change(function() {
-				console.log('/users/massive/shell/'+$.URLEncode("{{uids}}")+'/'+$.URLEncode($('#id_shell').val()))
+				//console.log('/users/massive/shell/'+$.URLEncode("{{uids}}")+'/'+$.URLEncode($('#id_shell').val()))
 				$.get('/users/massive/shell/'+$.URLEncode("{{uids}}")+'/'+$.URLEncode($('#id_shell').val()))
 			})
 
