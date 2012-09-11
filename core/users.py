@@ -53,8 +53,17 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 	@staticmethod
 	def _cli_invalidate_all():
-		for user in User.by_login.itervalues():
-			user()._cli_invalidate()
+		for login, user in User.by_login.iteritems():
+			try:
+				user()._cli_invalidate()
+
+			except AttributeError:
+				# NOTE: for details, see groups.py, line 770.
+				if settings.experimental.enabled:
+					logging.warning(_(u'{0}: is `None` in class `core.User`, skipped.').format(login))
+
+				else:
+					raise
 	@staticmethod
 	def _cli_compute_label_width():
 
@@ -307,6 +316,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		if self.__pickled:
 			# avoid useless exception on the WMI remote side.
 			return
+
+		#logging.exception(_(u'{0}: __del__() called!!'), self.__login)
 
 		assert ltrace(TRACE_GC, '| User %s.__del__()' % self.__login)
 
