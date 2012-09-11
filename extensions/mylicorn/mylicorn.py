@@ -199,8 +199,19 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		logging.info(_(u'{0}: extension always enabled unless manually '
 							u'ignored in {1}.').format(self.pretty_name,
 								stylize(ST_PATH, settings.main_config_file)))
-
 		return True
+	def enable(self):
+		logging.warning(_(u'{0}: not meant to be disabled. Ignore the '
+						u'extension in {2} if you really want this.').format(
+							self.pretty_name, stylize(ST_ATTR, 'disable()'),
+								stylize(ST_PATH, settings.main_config_file)))
+		return True
+	def disable(self):
+		logging.warning(_(u'{0}: not meant to be disabled. Mark the extension '
+						u'ignored in {2} if you really want this.').format(
+							self.pretty_name, stylize(ST_ATTR, 'disable()'),
+								stylize(ST_PATH, settings.main_config_file)))
+		return False
 	def __save_configuration(self, **kwargs):
 
 		basedict = {}
