@@ -699,7 +699,7 @@ class Machine(CoreStoredObject, SharedResource):
 		""" Restart the remote machine. """
 
 		with self.lock:
-			self.status = host_status.REBOOTING
+			self.status = host_status.BOOTING
 
 		self.system.restart(condition=condition)
 	def update_status(self, status):
