@@ -303,7 +303,7 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 						else {
 							page_url = "/"+list_name+"/massive/apply_skel/" + $.URLEncode(users.join(','))
 						}
-						console.log(page_url)
+						//console.log(page_url)
 						$.get(page_url);
 					});
 				skel_dialog.show();
