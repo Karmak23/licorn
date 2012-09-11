@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers       import reverse
 from django.shortcuts               import *
 from django.template.loader         import render_to_string
-from django.utils.translation       import ugettext_lazy as _
+from django.utils.translation       import ugettext as _
 from django.http					import HttpResponse, \
 											HttpResponseForbidden, \
 											HttpResponseNotFound, \
@@ -159,8 +159,7 @@ def massive(request, gids, action, value='', *args, **kwargs):
 		if nusers > 50:
 			# TODO: make the notification sticky and remove it just
 			# before returning the rendered template result.
-			utils.notification(request, _('Building group {0} form, please wait…').format(
-				_('edit') if _mode == 'edit' else _('creation')), 3000 + 5 * nusers, 'wait_for_rendering')
+			utils.notification(request, _('Building group massiv edit form, please wait…'), 'wait_for_rendering')
 
 		users_list = [ (_('Standard users'),{
 						'groups' : groups,
