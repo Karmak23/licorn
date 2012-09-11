@@ -9,6 +9,7 @@ REGEDIT4
 "NoSetTaskbar"=dword:00000000
 "NoFind"=dword:00000000
 "NoDrives"=dword:00000000
+"NoViewOnDrive"=dword:00000000
 "NoSaveSettings"=dword:00000000
 "NoSetActiveDesktop"=dword:00000001
 "NoFavoritesmenu"=dword:00000001

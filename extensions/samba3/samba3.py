@@ -428,10 +428,9 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			for uyp in fsapi.check_full(self.__user_profiles(user), batch=True):
 				pass
 
-			logging.notice(_(u'{0}: created {1}\'s Windows® profile (empty) '
-									u'in {2}.').format(self.pretty_name,
-										stylize(ST_LOGIN, user.login),
-										stylize(ST_PATH, dir_info.path)))
+			logging.notice(_(u'{0}: created {1}\'s Windows® (empty) '
+								u'profiles.').format(self.pretty_name,
+									stylize(ST_LOGIN, user.login)))
 
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).

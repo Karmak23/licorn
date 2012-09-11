@@ -2,7 +2,9 @@
 echo "START Admins script"
 
 echo "RESET REGISTRY."
-regedit /s \\%servname%\netlogon\templates\registry\reset-mini.reg >nul
+rem This currently doesn't work as expected, because the users.cmd script
+rem will lock down the computer again. Waiting for #912 to be resolved.
+rem regedit /s \\%servname%\netlogon\templates\registry\reset-mini.reg >nul
 
 echo "SET TIME."
 net time \\%servname% /set /yes >nul

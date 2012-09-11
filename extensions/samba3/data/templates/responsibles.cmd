@@ -1,8 +1,10 @@
 
 echo "START responsibles script"
 
-regedit /s \\%servname%\netlogon\templates\registry\reset-mini.reg >nul
-regedit /s \\%servname%\netlogon\templates\registry\responsibles.reg >nul
+rem This currently doesn't work as expected, because the users.cmd script
+rem will lock down the computer again. Waiting for #912 to be resolved.
+rem regedit /s \\%servname%\netlogon\templates\registry\reset-mini.reg >nul
+rem regedit /s \\%servname%\netlogon\templates\registry\responsibles.reg >nul
 
 net time \\%servname% /set /yes >nul
 copy \\%servname%\netlogon\templates\files\hosts %windir%\hosts >nul

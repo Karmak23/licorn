@@ -7,7 +7,7 @@ Licorn Daemon CommandListener, implemented with Pyro (Python Remote Objects)
 :license: GNU GPL version 2.
 """
 
-import signal, os, time, new, pwd
+import signal, os, time, new
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
 from threading import Thread, Timer, current_thread
@@ -195,11 +195,6 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					return 0, Pyro.constants.DENIED_HOSTBLOCKED
 	def acceptUid(self, daemon, client_uid, client_login, client_addr, client_socket):
 		try:
-			# NOTE: measured with LICORN_TRACE=timings, using pwd.getpwuid()
-			# is **at best** as quick as users.uid_to_login(), but generally
-			# slower. Thus we use our internals.
-			#client_login = pwd.getpwuid(client_uid).pw_name
-
 			if settings.role == roles.CLIENT:
 
 				if client_addr.startswith('127.'):
@@ -276,8 +271,8 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				return 1, 0
 			else:
 				logging.warning(_(u'Connection tentative from {0}:{1}, '
-					u'user {2}({3}).').format(client_addr, client_socket,
-						client_login, client_uid))
+						u'user {2}({3}).').format(client_addr, client_socket,
+							client_login, client_uid))
 
 				return 0, Pyro.constants.DENIED_SECURITY
 

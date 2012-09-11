@@ -699,7 +699,7 @@ class Machine(CoreStoredObject, SharedResource):
 		""" Restart the remote machine. """
 
 		with self.lock:
-			self.status = host_status.REBOOTING
+			self.status = host_status.BOOTING
 
 		self.system.restart(condition=condition)
 	def update_status(self, status):
@@ -1266,6 +1266,20 @@ class MachinesController(DictSingleton, CoreController):
 			+ "\n</machines-list>\n"
 
 		return data
+	def to_script(self, selected=None, script_format=None, script_separator=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				mids = self.keys()
+			else:
+				mids = selected
+			mids.sort()
+
+			machines = (self[mid] for mid in mids)
+
+		return script_separator.join(script_format.format(machine=machine, m=machine,
+										self=machine) for machine in machines)
 	def shutdown(self, mid, warn_users=True):
 		""" Shutdown a machine, after having warned the connected user(s) if
 			asked to."""
