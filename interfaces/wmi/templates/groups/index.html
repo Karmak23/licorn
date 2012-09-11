@@ -1,134 +1,245 @@
 {#- Copyright 2011 META IT & Robin Lucbernet<rl@meta-it.fr>
     Distributed under the terms of the GNU GPL version 2. -#}
 
-{% from 'widgets/common.html' import licorn_list, jquery_popover_media %}
+{#- REMOVE IT -#}
+{% from 'widgets/common.html' import licorn_list, jquery_popover_media with context %}
 
-{%- extends 'fullbase.html' -%}
+{%- extends 'template_one_content.html' -%}
 
 {%- block extended_media -%}
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/list.css" />
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/groups.css" />
-	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/table_view.css" />
-	{{ jquery_popover_media() }}
-	<script language="javascript" type="text/javascript" src="/media/js/list.js"></script>
-	<script language="javascript" type="text/javascript" src="/media/js/groups.js"></script>
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.uitablefilter.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.iselectable.js"></script>
 {%- endblock -%}
 
 {%- block title -%}{{ _('Groups management') }}{%- endblock -%}
 
 {%- block main_content -%}
+	<div class="modal hide fade" id="machine_modal">
+		{{ edit_html }}
+	</div>
 
-	{%- if groups_list|length > 100 -%}
-	<script language="javascript" type="text/javascript">
-		loading_animation();
-	</script>
-	{%- endif -%}
+	<div class='table_header'>
+		<span class='table_header_title table_header_item'>
+			Groups (<span id='model_machines_count'>{{ groups|length }}</span>)
+		</span>
 
-	<!-- standard groups list -->
+		<span class='table_header_massive_actions table_header_item'>
+			<table>
+				<tr>
+					<td>
+						{{ _('Massive action :') }}
+					</td>
+					<td>
+						<div class="btn-group">
+							<button class="btn massive_action" data-url='/machines/massive/upgrade/' data-name='upgrade'>{{_('Upgrade')}}</button>
+							<button class="btn massive_action" data-url='/machines/massive/shutdown/' data-name='shutdown'>{{_('Shutdown')}}</button>
+							<!--<button class="btn">2</button>-->
+						</div>
+					</td>
+				</tr>
+			</table>
 
-	{%- set name = "groups" -%}
-	{%- set identifier = "gidNumber" -%}
-	{%- set main_column = "name" -%}
-	{%- set title = _('Groups') -%}
-	{%- set massive_actions = [ { "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
-								{ "action_name" : "permissiveness", "icon" : "/media/images/24x24/mass_lock.png"},
-								{ "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"},
-								{ "action_name" : "skel", "icon" : "/media/images/24x24/mass_skel.png"},
-								{ "action_name" : "edit", "icon" : "/media/images/24x24/mass_group.png"} ] -%}
+		</span>
 
-	{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'groups_massive_select\'>", "sortable" : False},
-						{ "name" : "permissive", "content" : "<img src=\'/media/images/24x24/locked_header.png\'/>", "sortable" : True, "default_sort" : False},
-						{ "name" : "name", "content" : _('Name'), "sortable" : True, "default_sort" : True},
-						{ "name" : "description", "content" : _('Description'), "sortable" : True, "default_sort" : False},
-						{ "name" : "gidNumber", "content" : _('GID'), "sortable" : True, "default_sort" : False},
-						{ "name" : "skel", "content" : _('Skeleton'), "sortable" : True, "default_sort" : False},
-						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
+		<span class='table_header_filter table_header_item'>
+			<div class="input-prepend" >
+				<span class="add-on">{{ _('Filter') }}</i></span><input type='text' id="list_filter"/>
+			</div>
+		</span>
+	</div>
+	<table class="table sortable" id="model_groups_table">
+		<thead>
+			<tr>
+				<th class='table_column_header centered' style="width: 5%">{{ _('Permissive') }}</th>
+				<th class='table_column_header centered' style="width: 5%">{{ _('Type') }}</th>
+				<th class='table_column_header' style="width: 75%">{{ _('Name') }}</th>
+				<th class='table_column_header centered' style="width: 5%">{{ _('Description') }}</th>
+				<th class='table_column_header centered' style="width: 5%">{{ _('Group id') }}</th>
+				<th class='table_column_header centered' style="width: 5%">{{ _('Skel') }}</th>
+				<th class='table_column_header centered' style="width: 5%">{# row navigation #}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{%- for group in groups -%}
+				{%- include 'groups/group_row.html' -%}
+			{%- endfor -%}
+		</tbody>
+	</table>
 
-	{%- set list_items = groups_list -%}
-	{%- set macro_row = 'groups/group_row.html' -%}
-	{%- set search_columns = [ 'gidNumber', 'description', 'name' ] -%}
-
-	{{ licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) }}
-
-	{%- if request.user.is_superuser -%}
-		<!-- system groups list -->
-		<br>
-		{%- set name = "sys_groups" -%}
-		{%- set title = _('System groups') -%}
-		{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'sys_groups_massive_select\'>", "sortable" : False},
-						{ "name" : "priv", "content" : "Privilege", "sortable" : True, "default_sort" : False},
-						{ "name" : "name", "content" : _('Name'), "sortable" : True, "default_sort" : True},
-						{ "name" : "description", "content" : _('description'), "sortable" : True, "default_sort" : False},
-						{ "name" : "gidNumber", "content" : _('uid'), "sortable" : True, "default_sort" : False},
-						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
-		{%- set list_items = system_groups_list -%}
-
-		{{ licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) }}
-
-	{%- endif -%}
 
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
+			setup_machines();
 
-			number_of_list = {{ 2 if request.user.is_superuser else 1 }};
-
-			//init size of lists
-			//$(".list_content").hide();
-
-			// hide everything
-			$(".list_header").hide();
-			$(".list_items").hide();
-			$(".bar_nav").hide();
-
-			// show only the first list
-			$(".list_header:first").show();
-			$(".list_items:first").show();
-			$(".search_bar:first .bar_nav").show();
-
-
-
-			height = $("#main_content").height() - number_of_list * ($(".list_title").height());
-			content = $(".list:first").find(".list_content");
-			content.show()
-			$(".list:first").addClass('current_list');
-			//content.show().height(height);
-			$('.list_items').height(height - content.find('.search_bar').height() - content.find('.list_header').height() - 100);
-			$('.row').width(content.find('.list_header').width());
-
-			// init click event on list title
-			if ($(".list_title").length > 1) {
-				
-				$(".list_title").click(function() {
-					var list = $('#'+$(this).data('list'))
-					$('.current_list').removeClass('current_list');
-					list.addClass('current_list');
-					// hide everything
-					$(".list_header").hide();
-					$(".list_items").hide();
-					$(".bar_nav").hide();
-
-					// show only the good list
-					list.find(".list_header").show();
-					list.find(".list_items").show();
-					list.find(".bar_nav").show();
-
-					// re sort the list
-					window["sort_"+$(this).data('list')]();
-					
-				});
-			}
-
-			remove_loading_animation();
-
-			$("#search_box").focus();
-
-
+			{%- if edit_html -%} 
+				$("#machine_modal").modal();
+			{%- endif -%}
 		});
+
+		var default_sort = [[1,0]]
+		var setup_row_timeout;
+
+		var select_active_class = 'row_selected'
+
+		function setup_machines() {
+			/* Setup all events related to machines */
+
+			// setup the filter mecanism
+			setup_table_filter($('#model_machines_table'), $('#list_filter'));
+			// make rows selectable
+			setup_table_row_selectable($('#model_machines_table tbody'), select_active_class, '.not-me');
+			// setup doubleclick on each rows
+			setup_table_row_doubleclick($('#model_machines_table tbody td'), func_doubleclick_row);
+			// setup the sort plugin
+			setup_table_sorter(default_sort);
+
+			// setup upgrade facilities
+			setup_upgrade_facilities();
+
+			//massives actions
+			setup_massive_actions();
+
+		}
+		function setup_upgrade_facilities(selector) {
+			if (selector == null) {
+				selector = $(".machine_upgrade")
+			}
+			selector.click(function() {
+				mid = $(this).data('mid')
+				$.get('/machines/upgrade/'+mid)
+			})
+		}
+
+
+		function setup_row(row) {
+
+			clearTimeout(setup_row_timeout)
+
+			setup_table_row_doubleclick($(row), func_doubleclick_row)
+
+			// filter the list
+            $('#list_filter').trigger('keyup')
+
+			// let know the sort plugin that we updated the table
+			$("table.sortable").trigger("update");
+
+			setup_upgrade_facilities(row.find('.machine_upgrade'))
+
+			setup_row_timeout = setTimeout( function() {
+				
+				// try to do it only once because it is applyed to the whole table
+				setup_table_row_selectable($('#model_machines_table tbody'), select_active_class, '.not-me')
+				},
+				1000);
+
+			// resort the table
+			$("table.sortable").trigger('update').trigger("sorton",[default_sort]);
+				
+		}
+		function func_doubleclick_row(td_element) {
+			if (! $(td_element).hasClass('no_double_click')) {
+				mid = td_element.data('mid')
+				if (mid == null) {
+					mid = td_element.parent('.licorn_row').data('mid')
+				}
+
+				$.get('/machines/edit/'+mid, function(modal_html) {
+					$("#machine_modal").html(modal_html).modal()
+				})
+			}
+		}
+
+		function setup_massive_actions() {
+			$('.massive_action').click(function() {
+				// get selected items
+				selected_rows = get_selected_rows($('#model_machines_table tbody'), select_active_class);
+
+				action_name = $(this).data('name')
+				action_url = $(this).data('url')
+
+				if (selected_rows.length == 0) {
+					show_message_through_notification('{{ _("Please select at least one machine to apply massive action <strong><em>'+action_name+'</em></strong> on") }}');
+				}
+				else {
+
+
+					mids=[]
+					$.each(get_selected_rows($('#model_machines_table tbody'), select_active_class), function(i, item) {
+						mids.push($(item).data('mid'))
+					})
+
+
+					// get the massive selection template
+					$.get('/machines/massive_select_template/'+action_name+'/'+mids.join(','), function(modal_html) {
+						$("#machine_modal").html(modal_html).modal()
+						init_massive_select_events(action_url, mids);
+					})
+				}
+			})
+		}
+		function init_massive_select_events(action, mids) {
+			$('#apply_massive_action').click(function() {
+				// close the modal
+				$("#machine_modal").modal('hide')
+
+				// run the action
+				$.get(action + mids)
+
+				// unselect all rows
+				$('.row_selected').removeClass('row_selected')
+
+			})
+		}
+		function bind_escape() {
+
+			$(document).keyup(function(e) {
+				/* if a table filter as been set, unset it.
+				If not, if rows are selected, unselect them. */
+
+				if (e.keyCode == 27) {    // ESC
+
+					var searchb = $('#list_filter');
+
+					if (searchb != [] && searchb.val() != "") {
+						searchb.val('');
+						searchb.keyup();
+
+					} else {
+						/*$.each(get_selected_rows($('#model_machines_table tbody'), select_active_class), function(i, item) {
+							console.log(i, item)
+							$(item).removeClass('row_selected').trigger('mousedown').trigger('mouseup');
+						})*/
+						$('.row_selected').removeClass('row_selected')
+					}
+
+
+				}
+			});
+
+		}
 	</script>
 
+
 {%- endblock -%}
 
-{%- block sub_content -%}
-{%- endblock -%}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

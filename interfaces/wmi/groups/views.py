@@ -455,16 +455,22 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 
 @staff_only
 def main(request, sort="login", order="asc", select=None, *args, **kwargs):
+	""" the main group page, list all groups.
+		If resquesting user is staff, display standard and privileged groups.
+		If it an "admins", display all groups.
+	"""
+	groups = LMC.groups.select(filters.STANDARD)
 
-	groups = sorted(LMC.groups.select(filters.STANDARD), key=attrgetter('name'))
-
+	print groups
 	if request.user.is_superuser:
-		sys_groups = sorted((g for g in LMC.groups.select(filters.SYSTEM)
-								if not g.is_helper), key=attrgetter('name'))
+		print "is_superuser", True
+		groups.append(g for g in LMC.groups.select(filters.SYSTEM)
+								if not g.is_helper and type(g) == licorn.core.groups.Group)
 	else:
-		sys_groups = sorted(LMC.groups.select(filters.PRIVILEGED), key=attrgetter('name'))
+		groups.append(LMC.groups.select(filters.PRIVILEGED))
+
+	print [ str(g) for g in groups ]
 
 	return render(request, 'groups/index.html', {
-			'groups_list' :        groups,
-			'system_groups_list' : sys_groups,
+			'groups' : groups,
 		})

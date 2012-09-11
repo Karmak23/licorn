@@ -38,7 +38,8 @@ def main(request, sort="login", order="asc", select=None, **kwargs):
 			'host_status'     : host_status,
 			'get_host_status_html' : wmi_data.get_host_status_html,
 			'get_host_os_html'     : wmi_data.get_host_os_html,
-			'get_host_type_html'   : wmi_data.get_host_type_html
+			'get_host_type_html'   : wmi_data.get_host_type_html,
+			'edit_html'            : None
 		})
 
 @staff_only
