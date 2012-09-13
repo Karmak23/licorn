@@ -8,7 +8,6 @@ from django.utils.translation   import ugettext as _
 from licorn.interfaces.wmi.libs import utils
 from licorn.core                import LMC
 
-from licorn.interfaces.wmi.licorn_widgets import LicornTextbox, LicornCheckbox, LicornSelect
 
 class GroupForm(forms.Form):
 	def __init__(self, _mode, group, *args, **kwargs):

@@ -4,7 +4,6 @@ from django.utils.translation   import ugettext as _
 
 from licorn.foundations         import exceptions
 
-from licorn.interfaces.wmi.licorn_widgets import LicornTextbox
 
 class MachineForm(forms.Form):
 
