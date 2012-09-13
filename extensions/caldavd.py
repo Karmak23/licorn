@@ -22,12 +22,143 @@ from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import ObjectSingleton, MixedDictObject, LicornConfigObject
 from licorn.foundations.classes   import FileLock
-from licorn.foundations.constants import distros, services, svccmds, priorities
+from licorn.foundations.constants import distros, services, svccmds, priorities, filters
 
 from licorn.core                  import LMC
 from licorn.core.classes          import only_if_enabled
 
 from licorn.extensions import ServiceExtension
+
+
+from calendarserver.tools.principals   import action_addProxy, addProxy, principalForPrincipalID
+from calendarserver.tools.util         import getDirectory, loadConfig, setupMemcached
+from twistedcaldav.config              import config
+from twistedcaldav.directory.directory import DirectoryRecord
+
+
+
+
+## {{{ http://code.activestate.com/recipes/577739/ (r4)
+from xml.dom.minidom import Document
+import copy
+
+class dict2xml(object):
+    doc     = Document()
+
+    def __init__(self, structure):
+        if len(structure) == 1:
+            rootName    = str(structure.keys()[0])
+            self.root   = self.doc.createElement(rootName)
+
+            self.doc.appendChild(self.root)
+            self.build(self.root, structure[rootName])
+
+    def build(self, father, structure):
+        if type(structure) == dict:
+            for k in structure:
+                tag = self.doc.createElement(k)
+                father.appendChild(tag)
+                self.build(tag, structure[k])
+        
+        elif type(structure) == list:
+            grandFather = father.parentNode
+            tagName     = father.tagName
+            grandFather.removeChild(father)
+            for l in structure:
+                tag = self.doc.createElement(tagName)
+                self.build(tag, l)
+                grandFather.appendChild(tag)
+            
+        else:
+            data    = str(structure)
+            tag     = self.doc.createTextNode(data)
+            father.appendChild(tag)
+    
+    def display(self):
+        print self.doc.toprettyxml(indent="  ")
+
+    """example = {'sibbling':{'couple':{'mother':'mom','father':'dad','children':[{'child':'foo'},
+                                                          {'child':'bar'}]}}}
+    xml = dict2xml(example)
+    xml.display()"""
+
+class XML2Dict(object):
+
+    def __init__(self, coding='UTF-8'):
+        self._coding = coding
+
+    def _parse_node(self, node):
+        tree = {}
+
+        #Save childrens
+        for child in node.getchildren():
+            print child
+            print child.text
+            ctag = child.tag
+            cattr = child.attrib
+            ctext = child.text.strip().encode(self._coding) if child.text is not None else ''
+            print ctext
+            ctree = self._parse_node(child)
+
+            if not ctree:
+                cdict = self._make_dict(ctag, ctext, cattr)
+            else:
+                cdict = self._make_dict(ctag, ctree, cattr)
+
+            if ctag not in tree: # First time found
+                tree.update(cdict)
+                continue
+
+            atag = '@' + ctag
+            atree = tree[ctag]
+            if not isinstance(atree, list):
+                if not isinstance(atree, dict):
+                    atree = {}
+
+                if atag in tree:
+                    atree['#'+ctag] = tree[atag]
+                    del tree[atag]
+
+                tree[ctag] = [atree] # Multi entries, change to list
+
+            if cattr:
+                ctree['#'+ctag] = cattr
+
+            tree[ctag].append(ctree)
+
+        return  tree
+
+    def _make_dict(self, tag, value, attr=None):
+        '''Generate a new dict with tag and value
+        
+        If attr is not None then convert tag name to @tag
+        and convert tuple list to dict
+        '''
+        ret = {tag: value}
+
+        # Save attributes as @tag value
+        if attr:
+            atag = '@' + tag
+
+            aattr = {}
+            for k, v in attr.items():
+                aattr[k] = v
+
+            ret[atag] = aattr
+
+            del atag
+            del aattr
+
+        return ret
+
+    def parse(self, xml):
+        '''Parse xml string to python dict
+        
+        '''
+        EL = ET.fromstring(xml)
+
+        return self._make_dict(EL.tag, self._parse_node(EL), EL.attrib)
+
 
 class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	""" Handles Apple Calendar Server configuration and service.
@@ -65,6 +196,56 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		if LMC.configuration.distro in (distros.UBUNTU, distros.LICORN,
 										distros.DEBIAN):
 			self.paths.service_defaults = '/etc/default/calendarserver'
+
+
+			"""
+			<plist version="1.0">
+			  <dict>
+
+			    <!--
+			        Public network address information
+
+			        This is the server's public network address, which is provided to
+			        clients in URLs and the like.  It may or may not be the network
+			        address that the server is listening to directly, though it is by
+			        default.  For example, it may be the address of a load balancer or
+			        proxy which forwards connections to the server.
+			      -->
+
+			    <!-- Network host name [empty = system host name] -->
+			    <key>ServerHostName</key>
+			    <string></string> <!-- The hostname clients use when connecting -->
+
+			    <!-- HTTP port [0 = disable HTTP] -->
+			    <key>HTTPPort</key>
+			    <integer>8008</integer>
+
+			    <!-- SSL port [0 = disable HTTPS] -->
+			    <!-- (Must also configure SSLCertificate and SSLPrivateKey below) -->
+			    <!--
+			    <key>SSLPort</key>
+			    <integer>8443</integer>
+			    -->
+
+			    <!-- Redirect non-SSL ports to an SSL port (if configured for SSL) -->
+			    <key>RedirectHTTPToHTTPS</key>
+			    <false/>"""
+
+
+
+		# config
+		
+
+		d = XML2Dict(coding='utf-8').parse(open(self.paths.configuration, 'r').read())
+		print d
+
+
+
+
+
+
+
+
 	def initialize(self):
 		""" Set :attr:`self.available` to ``True`` if calendarserver service
 			is installed and all of its data files load properly.
@@ -78,6 +259,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 			try:
 				self.__parse_files()
+				self.setup_calendarserver_environement()
 				self.available = True
 
 			except ImportError, e:
@@ -108,9 +290,80 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			if (os.path.exists(filename) and filename != self.paths.main_dir):
 				os.chmod(filename, 0640)
 
+
+		# load calendarserver config file
+		calendarserver_conf = readers.xml_load_tree(self.paths.configuration)
+
+		print calendarserver_conf
+
+		shadow_backend = LMC.backends.guess_one('shadow')
+		ldap_backend   = LMC.backends.guess_one('openldap')
+
+		conf = conffromxml
+		need_rewrite = False
+		current_dir_service = getdirservicefromxml
+
+		if ldap_backend.active:
+			if current_dir_service != ldap:
+				need_rewrite = True
+
+
+			# if ldap is active, all calendarserver information are taken from LDAP
+			
+			# put config elements to use ldap backends
+			pass
+
+
+		elif shadow_backend.active:
+			if current_dir_service == ldap:
+				need_rewrite = True
+			# we need to use account.xml
+
+			# put config elements to use xml backend
+			pass
+
+
+		if need_rewrite:
+			# save config in xml file
+			self.service(svccmds.RELOAD)
+
+		# after reload check existing users/groups
+
+		if not ldap_backend.active:
+			# check if already existing STD users have a calendar.
+			for user in LMC.users.select(filters.STANDARD):
+				if not self.check_if_element_has_calendar('users', user.login):
+					print "ADD USER"
+					#self.post_add_user(....)
+			for group in LMC.groups.select(filters.STANDARD):
+				if not self.check_if_element_has_calendar('groups', group.name) and \
+					not self.check_if_element_has_calendar('groups', 'rsp-'+group.name) and \
+					not self.check_if_element_has_calendar('groups', 'gst-'+group.name) and \
+					not self.check_if_element_has_calendar('resources', group.name):
+						print "ADD GROUP"
+						#self.post_add_group(....)
+
+		# if ldap backend check if group resource exists
+
 		# and don't forget to remove (or at least warn about) superfluous entries.
 		logging.info(_(u'**Please implement caldavd extension check for '
 			'pre-existing users and groups.**'))
+
+	def check_if_element_has_calendar(self, type, element):
+		""" ask calendarserver """
+		print ">> check if calendar ",element, principalForPrincipalID('{0}:{1}'.format(type, element))
+		if principalForPrincipalID('{0}:{1}'.format(type, element)) is None:
+			return False
+		else:
+			return True
+
+
+
+	def setup_calendarserver_environement(self):
+		loadConfig(None)
+		config.directory = getDirectory()
+		setupMemcached(config)
+
 	def __parse_files(self):
 		""" Create locks and load all caldavd data files. """
 
@@ -569,7 +822,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		resource_uuid = str(uuid.uuid1())
 		try:
-			if (
+			if ( ldap_backend.active or 
 				self.add_group(uid=group.name, guid=str(uuid.uuid1()),
 								name=group.description)
 				and
@@ -599,22 +852,11 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				self.__write_elements_and_reload()
 
 				# deal with proxies
-				from calendarserver.tools.principals import action_addProxy, addProxy, principalForPrincipalID
-				from calendarserver.tools.util import getDirectory, loadConfig, setupMemcached
-				from twistedcaldav.config import config
-				from twistedcaldav.directory.directory import DirectoryRecord
-				loadConfig(None)
-				config.directory = getDirectory()
-				setupMemcached(config)
+				
+				
 				# the standard group ressource is the principal
 				#principal = config.directory.recordWithShortName("resources", "resource_"+group.sortName)
 				principal = principalForPrincipalID('resources:resource_'+group.name.replace('gst-', '').replace('rsp-',''))
-
-				guid = principalForPrincipalID('groups:'+group.name)
-				gst_guid = principalForPrincipalID('groups:gst-'+group.name)
-				rsp_guid = principalForPrincipalID('groups:rsp-'+group.name)
-				#guid = config.directory.recordWithShortName("groups", group.name)
-
 
 				action_addProxy(principal, 'read', ('groups:gst-'+group.name))
 				action_addProxy(principal, 'write', ('groups:rsp-'+group.name))
@@ -769,3 +1011,15 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					hostname=hostname,
 					port=self.data.configuration['HTTPPort'],
 					name=group.name))
+
+
+
+
+
+
+
+
+
+
+
+
