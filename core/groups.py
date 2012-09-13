@@ -532,7 +532,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.serialize()
 
 			LicornEvent('group_groupSkel_changed',
-								group=self.proxy).emit(priorities.LOW)
+								group=self.proxy, skel=groupSkel).emit(priorities.LOW)
 
 			logging.notice(_(u'Changed group {0} skel to {1}.').format(
 					stylize(ST_NAME, self.name),

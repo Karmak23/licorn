@@ -348,8 +348,8 @@ function init_instant_apply(page_name) {
 	interval = 1000;
 
 	form_div = $('#table')
-
-	form_div.find('input:text').keyup(function() {
+	//console.log('init_instant_apply ', $('.instant_apply_click'))
+	$('input:text').keyup(function() {
 		//console.log('keyUp');
 		clearTimeout(instant_apply_timeout_textbox);
 
@@ -361,7 +361,7 @@ function init_instant_apply(page_name) {
 
 	});
 
-	form_div.find('input:checkbox').click(function() {
+	$('input:checkbox').click(function() {
 		checked = this.checked;
 		if (this.checked == true) {
 			checked = 'True';
@@ -374,7 +374,7 @@ function init_instant_apply(page_name) {
 		$.get(page);
 	});
 
-	form_div.find('input:password').keyup(function() {
+	$('input:password').keyup(function() {
 
 		var empty = false;
 		form_div.find('input:password').each(function() {
@@ -428,7 +428,7 @@ function init_instant_apply(page_name) {
 		'resp'          : 3 }
 
 	$('.instant_apply_click').click(function() {
-		//console.log('group click '+$('#sub_content').attr('value'))
+		console.log('clickkkkk')
 		div = $('#sub_content').find('#'+$(this).attr('id')).filter('.click_item');
 		//console.log(div)
 		div.find('.item_hidden_input').addClass('item_currently_selected');

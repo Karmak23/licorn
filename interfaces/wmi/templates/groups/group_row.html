@@ -1,5 +1,27 @@
 {%- macro get_group_type_img(group) -%}
-	group type
+
+	{% if group.is_privilege %}
+		<img src="/media/images/16x16/group_priv.png" alt='privileged group image' title="{{ _('Privileged group') }}"/>
+	{% elif group.is_system_restricted %}
+		<img src="/media/images/16x16/group_rst.png" alt='restricted group image' title="{{ _('Restricted group') }}"/>
+	{% elif group.is_system %}
+		<img src="/media/images/16x16/group_sys.png" alt='system group image' title="{{ _('System group') }}"/>
+	{% elif group.is_standard %}
+		<img src="/media/images/16x16/group_std.png" alt='standard group image' title="{{ _('Standard group') }}"/>
+	{% endif %}
+{%- endmacro -%}
+
+{%- macro get_group_type(group) -%}
+
+	{% if group.is_privilege %}
+		{{ _('privileged') }}
+	{% elif group.is_system_restricted %}
+		restricted
+	{% elif group.is_system %}
+		{{ _('system') }}
+	{% elif group.is_standard %}
+		{{ _('standard') }}
+	{% endif %}
 {%- endmacro -%}
 
 {%- macro get_group_permissivness_img(group) -%}
@@ -22,39 +44,40 @@
 	{%- endif -%}
 	
 {%- endmacro -%}
-<tr class='licorn_row' data-gid="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}'>
+
+
+<tr class='licorn_row' data-gid="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}' data-filter='{{ get_group_type(group) }}'>
 	<!-- permissive -->
-	<td class='centered' data-sort='{{ group.is_permissive }}' data-filter="">
+	<td class='centered' data-sort='{{ group.is_permissive }}' data-search="">
 		{{ get_group_permissivness_img(group) }}
 	</td>
 	<!-- type -->
-	<td class='centered' data-filter="">
+	<td class='centered' data-search="{{ get_group_type(group) }}">
 		{{ get_group_type_img(group) }}
 	</td>
 	<!-- name -->
-	<td data-sort="{{ group.name }}" data-filter="{{ group.name }}">
+	<td data-sort="{{ group.name }}" data-search="{{ group.name }}">
 		<span>{{ group.name }}<span>
 	</td>
 	<!-- description -->
-	<td data-sort="{{ group.name }}" data-filter="{{ group.name }}">
+	<td data-sort="{{ group.name }}" data-search="{{ group.name }}">
 		<span>{{ group.description }}<span>
 	</td>
 	<!-- gidNumber -->
-	<td data-sort="{{ group.name }}" data-filter="{{ group.name }}">
-		<span>{{ group.name }}<span>
+	<td data-sort="{{ group.gidNumber }}" data-search="{{ group.name }}">
+		<span>{{ group.gidNumber }}<span>
 	</td>
 	<!-- skel -->
-	<td data-sort="{{ group.name }}" data-filter="{{ group.name }}">
+	<td data-sort="{{ group.name }}" data-search="{{ group.name }}">
 		<span>{{ group.groupSkel }}<span>
 	</td>
 	<!-- nav -->
-	<td data-sort="{{ group.name }}" data-filter="{{ group.name }}">
+	<td data-sort="{{ group.name }}" data-search="{{ group.name }}">
 		<span>nav<span>
 	</td>
 
 	
 </tr>
-
 
 
 

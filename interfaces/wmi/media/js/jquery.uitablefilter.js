@@ -22,7 +22,7 @@
     var new_hidden = false;
     if( this.last_phrase === phrase ) return false;
 
-    var phrase_length = phrase.length;
+    var phrase_length = phrase.length;256
     var words = phrase.toLowerCase().split(" ");
 
     // these function pointers may change
@@ -32,10 +32,9 @@
       var text = '';
       
       $.each(elem.children(), function(i, v) {
-        f = $(v).data('filter');
+        f = $(v).data('search');
         if (typeof f === 'undefined') {
           text += $(v).text();
-
         } else {
           text += f;
         } 
@@ -77,7 +76,7 @@
     }
     else {
       new_hidden = true;
-      var elems = jq.find("tbody:first > tr")
+      var elems = jq.find("tbody:first > tr.not_filtered")
     }
 
     elems.each(function(){

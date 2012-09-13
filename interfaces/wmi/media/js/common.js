@@ -1,10 +1,18 @@
 var page_cleaner_interval;
 
+function remove_instance(model, iid) {
+	table = $('#model_' + model + '_table');
+	old   = $('#' + model + '_' + iid);
+	old.addClass('to-remove');
+	old.hide();
+	old.remove();
+}
+
 function update_instance(model, iid, new_html, callback) {
 	// This function will work with anything, but best for replacing a <tr>
 	// with a new one, already rendered.
 	//
-
+	console.log('update_instance')
 	new_  = $(new_html);
 
 	table = $('#model_' + model + '_table');
@@ -137,8 +145,9 @@ function setup_table_sorter(sort_list) {
 	//	currentSort = sorter.target.config.sortList;
 	//});
 }
-function setup_table_filter(table_element, input_element) {
+function setup_table_search(table_element, input_element) {
 	input_element.keyup(function(event) {
+		// we need to search only on non hidden row
 		$.uiTableFilter( table_element, input_element.val() );
 	});
 }

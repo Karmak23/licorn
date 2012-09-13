@@ -1,106 +1,138 @@
-{#- Copyright 2011 META IT & & Robin Lucbernet<rl@meta-it.fr>
-    Distributed under the terms of the GNU GPL version 2. -#}
 
-<div id='sub_content_header'>
-	<h1 id='sub_content_title'>{{ title }}</h1>
-</div>
 
-<div id='sub_content_area'>
-	<form id='user_form'>{% csrf_token %}
-	<div id='table' name='{{ group_gid }}'>
-	<br />
 
-		{%- for field in form.visible_fields() -%}
-			{%- set immutable = field.name in form.immutables -%}
-				<div class='sub_content_line big_line'>
-					<div class='sub_content_half_line'>
-						<strong>{{ field.label_tag() }}</strong><br />{{ _('(fixed)') if immutable }}</div>
-					<div class='sub_content_half_line align_right'>
-						{%- if immutable -%}
-							{{ field.value() }}
-						{%- else -%}
-							{{ field }}
-						{%- endif -%}
+{%- extends 'modal.html' -%}
 
-					</div>
+    {%- block title -%}
+	    {%- if mode == 'new' -%}
+	    	<h3>{{ _('New group') }}</h3>
+	    {%- elif mode == 'edit' -%}
+	    	<h3>{{ _('Edit group') }} {{ '<span id="machine_hostname_{1}">{0}</span>'.format(group.name, group.gid) }}</h3>
+	    {%- elif mode == 'massiv' -%}
+	    	<h3>{{ _('Massive group edition') }}</h3>
+	    {%- endif -%}
+    {%- endblock -%}
+
+
+  {%- block body -%}
+
+  	{% if form.errors and not form.non_field_errors() -%}
+	    <div class="error_div error_text">
+			{% trans count=form.errors.items()|length() %}
+			    Merci de corriger l'erreur ci-dessous&nbsp;:
+			{% pluralize %}
+			    Merci de corriger les erreurs suivantes&nbsp;:
+			{% endtrans %}
+	    </div>
+	{% endif -%}
+
+	{% if form.non_field_errors() %}
+	    {% for error in form.non_field_errors() %}
+			<p class="errornote">
+				{{ error }}
+			</p>
+	    {% endfor %}
+	{% endif %}
+
+	<form class="form-horizontal" id='user_form'>{% csrf_token %}
+
+
+
+
+	<ul class="nav nav-tabs" id="myTab">
+		{% for block in form_blocks %}
+			<li {{ 'class="active"' if form_blocks[block][2] }}><a href="#{{ form_blocks[block][0] }}" data-toggle="tab">{{ form_blocks[block][1] }}</a></li>
+		{% endfor %}
+	</ul>
+	<div class="tab-content">
+
+
+	<div class="tab-pane active" id="general">
+
+		<div class="control-group">
+			{% for field in form.visible_fields() %}
+			<div style="min-height:50px;">
+				<label class="control-label" for="id_{{ field.name }}">
+					{{ field.label }}
+					{%-if field.field.required -%}
+						&nbsp;
+						<span class="required_field">*</span>
+					{%- endif -%}
+				</label>
+				<div class="controls" style="vertical-align:center;">
+					{{ field }}
+
+					{%-if field.field.help_text -%}
+						<p class="help-block">{{ field.field.help_text }}</p>
+					{%- endif -%}
 				</div>
-		{%- endfor -%}
+			</div>
+			{% endfor %}
+		</div>
 	</div>
+	
+		
+	{# add users and sys_user pane #}
+
 
 	{%- for title, users_list in users_lists -%}
-		{%- include 'groups/users_list.html' -%}
+		<div class="tab-pane" id="{{ users_list.name }}">
+    	
+			<div>
+				{%- include 'groups/users_list.html' -%}
+			</div>
+		
+
+
+    	</div>
+    	
+
 	{%- endfor -%}
 
-	{%- if mode == 'new' -%}
-	<div id='new_item_actions' class="one_line">
-		<span class='sub_content_half_line'>
-			<div id='cancel_button' class="interface_button float_left">{{ _('Cancel') }}</div>
-		</span>
-		<span class='sub_content_half_line'>
-			<div id='save_user_button' class="interface_button float_right">{{ _('Add') }}</div>
-		</span>
-	</div>
-	{%- endif -%}
+
+	</div> <!-- end tab-content -->
+	
+
+
 
 	</form>
-</div>
 
-<script type="text/javascript">
+
+  {%- endblock -%}
+  {%- block footer -%}
+  	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+    {% if mode == "new" %}
+    <a href="#" class="btn btn-primary" id="save_user_button">{{ _('Add user') }}</a>
+    {%endif%}
+
+
+
+    <script type="text/javascript">
 	$(document).ready(function() {
-
+		
+		// .click_item are our user box, when click is triggered, 
+		// show the popover containing possible relationship
 		$('.click_item').each(function() {
 			// display only relevant groups
 			rel = $(this).attr('value');
 			$(this).find('.rel_'+rel).hide();
-			$(this).popover({content: $(this).find('.user_popover_content'), position: 'top'});
+			
+			// initialize the popover
+			$(this).popover({
+				content: $(this).find('.user_popover_content'), 
+				position: 'top',
+			}).click(function() {
+					// on popover display, initialize instant_click, if 'edit' or 'massiv' mode
+					{% if mode == 'edit' or mode == 'massiv' %}
+						init_instant_click($('#user_popover_'+$(this).attr('id')))
+					{% endif -%}
+				});
+			
 		});
 
-		$('.popover_item').click(function() {
-			// update the current popover
-			user_id = $(this).attr('id');
-			new_rel = $(this).attr('value');
 
-			div = $('#sub_content').find('#'+user_id).filter('.click_item');
-			div.find('.item_hidden_input').attr('value', ''); // erase old membership
-			div.find('input[name$="'+new_rel+'_users"]').attr('value', user_id); // update new membership
-
-			{%- if mode == 'new' -%}
-				// visual feedback on users because no instant_apply in new
-				update_relationship('user', user_id, null, new_rel) ;
-			{%- endif -%}
-
-			//close the popover
-			$(".click_item#"+user_id).popover('hide');
-		});
-
-		{%- if mode == 'edit' -%}
-			init_instant_apply('groups');
-
-			lock_sub_content("{{ group_gid }}");
-			select_row("groups", "{{ group_gid }}");
-		{%- elif mode == 'massiv' -%}
-			// init massive mode
-
-			// for groups :
-			var rel_ids = {
-				'no_membership' : 0,
-				'guest'         : 1,
-				'member'        : 2,
-				'resp'          : 3 }
-
-			$('.instant_apply_click').click(function() {
-				div = $('#sub_content').find('#'+$(this).attr('id')).filter('.click_item');
-				div.find('.item_hidden_input').addClass('item_currently_selected');
-
-				url = '/groups/massive/users/'+$.URLEncode("{{ gids }}")+'/'+$(this).attr('id')
-							+ '/' + rel_ids[$(this).attr('value')]
-				console.log(url)
-				$.get(url);
-			});
-
-		{%- elif mode == 'new' -%}
-			unlock_sub_content();
-
+		{%- if mode == 'new' -%}
+			
 			function post_form() {
 				$.post("/groups/create/", $('#user_form').serialize());
 			}
@@ -116,24 +148,32 @@
 			$('#save_user_button').click( function() {
 				post_form();
 			});
+			$('#modal').modal('hide')
 
-			// click cancel button
-			$('#cancel_button').click(function() {
-				unlock_sub_content();
-				reload_div('#sub_content','');
-			});
+			
 		{%- endif -%}
 
-		// we need to wait a small amount of time, else the subcontent is
-		// not yet reloaded and the focus won't work.
-		setTimeout(function() {
-			{%- if mode == 'edit' -%}
-				$('#id_description').focus();
+	$('#id_permissive').checkbox({
+        'on_text': "{{ _('No') }}",
+        'off_text' : "{{ _('Yes') }}"
+    })
 
-			{%- else -%}
-				$('#id_name').focus();
 
-			{%- endif -%}
-		}, 250);
+
 	});
 </script>
+
+
+
+    
+  {%- endblock -%}
+
+
+
+
+
+
+
+
+
+

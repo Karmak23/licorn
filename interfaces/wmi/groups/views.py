@@ -30,6 +30,8 @@ from licorn.foundations.ltraces   import *
 
 from licorn.core import LMC
 
+from collections import OrderedDict
+
 # FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
 # WARNING: this import will fail if nobody has previously called `wmi.init()`.
 # This should have been done in the WMIThread.run() method. Anyway, this must
@@ -40,7 +42,7 @@ from licorn.interfaces.wmi.app             import wmi_event_app
 from licorn.interfaces.wmi.libs            import utils
 from licorn.interfaces.wmi.libs.decorators import staff_only, check_groups
 
-from forms import GroupForm
+from forms import GroupForm, get_group_form_blocks
 
 @staff_only
 def message(request, part, gid=None, *args, **kwargs):
@@ -370,6 +372,7 @@ def view(request, gid=None, name=None, *args, **kwargs):
 
 @staff_only
 def group(request, gid=None, name=None, action='edit', *args, **kwargs):
+	""" group view : used to render the GroupForm in 'edit' or 'new' mode """
 
 	try:
 		group = LMC.groups.by_gid(gid)
@@ -389,16 +392,6 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 			else:
 				# creation mode.
 				group = None
-
-	if action == 'edit':
-		mode    = "edit"
-		title    = _('Edit group {0}').format(group.name)
-		group_id = group.gidNumber
-
-	else:
-		mode    = 'new'
-		title    = _('Add new group')
-		group_id = ''
 
 	# inform the user that the UI will take time to build,
 	# to avoid re-clicks and (perfectly justified) grants.
@@ -423,12 +416,20 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 			'users' : utils.select('users', default_selection=filters.SYSTEM)
 		}))
 
+	# we need to sort the form_blocks dict to display headers in order
+	sorted_blocks = OrderedDict({})
+	form_blocks = get_group_form_blocks(request)
+	for k in sorted(form_blocks.iterkeys()):
+		sorted_blocks.update({ k: form_blocks[k]})
+
+	print "form_blocks", sorted_blocks
+
 	_dict = {
-				'group_gid'   : group_id,
-				'mode'    	  : mode,
-				'title'       : title,
-				'form'        : GroupForm(mode, group),
-				'users_lists' : users_list
+				'mode'    	  : action,
+				'group'       : group,
+				'form'        : GroupForm(action, group),
+				'users_lists' : users_list,
+				'form_blocks' : sorted_blocks,
 			}
 
 	if request.is_ajax():
@@ -460,17 +461,31 @@ def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 		If it an "admins", display all groups.
 	"""
 	groups = LMC.groups.select(filters.STANDARD)
-
-	print groups
+	
 	if request.user.is_superuser:
-		print "is_superuser", True
-		groups.append(g for g in LMC.groups.select(filters.SYSTEM)
-								if not g.is_helper and type(g) == licorn.core.groups.Group)
-	else:
-		groups.append(LMC.groups.select(filters.PRIVILEGED))
+		for g in LMC.groups.select(filters.SYSTEM):
+			if not g.is_helper:
+				groups.append(g)
 
-	print [ str(g) for g in groups ]
+
+		
+	else:
+		for g in LMC.groups.select(filters.PRIVILEGED):
+			groups.append(g)
 
 	return render(request, 'groups/index.html', {
-			'groups' : groups,
+			'request' : request,
+			'groups' : sorted(groups, key= lambda x: attrgetter('name')(x).lower()
+			)
 		})
+
+def massive_select_template(request, action_name, gids, *args, **kwargs):
+	_dict = { 'groups' : [ LMC.groups.guess_one(g) for g in gids.split(',') ] }
+	if action_name == 'delete':
+		_dict.update({
+			"archive_dir" : settings.home_archive_dir, 
+			'admin_group' : settings.defaults.admin_group })
+
+	return HttpResponse(
+		render_to_string('groups/parts/massive_{0}.html'.format(action_name),
+			_dict))

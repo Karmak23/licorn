@@ -7,26 +7,31 @@
 }
 
 .table_header_item {
-	width:33%;
+	width:28%;
 	display: block;
 	float: left;	
 }
-.table_header_filter {
+#table_header_search {
 	text-align: right;
 }
-.table_header_title {
-	
+#table_header_title {
+	width:15%;
 	color: #4c0b21;
 	font-size: 24px;
 	font-weight: bolder;
 	text-align: left;
 	font-family: small-caps;
+	display: block;
+	float: left;
+	margin-top:20px;
 }
+
 
 .row_selected, .row_selected:hover {
 	background-color: #00FFFF;
 }
- 
+.table tbody {
+}
 .table tbody tr:hover td,
 .table tbody tr:hover th {
     background-color: inherit;

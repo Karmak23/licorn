@@ -4,42 +4,7 @@ from django.utils.translation   import ugettext as _
 
 from licorn.foundations         import exceptions
 
-
-class LicornTextbox(forms.Widget):
-	""" Special Licorn textbox. Provide parameters to setup 'instant edit/apply'
-	mecanism. """
-
-	def __init__(self, instant_url=None, handler=None, handler_id=None, *args, **kwargs):
-		super(LicornTextbox, self).__init__(*args, **kwargs)
-
-		# url to contact to edit field
-		self.instant_url = instant_url
-		# event that will be thrown when edit action is completed
-		self.handler     = handler
-		# who has to react for this change
-		self.handler_id  = handler_id
-
-		if instant_url is not None and (handler is None or handler_id is None):
-			raise exceptions.BadArgumentError('You have to set handler and '
-				'handler_id.')
-
-	def render(self, name, value, attrs=None):
-
-
-		if self.instant_url is not None:
-
-			attrs.update({
-				'class'            : 'instant',
-				'data-instant-url' : self.instant_url
-				})
-
-		template = "<input type='text' name='{0}' value='{1}' {2}>"
-
-		return template.format(name, value,
-			' '.join([ '{0}=\'{1}\''.format(k,v) for k,v in attrs.iteritems() ]))
-
-
-
+from licorn.interfaces.wmi.licorn_widgets import LicornTextbox
 
 class MachineForm(forms.Form):
 

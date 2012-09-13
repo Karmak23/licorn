@@ -22,6 +22,8 @@ urlpatterns = patterns('groups.views',
 	(r'^.*message/(?P<part>.+)/(?P<gid>\d+)?/?$', 'message'),
 
     (r'^massive/(?P<action>\w+)/(?P<gids>[^/]+)/(?P<value>.*)/?$', 'massive'),
+    (r'^massive_select_template/(?P<action_name>.+)/(?P<gids>.+)/?$', 'massive_select_template'),
+
 
 
 )

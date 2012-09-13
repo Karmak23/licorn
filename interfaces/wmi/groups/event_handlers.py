@@ -16,6 +16,23 @@ def memberships(rel):
 		relation.GUEST         : _(u'guest'),
 		relation.RESPONSIBLE   : _(u'responsible'),
 	}[rel]
+def update_group_row(group, remove=False, gid=None):
+	if remove:
+		return utils.format_RPC_JS('remove_instance',
+								'groups',
+								gid
+								)
+	else:
+		return utils.format_RPC_JS('update_instance',
+								'groups',
+								group.gid,
+								render_to_string('groups/group_row.html', {
+									'group': group,
+								}),
+								"setup_row"
+								)
+
+
 def update_groups_number(request, event):
 	yield utils.format_RPC_JS('reload_div', '#groups_list_count',
 								len(LMC.groups.select(filters.STANDARD)))
@@ -28,19 +45,7 @@ def group_added_handler(request, event):
 
 	yield utils.notify(_(u'Group "{0}" added on the system.').format(group.name))
 
-	yield utils.format_RPC_JS('add_row',
-								'groups' if group.is_standard else 'sys_groups',
-								render_to_string('groups/group_row.html', {
-									'item': group,
-									'name': '%s' % 'groups'
-										if group.is_standard else 'sys_groups' }))
-
-	yield utils.format_RPC_JS('init_groups_events',
-								'groups' if group.is_standard else 'sys_groups',
-								group.gid, group.name, 'gidNumber')
-
-	for i in update_groups_number(request, event):
-		yield i
+	yield update_group_row(group)
 def group_deleted_handler(request, event):
 
 	system = event.kwargs['system']
@@ -48,17 +53,17 @@ def group_deleted_handler(request, event):
 	name   = event.kwargs['name']
 
 	yield utils.notify(_(u'Group "{0}" deleted from the system.').format(name))
-	yield utils.format_RPC_JS('del_row', 'sys_groups' if system else 'groups', gid)
-	for i in update_groups_number(request, event):
-		yield i
+
+	yield update_group_row(None, remove=True, gid=gid)
+
 def group_member_deleted_handler(request, event):
 
 	user  = event.kwargs['user']
 	group = event.kwargs['group']
 
-	yield utils.format_RPC_JS('update_relationship', 'user',
-		user.uidNumber, group.standard_group.gidNumber
-						if group.is_helper else group.gidNumber, 0)
+	yield utils.format_RPC_JS(
+		'update_relationship', 
+		user.uidNumber, 0)
 
 	yield utils.notify(_(u'User "{0}" has no more relationship with '
 		u'group "{1}".').format(user.login,
@@ -71,9 +76,8 @@ def group_member_added_handler(request, event):
 
 	rel = group.get_relationship(user.uidNumber)
 
-	yield utils.format_RPC_JS('update_relationship', 'user',
+	yield utils.format_RPC_JS('update_relationship',
 		user.uidNumber,
-		group.standard_group.gidNumber if group.is_helper else group.gidNumber,
 		rel)
 
 	yield utils.notify(_(u'User "{0}" is now a {1} of group "{2}".').format(
@@ -83,12 +87,18 @@ def group_permissive_state_changed_handler(request, event):
 
 	group = event.kwargs['group']
 
-	yield utils.format_RPC_JS('change_permissive_state',
-								group.gidNumber,
-								group.is_permissive)
+	yield update_group_row(group)
 
 	yield utils.notify(_(u'Group "{0}" is now {1}.').format(group.name,
 			_(u'permissive') if group.is_permissive else _(u'not permissive')))
+def group_groupSkel_changed_handler(request, event):
+
+	group = event.kwargs['group']
+	skel = event.kwargs['skel']
+
+	yield utils.notify(_(u'Group "{0}" now depends on skeleton {1}.').format(group.name,
+			skel))
+	yield update_group_row(group)
 def group_description_changed_handler(request, event):
 
 	group = event.kwargs['group']
@@ -96,9 +106,4 @@ def group_description_changed_handler(request, event):
 	yield utils.notify(_(u'Group "{0}" description has changed '
 						u'to {1}.').format(group.name, group.description))
 
-	yield utils.format_RPC_JS('update_row_value',
-								'groups' if group.is_standard
-									else 'sys_groups', group.gidNumber,
-								"description", _('No description')
-									if group.description in ('', None) else group.description,
-								[ '-grayed_out' ] if group.description else [ '+grayed_out' ])
+	yield update_group_row(group)
