@@ -23,6 +23,19 @@
 		{{ _('standard') }}
 	{% endif %}
 {%- endmacro -%}
+{%- macro get_group_filter_class(group) -%}
+	{% if group.is_privilege %}
+		filter_privileged
+	{% elif group.is_system_restricted %}
+		filter_restricted
+	{% elif group.is_system %}
+		filter_system
+	{% elif group.is_standard %}
+		filter_standard
+	{% endif %}
+{%- endmacro -%}
+
+
 
 {%- macro get_group_permissivness_img(group) -%}
 	
@@ -46,7 +59,7 @@
 {%- endmacro -%}
 
 
-<tr class='licorn_row' data-gid="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}' data-filter='{{ get_group_type(group) }}'>
+<tr class='licorn_row {{ get_group_filter_class(group) }}' data-gid="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}'>
 	<!-- permissive -->
 	<td class='centered' data-sort='{{ group.is_permissive }}' data-search="">
 		{{ get_group_permissivness_img(group) }}

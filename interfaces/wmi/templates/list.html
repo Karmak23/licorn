@@ -64,7 +64,7 @@
 			</div>
 		</span>
 	</div>
-	<table class="table sortable" id="model_groups_table">
+	<table class="table sortable table-hover" id="model_groups_table">
 		<thead>
 			<tr>
 				{%- block list_headers -%}
@@ -80,7 +80,13 @@
 
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
+			var START_TIME = new Date().getTime();
 			setup_list();
+			var END_TIME = new Date().getTime();
+			totalTime = (END_TIME - START_TIME);
+
+			console.log(totalTime)
+
 
 			{%- if edit_html -%} 
 				$("#machine_modal").modal();
@@ -89,17 +95,21 @@
 
 		function setup_list() {
 			// search field
-			setup_table_search($('#model_groups_table'), $('#list_search'))
+			// 1
+			//setup_table_search($('#model_groups_table'), $('#list_search'))
 
 			// make rows selectable
-			setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me');
+			// 54
+			//setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me');
 
 			// filters btn
+			// 2790
 			var filters = { 'standard' : true, 'system': true, 'restricted': false, 'privileged': true}
 			setup_table_filter($('#model_groups_table tbody tr'), $('.filter_item'), filters)
 
 			// setup doubleclick on each rows
-			setup_table_row_doubleclick($('#model_groups_table tbody td'), function(td) {
+			// 220
+			/*setup_table_row_doubleclick($('#model_groups_table tbody td'), function(td) {
 				if (! $(td).hasClass('no_double_click')) {
 
 					gid = td.data('gid')
@@ -113,16 +123,22 @@
 					})
 				}
 			
-			});
+			});*/
 			// setup the sort plugin
-			setup_table_sorter([[2,0]]);
+			// 4477
+			//setup_table_sorter([[2,0]]);
 
 			//massives actions
-			setup_massive_actions();
+			//3
+			//setup_massive_actions();
 		}
 
 		// to move in common.js
 		function setup_table_filter(table_rows, items, filters) {
+			/* setup table filters */
+
+
+
 			$.each(items, function(i, item) {
 				// setup interface
 				if (filters[$(item).data('filter')]) {
@@ -146,11 +162,32 @@
 					$(this).addClass('.active')
 					filters[$(this).data('filter')] = true;
 				}
-				do_filter(table_rows, filters)
+				do_filter()
 			})
-			do_filter(table_rows, filters)
-			function do_filter(table_rows, filters) {
-				$.each(table_rows, function(i, row) {
+			do_filter()
+			function do_filter() {
+				/* really do the filter, show/hide rows */
+				var START = new Date().getTime();
+
+				$.each(filters, function(name, on_state) {
+					//console.log('filter', name, on_state)
+					filter_items = $('.filter_'+name)
+
+					//console.log('working on ', filter_items)
+					if (on_state) {
+							filter_items.show();
+					}
+					else {
+						filter_items.hide();
+					}
+				})
+
+				var END = new Date().getTime();
+				tTime = (END - START);
+
+				console.log("do_filter", tTime)
+
+				/*$.each(table_rows, function(i, row) {
 					//console.log(row)
 					
 
@@ -166,7 +203,7 @@
 							}
 						}
 					
-				})
+				})*/
 				// now apply search field
 				$('#list_search').keyup();
 			}
@@ -213,121 +250,26 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		var default_sort = [[1,0]]
+		var select_active_class = 'row_selected'
 		var setup_row_timeout;
 
-		var select_active_class = 'row_selected'
-
-		function setup_machines() {
-			/* Setup all events related to machines */
-
-			// setup the filter mecanism
-			setup_table_filter($('#model_machines_table'), $('#list_filter'));
-			// make rows selectable
-			setup_table_row_selectable($('#model_machines_table tbody'), select_active_class, '.not-me');
-			// setup doubleclick on each rows
-			setup_table_row_doubleclick($('#model_machines_table tbody td'), func_doubleclick_row);
-			// setup the sort plugin
-			setup_table_sorter(default_sort);
-
-			// setup upgrade facilities
-			setup_upgrade_facilities();
-
-			//massives actions
-			setup_massive_actions();
-
-		}
-		function setup_upgrade_facilities(selector) {
-			if (selector == null) {
-				selector = $(".machine_upgrade")
-			}
-			selector.click(function() {
-				mid = $(this).data('mid')
-				$.get('/machines/upgrade/'+mid)
-			})
-		}
 
 
-		function setup_row(row) {
 
-			clearTimeout(setup_row_timeout)
 
-			setup_table_row_doubleclick($(row), func_doubleclick_row)
 
-			// filter the list
-            $('#list_filter').trigger('keyup')
 
-			// let know the sort plugin that we updated the table
-			$("table.sortable").trigger("update");
 
-			setup_upgrade_facilities(row.find('.machine_upgrade'))
 
-			setup_row_timeout = setTimeout( function() {
-				
-				// try to do it only once because it is applyed to the whole table
-				setup_table_row_selectable($('#model_machines_table tbody'), select_active_class, '.not-me')
-				},
-				1000);
 
-			// resort the table
-			$("table.sortable").trigger('update').trigger("sorton",[default_sort]);
-				
-		}
-		function func_doubleclick_row(td_element) {
-			if (! $(td_element).hasClass('no_double_click')) {
-				mid = td_element.data('mid')
-				if (mid == null) {
-					mid = td_element.parent('.licorn_row').data('mid')
-				}
 
-				$.get('/machines/edit/'+mid, function(modal_html) {
-					$("#machine_modal").html(modal_html).modal()
-				})
-			}
-		}
 
-		
-		function init_massive_select_events(action_name, action_url, mids, value) {
-			$('#apply_massive_action').click(function() {
-				// close the modal
-				$("#machine_modal").modal('hide')
 
-				value=null;
-				if (action_name=='delete') {
-					if ($('#delete_group_no_archive').is(':checked')) {
-						value="True"
-					}
-					else {
-						value=''
-					}
-				}
 
-				// run the action
-				url = action_url + mids + '/' + value
-				$.get(url)
 
-				// unselect all rows
-				$('.row_selected').removeClass('row_selected')
 
-			})
-		}
+
+	
 		function bind_escape() {
 
 			$(document).keyup(function(e) {
