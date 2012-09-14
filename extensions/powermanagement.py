@@ -83,6 +83,7 @@ class PowermanagementExtension(ObjectSingleton, LicornExtension):
 			self.available = True
 
 			self.__setup_messages_handlers()
+
 			self.__setup_upower()
 		else:
 			self.available = False
@@ -98,38 +99,43 @@ class PowermanagementExtension(ObjectSingleton, LicornExtension):
 		"""
 
 		if self.available:
+			if self.upower.obj:
+				version        = self.upower.props('DaemonVersion')
+				self.__has_lid = self.upower.props('LidIsPresent')
 
-			version        = self.upower.props('DaemonVersion')
-			self.__has_lid = self.upower.props('LidIsPresent')
+				#self.udisks.cookie = self.udisks.interface.Inhibit()
 
-			#self.udisks.cookie = self.udisks.interface.Inhibit()
+				logging.info(_(u'{0}: extension enabled{1}, on top of '
+								u'{2} v{3}.').format(self.pretty_name,
+									stylize(ST_COMMENT, _(' with laptop mode'))
+										if self.__has_lid else u'',
+									stylize(ST_NAME, 'UPower'),
+									stylize(ST_UGID, version)))
 
-			logging.info(_(u'{0}: extension enabled{1}, on top of '
-							u'{2} v{3}.').format(self.pretty_name,
-								stylize(ST_COMMENT, _(' with laptop mode'))
-									if self.__has_lid else u'',
-								stylize(ST_NAME, 'UPower'),
-								stylize(ST_UGID, version)))
+				return True
 
-			return True
-
-		logging.info(_(u'{0}: extension disabled because either {1} disabled '
-						u'or {2} not connected.').format(self.pretty_name,
-							LMC.extensions.gloop.pretty_name, dbus_pretty_name))
+		logging.info(_(u'{0}: extension disabled because either {1} disabled, '
+						u'{2} not connected or {3} not installed.').format(
+							self.pretty_name, LMC.extensions.gloop.pretty_name,
+							dbus_pretty_name, stylize(ST_NAME, 'upower')))
 		return False
 	@property
 	def is_laptop(self):
-		return self.__has_lid
+		if self.enabled:
+			return self.__has_lid
 	@property
 	def on_battery(self):
-		return self.upower.props('OnBattery')
+		if self.enabled:
+			return self.upower.props('OnBattery')
 	@property
 	def on_low_battery(self):
-		return self.upower.props('OnLowBattery')
+		if self.enabled:
+			return self.upower.props('OnLowBattery')
 	@property
 	def battery_level(self):
-		if self.__has_lid and self.battery.property('IsPresent'):
-			return self.battery.property('Percentage')
+		if self.enabled:
+			if self.__has_lid and self.battery.property('IsPresent'):
+				return self.battery.property('Percentage')
 		return -1
 	def upower_catchall_signal_handler(self, device=None, dbus_message=None):
 		""" Receive all UPower related messages, and eventually use them
@@ -169,14 +175,14 @@ class PowermanagementExtension(ObjectSingleton, LicornExtension):
 									"/org/freedesktop/UPower")
 		except:
 			self.upower.obj = None
+			return
 
-		else:
-			self.upower.interface = dbus.Interface(self.upower.obj,
-										'org.freedesktop.UPower')
-			self.upower.properties = dbus.Interface(self.upower.obj,
-												dbus.PROPERTIES_IFACE)
-			self.upower.props = lambda x: self.upower.properties.Get(
-										'org.freedesktop.UPower', x)
+		self.upower.interface = dbus.Interface(self.upower.obj,
+									'org.freedesktop.UPower')
+		self.upower.properties = dbus.Interface(self.upower.obj,
+											dbus.PROPERTIES_IFACE)
+		self.upower.props = lambda x: self.upower.properties.Get(
+									'org.freedesktop.UPower', x)
 
 		self.__setup_power_sources()
 	def __setup_power_sources(self):
