@@ -436,7 +436,7 @@ class CommandListener(LicornBasicThread):
 			network.local_ip_addresses())
 
 		if settings.role == roles.CLIENT:
-			LicornPyroValidator.server = LMC.configuration.server_main_address
+			LicornPyroValidator.server = settings.server_main_address
 
 		self.pyro_daemon.setNewConnectionValidator(
 			LicornPyroValidator(settings.role))

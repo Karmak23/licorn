@@ -208,7 +208,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		if settings.role == roles.CLIENT:
 			waited = 0.1
-			while LMC.configuration.server_main_address is None:
+			while settings.server_main_address is None:
 				#
 				time.sleep(0.1)
 				waited += 0.1
@@ -218,7 +218,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 					raise exceptions.LicornRuntimeException(
 						'No server detected, bailing out…' )
 
-			self.uri = 'ldap://' + LMC.configuration.server_main_address
+			self.uri = 'ldap://' + settings.server_main_address
 			assert ltrace(TRACE_OPENLDAP, '| find_licorn_ldap_server() -> %s' % self.uri)
 
 		# else, keep the default ldapi:/// (local socket) URI.
