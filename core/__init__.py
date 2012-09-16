@@ -532,6 +532,10 @@ class LicornMasterController(MixedDictObject):
 						signal.pause()
 					second_try=True
 
+			if not hasattr(self, 'system') or self.system is None:
+				# We connected to a remote server RWI. But we need its `system` too.
+				self.system = Pyro.core.getAttrProxyForURI("%s/system" % pyroloc)
+
 			assert ltrace(TRACE_TIMINGS, '@LMC.connect(): %.4fs' % (
 				time.time() - start_time))
 			del start_time
