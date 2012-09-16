@@ -294,6 +294,8 @@ class LicornMasterController(MixedDictObject):
 				self.groups   = LMC.groups
 
 		LicornMasterController._init_first_pass = True
+
+		LicornEvent('lmc_initialized').emit(priorities.HIGH)
 	def __init_common(self):
 		""" Common phase of LMC.init between CLIENT and SERVER. Init the
 			extensions after the controllers, and add extensions data to
@@ -401,11 +403,14 @@ class LicornMasterController(MixedDictObject):
 
 			if settings.role == roles.SERVER:
 				pyroloc = 'PYROLOC://127.0.0.1:%s' % (settings.pyro.port)
+
 			else:
-				logging.progress(_(u'trying to connect to server %s.') %
-													settings.server_main_address)
+				logging.progress(_(u'Trying to connect to server {0}.').format(
+									stylize(ST_URL, 'pyro://{0}:{1}/'.format(
+										settings.server_main_address,
+										settings.server_main_port))))
 				pyroloc = 'PYROLOC://%s:%s' % (settings.server_main_address,
-												settings.pyro.port)
+												settings.server_main_port)
 
 				if not self._master:
 					# remove current values of controllers, they are pointing to LMC.

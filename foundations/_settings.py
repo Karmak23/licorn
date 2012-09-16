@@ -16,6 +16,7 @@ from ltrace    import *
 from ltraces   import *
 from styles    import *
 from pyutils   import resolve_attr
+from process   import cgroup
 from threads   import RLock
 from base      import ObjectSingleton, NamedObject, LicornConfigObject, BasicCounter
 from constants import roles
@@ -100,6 +101,13 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 
 		self.merge_settings({
 			'role'                         : roles.UNSET,
+
+			# In case of multiple servers on the same LAN, the administrator
+			# can eventually assign a lower priority to some, for testing or
+			# debugging purposes. In normal conditions, this should not be
+			# changed in the configuration, and is thus not documented
+			# officially.
+			'group'                        : cgroup or '/',
 			'pyro.port'                    : int(os.getenv('PYRO_PORT', 299)),
 
 			# timeout for CLI connect; in seconds.
@@ -165,14 +173,22 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 
 		if self.role == roles.CLIENT:
 			logging.progress(_(u'Trying to find our Licorn® server…'))
-			self.server_main_address = network.find_server()
+
+			self.server_main_address, self.server_main_port = network.find_server(self.group)
+
+			if self.server_main_port is None:
+				self.server_main_port = self.pyro.port
+
 			if self.server_main_address is None:
 				logging.error(_(u'Could not find our Licorn® server via '
 					u'autodetection. Please contact your network '
 					u'administrator or set the {0} environment variable.').format(
 					stylize(ST_NAME, 'LICORN_SERVER')))
-			logging.notice(_(u'Our Licorn® server is {0}').format(
-							stylize(ST_NAME, self.server_main_address)))
+
+			logging.notice(_(u'Our Licorn® server is {0}.').format(
+								stylize(ST_URL, 'pyro://{0}:{1}/'.format(
+												self.server_main_address,
+												self.server_main_port))))
 	def merge_settings(self, conf, overwrite=True, emit_event=True):
 		""" Build the licorn configuration object from a dict. """
 

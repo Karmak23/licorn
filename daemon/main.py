@@ -172,7 +172,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			LMC.init_client_first_pass()
 
 			# The remaining client configuration occurs in the
-			# `configuration_loaded` callback below.
+			# `lmc_initialized` callback below.
 
 		# see foundations.settings (CLIENT -> inotifier disabled)
 		# create the INotifier thread, and map its WatchManager methods to
@@ -234,16 +234,20 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		pass
 
 	@events.callback_method
-	def configuration_loaded(self, event, *args, **kwargs):
+	def lmc_initialized(self, event, *args, **kwargs):
 		if settings.role == roles.CLIENT:
 
+			# We start the `CommandListener` manually here just before the
+			# `client.ServerLMC.connect()`, else the 2-way pyro authentication
+			# will fail because of a race condition between mainthread and here.
+			# Thus, don't try to move this block in :meth:`init_daemon_services`
+			# to factorize it with the server code. This *will* trigger the race.
 			self.__threads.CommandListener = CommandListener(
 												pids_to_wake1=self.pids_to_wake1,
+												pids_to_wake2=set(self.pids_to_wake2),
 												licornd=self)
 			self.__threads.CommandListener.start()
 
-			# NOTE: the remaining of the client processing takes place later,
-			# in the 'configuration_loaded' callback.
 
 			from licorn.daemon import client
 			client.ServerLMC.connect()
@@ -474,9 +478,11 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			sys.stderr.write('-' * (ttyutils.terminal_size()[1] or 80) + '\n')
 
 		logging.notice(_(u'{0}: Licorn® daemon version {1} '
-						u'role {2} warming up…').format(
+						u'role {2}{3} warming up…').format(
 							self, stylize(ST_SPECIAL, version),
-							stylize(ST_SPECIAL, roles[settings.role].lower())))
+							stylize(ST_SPECIAL, roles[settings.role].lower()),
+							_(' group {0}').format(
+								stylize(ST_ATTR, settings.group))))
 
 		if self.opts.initial_check:
 			# disable the LAN scan during the initial check,
@@ -722,9 +728,11 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 		self.register_bonjour_service(	'Licorn(R) Server',
 										'_licorn_pyro._tcp',
-										settings.licornd.pyro.port,
-										pyro_registered_callback)
-	def register_bonjour_service(self, service_name, service_type, service_port, callback=None):
+										settings.pyro.port,
+										pyro_registered_callback,
+										pybonjour.TXTRecord({'group': settings.group}))
+	def register_bonjour_service(self, service_name, service_type, service_port,
+												callback=None, txtRecord=None):
 		""" Register a given service in the Bonjour stack via :py:mod:`pybonjour`.
 
 			..warning:: This method internally uses ``select`` in a ``while
@@ -737,7 +745,8 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		sdRef = pybonjour.DNSServiceRegister(name = service_name,
 											 regtype = service_type,
 											 port = service_port,
-											 callBack = callback)
+											 callBack = callback,
+											 txtRecord = txtRecord)
 
 		try:
 			while 1:
