@@ -13,6 +13,8 @@ from types     import *
 from threading import current_thread
 
 # licorn foundations imports
+#
+# NOTE: don't import "settings" or "_settings", it will cycle.
 import exceptions, logging, styles
 from styles  import *
 from ltrace  import *
@@ -27,15 +29,21 @@ __all__ = ('daemonize', 'write_pid_file', 'use_log_file', 'set_name',
 	'get_process_cmdline', 'already_running', 'syscmd', 'execute',
 	'execute_remote', 'whoami', 'refork_as_root_or_die', 'fork_licorn_daemon',
 	'get_traceback', 'find_network_client_infos', 'pidof', 'pid_for_socket',
-	'thread_basic_info', 'executable_exists_in_path', )
+	'thread_basic_info', 'executable_exists_in_path', 'cgroup', )
 
-cgroup = None
+cgroup_host = False
 
 with open('/etc/mtab') as mtab:
 	for mline in mtab.readlines():
 		if '/sys/fs/cgroup' in mline:
-			cgroup = open('/proc/%s/cpuset' % os.getpid()).read().strip()
+			crgroup_host = True
 			break
+
+try:
+	cgroup = open('/proc/%s/cpuset' % os.getpid()).read().strip()
+
+except:
+	cgroup = None
 
 # daemon and process functions
 def daemonize(log_file=None, close_all=False, process_name=None):
