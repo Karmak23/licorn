@@ -436,7 +436,7 @@ class CommandListener(LicornBasicThread):
 			network.local_ip_addresses())
 
 		if settings.role == roles.CLIENT:
-			LicornPyroValidator.server = LMC.configuration.server_main_address
+			LicornPyroValidator.server = settings.server_main_address
 
 		self.pyro_daemon.setNewConnectionValidator(
 			LicornPyroValidator(settings.role))
@@ -460,11 +460,9 @@ class CommandListener(LicornBasicThread):
 		# with each other.
 		#
 		# FIXME: server exporting system is not very secure...
-		self.uris['system'] = self.pyro_daemon.connect(
-			LMC.system, 'system')
+		self.uris['system'] = self.pyro_daemon.connect(LMC.system, 'system')
 
-		self.uris['msgproc'] = self.pyro_daemon.connect(
-					LMC.msgproc, 'msgproc')
+		self.uris['msgproc'] = self.pyro_daemon.connect(LMC.msgproc, 'msgproc')
 
 		logging.info(_(u'{0}: {1} to answer requests at {2}.').format(
 								self.name, stylize(ST_OK, _(u'ready')),

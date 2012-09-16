@@ -232,7 +232,7 @@ class ModulesManager(LockedController):
 			# Is module already loaded ?
 
 			if module_name in self.iterkeys():
-				module = self[module]
+				module = self[module_name]
 
 				if module.enabled:
 					# module already loaded locally. Enventually sync with the
@@ -261,11 +261,14 @@ class ModulesManager(LockedController):
 				# the module instanciation, at last!
 				module = module_class()
 
+				if settings.role != roles.SERVER and module.server_only:
+					continue
+
 				assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
 					self.module_type, stylize(ST_NAME, module_name)))
 
 				LicornEvent('%s_%s_loads' % (self.module_type, module_name)
-									).emit(synchronous=True)
+													).emit(synchronous=True)
 
 				try:
 					module.load(server_modules=server_side_modules)
@@ -275,7 +278,7 @@ class ModulesManager(LockedController):
 					events.collect(module)
 
 					LicornEvent('%s_%s_loaded' % (self.module_type, module_name)
-										).emit(synchronous=True)
+														).emit(synchronous=True)
 
 				except Exception:
 					# an uncatched exception occured, the module is buggy or
@@ -484,6 +487,7 @@ class ModulesManager(LockedController):
 			# the only way to make sure they can be fully usable before
 			# enabling them.
 			for module in self:
+
 				#assert ltrace(self._trace_name, '  check(%s)' % module.name)
 				try:
 					module.check(batch=batch, auto_answer=auto_answer)

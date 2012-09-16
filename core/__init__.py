@@ -207,8 +207,10 @@ class LicornMasterController(MixedDictObject):
 
 		self._ServerLMC = ServerLMC
 
-		logging.info(_(u'Server backends: {0}').format(
-						ServerLMC.system.get_backends(client_only=True)))
+		logging.info(_(u'Server backends: {0}.').format(
+						', '.join(stylize(ST_NAME, x)
+							for x in ServerLMC.system.get_backends(
+												client_only=True))))
 
 		self.backends.load(
 				server_side_modules=ServerLMC.system.get_backends(
@@ -292,6 +294,8 @@ class LicornMasterController(MixedDictObject):
 				self.groups   = LMC.groups
 
 		LicornMasterController._init_first_pass = True
+
+		LicornEvent('lmc_initialized').emit(priorities.HIGH)
 	def __init_common(self):
 		""" Common phase of LMC.init between CLIENT and SERVER. Init the
 			extensions after the controllers, and add extensions data to
@@ -300,9 +304,15 @@ class LicornMasterController(MixedDictObject):
 
 		from licorn.extensions import ExtensionsManager
 		self.extensions = ExtensionsManager()
-		self.extensions.load(
-			self._ServerLMC.system.get_extensions(client_only=True) \
-				if self._ServerLMC else None)
+
+		if self._ServerLMC:
+			logging.info(_(u'Server extensions: {0}.').format(
+						', '.join(stylize(ST_NAME, x)
+							for x in self._ServerLMC.system.get_extensions(
+												client_only=True))))
+
+		self.extensions.load(self._ServerLMC.system.get_extensions(
+							client_only=True) if self._ServerLMC else None)
 
 		# extensions must have a clean configuration before continuing.
 		self.extensions.check(batch=True)
@@ -330,14 +340,14 @@ class LicornMasterController(MixedDictObject):
 		from profiles import ProfilesController
 		from keywords import KeywordsController
 		from machines import MachinesController
-		
+
 		self.profiles = ProfilesController()
 		self.profiles.load()
 		self.machines = MachinesController()
 		self.machines.load()
 		self.keywords = KeywordsController()
 		self.keywords.load()
-		
+
 	def terminate(self):
 
 		if self._ServerLMC:
@@ -393,21 +403,24 @@ class LicornMasterController(MixedDictObject):
 
 			if settings.role == roles.SERVER:
 				pyroloc = 'PYROLOC://127.0.0.1:%s' % (settings.pyro.port)
+
 			else:
-				logging.progress(_(u'trying to connect to server %s.') %
-													settings.server_main_address)
+				logging.progress(_(u'Trying to connect to server {0}.').format(
+									stylize(ST_URL, 'pyro://{0}:{1}/'.format(
+										settings.server_main_address,
+										settings.server_main_port))))
 				pyroloc = 'PYROLOC://%s:%s' % (settings.server_main_address,
-												settings.pyro.port)
+												settings.server_main_port)
 
 				if not self._master:
 					# remove current values of controllers, they are pointing to LMC.
 					self.configuration = None
-					self.backends = None
-					self.extension = None
-					self.users = None
-					self.groups = None
-					self.system = None
-					self.msgproc = None
+					self.backends      = None
+					self.extension     = None
+					self.users         = None
+					self.groups        = None
+					self.system        = None
+					self.msgproc       = None
 
 			# the opposite is already used to define pyro.port
 			#Pyro.config.PYRO_PORT=settings.pyro.port
@@ -531,6 +544,10 @@ class LicornMasterController(MixedDictObject):
 						# ALARM or USR1 will break the pause()
 						signal.pause()
 					second_try=True
+
+			if not hasattr(self, 'system') or self.system is None:
+				# We connected to a remote server RWI. But we need its `system` too.
+				self.system = Pyro.core.getAttrProxyForURI("%s/system" % pyroloc)
 
 			assert ltrace(TRACE_TIMINGS, '@LMC.connect(): %.4fs' % (
 				time.time() - start_time))

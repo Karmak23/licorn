@@ -208,7 +208,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		if settings.role == roles.CLIENT:
 			waited = 0.1
-			while LMC.configuration.server_main_address is None:
+			while settings.server_main_address is None:
 				#
 				time.sleep(0.1)
 				waited += 0.1
@@ -218,7 +218,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 					raise exceptions.LicornRuntimeException(
 						'No server detected, bailing out…' )
 
-			self.uri = 'ldap://' + LMC.configuration.server_main_address
+			self.uri = 'ldap://' + settings.server_main_address
 			assert ltrace(TRACE_OPENLDAP, '| find_licorn_ldap_server() -> %s' % self.uri)
 
 		# else, keep the default ldapi:/// (local socket) URI.
@@ -323,13 +323,20 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		assert ltrace_func(TRACE_OPENLDAP)
 
-		logging.progress(_(u'{0}: checking backend configuration…').format(self.pretty_name))
+		logging.progress(_(u'{0}: checking backend configuration…').format(
+															self.pretty_name))
 
 		# we always check system files, whatever.
 		self.check_system_files(batch, auto_answer)
 
-		if not self.available or settings.role == roles.CLIENT:
-			logging.warning2(_(u'{0:s}: backend not available, not checking.'))
+		if not self.available:
+			logging.warning2(_(u'{0}: backend not available, not '
+								u'checking.').format(self.pretty_name))
+			return
+
+		if settings.role == roles.CLIENT:
+			logging.warning2(_(u'{0}: not checking OpenLDAP server in CLIENT '
+								u'role.').format(self.pretty_name))
 			return
 
 		if process.whoami() != 'root' and not self.bind_as_admin:

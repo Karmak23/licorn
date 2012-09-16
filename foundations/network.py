@@ -6,18 +6,22 @@ Copyright (C) 2005-2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, fcntl, struct, socket, platform, re, netifaces
+import sys, os, fcntl, struct, socket, select, platform, re, netifaces
 import icmp, ip, time, select
 
 from ping      import PingSocket
+from threading import current_thread, Event
 
 # other foundations imports.
-import logging, process, exceptions
+import logging, process, exceptions, styles
 from threads   import RLock
 from styles    import *
 from ltrace	   import *
 from ltraces   import *
 from constants import distros
+
+# circumvent the `import *` local namespace duplication limitation.
+stylize = styles.stylize
 
 def netmask2prefix(netmask):
 	return (reduce(lambda x,y: x+y,
@@ -72,10 +76,16 @@ def interfaces(full=False):
 					continue
 			ifaces.append(iface)
 		return ifaces
-def find_server_Linux():
-	""" return the hostname / IP of our DHCP server. """
+def find_server_Linux(group):
+	""" Return the hostname (or IP, in some conditions) of our Licorn® server.
+		These are tried in turn:
 
-	from licorn.core import LMC
+		- ``LICORN_SERVER`` environment variable (always takes precedence, with
+		  a message; this variable should be used for debug / development purposes only;
+		- `zeroconf` lookup; this the "standard" way of discovery our server.
+		- LAN dhcp server on distros where it is supported (currently Ubuntu and Debian).
+
+	"""
 
 	env_server = os.getenv('LICORN_SERVER', None)
 
@@ -84,7 +94,23 @@ def find_server_Linux():
 			u'server; unset {1} if you prefer automatic detection.').format(
 				stylize(ST_IMPORTANT, env_server),
 				stylize(ST_NAME, 'LICORN_SERVER')))
-		return env_server
+
+		if ':' in env_server:
+			return env_server.split(':')
+
+		return env_server, None
+
+	return find_zeroconf_server_Linux(group)
+
+	"""
+	# NOTE: the next try is not used anymore but kept for reference in parsing
+	# dhclient command line arguments. It will fail on clients because
+	# `LMC.configuration` is not yet loaded: `find_server` is called in
+	# `foundations._settings` setup, to be able to lookup the server
+	# configuration. The distro data is in the local configuration, which is
+	# not accessible yet at the moment the settings are setup.
+
+	from licorn.core import LMC
 
 	if LMC.configuration.distro in (distros.LICORN, distros.UBUNTU,
 													distros.DEBIAN):
@@ -104,6 +130,111 @@ def find_server_Linux():
 		return None
 	else:
 		raise NotImplementedError(_(u'find_server() not implemented yet for your distro!'))
+	"""
+def find_zeroconf_server_Linux(group):
+	""" This code has been gently borrowed from
+		http://code.google.com/p/pybonjour/ and adapted for Licorn®.
+	"""
+
+	import pybonjour
+
+	timeout   = 10
+
+	# we use a list to be able to modify it simply from sub-defs.
+	resolved  = []
+	found     = Event()
+
+	caller = stylize(ST_NAME, current_thread().name)
+
+	def resolve_callback(sdRef, flags, interfaceIndex, errorCode, fullname,
+												hosttarget, port, txtRecord):
+
+		if errorCode == pybonjour.kDNSServiceErr_NoError:
+			logging.progress(_(u'{0}: successfully found a Licorn® server via '
+								u'Bonjour at address {1}.').format(
+									stylize(ST_NAME, current_thread().name),
+									stylize(ST_URL, 'pyro://{0}:{1}/'.format(
+										hosttarget[:-1]
+											if hosttarget.endswith('.')
+											else hosttarget, port))))
+
+			# Store host with group (in txtRecord, given as a string).
+			resolved.append((txtRecord.split('=')[1].strip(), hosttarget, port))
+			found.set()
+	def browse_callback(sdRef, flags, interfaceIndex, errorCode, serviceName,
+														regtype, replyDomain):
+		if errorCode != pybonjour.kDNSServiceErr_NoError:
+			return
+
+		caller = stylize(ST_NAME, current_thread().name)
+
+		if not (flags & pybonjour.kDNSServiceFlagsAdd):
+			logging.warning(_(u'{0}: service removed!').format(caller))
+			return
+
+		logging.progress(_(u'{0}: service added; now resolving…').format(caller))
+
+		resolve_sdRef = pybonjour.DNSServiceResolve(0,
+													interfaceIndex,
+													serviceName,
+													regtype,
+													replyDomain,
+													resolve_callback)
+
+		try:
+			wait_loop = 0
+
+			while not resolved:
+				ready = select.select([resolve_sdRef], [], [], timeout)
+
+				wait_loop += 1
+
+				if resolve_sdRef not in ready[0]:
+					# we loop indefinitely, because we *need* a server to
+					# continue.
+					logging.progress(_(u'{0}: timeout while looking up Licorn® '
+						u'server. Looking up again (try {1})…').format(caller,
+							wait_loop))
+					continue
+
+				pybonjour.DNSServiceProcessResult(resolve_sdRef)
+
+			# NOT here.
+			#return resolved.pop()
+
+		finally:
+			resolve_sdRef.close()
+
+	# NOTE: the regtype is initially defined in daemon/main.py in the
+	# LicornDaemon.__register_bonjour_pyro() method.
+	browse_sdRef = pybonjour.DNSServiceBrowse(regtype = '_licorn_pyro._tcp',
+											  callBack = browse_callback)
+
+	try:
+		while not found.is_set():
+			ready = select.select([browse_sdRef], [], [])
+
+			if browse_sdRef in ready[0]:
+				pybonjour.DNSServiceProcessResult(browse_sdRef)
+
+	finally:
+		browse_sdRef.close()
+
+	for hgroup, host, port in resolved:
+		if hgroup == group:
+			return socket.gethostbyname(host), port
+
+	hgroup, host, port = resolved[0]
+
+	logging.warning(_(u'{0}: could not find my dedicated server, returning '
+						u'the first found {1} (group {2}).').format(caller,
+							stylize(ST_URL, 'pyro://{0}:{1}/'.format(
+								host[:-1]
+									if host.endswith('.')
+									else host, port)),
+							stylize(ST_ATTR, hgroup)))
+
+	return socket.gethostbyname(host), port
 def find_first_local_ip_address_Linux():
 	""" try to find the main external IP address of the current machine (first
 		found is THE one). Return None if we can't find any.
