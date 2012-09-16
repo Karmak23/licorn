@@ -261,6 +261,9 @@ class ModulesManager(LockedController):
 				# the module instanciation, at last!
 				module = module_class()
 
+				if settings.role != roles.SERVER and module.server_only:
+					continue
+
 				assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
 					self.module_type, stylize(ST_NAME, module_name)))
 
