@@ -207,8 +207,10 @@ class LicornMasterController(MixedDictObject):
 
 		self._ServerLMC = ServerLMC
 
-		logging.info(_(u'Server backends: {0}').format(
-						ServerLMC.system.get_backends(client_only=True)))
+		logging.info(_(u'Server backends: {0}.').format(
+						', '.join(stylize(ST_NAME, x)
+							for x in ServerLMC.system.get_backends(
+												client_only=True))))
 
 		self.backends.load(
 				server_side_modules=ServerLMC.system.get_backends(
@@ -300,9 +302,15 @@ class LicornMasterController(MixedDictObject):
 
 		from licorn.extensions import ExtensionsManager
 		self.extensions = ExtensionsManager()
-		self.extensions.load(
-			self._ServerLMC.system.get_extensions(client_only=True) \
-				if self._ServerLMC else None)
+
+		if self._ServerLMC:
+			logging.info(_(u'Server extensions: {0}.').format(
+						', '.join(stylize(ST_NAME, x)
+							for x in self._ServerLMC.system.get_extensions(
+												client_only=True))))
+
+		self.extensions.load(self._ServerLMC.system.get_extensions(
+							client_only=True) if self._ServerLMC else None)
 
 		# extensions must have a clean configuration before continuing.
 		self.extensions.check(batch=True)
