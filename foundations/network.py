@@ -13,7 +13,7 @@ from ping      import PingSocket
 from threading import current_thread, Event
 
 # other foundations imports.
-import logging, process, exceptions, styles
+import logging, process, exceptions, styles, pyutils
 from threads   import RLock
 from styles    import *
 from ltrace	   import *
