@@ -738,7 +738,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 										settings.pyro.port,
 										pyro_registered_callback,
 										pybonjour.TXTRecord({
-											'uuid': LMC.configuration.system_uuid,
+											'uuid' : LMC.configuration.system_uuid,
 											'group': settings.group,
 										}))
 	def register_bonjour_service(self, service_name, service_type, service_port,
@@ -759,7 +759,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 											 txtRecord = txtRecord)
 
 		try:
-			while 1:
+			while not current_thread()._stop_event.is_set():
 				ready = select.select([sdRef], [], [])
 
 				if sdRef in ready[0]:
