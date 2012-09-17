@@ -349,7 +349,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 				apt_file.backup_and_save(batch=batch, auto_answer=auto_answer)
 
 		else:
-			self.remove_configuration()
+			self.remove_configuration(batch=True)
 
 		assert ltrace(globals()['TRACE_' + self.name.upper()], '< update_client()' )
 	def check(self, batch=False, auto_answer=None):
