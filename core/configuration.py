@@ -574,8 +574,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 			if os.path.exists(skel_path):
 				try:
-					# depth is 2 because we have 'factory' and 'local' 
-					# folders. They include package maintainer profile and 
+					# depth is 2 because we have 'factory' and 'local'
+					# folders. They include package maintainer profile and
 					# admin custom profile.
 					for new_skel in fsapi.minifind(path=skel_path,
 						itype=(stat.S_IFDIR,), mindepth=2, maxdepth=2):
@@ -1196,7 +1196,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				u'/etc/hostname, verify the file is still clean:\n\t%s)') % e)
 
 	### CHECKS ###
-	def check(self, minimal=True, batch=False, auto_answer=None):
+	def check(self, minimal=True, batch=False, auto_answer=None, full_display=True):
 		""" Check all components of system configuration and repair
 		if asked for.
 
@@ -1208,15 +1208,35 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		assert ltrace(TRACE_CONFIGURATION, '> check()')
 
 		self.check_system_groups(minimal=minimal, batch=batch,
-								auto_answer=auto_answer)
+							auto_answer=auto_answer, full_display=full_display)
+
+		self.check_system_dirs(minimal=minimal, batch=batch,
+							auto_answer=auto_answer, full_display=full_display)
 
 		self.check_base_dirs(minimal=minimal, batch=batch,
-								auto_answer=auto_answer)
+							auto_answer=auto_answer, full_display=full_display)
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
 		assert ltrace(TRACE_CONFIGURATION, '< check()')
-	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None):
+	def check_system_dirs(self, minimal=True, batch=False, auto_answer=None, full_display=True):
+		""" Check settings directories. """
+
+		for directory in (settings.config_dir, settings.cache_dir, settings.data_dir):
+
+			for uyp in fsapi.check_dirs_and_contents_perms_and_acls_new([
+								fsapi.FsapiObject(name='sys_dir_check',
+									path=directory, uid=0, gid=LMC.groups.by_name(
+										settings.defaults.admin_group).gidNumber,
+									root_dir_perm=0750,
+									dirs_perm=0750, files_perm=0640)
+							], batch=batch, auto_answer=auto_answer,
+							full_display=full_display):
+				# TODO: we could count modified entries and display a nice
+				# information message. Not that useful where we are, and
+				# full_display is already `True`.
+				pass
+	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None, full_display=True):
 		"""Check and eventually repair default needed dirs."""
 
 		assert ltrace_func(TRACE_CONFIGURATION)
@@ -1296,7 +1316,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				# message kind of explicit and clear, to let administrator know
 				# he/she should mount the partition with 'acl' option.
 				raise exceptions.LicornRuntimeError(_(u'Filesystem must be '
-					u'mounted with "acl" option:\n\t%s') % e)
+									u'mounted with "acl" option:\n\t%s') % e)
 			else:
 				raise
 		except TypeError:
@@ -1307,7 +1327,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		assert ltrace(TRACE_CONFIGURATION, '< check_base_dirs()')
 	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
-		auto_answer=None, full_display=True):
+										auto_answer=None, full_display=True):
 		""" Check only the archive dir, and eventually even only one of its
 			subdir. """
 
@@ -1347,7 +1367,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).
 			pass
-	def check_system_groups(self, minimal=True, batch=False, auto_answer=None):
+	def check_system_groups(self, minimal=True, batch=False, auto_answer=None, full_display=True):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
 
@@ -1414,7 +1434,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.users.gid = groups.by_name(self.users.group).gidNumber
 
 		self.check_base_dirs(batch=True)
-	def CheckHostname(self, batch = False, auto_answer = None):
+	def CheckHostname(self, batch=False, auto_answer=None):
 		""" Check hostname consistency (by DNS/reverse resolution),
 			and check /etc/hosts against flakynesses."""
 
