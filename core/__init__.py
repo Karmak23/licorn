@@ -503,7 +503,7 @@ class LicornMasterController(MixedDictObject):
 							logging.warning(_(u'Cannot reach our daemon at %s, '
 								u'retrying in 5 seconds. Check your network '
 								u'connection, cable, DNS and firewall. Perhaps '
-								u' the Licorn® server is simply down.') %
+								u'the Licorn® server is simply down.') %
 									stylize(ST_ADDRESS, u'pyro://%s:%s' % (
 										settings.server_main_address,
 										settings.pyro.port)))
