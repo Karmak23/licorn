@@ -123,7 +123,7 @@ class LicornInterfaceBaseApplication:
 		LMC.release(force=True)
 		LMC.connect()
 
-		LMC.rwi.set_listener(self.local_listener.getAttrProxy())
+		self.RWI.set_listener(self.local_listener.getAttrProxy())
 
 		if hasattr(self, 'resync_specific'):
 			# Used in the CLI applications, to resync GET sta/evt.
@@ -202,7 +202,7 @@ class LicornInterfaceBaseApplication:
 				# NOTE: an AttrProxy is needed, not a simple Proxy. Because the
 				# daemon will check listener.verbose, which is not accessible
 				# through a simple Pyro Proxy.
-				LMC.rwi.set_listener(self.local_listener.getAttrProxy())
+				self.RWI.set_listener(self.local_listener.getAttrProxy())
 
 			# not used yet, but kept for future use.
 			#server=Pyro.core.getAttrProxyForURI(

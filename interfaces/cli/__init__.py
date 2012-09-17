@@ -60,7 +60,7 @@ class CliInteractor(ttyutils.LicornInteractor):
 			self.listener.verbose += 1
 
 			# the daemon side (remote Pyro thread)
-			LMC.rwi.set_listener_verbose(
+			self.RWI.set_listener_verbose(
 						self.listener.getAttrProxy(),
 						self.listener.verbose)
 
@@ -87,7 +87,7 @@ class CliInteractor(ttyutils.LicornInteractor):
 			self.listener.verbose -= 1
 
 			# the daemon side (remote thread)
-			LMC.rwi.set_listener_verbose(
+			self.RWI.set_listener_verbose(
 						self.listener.getAttrProxy(),
 						self.listener.verbose)
 
