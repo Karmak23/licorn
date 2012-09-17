@@ -7,7 +7,7 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import sys, os, fcntl, struct, socket, select, platform, re, netifaces
-import icmp, ip, time, select
+import icmp, ip, time
 
 from ping      import PingSocket
 from threading import current_thread, Event
@@ -142,13 +142,13 @@ def find_zeroconf_server_Linux(favorite, group):
 
 	import pybonjour
 
-	timeout   = 10
-
-	# we use a list to be able to modify it simply from sub-defs.
+	# we use lists to be able to modify them simply
+	# from sub-defs without the "global" mess.
+	waited    = []
 	resolved  = []
 	found     = Event()
-
-	caller = stylize(ST_NAME, current_thread().name)
+	timeout   = 10
+	caller    = stylize(ST_NAME, current_thread().name)
 
 	def resolve_callback(sdRef, flags, interfaceIndex, errorCode, fullname,
 												hosttarget, port, txtRecord):
@@ -166,7 +166,16 @@ def find_zeroconf_server_Linux(favorite, group):
 
 			# Store host with uuid / group, to help find our eventual favorite.
 			resolved.append((txtRecord['uuid'], txtRecord['group'], hosttarget, port))
-			found.set()
+
+			if favorite and txtRecord['uuid'] == favorite:
+				found.set()
+
+			else:
+				# We already have one server in the resolved list.
+				# If we have waited long enough, go with it and take
+				# the best we can.
+				if len(waited) > 5:
+					found.set()
 	def browse_callback(sdRef, flags, interfaceIndex, errorCode, serviceName,
 														regtype, replyDomain):
 		if errorCode != pybonjour.kDNSServiceErr_NoError:
@@ -188,58 +197,42 @@ def find_zeroconf_server_Linux(favorite, group):
 													resolve_callback)
 
 		try:
-			wait_loop = 0
-
-			while not resolved:
+			current_wait = 0
+			while current_wait < 6:
+				waited.append(1)
+				current_wait += 1
 				ready = select.select([resolve_sdRef], [], [], timeout)
 
-				wait_loop += 1
-
-				if resolve_sdRef not in ready[0]:
-					# we loop indefinitely, because we *need* a server to
-					# continue.
-					logging.progress(_(u'{0}: timeout while looking up Licorn® '
-						u'server. Looking up again (try {1})…').format(caller,
-							wait_loop))
-					continue
-
-				pybonjour.DNSServiceProcessResult(resolve_sdRef)
-
-			# NOT here.
-			#return resolved.pop()
+				if resolve_sdRef in ready[0]:
+					pybonjour.DNSServiceProcessResult(resolve_sdRef)
 
 		finally:
 			resolve_sdRef.close()
 
-	def browse():
-		# NOTE: the regtype is initially defined in daemon/main.py in the
-		# LicornDaemon.__register_bonjour_pyro() method.
-		browse_sdRef = pybonjour.DNSServiceBrowse(regtype = '_licorn_pyro._tcp',
-												  callBack = browse_callback)
+	# NOTE: the regtype is initially defined in daemon/main.py in the
+	# LicornDaemon.__register_bonjour_pyro() method.
+	browse_sdRef = pybonjour.DNSServiceBrowse(regtype = '_licorn_pyro._tcp',
+											  callBack = browse_callback)
 
-		try:
-			while not found.is_set():
-				ready = select.select([browse_sdRef], [], [])
+	try:
+		while not found.is_set():
+			ready = select.select([browse_sdRef], [], [], timeout)
 
-				if browse_sdRef in ready[0]:
-					pybonjour.DNSServiceProcessResult(browse_sdRef)
+			if browse_sdRef in ready[0]:
+				pybonjour.DNSServiceProcessResult(browse_sdRef)
 
-		finally:
-			browse_sdRef.close()
+			if favorite:
+				logging.warning(_(u'{0}: favorite server not found. Retrying…'
+															).format(caller))
 
-	browse()
+	finally:
+		browse_sdRef.close()
 
 	if favorite:
 		# If we have a favorite, we always look for it, and loop while not found.
-		while 1:
-			for uuid, hgroup, host, port in resolved:
-				if favorite and uuid == favorite:
-					return socket.gethostbyname(host), port
-
-			logging.warning(_(u'{0}: favorite server not found. Retrying in '
-					u'{1}…').format(caller, pyutils.format_time_delta(timeout)))
-			time.sleep(timeout)
-			browse()
+		for uuid, hgroup, host, port in resolved:
+			if uuid == favorite:
+				return socket.gethostbyname(host), port
 
 	else:
 		# If we don't have any favorite yet, we try to return a server from
