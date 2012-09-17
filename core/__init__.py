@@ -249,18 +249,17 @@ class LicornMasterController(MixedDictObject):
 			# sort of things).
 			self.backends.check(batch=True)
 
-			if settings.role == roles.SERVER:
-				# load common core objects.
-				from users  import UsersController
-				from groups import GroupsController
-				from tasks    import TasksController
+			# load common core objects.
+			from users  import UsersController
+			from groups import GroupsController
+			from tasks  import TasksController
 
-				self.tasks = TasksController()
-				self.users  = UsersController()
-				self.groups = GroupsController()
+			self.tasks  = TasksController()
+			self.users  = UsersController()
+			self.groups = GroupsController()
 
-				# groups will load users as a dependancy.
-				self.groups.load()
+			# groups will load users as a dependancy.
+			self.groups.load()
 
 			# We create it in first pass, because :class:`CommandListener` needs it.
 			from licorn.foundations.messaging import MessageProcessor
