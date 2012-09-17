@@ -76,7 +76,7 @@ def interfaces(full=False):
 					continue
 			ifaces.append(iface)
 		return ifaces
-def find_server_Linux(group):
+def find_server_Linux(favorite, group):
 	""" Return the hostname (or IP, in some conditions) of our Licorn® server.
 		These are tried in turn:
 
@@ -85,6 +85,10 @@ def find_server_Linux(group):
 		- `zeroconf` lookup; this the "standard" way of discovery our server.
 		- LAN dhcp server on distros where it is supported (currently Ubuntu and Debian).
 
+		:param favorite: UUID of our optional favorite server, as a string
+			formated like `LMC.configuration.system_uuid` (no dashes).
+		:param group: an LXC cpuset. This is an undocumented feature. please do
+			not use outside of debugging / testing environments.
 	"""
 
 	env_server = os.getenv('LICORN_SERVER', None)
@@ -100,7 +104,7 @@ def find_server_Linux(group):
 
 		return env_server, None
 
-	return find_zeroconf_server_Linux(group)
+	return find_zeroconf_server_Linux(favorite, group)
 
 	"""
 	# NOTE: the next try is not used anymore but kept for reference in parsing
@@ -131,7 +135,7 @@ def find_server_Linux(group):
 	else:
 		raise NotImplementedError(_(u'find_server() not implemented yet for your distro!'))
 	"""
-def find_zeroconf_server_Linux(group):
+def find_zeroconf_server_Linux(favorite, group):
 	""" This code has been gently borrowed from
 		http://code.google.com/p/pybonjour/ and adapted for Licorn®.
 	"""
@@ -158,8 +162,10 @@ def find_zeroconf_server_Linux(group):
 											if hosttarget.endswith('.')
 											else hosttarget, port))))
 
-			# Store host with group (in txtRecord, given as a string).
-			resolved.append((txtRecord.split('=')[1].strip(), hosttarget, port))
+			txtRecord = pybonjour.TXTRecord.parse(txtRecord)
+
+			# Store host with uuid / group, to help find our eventual favorite.
+			resolved.append((txtRecord['uuid'], txtRecord['group'], hosttarget, port))
 			found.set()
 	def browse_callback(sdRef, flags, interfaceIndex, errorCode, serviceName,
 														regtype, replyDomain):
@@ -205,36 +211,59 @@ def find_zeroconf_server_Linux(group):
 		finally:
 			resolve_sdRef.close()
 
-	# NOTE: the regtype is initially defined in daemon/main.py in the
-	# LicornDaemon.__register_bonjour_pyro() method.
-	browse_sdRef = pybonjour.DNSServiceBrowse(regtype = '_licorn_pyro._tcp',
-											  callBack = browse_callback)
+	def browse():
+		# NOTE: the regtype is initially defined in daemon/main.py in the
+		# LicornDaemon.__register_bonjour_pyro() method.
+		browse_sdRef = pybonjour.DNSServiceBrowse(regtype = '_licorn_pyro._tcp',
+												  callBack = browse_callback)
 
-	try:
-		while not found.is_set():
-			ready = select.select([browse_sdRef], [], [])
+		try:
+			while not found.is_set():
+				ready = select.select([browse_sdRef], [], [])
 
-			if browse_sdRef in ready[0]:
-				pybonjour.DNSServiceProcessResult(browse_sdRef)
+				if browse_sdRef in ready[0]:
+					pybonjour.DNSServiceProcessResult(browse_sdRef)
 
-	finally:
-		browse_sdRef.close()
+		finally:
+			browse_sdRef.close()
 
-	for hgroup, host, port in resolved:
-		if hgroup == group:
-			return socket.gethostbyname(host), port
+	browse()
 
-	hgroup, host, port = resolved[0]
+	if favorite:
+		# If we have a favorite, we always look for it, and loop while not found.
+		while 1:
+			for uuid, hgroup, host, port in resolved:
+				if favorite and uuid == favorite:
+					return socket.gethostbyname(host), port
 
-	logging.warning(_(u'{0}: could not find my dedicated server, returning '
-						u'the first found {1} (group {2}).').format(caller,
-							stylize(ST_URL, 'pyro://{0}:{1}/'.format(
-								host[:-1]
-									if host.endswith('.')
-									else host, port)),
-							stylize(ST_ATTR, hgroup)))
+			logging.warning(_(u'{0}: favorite server not found. Retrying in '
+					u'{1}…').format(caller, pyutils.format_time_delta(timeout)))
+			time.sleep(timeout)
+			browse()
 
-	return socket.gethostbyname(host), port
+	else:
+		# If we don't have any favorite yet, we try to return a server from
+		# the "group". If no server is found in the looked up group, the first
+		# server found is returned.
+		# As the "group" feature is used only for debugging/testing, developers
+		# should have already taken care of starting the test server instance
+		# before the client ;-)
+		for uuid, hgroup, host, port in resolved:
+			if hgroup == group:
+				return socket.gethostbyname(host), port
+
+		uuid, hgroup, host, port = resolved[0]
+
+		logging.warning(_(u'{0}: could not find any server in my group, '
+							u'returning the first found {1} (group {2}).').format(
+								caller,
+								stylize(ST_URL, 'pyro://{0}:{1}/'.format(
+									host[:-1]
+										if host.endswith('.')
+										else host, port)),
+								stylize(ST_ATTR, hgroup)))
+
+		return socket.gethostbyname(host), port
 def find_first_local_ip_address_Linux():
 	""" try to find the main external IP address of the current machine (first
 		found is THE one). Return None if we can't find any.

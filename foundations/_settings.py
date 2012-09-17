@@ -6,7 +6,8 @@ Copyright (C) 2011 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, getpass, errno
+import os, getpass, errno, tempfile
+from threading import current_thread
 
 # ================================================= Licorn® foundations imports
 import logging, styles, events
@@ -40,7 +41,7 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 
 		self.defaults = LicornConfigObject(parent=self)
 
-		self.defaults.home_base_path = '/home'
+		self.defaults.home_base_path         = '/home'
 		self.defaults.check_homedir_filename = '00_default'
 
 		# default expiration time (float, in seconds) for various things
@@ -54,6 +55,7 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		# TODO: autodetect this & see if it not autodetected elsewhere.
 		#self.defaults.quota_device = "/dev/hda1"
 
+		# TODO: protect (all of?) these by turning them into R/O properties.
 		self.config_dir              = u'/etc/licorn'
 		self.data_dir                = u'/var/lib/licorn'
 		self.cache_dir               = u'/var/cache/licorn'
@@ -108,6 +110,7 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 			# changed in the configuration, and is thus not documented
 			# officially.
 			'group'                        : cgroup or '/',
+			'favorite_server'              : None,
 			'pyro.port'                    : int(os.getenv('PYRO_PORT', 299)),
 
 			# timeout for CLI connect; in seconds.
@@ -151,6 +154,7 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 
 		self.__check_settings_role()
 		self.__check_debug_variable()
+
 	def __check_settings_role(self):
 		""" check the licornd.role directive for correctness. """
 
@@ -171,10 +175,13 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		""" This one needs to be defered until LMC.configuration is loaded,
 			else we create a chicken-and-egg problem. """
 
-		if self.role == roles.CLIENT:
-			logging.progress(_(u'Trying to find our Licorn® server…'))
+		caller = stylize(ST_NAME, current_thread().name)
 
-			self.server_main_address, self.server_main_port = network.find_server(self.group)
+		if self.role == roles.CLIENT:
+			logging.progress(_(u'{0}: looking up our Licorn® server…').format(caller))
+
+			self.server_main_address, self.server_main_port = network.find_server(
+											self.favorite_server, self.group)
 
 			if self.server_main_port is None:
 				self.server_main_port = self.pyro.port
@@ -185,7 +192,8 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 					u'administrator or set the {0} environment variable.').format(
 					stylize(ST_NAME, 'LICORN_SERVER')))
 
-			logging.notice(_(u'Our Licorn® server is {0}.').format(
+			logging.notice(_(u'{0}: our Licorn® server is {1}.').format(
+								caller,
 								stylize(ST_URL, 'pyro://{0}:{1}/'.format(
 												self.server_main_address,
 												self.server_main_port))))
@@ -318,30 +326,107 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 									self, self.reload)
 	def reload(self, emit_event=True, **kwargs):
 
-		self.__load_main_config_file(emit_event)
+		with self.lock:
+			self.__load_main_config_file(emit_event)
 
-		# TODO:
-		#self.__load_config_directory()
+			# TODO:
+			#self.__load_config_directory()
 
-		self.__convert_settings_values()
+			self.__convert_settings_values()
 
-		self.__load_inotifier_exclusions(emit_event)
+			self.__load_inotifier_exclusions(emit_event)
 
-		self.check()
+			self.check()
 	def get(self, setting_name, default_value=None):
 
-		if not setting_name.startswith('settings.'):
-			setting_name = 'settings.' + setting_name
+		with self.lock:
+			if not setting_name.startswith('settings.'):
+				setting_name = 'settings.' + setting_name
 
-		try:
-			value = resolve_attr(setting_name, {'settings': self})
+			try:
+				value = resolve_attr(setting_name, {'settings': self})
 
-		except AttributeError:
-			if default_value is None:
-				raise
+			except AttributeError:
+				if default_value is None:
+					raise
 
+				else:
+					return default_value
+	def set(self, setting_name, value):
+		""" If value is explicitely ``None``, we will delete the key. """
+
+		with self.lock:
+			try:
+				# Don't bother write the new setting if unchanged.
+				if self.get(setting_name) == value:
+					return
+
+			except AttributeError:
+				# No current setting with that name.
+
+				if value is None:
+					# Wanted to delete a non-existing setting.
+					return
+
+			if setting_name.startswith('settings.'):
+				setting_name = setting_name[9:]
+
+			if value is None:
+				replace = False
 			else:
-				return default_value
+				replace = True
+
+			found   = False
+			newdata = ''
+
+			with open(self.main_config_file) as f:
+				for line in f.readline():
+					if line.startswith(setting_name + ' ') or line.startswith(setting_name + '='):
+						if replace:
+							newdata += '{0} = {1}\n'.format(setting_name, value)
+							found = True
+
+						else:
+							# delete mode. skip the line
+							continue
+
+					else:
+						# keep any non-matching line
+						newdata += line
+
+			if not found:
+				# Setting was not present, but now needs to be.
+				newdata += '{0} = {1}\n'.format(setting_name, value)
+
+			# Cannot do this at the top of module,
+			# because `fsapi` already imports us.
+			from licorn.foundations import fsapi
+
+			fsapi.backup_file(self.main_config_file)
+			ftempp, fpathp = tempfile.mkstemp(dir=self.config_dir)
+			os.write(ftempp, newdata)
+
+			# This will be done later by a worker
+			#os.fchmod(ftempp, 0644)
+			#os.fchown(ftempp, 0, 0)
+
+			os.close(ftempp)
+			# Avoid a reload triggered by our own write().
+			self.__hint_main += 1
+			os.rename(fpathp, self.main_config_file)
+
+			# If everything went fine, finally make the new setting
+			# available for everyone else. We could do it faster with
+			# dedicated code, but re-using :meth:`merge_settings` makes
+			# it shorter and more maintainable.
+			self.merge_settings({setting_name: value})
+
+		# This will trigger the file checking in LMC.configuration,
+		# without the need to import workers and LMC here.
+		from licorn.foundations.events import LicornEvent
+		LicornEvent('settings_file_written').emit()
+
+
 settings = LicornSettings()
 
 __all__ = ('settings', )
