@@ -6,7 +6,7 @@ Copyright (C) 2011 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, getpass, errno, tempfile
+import time, os, getpass, errno, tempfile
 from threading import current_thread
 
 # ================================================= Licorn® foundations imports
@@ -16,7 +16,7 @@ import logging, styles, events
 from ltrace    import *
 from ltraces   import *
 from styles    import *
-from pyutils   import resolve_attr
+from pyutils   import resolve_attr, format_time_delta
 from process   import cgroup
 from threads   import RLock
 from base      import ObjectSingleton, NamedObject, LicornConfigObject, BasicCounter
@@ -180,6 +180,8 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		if self.role == roles.CLIENT:
 			logging.progress(_(u'{0}: looking up our Licorn® server…').format(caller))
 
+			start = time.time()
+
 			self.server_main_address, self.server_main_port = network.find_server(
 											self.favorite_server, self.group)
 
@@ -192,11 +194,14 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 					u'administrator or set the {0} environment variable.').format(
 					stylize(ST_NAME, 'LICORN_SERVER')))
 
-			logging.notice(_(u'{0}: our Licorn® server is {1}.').format(
-								caller,
+			logging.notice(_(u'{0}: our Licorn® server is {1} (resolution '
+								u'took {2}).').format(caller,
 								stylize(ST_URL, 'pyro://{0}:{1}/'.format(
 												self.server_main_address,
-												self.server_main_port))))
+												self.server_main_port)),
+								stylize(ST_COMMENT, format_time_delta(
+									time.time() - start,
+									long_output=False, big_precision=False))))
 	def merge_settings(self, conf, overwrite=True, emit_event=True):
 		""" Build the licorn configuration object from a dict. """
 

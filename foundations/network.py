@@ -144,11 +144,11 @@ def find_zeroconf_server_Linux(favorite, group):
 
 	# we use lists to be able to modify them simply
 	# from sub-defs without the "global" mess.
-	waited    = []
-	resolved  = []
-	found     = Event()
-	timeout   = 10
-	caller    = stylize(ST_NAME, current_thread().name)
+	waited   = []
+	resolved = []
+	found    = Event()
+	timeout  = 3
+	caller   = stylize(ST_NAME, current_thread().name)
 
 	def resolve_callback(sdRef, flags, interfaceIndex, errorCode, fullname,
 												hosttarget, port, txtRecord):
@@ -174,7 +174,7 @@ def find_zeroconf_server_Linux(favorite, group):
 				# We already have one server in the resolved list.
 				# If we have waited long enough, go with it and take
 				# the best we can.
-				if len(waited) > 5:
+				if len(waited) > 12:
 					found.set()
 	def browse_callback(sdRef, flags, interfaceIndex, errorCode, serviceName,
 														regtype, replyDomain):
@@ -184,10 +184,12 @@ def find_zeroconf_server_Linux(favorite, group):
 		caller = stylize(ST_NAME, current_thread().name)
 
 		if not (flags & pybonjour.kDNSServiceFlagsAdd):
-			logging.warning(_(u'{0}: service removed!').format(caller))
+			logging.warning(_(u'{0}: service {1} removed!').format(caller,
+																serviceName))
 			return
 
-		logging.progress(_(u'{0}: service added; now resolving…').format(caller))
+		logging.progress(_(u'{0}: service {1} added; now resolving…').format(
+														caller, serviceName))
 
 		resolve_sdRef = pybonjour.DNSServiceResolve(0,
 													interfaceIndex,
@@ -198,9 +200,10 @@ def find_zeroconf_server_Linux(favorite, group):
 
 		try:
 			current_wait = 0
-			while current_wait < 6:
+			while current_wait < 5:
 				waited.append(1)
 				current_wait += 1
+
 				ready = select.select([resolve_sdRef], [], [], timeout)
 
 				if resolve_sdRef in ready[0]:
@@ -215,15 +218,19 @@ def find_zeroconf_server_Linux(favorite, group):
 											  callBack = browse_callback)
 
 	try:
+		retry_not_displayed = True
+
 		while not found.is_set():
 			ready = select.select([browse_sdRef], [], [], timeout)
 
 			if browse_sdRef in ready[0]:
 				pybonjour.DNSServiceProcessResult(browse_sdRef)
 
-			if favorite:
-				logging.warning(_(u'{0}: favorite server not found. Retrying…'
-															).format(caller))
+			if favorite and retry_not_displayed:
+				logging.warning(_(u'{0}: Resolving our favorite server via '
+					u'Bonjour. Please wait, this can take a while…').format(
+																	caller))
+				retry_not_displayed = False
 
 	finally:
 		browse_sdRef.close()
