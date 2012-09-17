@@ -263,6 +263,13 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# TODO: get the cache from the server, it has the
 			# one in sync with the NFS-served files.
 
+			# write down the favorite server if none was already present.
+			# We will automatically look for it at next start.
+			if settings.favorite_server is None:
+				#print '>> my UUID', LMC.system.system_uuid()
+				#print '>> Server UUID', client.ServerLMC.system.system_uuid()
+				settings.set('favorite_server', client.ServerLMC.system.system_uuid())
+
 			self.collect_and_start_threads()
 
 	def collect_and_start_threads(self, collect_only=False, full_display=True):
@@ -730,7 +737,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 										'_licorn_pyro._tcp',
 										settings.pyro.port,
 										pyro_registered_callback,
-										pybonjour.TXTRecord({'group': settings.group}))
+										pybonjour.TXTRecord({
+											'uuid': LMC.configuration.system_uuid,
+											'group': settings.group,
+										}))
 	def register_bonjour_service(self, service_name, service_type, service_port,
 												callback=None, txtRecord=None):
 		""" Register a given service in the Bonjour stack via :py:mod:`pybonjour`.

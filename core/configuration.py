@@ -1195,6 +1195,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			raise exceptions.LicornRuntimeError(_(u'Cannot modify '
 				u'/etc/hostname, verify the file is still clean:\n\t%s)') % e)
 
+	@events.handler_method
+	def settings_file_written(self, *a, **kw):
+		""" An event triggered when settings file is written, forwarded here to
+			make `configuration` check the file permissions. This would be too
+			complicated for settings to check it on its side, needing to import
+			too much `core` objects in `foundations`. """
+		self.check_system_dirs(batch=True)
+
 	### CHECKS ###
 	def check(self, minimal=True, batch=False, auto_answer=None, full_display=True):
 		""" Check all components of system configuration and repair
