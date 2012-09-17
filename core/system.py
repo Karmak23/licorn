@@ -335,6 +335,8 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 			# 		- waits the delay
 			#		- and sends the 'need_restart' event.
 			pass
+	def system_uuid(self, *a, **kw):
+		return LMC.configuration.system_uuid
 	def get_extensions(self, client_only=False):
 		if client_only:
 			return [ key for key in LMC.extensions.keys()
