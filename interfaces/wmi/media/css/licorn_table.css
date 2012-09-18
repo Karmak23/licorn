@@ -28,7 +28,7 @@
 
 
 .row_selected, .row_selected:hover {
-	background-color: #00FFFF;
+	background-color: #00FFFF !important;
 }
 .table tbody {
 }

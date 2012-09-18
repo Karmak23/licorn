@@ -133,20 +133,22 @@ function setup_table_sorter(sort_list) {
 		.tablesorter({
 			sortList: sort_list,
 			textExtraction: table_sort_extractor,
-		})
+		});
 		// assign the sortStart event
-		.bind("sortStart",function(e, t){
+		$(document).bind("sortStart",function(e, t){
 			body_wait();
 		})
 		.bind("sortEnd",function(e, t){
 			body_unwait();
-		}); ;
+		}); 
+
 	//.bind('sortEnd', function(sorter) {
 	//	currentSort = sorter.target.config.sortList;
 	//});
 }
 function setup_table_search(table_element, input_element) {
 	input_element.keyup(function(event) {
+		console.log('searching ', input_element.val())
 		// we need to search only on non hidden row
 		$.uiTableFilter( table_element, input_element.val() );
 	});
@@ -169,11 +171,14 @@ function get_selected_rows(table_element, active_class) {
 }
 function setup_table_row_doubleclick(elements, _function) {
 	// double click on a row will call _function with td as parameter
-	elements.each(function(index, row) {
+	elements.dblclick(function(event) {
+			_function($(event.target).parent());
+		});
+	/*elements.each(function(index, row) {
 		$(row).dblclick(function(event) {
 			_function($(event.target).parent());
 		});
-	});
+	});*/
 }
 function setup_popovers(parent){
 

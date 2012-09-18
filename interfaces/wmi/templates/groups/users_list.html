@@ -14,6 +14,8 @@
 				{%- if mode == 'edit'-%}
 					{%- set rel = users_list.group.get_relationship(item.uidNumber) -%}
 					{%- set instant_apply_class = 'instant_click' -%}
+
+					{%- set url = '/groups/mod/{0}/users/'.format(users_list.group.gidNumber) -%}
 				{%- elif mode == "massiv" -%}
 					{# if all gids have the same relationship with the user, show it, else no relationship #}
 
@@ -39,6 +41,8 @@
 					{% endif %}
 
 					{%- set instant_apply_class = 'instant_click' -%}
+					{%- set url = '/groups/massive/users/{0}/'.format(gids) -%}
+
 				{%- else -%}
 					{%- set rel= 0 -%}
 					{%- set instant_apply_class = '' -%}
@@ -76,21 +80,21 @@
 
 							<div class='popover_item rel_no_membership {{ instant_apply_class }}'
 								id='{{ item.uidNumber }}' value='no_membership'
-								data-instant-url="/groups/mod/{{users_list.group.gidNumber}}/users/{{ item.uidNumber }}/0">
+								data-instant-url="{{url}}{{ item.uidNumber }}/0">
 								<span class='item_title no_membership_bkg '>{{ _('no membership') }}</span>
 							</div>
 							{% if item.is_standard %}
 							<div class='popover_item rel_guest {{ instant_apply_class }}' id='{{ item.uidNumber }}' value='guest'
-							data-instant-url="/groups/mod/{{users_list.group.gidNumber}}/users/{{ item.uidNumber }}/1" >
+							data-instant-url="{{url}}{{ item.uidNumber }}/1" >
 								<span class='item_title guest_bkg'>{{ _('guest') }}</span>
 							</div>
 							{% endif %}
 							
-							<div class='popover_item rel_member {{ instant_apply_class }}' id='{{ item.uidNumber }}' value='member' data-instant-url="/groups/mod/{{users_list.group.gidNumber}}/users/{{ item.uidNumber }}/2">
+							<div class='popover_item rel_member {{ instant_apply_class }}' id='{{ item.uidNumber }}' value='member' data-instant-url="{{url}}{{ item.uidNumber }}/2">
 								<span class='item_title member_bkg'>{{ _("member") }}</span>
 							</div>
 							{% if item.is_standard %}
-							<div class='popover_item rel_resp {{ instant_apply_class }}' id='{{ item.uidNumber }}' value='resp' data-instant-url="/groups/mod/{{users_list.group.gidNumber}}/users/{{ item.uidNumber }}/3">
+							<div class='popover_item rel_resp {{ instant_apply_class }}' id='{{ item.uidNumber }}' value='resp' data-instant-url="{{url}}{{ item.uidNumber }}/3">
 								<span class='item_title resp_bkg'>{{ _('responsible') }}</span>
 							</div>
 							{% endif %}

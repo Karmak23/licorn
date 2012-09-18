@@ -64,22 +64,39 @@
 			</div>
 		</span>
 	</div>
-	<table class="table sortable table-hover" id="model_groups_table">
+	<table class="table sortable" id="model_groups_table">
 		<thead>
 			<tr>
 				{%- block list_headers -%}
 				{%- endblock -%}
 			</tr>
 		</thead>
-		<tbody>
+		<tbody id='table_tbody'>
 			{%- block list_body -%}
 			{%- endblock -%}
 		</tbody>
 	</table>
 
+	<!--<style>
+	#table_tbody {
+		display:block;
+		overflow: auto;
+		height: 100%;
+	}
+	#model_groups_table thead {
+		display:block;
+	}
+	#model_groups_table {
+		height:90%;
+	}
+	</style>-->
 
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
+
+			//$('#special_hide').attr('disabled', 'false');
+
+
 			var START_TIME = new Date().getTime();
 			setup_list();
 			var END_TIME = new Date().getTime();
@@ -93,23 +110,19 @@
 			{%- endif -%}
 		});
 
-		function setup_list() {
+		function setup_list(list_name) {
 			// search field
-			// 1
-			//setup_table_search($('#model_groups_table'), $('#list_search'))
+			setup_table_search($('#model_groups_table'), $('#list_search'))
 
 			// make rows selectable
-			// 54
-			//setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me');
+			setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me');
 
 			// filters btn
-			// 2790
 			var filters = { 'standard' : true, 'system': true, 'restricted': false, 'privileged': true}
 			setup_table_filter($('#model_groups_table tbody tr'), $('.filter_item'), filters)
 
 			// setup doubleclick on each rows
-			// 220
-			/*setup_table_row_doubleclick($('#model_groups_table tbody td'), function(td) {
+			setup_table_row_doubleclick($('#model_groups_table tbody td'), function(td) {
 				if (! $(td).hasClass('no_double_click')) {
 
 					gid = td.data('gid')
@@ -122,22 +135,31 @@
 						$("#modal").html(modal_html).modal()
 					})
 				}
-			
-			});*/
+			});
 			// setup the sort plugin
-			// 4477
 			//setup_table_sorter([[2,0]]);
 
 			//massives actions
-			//3
-			//setup_massive_actions();
+			setup_massive_actions();
+
+			// on row hover, always clean interface in case of previus preselection with keyboard
+			$('#model_groups_table tbody tr').hover(function(){
+				//in
+				$('#model_groups_table tr').css({"background-color":"none"})
+				$(this).css({'background-color': background_color_hover})
+
+				$('.preselected_row').removeClass('preselected_row')
+				$(this).addClass('preselected_row')
+
+			}, function() {
+				//out
+				$(this).css({'background-color': "none"})
+			})
 		}
 
 		// to move in common.js
 		function setup_table_filter(table_rows, items, filters) {
 			/* setup table filters */
-
-
 
 			$.each(items, function(i, item) {
 				// setup interface
@@ -150,7 +172,6 @@
 			})
 
 			$(items).click(function() {
-				console.log('click')
 				// check the filter state
 				if ($(this).hasClass('active')) {
 					// the filter is currently activated, disable it
@@ -163,49 +184,27 @@
 					filters[$(this).data('filter')] = true;
 				}
 				do_filter()
+				console.log("tarararar")
 			})
 			do_filter()
 			function do_filter() {
 				/* really do the filter, show/hide rows */
-				var START = new Date().getTime();
+				//var START = new Date().getTime();
 
 				$.each(filters, function(name, on_state) {
-					//console.log('filter', name, on_state)
-					filter_items = $('.filter_'+name)
-
-					//console.log('working on ', filter_items)
+					filter_items = $('#table_tbody .filter_'+name)
 					if (on_state) {
-							filter_items.show();
+						filter_items.css('display', '')
 					}
 					else {
-						filter_items.hide();
+						filter_items.css('display', 'none');
 					}
 				})
 
-				var END = new Date().getTime();
-				tTime = (END - START);
+				//var END = new Date().getTime();
+				//tTime = (END - START);
 
-				console.log("do_filter", tTime)
-
-				/*$.each(table_rows, function(i, row) {
-					//console.log(row)
-					
-
-						row_filter = $.trim($(row).data('filter'))
-						if (row_filter != '' & row_filter != null) {
-							if (filters[row_filter] == true) {
-								$(row).show()
-								$(row).addClass('not_filtered')
-							}
-							else {
-								$(row).removeClass('not_filtered')
-								$(row).hide()
-							}
-						}
-					
-				})*/
-				// now apply search field
-				$('#list_search').keyup();
+				//console.log("do_filter", tTime)
 			}
 		}
 
@@ -236,7 +235,30 @@
 				}
 			})
 		}
+		function init_massive_select_events(action_name, action_url, gids) {
+			console.log("init_massive_select_events", action_name, action_url, gids)
+			$('#apply_massive_action').click(function() {
+				// close the modal
+				$("#machine_modal").modal('hide')
 
+				// run the action
+				if (action_name == 'export') {
+					$.get(action_url + gids, function() {
+						file_name = data.file_name
+						iframe = document.getElementById('download_iframe')
+						iframe.src = "/system/download/"+file_name
+
+					}, "json")
+				}
+				else {
+					$.get(action_url + gids)
+				}
+
+				// unselect all rows
+				$('.row_selected').removeClass('row_selected')
+
+			})
+		}
 
 
 
@@ -251,6 +273,7 @@
 
 
 		var select_active_class = 'row_selected'
+		var background_color_hover = 'rgb(245, 245, 245)'
 		var setup_row_timeout;
 
 
@@ -270,13 +293,15 @@
 
 
 	
-		function bind_escape() {
+		function bind_keys() {
 
+		
 			$(document).keyup(function(e) {
 				/* if a table filter as been set, unset it.
 				If not, if rows are selected, unselect them. */
-
+				console.log('key :', e.keyCode)
 				if (e.keyCode == 27) {    // ESC
+					// on ESC, first remove search content, secondly unselect row
 
 					var searchb = $('#list_filter');
 
@@ -291,9 +316,115 @@
 						})*/
 						$('.row_selected').removeClass('row_selected')
 					}
+				}
+
+
+
+				
+				/* Rows selection mecanism */
+				if (e.keyCode == 74 || e.keyCode == 75 || e.keyCode == 83) {
+					var preselected_row  = null;
+
+					var next_row         = null
+					var previus_row      = null
+					var new_selected_row = null
+
+					// find where to start 
+					console.log('seeking where to start')
+					if ($('.preselected_row').length == 0) {
+
+						$.each($('tbody tr'), function() {
+							//console.log($(this).css('background-color'), background_color_hover, $(this).css('background-color') == background_color_hover)
+							if ($(this).css('background-color') == background_color_hover) {
+								preselected_row = $(this);
+							}
+						});
+					}
+					else {
+						preselected_row = $('.preselected_row')
+					}
+
+				}
+
+
+				if (e.keyCode == 74) {    // J = next
+					if (preselected_row == null) {
+						// no, preselected row, start from the top
+						new_selected_row = $('table tbody tr:first');
+					}
+					else {
+						// one row is already preselected, start from it
+						next_row = preselected_row.next(':visible')
+						if (next_row.length == 0) {
+							next_row = preselected_row.nextUntil(':visible').last().next()
+						}
+						new_selected_row = next_row;					}
+				}
+
+				if (e.keyCode == 75) {    // K = previus
+					if (preselected_row == null) {
+						// no, preselected row, start from the top
+						new_selected_row = $('table tbody tr:first');
+					}
+					else {
+						// one row is already preselected, start from it
+						prev_row = preselected_row.prev(':visible')
+						if (prev_row.length == 0) {
+							prev_row = preselected_row.prevUntil(':visible').prev().last();
+						}
+						new_selected_row = prev_row;
+						
+					}
+
+				}
+				if (e.keyCode == 74 || e.keyCode == 75) {
+					
+					if (new_selected_row.length != 0) {
+						if (preselected_row != null) {
+							// unpreselect preselected_row
+							preselected_row.css({'background-color': "none"})
+						}
+						console.log("setting preselected_row")
+						$('.preselected_row').removeClass('preselected_row')
+					
+						new_selected_row.addClass('preselected_row').css({'background-color' : background_color_hover})
+
+						//
+
+						$('body').scrollTop(new_selected_row.position().top - $(window).height()/2)
+					}
+				}
+
+
+
+				if (e.keyCode == 83) {    // s
+					if (preselected_row.hasClass(select_active_class)) {
+						preselected_row.removeClass(select_active_class)
+					}
+					else {
+						// if a row is "preselected", select it
+						$('.preselected_row').removeClass('preselected_row')
+						preselected_row.addClass('preselected_row').addClass(select_active_class)
+					}
+
+				}
+
+				if (e.keyCode == 13) {    // enter
+					selected_rows = get_selected_rows($('#model_groups_table tbody'), select_active_class);
+					console.log($(selected_rows))
+					if (selected_rows.length == 1) {
+						gid = $(selected_rows).data('gid');
+						$.get('/groups/edit/'+gid, function(modal_html) {
+							$("#modal").html(modal_html).modal()
+						})
+					}
+					else if (selected_rows.length > 1) {
+						console.log("mass edit", selected_rows)
+					}
 
 
 				}
+
 			});
 
 		}

@@ -63,16 +63,20 @@
 {%- endblock -%}
 
 {%- block list_headers -%}
-	<th class='table_column_header centered' style="width: 5%">{{ _('Permissive') }}</th>
-	<th class='table_column_header centered' style="width: 5%">{{ _('Type') }}</th>
-	<th class='table_column_header' style="width: 10%">{{ _('Name') }}</th>
-	<th class='table_column_header centered' style="width: 55%">{{ _('Description') }}</th>
-	<th class='table_column_header centered' style="width: 7%">{{ _('Group identifier') }}</th>
-	<th class='table_column_header centered' style="width: 5%">{{ _('Skel') }}</th>
-	<th class='table_column_header centered' style="width: 5%">{# row navigation #}</th>
+	<th class='table_column_header centered'>{{ _('Permissive') }}</th>
+	<th class='table_column_header centered'>{{ _('Type') }}</th>
+	<th class='table_column_header'>{{ _('Name') }}</th>
+	<th class='table_column_header centered'>{{ _('Description') }}</th>
+	<th class='table_column_header centered'>{{ _('Group identifier') }}</th>
+	<th class='table_column_header centered'>{{ _('Skel') }}</th>
 {%- endblock -%}
 
 {%- block list_body -%}
+	<style>
+		.licorn_row[style~="hidden;"]{
+		    height:0;
+		}​
+	</style>
 	{%- for group in groups -%}
 		{%- include 'groups/group_row.html' -%}
 	{%- endfor -%}

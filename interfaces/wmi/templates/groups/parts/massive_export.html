@@ -1,0 +1,21 @@
+{%- extends 'groups/massive_select.html' -%}
+
+
+{%- block confirm_text -%}
+	<p>{{ _('Do you really want to <em><strong>export</strong></em> all selected groups ?') }}</p>
+{%- endblock -%}
+
+{%- block end_text -%}
+<div>
+
+	<p>
+		{{ _("Please chose your prefered export format : ") }}
+	</p>
+	<select id="id_export_type">
+		<option name="csv">CSV</option>
+		<option name="xml">XML</option>
+	</select>
+	<!-- iframe trick to be abble to prompt download at the correct time -->
+	<iframe id="download_iframe" style="display:none"></iframe>
+</div>
+{%- endblock -%}

@@ -81,14 +81,10 @@
 		<span>{{ group.gidNumber }}<span>
 	</td>
 	<!-- skel -->
-	<td data-sort="{{ group.name }}" data-search="{{ group.name }}">
-		<span>{{ group.groupSkel }}<span>
+	<td data-search="{{ group.groupSkel }}">
+		<span title="{{ group.groupSkel }}">{{ group.groupSkel.split('/')[-1] }}<span>
 	</td>
-	<!-- nav -->
-	<td data-sort="{{ group.name }}" data-search="{{ group.name }}">
-		<span>nav<span>
-	</td>
-
+	
 	
 </tr>
 

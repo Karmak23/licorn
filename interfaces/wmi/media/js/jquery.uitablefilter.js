@@ -29,7 +29,7 @@
     var matches = function(elem) { elem.show() }
     var noMatch = function(elem) { elem.hide(); new_hidden = true }
     var getText = function(elem) { 
-      var text = '';
+     var text = '';
       
       $.each(elem.children(), function(i, v) {
         f = $(v).data('search');
@@ -76,7 +76,9 @@
     }
     else {
       new_hidden = true;
-      var elems = jq.find("tbody:first > tr.not_filtered")
+      //console.log('toto')
+      var elems = jq.find("tbody:first > tr")
+      //console.log(elems)
     }
 
     elems.each(function(){

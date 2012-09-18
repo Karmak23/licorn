@@ -103,7 +103,7 @@ def massive(request, gids, action, value='', *args, **kwargs):
 		for gid in gids.split(','):
 			delete(request, gid=int(gid), no_archive=bool(value))
 
-	elif action == 'permissiveness':
+	elif action == 'permissivness':
 		for gid in gids.split(','):
 			toggle_permissiveness(request, gid=int(gid))
 
@@ -480,12 +480,46 @@ def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 		})
 
 def massive_select_template(request, action_name, gids, *args, **kwargs):
-	_dict = { 'groups' : [ LMC.groups.guess_one(g) for g in gids.split(',') ] }
+	groups = [ LMC.groups.guess_one(g) for g in gids.split(',') ]
+	template = None
+
+	_dict = { 'groups' : groups }
+
 	if action_name == 'delete':
 		_dict.update({
 			"archive_dir" : settings.home_archive_dir, 
 			'admin_group' : settings.defaults.admin_group })
+	if action_name == 'edit':
+		users_list = [ (_('Standard users'),{
+						'groups' : groups,
+						'name'  : 'standard',
+						'users' : utils.select('users', default_selection=filters.STANDARD)
+					}) ]
+
+		# if super user append the system users list
+		if request.user.is_superuser:
+			users_list.append( ( _('System users') ,  {
+				'groups' : groups,
+				'name'  : 'system',
+				'users' : utils.select('users', default_selection=filters.SYSTEM)
+			}))
+
+		# we need to sort the form_blocks dict to display headers in order
+		sorted_blocks = OrderedDict({})
+		form_blocks = get_group_form_blocks(request)
+		for k in sorted(form_blocks.iterkeys()):
+			sorted_blocks.update({ k: form_blocks[k]})
+
+		_dict.update({
+					'gids'        : gids,
+					'mode'    	  : "massiv",
+					'title'       : _("Massive edit"),
+					'form'        : GroupForm("massiv", group),
+					'users_lists' : users_list,
+					'form_blocks' : sorted_blocks
+				})
+		template = '/groups/group.html'
 
 	return HttpResponse(
-		render_to_string('groups/parts/massive_{0}.html'.format(action_name),
+		render_to_string(template if template != None else 'groups/parts/massive_{0}.html'.format(action_name),
 			_dict))
