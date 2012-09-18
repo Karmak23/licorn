@@ -304,6 +304,11 @@ class ListenerObject(object):
 
 	# ====================================== Licornd remote interactive console
 
+	def console_informations(self):
+		from _settings   import settings
+		from licorn.core import version
+		return (socket.gethostname(), roles[settings.role],
+					version, sys.version.replace('\n', ''), sys.platform)
 	def console_start(self, is_tty=True):
 		# we have to import 'logging' not at the top of the module
 		import logging, events
