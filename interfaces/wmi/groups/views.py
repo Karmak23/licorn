@@ -400,7 +400,7 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 		# TODO: make the notification sticky and remove it just
 		# before returning the rendered template result.
 		utils.notification(request, _('Building group {0} form, please wait…').format(
-			_('edit') if _mode == 'edit' else _('creation')), 3000 + 5 * nusers, 'wait_for_rendering')
+			_('edit') if action == 'edit' else _('creation')), 3000 + 5 * nusers, 'wait_for_rendering')
 
 	users_list = [ (_('Standard users'),{
 					'group' : group,

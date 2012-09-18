@@ -243,7 +243,7 @@
 
 				// run the action
 				if (action_name == 'export') {
-					$.get(action_url + gids, function() {
+					$.get(action_url + gids, function(data) {
 						file_name = data.file_name
 						iframe = document.getElementById('download_iframe')
 						iframe.src = "/system/download/"+file_name
