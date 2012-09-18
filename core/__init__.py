@@ -557,6 +557,8 @@ class LicornMasterController(MixedDictObject):
 										u'operations will not be available.'))
 					self.rwi = None
 
+				self.rwi._setTimeout(0)
+
 			assert ltrace(TRACE_TIMINGS, '@LMC.connect(): %.4fs' % (
 													time.time() - start_time))
 			del start_time
