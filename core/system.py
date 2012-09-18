@@ -19,7 +19,7 @@ from threading import current_thread
 from licorn.foundations.threads import RLock
 
 from licorn.foundations           import logging, settings
-from licorn.foundations           import process, apt, events, hlstr
+from licorn.foundations           import process, network, apt, events, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
@@ -335,6 +335,11 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 			# 		- waits the delay
 			#		- and sends the 'need_restart' event.
 			pass
+	def server(self, *a, **kw):
+		if settings.role == roles.CLIENT:
+			return settings.server_main_address, settings.server_main_port
+
+		return network.find_first_local_ip_address(), settings.pyro.port
 	def system_uuid(self, *a, **kw):
 		return LMC.configuration.system_uuid
 	def get_extensions(self, client_only=False):
