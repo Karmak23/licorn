@@ -15,13 +15,13 @@ import sys, os, time, errno, socket, signal
 from threading import current_thread, Thread
 import Pyro.core, Pyro.util, Pyro.configuration
 
-from licorn.foundations           import options, logging, exceptions
-from licorn.foundations           import pyutils, process, styles
+from licorn.foundations           import settings, options, logging, exceptions
+from licorn.foundations           import pyutils, process, styles, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import LicornConfigObject, Singleton
-from licorn.foundations.constants import verbose
+from licorn.foundations.constants import verbose, roles
 from licorn.foundations.messaging import MessageProcessor
 
 # circumvent the `import *` local namespace duplication limitation.
@@ -123,7 +123,16 @@ class LicornInterfaceBaseApplication:
 		LMC.release(force=True)
 		LMC.connect()
 
-		self.RWI.set_listener(self.local_listener.getAttrProxy())
+		LMC.system.set_listener(self.local_listener.getAttrProxy())
+
+		if settings.role != roles.SERVER:
+			# expose our listener with its public address, not 127.0.0.1, else
+			# the remote_output() of the the remote daemon will fail.
+			LMC.rwi.set_listener(Pyro.core.PyroURI(
+							host=network.find_first_local_ip_address(),
+							objectID=self.local_listener.GUID).getAttrProxy())
+		else:
+			LMC.rwi.set_listener(self.local_listener.getAttrProxy())
 
 		if hasattr(self, 'resync_specific'):
 			# Used in the CLI applications, to resync GET sta/evt.
@@ -138,10 +147,11 @@ class LicornInterfaceBaseApplication:
 			self.main_pre_connect(*args, **kwargs)
 
 		assert ltrace(TRACE_INTERFACES, '  run : connecting to LMC.')
-		self.RWI = LMC.connect(self.delayed_daemon_start)
+		LMC.connect(self.delayed_daemon_start)
 
 		# options._rwi is needed for the Interactor
-		options._rwi = self.RWI
+		# 20120918: really ??
+		#options._rwi = LMC.rwi
 
 		if hasattr(self, 'main_post_connect'):
 			assert ltrace(TRACE_INTERFACES, '  run : post_connect.')
@@ -202,7 +212,17 @@ class LicornInterfaceBaseApplication:
 				# NOTE: an AttrProxy is needed, not a simple Proxy. Because the
 				# daemon will check listener.verbose, which is not accessible
 				# through a simple Pyro Proxy.
-				self.RWI.set_listener(self.local_listener.getAttrProxy())
+				LMC.system.set_listener(self.local_listener.getAttrProxy())
+
+				if settings.role != roles.SERVER:
+					# expose our listener with its public address, not 127.0.0.1, else
+					# the remote_output() of the the remote daemon will fail.
+
+					LMC.rwi.set_listener(Pyro.core.PyroURI(
+									host=network.find_first_local_ip_address(),
+									objectID=self.local_listener.GUID()).getAttrProxy())
+				else:
+					LMC.rwi.set_listener(self.local_listener.getAttrProxy())
 
 			# not used yet, but kept for future use.
 			#server=Pyro.core.getAttrProxyForURI(

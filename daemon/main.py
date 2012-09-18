@@ -23,7 +23,7 @@ This daemon exists:
 import time
 dstart_time = time.time()
 
-import os, sys, signal, select, resource, pybonjour, gc, __builtin__
+import os, sys, signal, select, socket, resource, pybonjour, gc, __builtin__
 
 from threading  import current_thread, Thread, active_count
 
@@ -70,6 +70,8 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.__restart_event = Event()
 
 		self.__threads = LicornThreads('daemon_threads')
+
+		self.hostname = socket.gethostname()
 
 		LMC.licornd = self
 		events.collect(self)
@@ -629,13 +631,14 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 											long_output, precision, as_string)
 
 		if as_string:
-			data = _(u'Licorn® {role} daemon {full}status: '
-				u'up {uptime}, {nb_threads} threads, {nb_controllers} controllers, '
+			data = _(u'Licorn® {hostname} {role} daemon {full}status: up {uptime}\n'
+				u'{nb_threads} threads, {nb_controllers} controllers, '
 				u'{nb_queues} queues, {nb_locked}/{nb_locks} Mlocks, {sub_locked}/{sub_locks} Ulocks\n'
 				u'CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s '
 				u'MEM: res {mem_res:.2}Mb shr {mem_shr:.2}Mb '
 					u'ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n').format(
 				full=stylize(ST_COMMENT, 'full ') if long_output else '',
+				hostname=self.hostname,
 				role=stylize(ST_ATTR, roles[settings.role]),
 				uptime=stylize(ST_COMMENT,
 					pyutils.format_time_delta(time.time() - dstart_time)),
