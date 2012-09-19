@@ -325,7 +325,7 @@ class SimpleShare(PicklableObject):
 			mechanisms because the current password is always stored
 			encrypted. """
 		return self.__password == self.compute_password(pw_to_check, salt=self.__password, ascii=True)
-	def __request_short_url(self):
+	def request_short_url(self):
 		""" request a short URL (http://lsha.re/xxxxxxxx) from the central
 			server.
 
@@ -334,6 +334,9 @@ class SimpleShare(PicklableObject):
 				given path as many times as we ask for it.
 
 		"""
+
+		# NOTE: don't test "if self.uri not in (None, '')": in case the URL
+		# changed on the central server, we'd better request an update.
 
 		m = LMC.extensions.mylicorn
 
@@ -368,14 +371,14 @@ class SimpleShare(PicklableObject):
 
 		else:
 			logging.warning(_(u'{0}: {1} is not connected, deferring short '
-					u'URL request.').format(self, m.pretty_name))
+								u'URL request.').format(self, m.pretty_name))
 			retrigger = True
 
 		if retrigger:
 			# Random the job delay to avoid doing all next calls at once,
 			# in case the problem was OVERQUOTA and we need a lot of URLs.
-			workers.network_enqueue(priorities.LOW, self.__request_short_url,
-								job_delay=float(random.randint(1800, 5400)))
+			workers.network_enqueue(priorities.LOW, self.request_short_url,
+								job_delay=float(random.randint(10, 30)))
 	def check(self, batch=False, auto_answer=None, full_display=True):
 		""" Check the share parameters. For the moment, it just makes sure
 			the share has a short URL, else it will request one.
@@ -385,7 +388,7 @@ class SimpleShare(PicklableObject):
 				be updated. This is not a bug, just worth noting. """
 
 		if self.uri in (None, ''):
-			workers.network_enqueue(priorities.LOW, self.__request_short_url)
+			workers.network_enqueue(priorities.LOW, self.request_short_url)
 class SimpleSharingUser(object):
 	""" A mix-in for :class:`~licorn.core.users.User` which add simple file
 		sharing support. See http://dev.licorn.org/wiki/ExternalFileSharing
