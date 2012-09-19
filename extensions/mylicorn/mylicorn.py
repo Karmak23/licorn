@@ -17,9 +17,9 @@ from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.threads   import Event
+from licorn.foundations.threads   import Event, RLock
 
-from licorn.foundations.base      import ObjectSingleton
+from licorn.foundations.base      import ObjectSingleton, Enumeration
 from licorn.foundations.constants import host_types, priorities, host_status
 
 from licorn.daemon.threads        import LicornJobThread
@@ -72,6 +72,10 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		self.events.connected = Event()
 
 		self.paths.config_file = os.path.join(settings.config_dir, 'mylicorn.conf')
+
+		self.result = Enumeration()
+		self.result.code = None
+		self.result.mesg = None
 
 		# unknown reachable status
 		self.__is_reachable = None
@@ -232,6 +236,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			Licornd is `cruising`, which means “ `everything is ready, boys` ”. """
 
 		self.authenticate()
+
 	@events.handler_method
 	# Doesn't need @only_if_enabled, it won't be trigerred unless enabled.
 	def extension_mylicorn_authenticated(self, *args, **kwargs):
@@ -248,6 +253,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 								job_delay=20.0)
 
 		self.__start_updater_thread()
+
 	@events.handler_method
 	# Doesn't need @only_if_enabled, it won't be trigerred unless enabled.
 	def extension_mylicorn_configuration_changed(self, *args, **kwargs):
@@ -258,10 +264,12 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		if 'api_key' in kwargs:
 			self.disconnect()
 			self.authenticate()
+
 	@events.handler_method
 	@only_if_enabled
 	def system_sleeping(self, *args, **kwargs):
 		self.disconnect(host_status.SLEEPING)
+
 	@events.handler_method
 	@only_if_enabled
 	def system_resuming(self, *args, **kwargs):
@@ -328,27 +336,39 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			logging.info(_(u'{0}: updater thread stopped.').format(self.pretty_name))
 	def __remote_call(self, rpc_func, *args, **kwargs):
 
-		try:
-			result = rpc_func(*args, **kwargs)
+		with self.locks._global:
 
-		except Exception, e:
-			if isinstance(e, urllib2.HTTPError):
-				try:
-					print_web_exception(e)
+			# In case we want to know precisely what crashed.
+			self.result.func   = rpc_func
+			self.result.args   = args
+			self.result.kwargs = kwargs
 
-				except:
-					logging.exception(_(u'{0}: error decoding web exception '
-										u'{1} from failed execution of {2}'),
-											self.pretty_name, e, rpc_func.__name__)
+			try:
+				result = rpc_func(*args, **kwargs)
+
+			except Exception, e:
+				if isinstance(e, urllib2.HTTPError):
+					try:
+						print_web_exception(e)
+
+					except:
+						logging.exception(_(u'{0}: error decoding web exception '
+											u'{1} from failed execution of {2}'),
+												self.pretty_name, e, rpc_func.__name__)
+				else:
+					logging.exception(_(u'{0}: error while executing {1}'),
+												self.pretty_name, rpc_func.__name__)
+
+				self.result.code = common.FAILED
+				self.result.mesg = _(u'Remote call of procedure “%s” failed '
+						u'(network or MyLicorn® issue).') % rpc_func.__name__
+
 			else:
-				logging.exception(_(u'{0}: error while executing {1}'),
-											self.pretty_name, rpc_func.__name__)
+				self.result.code = result['result']
+				self.result.mesg = result['message']
 
-			return {'result' : common.FAILED,
-					'message': _('RPC %s failed') % rpc_func.__name__}
-
-		else:
-			return result
+			# return it in an easy usable form for callers.
+			return self.result.code, self.result.mesg
 	def retrigger_authenticate(self, short=False):
 
 		if short:
@@ -419,10 +439,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 			self.__stop_updater_thread()
 
-			res = self.__remote_call(self.service.disconnect,
+			code, message = self.__remote_call(self.service.disconnect,
 										status or host_status.SHUTTING_DOWN)
-
-			code = res['result']
 
 			if code < 0:
 				# if authentication goes wrong, we won't even try to do anything
@@ -431,14 +449,14 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 									u'message: {2})').format(
 										self.pretty_name,
 										stylize(ST_UGID, disconnect[code]),
-										stylize(ST_COMMENT, res['message'])))
+										stylize(ST_COMMENT, message)))
 
 			else:
 				logging.info(_(u'{0}: sucessfully disconnected (code: {1}, '
 								u'message: {2})').format(
 									self.pretty_name,
 									stylize(ST_UGID, disconnect[code]),
-									stylize(ST_COMMENT, res['message'])))
+									stylize(ST_COMMENT, message)))
 
 				LicornEvent('extension_mylicorn_disconnected').emit()
 
@@ -463,9 +481,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		# NOTE: the arguments must match the ones from the
 		# My.Licorn.org `authenticate()` JSON-RPC method.
-		res = self.__remote_call(self.service.authenticate, *self.__auth_infos())
-
-		code = res['result']
+		code, message = self.__remote_call(self.service.authenticate, *self.__auth_infos())
 
 		if code < 0:
 			# if authentication goes wrong, we won't even try to do anything
@@ -473,13 +489,13 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			logging.warning(_(u'{0}: failed to authenticate (code: {1}, '
 								u'message: {2})').format(self.pretty_name,
 									stylize(ST_UGID, authenticate[code]),
-									stylize(ST_COMMENT, res['message'])))
+									stylize(ST_COMMENT, message)))
 			self.retrigger_authenticate()
 		else:
 			logging.info(_(u'{0}: sucessfully authenticated (code: {1}, '
 							u'message: {2})').format(self.pretty_name,
 								stylize(ST_UGID, authenticate[code]),
-								stylize(ST_COMMENT, res['message'])))
+								stylize(ST_COMMENT, message)))
 
 			LicornEvent('extension_mylicorn_authenticated').emit()
 	def update_reachability(self):
@@ -493,9 +509,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		# Unknown status by default
 		self.__is_reachable = None
 
-		res = self.__remote_call(self.service.is_reachable)
-
-		code = res['result']
+		code, message = self.__remote_call(self.service.is_reachable)
 
 		if code == is_reachable.SUCCESS:
 			self.__is_reachable = True
@@ -514,16 +528,14 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			request contents. From our point of view, this is just a kind of
 			``ping()``.
 		"""
-		res = self.__remote_call(self.service.noop)
-
-		code = res['result']
+		code, message = self.__remote_call(self.service.noop)
 
 		if code < 0:
 			logging.warning(_(u'{0}: problem noop()\'ing {1} (was: code={2}, '
 									u'message={3}).').format(self.pretty_name,
 										stylize(ST_URL, self.my_licorn_uri),
 										stylize(ST_UGID, authenticate[code]),
-										stylize(ST_COMMENT, res['message'])))
+										stylize(ST_COMMENT, message)))
 
 			# any [remote] exception will halt the current thread, and
 			# re-trigger a full pass of "authentication-then-regularly-update"
@@ -573,9 +585,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 											anonymize_full=anonymize_full).iter())
 
 			if data_to_upload:
-				res = self.__remote_call(self.service.update_history,
-											history_name, data_to_upload)
-				code = res['result']
+				code, message = self.__remote_call(self.service.update_history,
+												history_name, data_to_upload)
 
 				if code < 0:
 					logging.warning(_(u'{0}: problem uploading {1} history '
@@ -583,7 +594,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 									self.pretty_name,
 									stylize(ST_ATTR, history_name),
 									stylize(ST_UGID, update_history[code]),
-									stylize(ST_COMMENT, res['message'])))
+									stylize(ST_COMMENT, message)))
 
 				else:
 					logging.info(_(u'{0}: successfully uploaded / updated {1} '
@@ -598,10 +609,9 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 									stylize(ST_ATTR, history_name)))
 
 		for history_name in ('wtmp', ):
-			res = self.__remote_call(self.service.update_history,
+			code, message = self.__remote_call(self.service.update_history,
 										# history_name, history_data, query_last
 										history_name,	None, 			True)
-			code = res['result']
 
 			if code < 0:
 				logging.warning(_(u'{0}: problem querying for last {1} history '
@@ -609,9 +619,9 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 							u'message={3}).').format(self.pretty_name,
 											stylize(ST_ATTR, history_name),
 											stylize(ST_UGID, update_history[code]),
-											stylize(ST_COMMENT, res['message'])))
+											stylize(ST_COMMENT, message)))
 
 			else:
-				upload_latest_data(history_name, res['message'])
+				upload_latest_data(history_name, message)
 
 __all__ = ('MylicornExtension', )
