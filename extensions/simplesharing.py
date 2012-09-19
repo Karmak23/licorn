@@ -180,6 +180,12 @@ class SimpleShare(PicklableObject):
 			try:
 				os.makedirs(self.uploads_directory)
 
+				# This is very basic, but sufficient for now.
+				os.chown(self.uploads_directory,
+							self.__coreobj.uidNumber
+								if hasattr(self.__coreobj, 'uidNumber') else 0,
+							self.__coreobj.gidNumber)
+
 			except (OSError, IOError), e:
 				if e.errno != errno.EEXIST:
 					raise
@@ -470,6 +476,9 @@ class SimpleSharingUser(object):
 													self.shares_directory))):
 
 						os.makedirs(self.shares_directory)
+
+						# This is very basic, but sufficient for now.
+						os.chown(self.shares_directory, self.uidNumber, self.gidNumber)
 
 						logging.notice(_(u'Created simple web shares '
 									u'directory {0}.').format(stylize(ST_PATH,
