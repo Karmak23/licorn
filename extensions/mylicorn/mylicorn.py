@@ -518,9 +518,9 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			self.__is_reachable = False
 
 		logging.info(_(u'{0}: our reachability state is now {1}.').format(
-					self.pretty_name, stylize(ST_ATTR, 'UNKNOWN'
-												if code == is_reachable.FAILED
-												else is_reachable[code])))
+					self.pretty_name, stylize(ST_ATTR, is_reachable[code]
+												if code in (is_reachable.SUCCESS, is_reachable.UNREACHABLE)
+												else _('UNKNOWN'))))
 	def update_remote_informations(self):
 		""" Method meant to be run from the updater Thread, which can also be
 			run manually at will from the daemon's console. It will run ``noop()``
