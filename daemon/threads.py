@@ -720,8 +720,23 @@ class GenericQueueWorkerThread(AbstractTimerThread):
 							jobbing=self.jobbing.is_set(),
 							**process.thread_basic_info(self))
 	def __format_job(self):
+
+		try:
+			job_name = self.job.__name__
+
+		except AttributeError:
+			# Pyro's `core._RemoteMethod` class has no __name__
+			# retro-compatibility attribute. We must fake to
+			# find the real name, but at least with Python, we can.
+			try:
+				job_name = getattr(self.job, '_RemoteMethod__name')
+
+			except:
+				# In case it wasn't a Pyro method, use a sane fallback.
+				job_name = str(self.job)
+
 		return stylize(ST_ON, '%s(%s%s%s)' % (
-							self.job.__name__,
+							job_name,
 							', '.join([str(j) for j in self.job_args])
 								if self.job_args else '',
 							', ' if self.job_args and self.job_kwargs else '',
