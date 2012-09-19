@@ -601,6 +601,14 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 							self.pretty_name, stylize(ST_ATTR, 'disable()'),
 								stylize(ST_PATH, settings.main_config_file)))
 		return False
+	def check(self, batch=False, auto_answer=None):
+
+		logging.progress(_(u'{0}: checking all users\' shares…').format(self.pretty_name))
+
+		for user in LMC.users:
+			user.check_shares(batch=batch, auto_answer=auto_answer)
+
+		logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
 	def __load_factory_settings(self):
 
 		for setting_name, setting_value in (
@@ -640,12 +648,6 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 		""" When the daemon has reached ``cruising`` state, we can start to
 			check shares, request short URLs, etc. """
 
-		logging.progress(_(u'{0}: checking all users\' shares…').format(self.pretty_name))
-
-		for user in LMC.users:
-			user.check_shares(batch=True)
-
-		logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
-
+		self.check(batch=True)
 __all__ = ('SimpleShare', 'SimpleSharingUser', 'SimplesharingExtension',
 			'DEFAULT_MAX_UPLOAD_SIZE', )
