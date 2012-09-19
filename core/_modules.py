@@ -642,10 +642,31 @@ class CoreModule(CoreUnitObject, NamedObject):
 		#: replicated / configured on CLIENTS).
 		self.server_only = False
 	def event(self, event_name):
+		""" Get the current state of a module event, and return ``True`` if
+			the event is **set**, else ``False``.
+
+			This method is meant to be used from remote network clients, where
+			getting the whole extension via Pyro would not transmit threads,
+			locks and other sort of special attributes. As the method exists
+			on the remote side, Pyro will execute it correctly via RPC and the
+			remote code will be able to test the :class:`~threading.Event`.
+		"""
 		assert ltrace_locks(self.events[event_name])
 		return self.events[event_name].is_set()
-	def lock(self, lock_name):
-		the_lock = self.locks[lock_name]
+	def lock(self, lock_name=None):
+		""" Get the current state of a module lock, and return ``True``
+			if the lock is currently acquired, else ``False``.
+
+			:param lock_name: a string specifying which lock to test. If
+				ommited, the global module lock will be tested.
+
+			This method is meant to be used from remote network clients, where
+			getting the whole extension via Pyro would not transmit threads,
+			locks and other sort of special attributes. As the method exists
+			on the remote side, Pyro will execute it correctly via RPC and the
+			remote code will be able to test the :class:`~threading.RLock`.
+		"""
+		the_lock = self.locks[lock_name] if lock_name else self.locks._global
 		if the_lock.acquire(blocking=False):
 			the_lock.release()
 			return False
