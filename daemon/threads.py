@@ -12,16 +12,15 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import time, __builtin__
-from threading   import Thread, current_thread
+from threading   import Thread
 from Queue       import Queue
 
-from licorn.foundations           import logging, exceptions, options
+from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process, pyutils
 from licorn.foundations.threads   import RLock, Event
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import verbose, priorities
 
 class BaseLicornThread(Thread):
 	""" A simple class of thread which records its own instances, and whose
