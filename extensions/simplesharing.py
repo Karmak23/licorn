@@ -362,12 +362,14 @@ class SimpleShare(PicklableObject):
 										u'to {1}.').format(self, self.uri))
 
 				else:
-					logging.warning(_(u'{0}: short URL request failed, '
-							u'deferring next try (was: code={1}, '
-							u'message={2}).').format(self,
-								constants.shorten_url[result['result']],
-														result['message']))
-					retrigger = True
+					logging.warning(_(u'{0}: short URL request failed '
+								u'(was: code={1}, message={2}).').format(self,
+									constants.shorten_url[result['result']],
+									result['message']))
+
+					# We don't retrigger in case of a MyLicorn® error.
+					# This would lead quickly to #930 issue, which is bad.
+					# retrigger = True
 
 		else:
 			logging.warning(_(u'{0}: {1} is not connected, deferring short '
@@ -375,10 +377,9 @@ class SimpleShare(PicklableObject):
 			retrigger = True
 
 		if retrigger:
-			# Random the job delay to avoid doing all next calls at once,
-			# in case the problem was OVERQUOTA and we need a lot of URLs.
+			# Random the job delay to avoid doing all next calls at once.
 			workers.network_enqueue(priorities.LOW, self.request_short_url,
-								job_delay=float(random.randint(10, 30)))
+								job_delay=float(random.randint(60, 120)))
 	def check(self, batch=False, auto_answer=None, full_display=True):
 		""" Check the share parameters. For the moment, it just makes sure
 			the share has a short URL, else it will request one.
