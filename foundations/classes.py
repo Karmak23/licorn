@@ -243,24 +243,23 @@ class FileLock:
 		self.wait    = waitmax
 		self.verbose = verbose
 
-	#
 	# Make FileLock be usable as a context manager.
-	#
 	def __enter__(self):
-		self.Lock()
+		self.acquire()
 	def __exit__(self, type, value, tb):
-		self.Unlock()
+		self.release()
 
-	def Lock(self):
+	def acquire(self):
 		"""Acquire a lock, i.e. create $file.lock."""
-		assert ltrace(TRACE_OBJECTS, '%s: pseudo-locking %s.' % (self.pretty_name,
-			stylize(ST_PATH, self.lockname)))
+		assert ltrace(TRACE_OBJECTS, '%s: pseudo-locking %s.' % (
+						self.pretty_name, stylize(ST_PATH, self.lockname)))
 
 		try:
 			self.wait = self.waitmax
+
 			while os.path.exists(self.filename) and self.wait >= 0:
 				if self.verbose:
-					sys.stderr.write("\r %s waiting %d second(s) for %s lock to be released… " \
+					sys.stderr.write("\r %s waiting %d second(s) for %s lock to be released… "
 						% (stylize(ST_NOTICE, '*'), self.wait, self.lockname))
 					sys.stderr.flush()
 				self.wait = self.wait - 1
@@ -281,28 +280,34 @@ class FileLock:
 			sys.stderr.write("\n")
 			raise
 
-		assert ltrace(TRACE_OBJECTS, '%s: successfully locked %s.' % (self.pretty_name,
-			stylize(ST_PATH, self.filename)))
-
-	def Unlock(self):
+		assert ltrace(TRACE_OBJECTS, '%s: successfully locked %s.' % (
+					self.pretty_name, stylize(ST_PATH, self.filename)))
+	def release(self):
 		"""Free the lock by removing the associated lockfile."""
 
-		assert ltrace(TRACE_OBJECTS, '%s: removing lock on %s.' % (self.pretty_name,
-			stylize(ST_PATH, self.lockname)))
+		assert ltrace(TRACE_OBJECTS, '%s: removing lock on %s.' % (
+						self.pretty_name, stylize(ST_PATH, self.lockname)))
 
-		if os.path.exists(self.filename):
-			try:
-				os.unlink(self.filename)
-			except (OSError):
+		try:
+			os.unlink(self.filename)
+
+		except (IOError, OSError), e:
+			if e.errno != errno.ENOENT:
 				raise OSError, "can't remove lockfile %s." % self.filename
 
-		assert ltrace(TRACE_OBJECTS, '%s: successfully unlocked %s.' % (self.pretty_name,
-			stylize(ST_PATH, self.filename)))
+		assert ltrace(TRACE_OBJECTS, '%s: successfully unlocked %s.' % (
+						self.pretty_name, stylize(ST_PATH, self.filename)))
 
-	def IsLocked(self):
+	def is_locked(self):
 		"""Tell if a file is currently locked by looking if the associated lock
 		is present."""
 		return os.path.exists(self.filename)
+
+	# old style primitive names
+	Lock     = acquire
+	Unlock   = release
+	IsLocked = is_locked
+	locked   = is_locked
 class StateMachine:
 	"""
 		A Finite state machine design pattern.
