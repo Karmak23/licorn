@@ -34,7 +34,10 @@
 	    {% endfor %}
 	{% endif %}
 
-	<form class="form-horizontal" id='user_form'>{% csrf_token %}
+	<form class="form-horizontal" id='user_form'>
+
+		{% csrf_token %}
+		
 
 
 
@@ -74,19 +77,12 @@
 		
 	{# add users and sys_user pane #}
 
-
-	{%- for title, users_list in users_lists -%}
-		<div class="tab-pane" id="{{ users_list.name }}">
-    	
+	{%- for list in users_lists -%}
+		<div class="tab-pane" id="{{ list.list_name }}">
 			<div>
-				{%- include 'groups/users_list.html' -%}
+				{{list.list_content}}
 			</div>
-		
-
-
     	</div>
-    	
-
 	{%- endfor -%}
 
 
@@ -106,12 +102,56 @@
     {%endif%}
 
 
-
+    <style>
+    	.my_popover{
+    		width:auto;
+    	}
+    </style>
     <script type="text/javascript">
 	$(document).ready(function() {
 		
 		// .click_item are our user box, when click is triggered, 
 		// show the popover containing possible relationship
+
+
+		// init the popover
+		$('.trigger_popover').each(function() {
+
+			// display only relevant relationship (do not display the current one)
+			current_rel = $(this).data('rel')
+			$(this).find('.rel_'+current_rel).hide();
+			popover_content = $(this).find('.popover').html()
+			var popover_id = $(this).data('id')
+
+			// init tht popover
+			$(this).clickover({
+				title : 'relationship',
+				content  : popover_content,
+				placement : 'top',
+				template: '<div class="popover my_popover" id="popover_'+popover_id+'"><div class="arrow"></div><div class="popover-inner"><div class="popover-content"><p></p></div></div></div>'
+
+			}).click(function() {
+				// on popover display, initialize instant_click, if 'edit' or 'massiv' mode
+				{% if mode == 'edit' or mode == 'massiv' %}
+					console.log('inti',popover_id, $("#popover_"+$(this).data('id')))
+					init_instant_click($("#popover_"+$(this).data('id')))
+				{% endif -%}
+			});
+		});
+
+		{% if mode == 'new' %}
+
+			{# no instant apply, but give a visual feedback #}
+			$('.popover btn').click(function() {
+				console.log("click sqdoushdklqhbdq")
+			});
+						
+		{% endif -%}
+
+
+
+
+
 		$('.click_item').each(function() {
 			// display only relevant groups
 			rel = $(this).attr('value');
@@ -135,7 +175,7 @@
 			
 			function post_form() {
 				$.post("/groups/create/", $('#user_form').serialize());
-			}
+			};
 
 			$(document).keyup(function(e) {
 				if (e.keyCode == 13) { // enter
@@ -143,20 +183,20 @@
 				}
 			});
 
-
 			// click save button
 			$('#save_user_button').click( function() {
 				post_form();
 			});
-			$('#modal').modal('hide')
+
+			$('#modal').modal('hide');
 
 			
 		{%- endif -%}
 
-	$('#id_permissive').checkbox({
-        'on_text': "{{ _('No') }}",
-        'off_text' : "{{ _('Yes') }}"
-    })
+		$('#id_permissive').checkbox({
+	        'on_text': "{{ _('No') }}",
+	        'off_text' : "{{ _('Yes') }}"
+	    })
 
 
 

@@ -70,8 +70,7 @@ function update_instance(model, iid, new_html, callback) {
 	*/
 
 	// re-sort the table.
-	table.trigger("update")
-		.trigger("sorton", [table.get(0).config.sortList]);
+	//table.trigger("update").trigger("sorton", [table.get(0).config.sortList]);
 	  //.trigger("appendCache");
 	  //.trigger("applyWidgets");
 

@@ -26,9 +26,11 @@
 	margin-top:20px;
 }
 
-
+.licorn_row {
+	cursor: pointer;
+}
 .row_selected, .row_selected:hover {
-	background-color: #00FFFF !important;
+	background-color: #7be5ff !important;
 }
 .table tbody {
 }

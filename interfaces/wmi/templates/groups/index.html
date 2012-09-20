@@ -14,19 +14,19 @@
 
 {%- block massive_actions -%}
 	<div class="btn-group">
-		<button class="btn massive_action" data-url='/groups/massive/delete/' data-name='delete'>
+		<button class="btn massive_action" data-url='/groups/massive/delete/' data-name='delete' id="massive_delete">
 			<img src="/media/images/24x24/mass_del.png" title="{{ _('Massively delete groups.') }}" alt="massive delete icon"/>
 		</button>
-		<button class="btn massive_action" data-url='/groups/massive/permissivness/' data-name='permissive'>
+		<button class="btn massive_action" data-url='/groups/massive/permissivness/' data-name='permissive' id="massive_permissive">
 			<img src="/media/images/24x24/mass_lock.png" title="{{ _('Massively make/unmake groups permissive.') }}" alt="massive permissive icon"/>
 		</button>
-		<button class="btn massive_action" data-url='/groups/massive/export/' data-name='export'>
+		<button class="btn massive_action" data-url='/groups/massive/export/' data-name='export' id="massive_export">
 			<img src="/media/images/24x24/mass_export.png" title="{{ _('Massively export groups.') }}" alt="massive export icon"/>
 		</button>
-		<button class="btn massive_action" data-url='/groups/massive/apply_skel/' data-name='skel'>
+		<button class="btn massive_action" data-url='/groups/massive/apply_skel/' data-name='skel' id="massive_skel">
 			<img src="/media/images/24x24/mass_skel.png" title="{{ _('Massively reapply groups\' skel on groups\' members.') }}" alt="massive apply skel icon"/>
 		</button>
-		<button class="btn massive_action" data-url='/groups/massive/edit/' data-name='edit'>
+		<button class="btn massive_action" data-url='/groups/massive/edit/' data-name='edit' id="massive_edit">
 			<img src="/media/images/24x24/mass_group.png" title="{{ _('Massively edit groups.') }}" alt="massive edit groups icon"/>
 		</button>
 	</div>
@@ -39,23 +39,23 @@
 	<div class="btn-group" data-toggle="buttons-checkbox">
 		{% if request.user.is_superuser %}
 			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
-				{{ _('Standards') }}
+				<strong>{{ _('Standard') }}</strong>&nbsp;<i class="icon-map-marker"></i>
 			</button>
 			<button id='filter_privileged' class="btn filter_item" data-filter='privileged'>
-				{{ _('Privileged') }}
+				<em>{{ _('Privileged') }}</em>&nbsp;<i class="icon-glass"></i>
 			</button>
 			<button id='filter_system' class="btn filter_item" data-filter='system'>
-				{{ _('Systems') }}
+				{{ _('Systems') }}&nbsp;<i class="icon-wrench"></i>
 			</button>
 			<button id='filter_restricted' class="btn filter_item" data-filter='restricted'>
-				{{ _('Restricted') }}
+				{{ _('Restricted') }}&nbsp;<i class="icon-warning-sign"></i>
 			</button>
 		{% elif request.user.is_staff %}
-			<button id='filter_standard' class="btn filter_item" data-filter='standard'>
-				{{ _('Standards') }}
+			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
+				<strong>{{ _('Standard') }}</strong>&nbsp;<i class="icon-map-marker"></i>
 			</button>
 			<button id='filter_privileged' class="btn filter_item" data-filter='privileged'>
-				{{ _('Privileged') }}
+				<em>{{ _('Privileged') }}</em>&nbsp;<i class="icon-glass"></i>
 			</button>
 		{% endif %}
 
@@ -63,12 +63,12 @@
 {%- endblock -%}
 
 {%- block list_headers -%}
-	<th class='table_column_header centered'>{{ _('Permissive') }}</th>
-	<th class='table_column_header centered'>{{ _('Type') }}</th>
-	<th class='table_column_header'>{{ _('Name') }}</th>
-	<th class='table_column_header centered'>{{ _('Description') }}</th>
-	<th class='table_column_header centered'>{{ _('Group identifier') }}</th>
-	<th class='table_column_header centered'>{{ _('Skel') }}</th>
+	<th class='table_column_header centered' width="5%">{{ _('Type') }}</th>
+	<th class='table_column_header centered' width="10%">{{ _('Permissive') }}</th>
+	<th class='table_column_header' width="10%">{{ _('Name') }}</th>
+	<th class='table_column_header centered' width="55%">{{ _('Description') }}</th>
+	<th class='table_column_header centered' width="5%">{{ _('Group identifier') }}</th>
+	<th class='table_column_header centered' width="5%">{{ _('Skel') }}</th>
 {%- endblock -%}
 
 {%- block list_body -%}

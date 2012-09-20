@@ -1,0 +1,84 @@
+
+
+
+{%- macro get_group_membership(groups, user) -%}
+	{% if groups == [ None ] %}
+		
+		{%- set rel = 0 -%}
+		
+	{% else %}
+
+		{# http://stackoverflow.com/questions/4870346/can-a-jinja-variables-scope-extend-beyond-in-an-inner-block #}
+		{%- set rel_ref = [] -%}
+		{%- set same_rel = [] -%}
+
+		{% for g in groups %}
+			{% if rel_ref == [] %}
+				{%- do rel_ref.append(g.get_relationship(user.uidNumber)) -%}
+			{% else %}
+				{% if rel_ref[0] != g.get_relationship(user.uidNumber) %}
+					{%- do same_rel.append(0) -%}
+				{% endif %}
+			{% endif %}
+		{% endfor %}
+
+		{% if same_rel == [] %}
+			{%- set rel = rel_ref[0] -%}
+		{% else %}
+			{%- set rel = 4 -%}
+		{% endif %}
+
+	{% endif %}
+
+
+
+
+
+	{{-rel-}}
+{%- endmacro -%}
+
+{% set get_image_relationship = { 
+		"0": "",
+		"1": '<img src="/media/images/24x24/guest+3px.png"/>',
+		"2": '<img src="/media/images/24x24/member+3px.png"/>',
+		"3": '<img src="/media/images/24x24/resp+3px.png"/>',
+		"4": "",
+	}
+%}
+
+
+
+
+{% set gids = [] %}
+{% for g in groups %}
+	{% do gids.append(g.gidNumber) %}
+{% endfor %}
+
+
+{% set button_types = { "0": 'default', "1":'primary', "2":'success', "3":'danger', "4":'warning' } %}
+{% set current_rel = get_group_membership(groups, user)|trim %}
+
+<span class="btn btn-{{ button_types[current_rel] }} trigger_popover" data-rel="{{current_rel}}" data-id={{user.uidNumber}} id="btn_{{user.uidNumber}}">
+	{{ user.login }} {{ get_image_relationship[current_rel]}}
+
+
+
+	<div class="popover">
+		<div width="auto">
+			<span class="instant_click btn btn-default rel_0" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/0">no membership {{ get_image_relationship['0']}}</span>
+			{% if user.is_standard %}
+			<span class="instant_click btn btn-primary rel_1" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/1">guest {{ get_image_relationship['1']}}</span>
+			{% endif %}
+			<span class="instant_click btn btn-success rel_2" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/2">member {{ get_image_relationship['2']}}</span>
+			{% if user.is_standard %}
+			<span class="instant_click btn btn-danger rel_3" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/3">responsible {{ get_image_relationship['3']}}</span>
+			{% endif %}
+		</div>
+	</div>
+
+
+
+</span>
+
+
+

@@ -10,6 +10,7 @@
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.uitablefilter.js"></script>
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.iselectable.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.tablescroll.js"></script>
 
 	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/ug-popover.css" />
 	
@@ -60,10 +61,12 @@
 		<span id="table_header_search" class='table_header_item'>
 			<div class="centered">&nbsp;</div>
 			<div class="input-prepend" >
-				<span class="add-on">{{ _('Search') }}</i></span><input type='text' id="list_search"/>
+				<span class="add-on"><i class="icon-search"></i></span><input type='text' accesskey="f" id="list_search"/>
 			</div>
 		</span>
 	</div>
+
+	<div id='table_wrapper'>
 	<table class="table sortable" id="model_groups_table">
 		<thead>
 			<tr>
@@ -76,27 +79,36 @@
 			{%- endblock -%}
 		</tbody>
 	</table>
+	</div>
 
-	<!--<style>
-	#table_tbody {
-		display:block;
-		overflow: auto;
-		height: 100%;
-	}
-	#model_groups_table thead {
-		display:block;
-	}
-	#model_groups_table {
-		height:90%;
-	}
-	</style>-->
+	
+	<style>
+		.table_header{
+			position: fixed;
+			background-color: white;
+		}
+		#table_wrapper {
+			margin-top:20px;
+		}
+		.table_header {
+			top: 0px;
+		}
+
+	</style>
+	<script language="javascript" type="text/javascript">
+		$(document).ready(function() {
+			$('.table_header').width($('table').width())
+		})
+	</script>
+
+
+
+
+
 
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
-
-			//$('#special_hide').attr('disabled', 'false');
-
-
+		
 			var START_TIME = new Date().getTime();
 			setup_list();
 			var END_TIME = new Date().getTime();
@@ -104,15 +116,83 @@
 
 			console.log(totalTime)
 
-
 			{%- if edit_html -%} 
 				$("#machine_modal").modal();
 			{%- endif -%}
 		});
 
+		function groups_doubleclick_row(td) {
+
+			if (! $(td).hasClass('no_double_click')) {
+
+				gid = td.data('gid')
+
+				if (gid == null) {
+					gid = td.parent('.licorn_row').data('gid')
+				}
+
+				$.get('/groups/edit/'+gid, function(modal_html) {
+					$("#modal").html(modal_html).modal()
+				})
+			}
+		}
+		
+
 		function setup_list(list_name) {
 			// search field
-			setup_table_search($('#model_groups_table'), $('#list_search'))
+			//setup_table_search($('#model_groups_table'), $('#list_search'))
+			var search_timeout;
+			searchbox=$('#list_search')
+			searchbox.keyup(function() {
+
+
+
+		
+
+				clearTimeout(search_timeout)
+
+			
+				search_timeout = setTimeout( function() {
+						
+
+						console.log('keyup', searchbox.val())
+						val = searchbox.val()
+
+						$('.filtered:not(.hidden)').addClass('hidden');
+						if (val == '') {
+							$('.not_filtered').css('display', '').removeClass('hidden')
+							$('.filtered').removeClass('hidden')
+						}
+						else {
+							$('.not_filtered:not(:contains('+val+'))').css('display', 'none').addClass('hidden')
+							$('.not_filtered:contains('+val+')').css('display', '').removeClass('hidden')
+							
+						}
+					
+					},50);
+
+
+
+
+
+
+
+				/*$.each($('.not_filtered.not_hidden'), function() {
+					var _this = $(this);
+					td = _this.find('td:visible')
+					text = td.text();
+
+					if (val == '') {
+						_this.css('display', '').removeClass('hidden')
+					}
+					
+					else if (text.indexOf(val) == -1) {
+						_this.css('display', 'none').addClass('hidden')
+					}
+
+
+				})*/
+			})
 
 			// make rows selectable
 			setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me');
@@ -122,39 +202,18 @@
 			setup_table_filter($('#model_groups_table tbody tr'), $('.filter_item'), filters)
 
 			// setup doubleclick on each rows
-			setup_table_row_doubleclick($('#model_groups_table tbody td'), function(td) {
-				if (! $(td).hasClass('no_double_click')) {
-
-					gid = td.data('gid')
-
-					if (gid == null) {
-						gid = td.parent('.licorn_row').data('gid')
-					}
-
-					$.get('/groups/edit/'+gid, function(modal_html) {
-						$("#modal").html(modal_html).modal()
-					})
-				}
-			});
+			setup_table_row_doubleclick($('#model_groups_table tbody td'), groups_doubleclick_row);
 			// setup the sort plugin
 			//setup_table_sorter([[2,0]]);
 
 			//massives actions
 			setup_massive_actions();
 
-			// on row hover, always clean interface in case of previus preselection with keyboard
-			$('#model_groups_table tbody tr').hover(function(){
-				//in
-				$('#model_groups_table tr').css({"background-color":"none"})
-				$(this).css({'background-color': background_color_hover})
+			setup_hover();
 
-				$('.preselected_row').removeClass('preselected_row')
-				$(this).addClass('preselected_row')
+			setup_ajaxized_link($('#model_groups_table tbody td'));
 
-			}, function() {
-				//out
-				$(this).css({'background-color': "none"})
-			})
+			$('.licorn_tooltip').tooltip()
 		}
 
 		// to move in common.js
@@ -183,7 +242,10 @@
 					$(this).addClass('.active')
 					filters[$(this).data('filter')] = true;
 				}
+				console.log('>DOFITLER')
 				do_filter()
+
+				console.log('<DOFITLER')
 				console.log("tarararar")
 			})
 			do_filter()
@@ -192,12 +254,13 @@
 				//var START = new Date().getTime();
 
 				$.each(filters, function(name, on_state) {
-					filter_items = $('#table_tbody .filter_'+name)
+					filter_items = $('#table_tbody .filter_'+name+'')
 					if (on_state) {
-						filter_items.css('display', '')
+						filter_items.addClass('not_filtered').removeClass('filtered')
+						filter_items.find(':not(.hidden)').css('display', '')
 					}
 					else {
-						filter_items.css('display', 'none');
+						filter_items.removeClass('not_filtered').addClass('filtered').css('display', 'none');
 					}
 				})
 
@@ -207,7 +270,12 @@
 				//console.log("do_filter", tTime)
 			}
 		}
-
+		function setup_ajaxized_link(items) {
+			items.find('.ajaxized_link').click(function() {
+				$.get($(this).attr('href'))
+				return false;
+			})
+		}
 		function setup_massive_actions() {
 			$('.massive_action').click(function() {
 				// get selected items
@@ -256,10 +324,26 @@
 
 				// unselect all rows
 				$('.row_selected').removeClass('row_selected')
+				//hide the modal
+				$('#modal').modal('hide')
 
 			})
 		}
+		function setup_hover() {
+			// on row hover, always clean interface in case of previus preselection with keyboard
+			$('#model_groups_table tbody tr').hover(function(){
+				//in
+				$('#model_groups_table tr').css({"background-color":"none"})
+				$(this).css({'background-color': background_color_hover})
 
+				//$('.preselected_row').removeClass('preselected_row')
+				//$(this).addClass('preselected_row')
+
+			}, function() {
+				//out
+				$(this).css({'background-color': "none"})
+			})
+		}
 
 
 
@@ -275,6 +359,31 @@
 		var select_active_class = 'row_selected'
 		var background_color_hover = 'rgb(245, 245, 245)'
 		var setup_row_timeout;
+
+		function setup_row(row) {
+
+			clearTimeout(setup_row_timeout)
+
+			setup_table_row_doubleclick($(row), groups_doubleclick_row)
+
+			// filter the list
+            $('#list_search').trigger('keyup')
+
+			// let know the sort plugin that we updated the table
+			//$("table.sortable").trigger("update");
+
+			setup_row_timeout = setTimeout( function() {
+				
+				// try to do it only once because it is applyed to the whole table
+				setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me')
+				setup_hover();
+				},
+				1000);
+			setup_ajaxized_link($(row))
+
+			$('.licorn_tooltip').tooltip()
+			
+		}
 
 
 
@@ -295,34 +404,56 @@
 	
 		function bind_keys() {
 
-		
 			$(document).keyup(function(e) {
-				/* if a table filter as been set, unset it.
-				If not, if rows are selected, unselect them. */
-				console.log('key :', e.keyCode)
-				if (e.keyCode == 27) {    // ESC
+				console.log("keyup", e.which )
+
+				if (e.which == 8 || e.which == 46) {    // SUPPR => mass delete
+					$('#massive_delete').click()
+				}
+
+				if (e.which == 27) {    // ESC
 					// on ESC, first remove search content, secondly unselect row
+					modal = $('#modal')
+					searchb = $('#list_search');
+					
+					console.log("modal visible", modal.is(':visible'))
+					console.log("search box focus", searchb.is(':focus'))
 
-					var searchb = $('#list_filter');
-
-					if (searchb != [] && searchb.val() != "") {
+					if (modal.is(':visible')) {
+						modal.modal('hide')
+					}
+					else if (searchb.is(':focus')) {
+						console.log("has focus")
 						searchb.val('');
 						searchb.keyup();
+						searchb.blur();
 
-					} else {
+						e.stopPropagation();
+						e.preventDefault();
+
+					} 
+					else {
 						/*$.each(get_selected_rows($('#model_machines_table tbody'), select_active_class), function(i, item) {
 							console.log(i, item)
 							$(item).removeClass('row_selected').trigger('mousedown').trigger('mouseup');
 						})*/
 						$('.row_selected').removeClass('row_selected')
 					}
+					
+
 				}
-
-
-
+			});
+			$(document).keypress(function(e) {
+				/* if a table filter as been set, unset it.
+				If not, if rows are selected, unselect them. */
+				console.log('key :', e.which)
+				console.log('alt:', e.altKey)
+				console.log('ctrl : ', e.ctrlKey)
+				console.log('shift : ', e.shiftKey)
 				
+
 				/* Rows selection mecanism */
-				if (e.keyCode == 74 || e.keyCode == 75 || e.keyCode == 83) {
+				if (e.which == 106 || e.which == 107 || e.which == 115) {
 					var preselected_row  = null;
 
 					var next_row         = null
@@ -343,11 +474,9 @@
 					else {
 						preselected_row = $('.preselected_row')
 					}
-
 				}
 
-
-				if (e.keyCode == 74) {    // J = next
+				if (e.which == 107) {    // K = next
 					if (preselected_row == null) {
 						// no, preselected row, start from the top
 						new_selected_row = $('table tbody tr:first');
@@ -361,7 +490,7 @@
 						new_selected_row = next_row;					}
 				}
 
-				if (e.keyCode == 75) {    // K = previus
+				if (e.which == 106) {    // J = previus
 					if (preselected_row == null) {
 						// no, preselected row, start from the top
 						new_selected_row = $('table tbody tr:first');
@@ -377,7 +506,7 @@
 					}
 
 				}
-				if (e.keyCode == 74 || e.keyCode == 75) {
+				if (e.which == 106 || e.which == 107) {
 					
 					if (new_selected_row.length != 0) {
 						if (preselected_row != null) {
@@ -391,13 +520,11 @@
 
 						//
 
-						$('body').scrollTop(new_selected_row.position().top - $(window).height()/2)
+						$('.tablescroll_wrapper').scrollTop(new_selected_row.position().top - 120)
 					}
 				}
 
-
-
-				if (e.keyCode == 83) {    // s
+				if (e.which == 115) {    // s
 					if (preselected_row.hasClass(select_active_class)) {
 						preselected_row.removeClass(select_active_class)
 					}
@@ -406,26 +533,53 @@
 						$('.preselected_row').removeClass('preselected_row')
 						preselected_row.addClass('preselected_row').addClass(select_active_class)
 					}
-
 				}
 
-				if (e.keyCode == 13) {    // enter
-					selected_rows = get_selected_rows($('#model_groups_table tbody'), select_active_class);
-					console.log($(selected_rows))
-					if (selected_rows.length == 1) {
-						gid = $(selected_rows).data('gid');
-						$.get('/groups/edit/'+gid, function(modal_html) {
-							$("#modal").html(modal_html).modal()
-						})
+				if (e.which == 13) {    // enter
+					if (modal.is(':hidden')) {
+						selected_rows = get_selected_rows($('#model_groups_table tbody'), select_active_class);
+						console.log($(selected_rows))
+						if (selected_rows.length == 1) {
+							gid = $(selected_rows).data('gid');
+							$.get('/groups/edit/'+gid, function(modal_html) {
+								$("#modal").html(modal_html).modal()
+							})
+						}
+						else if (selected_rows.length > 1) {
+							$('#massive_edit').click()
+						}
 					}
-					else if (selected_rows.length > 1) {
-						console.log("mass edit", selected_rows)
-					}
+
 
 
 				}
+				
+				if (e.which == 112) {    // p => mass perm
+					$('#massive_permissive').click()
+				}
+				if (e.which == 120) {    // x => mass export
+					$('#massive_export').click()
+				}
+				if (e.which == 108) {    // l => mass skel
+					$('#massive_skel').click()
+				}
 
-			});
+
+				/* page parts selection mecanism */
+				/*if (e.keyCode == 102) {    // f => focus search field
+					$('#list_search').focus();
+					// stop propagation and default to avoid "f" in search field
+					e.preventDefault();
+					e.stopPropagation();
+				}*/
+				//if (e.keyCode == 76 && e.shiftKey) {    // shift + l => focus list
+				//	console.log('alt+l')
+				//	$('#model_groups_table').focus();
+				//	e.preventDefault();
+				//	e.stopPropagation();
+				//}
+
+			});	
 
 		}
 	</script>

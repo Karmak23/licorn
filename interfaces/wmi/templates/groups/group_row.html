@@ -1,13 +1,13 @@
 {%- macro get_group_type_img(group) -%}
 
 	{% if group.is_privilege %}
-		<img src="/media/images/16x16/group_priv.png" alt='privileged group image' title="{{ _('Privileged group') }}"/>
+		<i title="{{ _('Privileged group') }}" class="icon-glass licorn_tooltip"></i>
 	{% elif group.is_system_restricted %}
-		<img src="/media/images/16x16/group_rst.png" alt='restricted group image' title="{{ _('Restricted group') }}"/>
+		<i title="{{ _('Restricted system group') }}" class="icon-warning-sign licorn_tooltip"></i>
 	{% elif group.is_system %}
-		<img src="/media/images/16x16/group_sys.png" alt='system group image' title="{{ _('System group') }}"/>
+		<i title="{{ _('System group') }}" class="icon-wrench licorn_tooltip"></i>
 	{% elif group.is_standard %}
-		<img src="/media/images/16x16/group_std.png" alt='standard group image' title="{{ _('Standard group') }}"/>
+		<i title="{{ _('Standard group') }}" class="icon-map-marker licorn_tooltip"></i>
 	{% endif %}
 {%- endmacro -%}
 
@@ -60,29 +60,41 @@
 
 
 <tr class='licorn_row {{ get_group_filter_class(group) }}' data-gid="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}'>
-	<!-- permissive -->
-	<td class='centered' data-sort='{{ group.is_permissive }}' data-search="">
-		{{ get_group_permissivness_img(group) }}
-	</td>
 	<!-- type -->
-	<td class='centered' data-search="{{ get_group_type(group) }}">
+	<td class='centered' width="5%" data-search="{{ get_group_type(group) }}">
 		{{ get_group_type_img(group) }}
 	</td>
+	<!-- permissive -->
+	<td class='centered' width="10%" data-sort='{{ group.is_permissive }}' data-search="">
+		<a href="/groups/massive/permissivness/{{group.gid}}" class="ajaxized_link">{{ get_group_permissivness_img(group) }}</a>
+	</td>
 	<!-- name -->
-	<td data-sort="{{ group.name }}" data-search="{{ group.name }}">
-		<span>{{ group.name }}<span>
+	<td data-sort="{{ group.name }}" width="10%" data-search="{{ group.name }}">
+		{%- if group.is_standard -%}
+			<strong>
+		{%- elif group.is_privilege -%}
+			<em>
+		{%-endif-%}
+
+		<span>{{ group.name }}</span>
+
+		{%- if group.is_standard -%}
+			</strong>
+		{%- elif group.is_privilege -%}
+			</em>
+		{%-endif-%}
 	</td>
 	<!-- description -->
-	<td data-sort="{{ group.name }}" data-search="{{ group.name }}">
-		<span>{{ group.description }}<span>
+	<td data-sort="{{ group.name }}" width="55%" data-search="{{ group.name }}">
+		<span>{{ group.description }}</span>
 	</td>
 	<!-- gidNumber -->
-	<td data-sort="{{ group.gidNumber }}" data-search="{{ group.name }}">
-		<span>{{ group.gidNumber }}<span>
+	<td data-sort="{{ group.gidNumber }}" width="5%" data-search="{{ group.name }}">
+		<div class="centered">{{ group.gidNumber }}</div>
 	</td>
 	<!-- skel -->
-	<td data-search="{{ group.groupSkel }}">
-		<span title="{{ group.groupSkel }}">{{ group.groupSkel.split('/')[-1] }}<span>
+	<td data-search="{{ group.groupSkel }}" width="10%" class="centered">
+		<a href='#' class='licorn_tooltip' title="{{ group.groupSkel }}">{{ group.groupSkel.split('/')[-1] }}</div>
 	</td>
 	
 	

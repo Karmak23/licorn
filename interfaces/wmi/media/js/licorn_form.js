@@ -38,6 +38,7 @@ $(document).ready(function() {
 })
 
 function init_instant_click(div) {
+	console.log(">>>>>", $(div), $(div).find('.instant_click'))
 	$(div).find('.instant_click').click(function(){
 		console.log('instant click')
 		$.get($(this).data('instant-url'))
@@ -64,11 +65,26 @@ function init_instant_click(div) {
 
 }
 
-var relationships = [ 'no_membership', 'guest', 'member', 'resp' ]
+var button_types = [ 'default', 'primary', 'success', 'danger', 'warning' ];
 
 function update_relationship(item_id, rel_id) {
 	/* Update the relationship of an element */
+	console.log('update', item_id, rel_id)
 
+	// find the popover
+	popover = $('#popover_'+item_id)
+	//show all relationship and hide the current
+	popover.find('.btn').show()
+	popover.find('.rel_'+rel_id).hide()
+
+	// update the current click_item
+	btn = $('#btn_'+item_id)
+	console.log("btn", btn)
+	btn.removeClass('btn-default btn-primary btn-success btn-danger btn-warning').addClass('btn-'+button_types[rel_id])
+
+
+
+	/*
 	new_rel = relationships[rel_id];
 	div = $(".click_item#"+item_id);
 	popover = $('.popover_item').filter('#'+item_id).parent();
@@ -83,6 +99,6 @@ function update_relationship(item_id, rel_id) {
 
 	div.find('.item_title')
 		.removeClass('no_membership_bkg guest_bkg member_bkg resp_bkg incomplete_bkg')
-		.addClass(new_rel+'_bkg');
+		.addClass(new_rel+'_bkg');*/
 }
 

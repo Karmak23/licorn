@@ -10,7 +10,7 @@ Licorn® WMI - groups views
 :license: GNU GPL version 2
 """
 
-import os, time, tempfile, json, csv
+import os, time, tempfile, json, csv, types
 from operator import attrgetter
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers       import reverse
@@ -402,36 +402,9 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 		utils.notification(request, _('Building group {0} form, please wait…').format(
 			_('edit') if action == 'edit' else _('creation')), 3000 + 5 * nusers, 'wait_for_rendering')
 
-	users_list = [ (_('Standard users'),{
-					'group' : group,
-					'name'  : 'standard',
-					'users' : utils.select('users', default_selection=filters.STANDARD)
-				}) ]
+	return get_group_template(request, action, group)
 
-	# if super user append the system users list
-	if request.user.is_superuser:
-		users_list.append( ( _('System users') ,  {
-			'group' : group,
-			'name'  : 'system',
-			'users' : utils.select('users', default_selection=filters.SYSTEM)
-		}))
-
-	# we need to sort the form_blocks dict to display headers in order
-	sorted_blocks = OrderedDict({})
-	form_blocks = get_group_form_blocks(request)
-	for k in sorted(form_blocks.iterkeys()):
-		sorted_blocks.update({ k: form_blocks[k]})
-
-	print "form_blocks", sorted_blocks
-
-	_dict = {
-				'mode'    	  : action,
-				'group'       : group,
-				'form'        : GroupForm(action, group),
-				'users_lists' : users_list,
-				'form_blocks' : sorted_blocks,
-			}
-
+	"""
 	if request.is_ajax():
 
 		# TODO: use utils.format_RPC_JS('remove_notification', "wait_for_rendering")
@@ -452,7 +425,7 @@ def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 				'system_groups_list'     : sys_groups})
 
 		# TODO: use utils.format_RPC_JS('remove_notification', "wait_for_rendering")
-		return render(request, 'groups/group_template.html', _dict)
+		return render(request, 'groups/group_template.html', _dict)"""
 
 @staff_only
 def main(request, sort="login", order="asc", select=None, *args, **kwargs):
@@ -490,36 +463,66 @@ def massive_select_template(request, action_name, gids, *args, **kwargs):
 			"archive_dir" : settings.home_archive_dir, 
 			'admin_group' : settings.defaults.admin_group })
 	if action_name == 'edit':
-		users_list = [ (_('Standard users'),{
-						'groups' : groups,
-						'name'  : 'standard',
-						'users' : utils.select('users', default_selection=filters.STANDARD)
-					}) ]
-
-		# if super user append the system users list
-		if request.user.is_superuser:
-			users_list.append( ( _('System users') ,  {
-				'groups' : groups,
-				'name'  : 'system',
-				'users' : utils.select('users', default_selection=filters.SYSTEM)
-			}))
-
-		# we need to sort the form_blocks dict to display headers in order
-		sorted_blocks = OrderedDict({})
-		form_blocks = get_group_form_blocks(request)
-		for k in sorted(form_blocks.iterkeys()):
-			sorted_blocks.update({ k: form_blocks[k]})
-
-		_dict.update({
-					'gids'        : gids,
-					'mode'    	  : "massiv",
-					'title'       : _("Massive edit"),
-					'form'        : GroupForm("massiv", group),
-					'users_lists' : users_list,
-					'form_blocks' : sorted_blocks
-				})
-		template = '/groups/group.html'
+		return get_group_template(request, "massiv", groups)
 
 	return HttpResponse(
-		render_to_string(template if template != None else 'groups/parts/massive_{0}.html'.format(action_name),
+		render_to_string('groups/parts/massive_{0}.html'.format(action_name),
 			_dict))
+
+
+
+def get_group_template(request, mode, groups):
+	print "get_group_template", mode, groups
+
+	if type(groups) != types.ListType:
+		groups = [ groups ]
+	
+	_dict = {}
+
+
+	users_lists = [
+		{
+			'list_name'    : 'standard',
+			'list_content' : ''.join([render_to_string('/groups/parts/user_membership.html', {
+				'groups' : groups,
+				'user'  : u
+				}) for u in LMC.users.select(filters.STANDARD)])
+		}
+	]
+
+	# if super user append the system users list
+	if request.user.is_superuser:
+		users_lists.append(
+			{
+				'list_name'    : 'system',
+				'list_content' : ''.join([render_to_string('/groups/parts/user_membership.html', {
+					'groups' : groups,
+					'user'  : u
+					}) for u in LMC.users.select(filters.SYSTEM)])
+			}
+		)
+		"""users_list.append( ( _('System users') ,  {
+			'groups' : groups,
+			'name'  : 'system',
+			'users' : utils.select('users', default_selection=filters.SYSTEM)
+		}))"""
+
+	# we need to sort the form_blocks dict to display headers in order
+	sorted_blocks = OrderedDict({})
+	form_blocks = get_group_form_blocks(request)
+	for k in sorted(form_blocks.iterkeys()):
+		sorted_blocks.update({ k: form_blocks[k]})
+
+	_dict.update({
+				'mode'    	  : mode,
+				'title'       : _("Massive edit"),
+				'form'        : GroupForm(mode, groups[0]),
+				'users_lists' : users_lists,
+				'form_blocks' : sorted_blocks
+			})
+	if mode == 'edit':
+		_dict.update({"group" : groups })
+
+	#print "rendering group.html", _dict
+
+	return render(request, '/groups/group.html', _dict)
