@@ -24,6 +24,7 @@ from django.utils.translation       import ugettext as _
 
 from licorn.foundations             import logging, settings, fsapi
 from licorn.foundations.constants   import priorities
+from licorn.foundations.workers     import workers
 from licorn.foundations.styles      import *
 from licorn.foundations.ltrace      import *
 from licorn.foundations.ltraces     import *
@@ -50,9 +51,14 @@ def toggle_shares(request, state):
 		No need to @login_required. """
 
 	login = request.user.username
+	user  = LMC.users.by_login(login)
 
 	try:
-		LMC.users.by_login(login).accepts_shares = state
+		user.accepts_shares = state
+
+		if state:
+			# Be sure all shares have a short URL, or will have soon.
+			workers.network_enqueue(priorities.LOW, user.check_shares(batch=True))
 
 	except Exception, e:
 		logging.exception(_(u'Could not toggle simple shares status to '
@@ -130,7 +136,12 @@ def password(request, shname, newpass, **kwargs):
 def index(request, sort="date", order="asc", **kwargs):
 	""" Main backup list (integrates volumes). """
 
-	return render(request, 'shares/index.html', wmi_data.base_data_dict(request))
+	_data = wmi_data.base_data_dict(request)
+
+	# Be sure all shares have a short URL, or will have soon.
+	workers.network_enqueue(priorities.LOW, _data['user'].check_shares(batch=True))
+
+	return render(request, 'shares/index.html', _data)
 
 # ================================================================ public views
 # no login required for these, they are voluntarily public, to be able
@@ -139,6 +150,7 @@ def serve(request, login, shname):
 	""" Serve a share to web visitors. """
 	try:
 		user  = LMC.users.by_login(login)
+
 	except KeyError:
 		return HttpResponseNotFound(_('No Web share for this user, sorry.'))
 

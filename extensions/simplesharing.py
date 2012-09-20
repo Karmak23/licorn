@@ -372,6 +372,8 @@ class SimpleShare(PicklableObject):
 					logging.info(_(u'{0}: short URL successfully set '
 										u'to {1}.').format(self, self.uri))
 
+					LicornEvent('share_short_url_set', share=self).emit(priorities.LOW)
+
 				else:
 					logging.warning(_(u'{0}: short URL request failed '
 								u'(was: code={1}, message={2}).').format(self,
