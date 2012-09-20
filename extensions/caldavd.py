@@ -32,15 +32,19 @@ from licorn.extensions import ServiceExtension
 
 from calendarserver.tools.principals   import action_addProxy, addProxy, principalForPrincipalID
 from calendarserver.tools.util         import getDirectory, loadConfig, setupMemcached
-from twistedcaldav.config              import config
+from twistedcaldav.config              import config, ConfigDict
 from twistedcaldav.directory.directory import DirectoryRecord
+
+
+from twistedcaldav.directory.directory import DirectoryService
+
 
 
 
 
 ## {{{ http://code.activestate.com/recipes/577739/ (r4)
 from xml.dom.minidom import Document
-import copy
+import copy, types
 
 class dict2xml(object):
     doc     = Document()
@@ -159,6 +163,44 @@ class XML2Dict(object):
 
         return self._make_dict(EL.tag, self._parse_node(EL), EL.attrib)
 
+def my_Configdict2xmlEtree(_dict):
+	"""returns xml"""
+	root = ET.Element('dict')
+
+
+	for k,v in _dict.iteritems():
+		#print k, v
+		elem = ET.Element('key')
+		elem.text = k
+
+		root.append(elem)
+		#print type(v)
+		if type(v) == types.StringType:
+			elem_value = ET.Element('string')
+			elem_value.text = v
+		if type(v) == types.BooleanType:
+			if v:
+				elem_value = ET.Element('true')
+			else:
+				elem_value = ET.Element('false')
+		if type(v) == types.IntType:
+			elem_value = ET.Element('integer')
+			elem_value.text = str(v)
+		if type(v) == types.NoneType:
+			elem_value = ET.Element('string')
+
+		if isinstance(v, ConfigDict) or type(v) == types.DictType:
+			elem_value = my_Configdict2xmlEtree(v)
+
+		root.append(elem_value)
+
+	return root
+
+
+
+
+
+
 
 class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	""" Handles Apple Calendar Server configuration and service.
@@ -234,10 +276,85 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 
 		# config
-		
+		self.default_config = LicornConfigObject()
+		self.default_config.ldap_directory = { 
+			
+			'type': 'twistedcaldav.directory.ldapdirectory.LdapDirectoryService', 
 
-		d = XML2Dict(coding='utf-8').parse(open(self.paths.configuration, 'r').read())
-		print d
+			'params': {
+				'tls': False, 
+				'restrictToGroup': '',
+				'resourceSchema': {
+					'autoScheduleEnabledValue': 'yes',
+					'resourceInfoAttr': '',
+					'readOnlyProxyAttr': '',
+					'proxyAttr': '',
+					'autoScheduleAttr': ''
+				}, 
+				'restrictEnabledRecords': False, 
+				'groupSchema': {
+					'memberIdAttr': '', 
+					'nestedGroupsAttr': '', 
+					'membersAttr': 'memberUid'
+				}, 
+				'uri': 'ldap:///', 
+				'tlsRequireCert': 'never', 
+				'rdnSchema': {
+					'users': {
+						'emailSuffix': '', 
+						'attr': 'uid', 
+						'calendarEnabledAttr': '', 
+						'mapping': {
+							'recordName': 'cn', 
+							'lastName': 'sn', 
+							'fullName': 'gecos', 
+							'emailAddresses': 'mail', 
+							'firstName': 'givenName'
+						}, 
+						'filter': '', 
+						'calendarEnabledValue': 'yes', 
+						'loginEnabledAttr': '', 
+						'rdn': 'ou=People', 
+						'loginEnabledValue': 'yes'
+					}, 
+					'guidAttr': 'entryUUID', 
+					
+					'base': 'dc=meta-it,dc=local', 
+					'groups': {
+						'emailSuffix': '', 
+						'filter': '', 
+						'rdn': 'ou=Groups', 
+						'attr': 'cn', 
+						'mapping': {
+							'recordName': 'cn', 
+							'lastName': 'sn', 
+							'fullName': 'cn', 
+							'emailAddresses': 'mail', 
+							'firstName': 'givenName'
+						}
+					}, 
+					
+				},
+				'tlsCACertDir': '', 
+				'cacheTimeout': 30, 
+				'credentials': {
+					'dn': 'cn=admin,dc=meta-it,dc=local', 
+					'password': 'metasecret' 
+				}, 
+				'tlsCACertFile': '',
+				'authMethod': 'PAM'
+			}
+		}
+
+
+		self.default_config.xml_directory = { 
+			'type': 'twistedcaldav.directory.xmlfile.XMLDirectoryService', 
+			'params': {
+				'xmlFile': '/etc/caldavd/accounts.xml'
+			}
+		}
+		#d = XML2Dict(coding='utf-8').parse(open(self.paths.configuration, 'r').read())
+		#print d
 
 
 
@@ -279,6 +396,24 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					stylize(ST_NAME, self.service_name)))
 
 		return self.available
+	def switch_directoryService(self, key):
+		# load calendarserver config file
+		config_xml = my_Configdict2xmlEtree(self.default_config.ldap_directory if key=='ldap' else self.default_config.xml_directory)
+
+		# Relaod the whole xml file in order to modify the correct "DirectoryService" part.
+		
+		xml_parsed = ET.parse(self.paths.configuration)
+
+		count_ref = None
+
+		for count, i in enumerate(xml_parsed.iter()):
+			if i.text == 'DirectoryService':
+				count_ref = int(count)
+
+		xml_parsed.getroot()[0][count_ref - 1] = config_xml
+
+		xml_parsed.write(self.paths.configuration)
+
 	def check(self, batch=False, auto_answer=None):
 		""" Check eveything needed for the caldavd extension and service.
 			Currently we just check ``chmod`` on caldavd files (because they
@@ -291,45 +426,36 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				os.chmod(filename, 0640)
 
 
-		# load calendarserver config file
-		calendarserver_conf = readers.xml_load_tree(self.paths.configuration)
+		
 
-		print calendarserver_conf
+		
 
+		#print calendarserver_conf
 		shadow_backend = LMC.backends.guess_one('shadow')
 		ldap_backend   = LMC.backends.guess_one('openldap')
 
-		conf = conffromxml
-		need_rewrite = False
-		current_dir_service = getdirservicefromxml
 
-		if ldap_backend.active:
-			if current_dir_service != ldap:
-				need_rewrite = True
+		need_reload = False
+		current_dir_service = config.DirectoryService.type
 
+		if ldap_backend.enabled:
+			if current_dir_service != "twistedcaldav.directory.ldapdirectory.LdapDirectoryService":
+				need_reload = True
+				self.switch_directoryService('ldap')
 
-			# if ldap is active, all calendarserver information are taken from LDAP
-			
-			# put config elements to use ldap backends
-			pass
-
-
-		elif shadow_backend.active:
-			if current_dir_service == ldap:
-				need_rewrite = True
-			# we need to use account.xml
-
-			# put config elements to use xml backend
-			pass
+		elif shadow_backend.enabled:
+			if current_dir_service == "twistedcaldav.directory.ldapdirectory.LdapDirectoryService":
+				need_reload = True
+				self.switch_directoryService('xml')
 
 
-		if need_rewrite:
+		if need_reload:
 			# save config in xml file
 			self.service(svccmds.RELOAD)
 
 		# after reload check existing users/groups
 
-		if not ldap_backend.active:
+		if not ldap_backend.enabled:
 			# check if already existing STD users have a calendar.
 			for user in LMC.users.select(filters.STANDARD):
 				if not self.check_if_element_has_calendar('users', user.login):
@@ -379,8 +505,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		self.data.accounts  = readers.xml_load_tree(self.paths.accounts)
 		self.data.resources = readers.xml_load_tree(self.paths.resources)
 
-		self.data.configuration = readers.plist_load_dict(
-											self.paths.configuration)
+		# self.data.configuration = readers.plist_load_dict(
+		#									self.paths.configuration)
 	def is_enabled(self):
 		""" Return ``True`` if the directive ``start_calendarserver`` is set to
 			``yes`` in the service configuration file
