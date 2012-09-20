@@ -19,7 +19,7 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import ObjectSingleton
-from licorn.foundations.classes   import PicklableObject
+from licorn.foundations.classes   import PicklableObject, FileLock
 from licorn.foundations.constants import services, svccmds, distros, priorities
 
 from licorn.core                  import LMC
@@ -78,8 +78,9 @@ class SimpleShare(PicklableObject):
 		# We've got to create an ID which is somewhat unique, but non-moving
 		# when re-instanciating the share over time. The ctime makes a good
 		# canditate to help the name, which can collide if used alone.
-		self.__shid = hlstr.validate_name(self.__name, custom_keep='', replace_by='_') \
-									 + str(int(os.stat(directory).st_ctime))
+		self.__shid = hlstr.validate_name(self.__name, custom_keep='',
+										replace_by='_') + str(int(
+											os.stat(directory).st_ctime))
 
 		# a method used to encrypt passwords
 		self.compute_password = coreobj.backend.compute_password
@@ -158,6 +159,11 @@ class SimpleShare(PicklableObject):
 	@property
 	def share_configuration_file(self):
 		return os.path.join(self.__path, self.__class__.share_file)
+	@property
+	def url_lock(self):
+		return FileLock(LMC.configuration,
+						os.path.join(self.__path, self.__class__.share_file),
+						verbose=False)
 	@property
 	def uploads_directory(self):
 		return os.path.join(self.__path, self.__class__.uploads_dir)
@@ -338,6 +344,11 @@ class SimpleShare(PicklableObject):
 		# NOTE: don't test "if self.uri not in (None, '')": in case the URL
 		# changed on the central server, we'd better request an update.
 
+		if not self.url_lock.is_locked():
+			logging.warning2(_(u'{0}: `self.url_lock` was unlocked; this is '
+								u'probably a developper error.').format(self))
+			self.url_lock.acquire()
+
 		m = LMC.extensions.mylicorn
 
 		retrigger = False
@@ -376,10 +387,16 @@ class SimpleShare(PicklableObject):
 								u'URL request.').format(self, m.pretty_name))
 			retrigger = True
 
+		# Allow next call.
+		self.url_lock.release()
+
 		if retrigger:
+			# See self.check() for lock-acquiring-related explanation.
+			self.url_lock.acquire()
+
 			# Random the job delay to avoid doing all next calls at once.
 			workers.network_enqueue(priorities.LOW, self.request_short_url,
-								job_delay=float(random.randint(60, 120)))
+									job_delay=float(random.randint(60, 120)))
 	def check(self, batch=False, auto_answer=None, full_display=True):
 		""" Check the share parameters. For the moment, it just makes sure
 			the share has a short URL, else it will request one.
@@ -388,7 +405,13 @@ class SimpleShare(PicklableObject):
 				development to production or vice-versa), the URLs will not
 				be updated. This is not a bug, just worth noting. """
 
-		if self.uri in (None, ''):
+		if self.uri in (None, '') and not self.url_lock.is_locked():
+
+			# We acquire the lock before launching the Worker, to avoid
+			# lauching more than one worker at once: the lock must be already
+			# taken while the worker pauses on the job delay, else we could
+			# have many workers waiting at the same time.
+			self.url_lock.acquire()
 			workers.network_enqueue(priorities.LOW, self.request_short_url)
 class SimpleSharingUser(object):
 	""" A mix-in for :class:`~licorn.core.users.User` which add simple file
