@@ -10,6 +10,7 @@
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.uitablefilter.js"></script>
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.iselectable.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/sorttable.js"></script>
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.tablescroll.js"></script>
 
 	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/ug-popover.css" />
@@ -114,7 +115,7 @@
 			var END_TIME = new Date().getTime();
 			totalTime = (END_TIME - START_TIME);
 
-			console.log(totalTime)
+			console.log("total time to setup list", totalTime)
 
 			{%- if edit_html -%} 
 				$("#machine_modal").modal();
@@ -176,7 +177,6 @@
 
 
 
-
 				/*$.each($('.not_filtered.not_hidden'), function() {
 					var _this = $(this);
 					td = _this.find('td:visible')
@@ -194,6 +194,9 @@
 				})*/
 			})
 
+			
+
+
 			// make rows selectable
 			setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me');
 
@@ -204,6 +207,7 @@
 			// setup doubleclick on each rows
 			setup_table_row_doubleclick($('#model_groups_table tbody td'), groups_doubleclick_row);
 			// setup the sort plugin
+			// PERF ISSUE
 			//setup_table_sorter([[2,0]]);
 
 			//massives actions
@@ -213,7 +217,8 @@
 
 			setup_ajaxized_link($('#model_groups_table tbody td'));
 
-			$('.licorn_tooltip').tooltip()
+			// PERF ISSUE
+			//$('.licorn_tooltip').tooltip()
 		}
 
 		// to move in common.js
@@ -256,8 +261,7 @@
 				$.each(filters, function(name, on_state) {
 					filter_items = $('#table_tbody .filter_'+name+'')
 					if (on_state) {
-						filter_items.addClass('not_filtered').removeClass('filtered')
-						filter_items.find(':not(.hidden)').css('display', '')
+						filter_items.addClass('not_filtered').removeClass('filtered').css('display', '')
 					}
 					else {
 						filter_items.removeClass('not_filtered').addClass('filtered').css('display', 'none');
@@ -333,10 +337,11 @@
 			// on row hover, always clean interface in case of previus preselection with keyboard
 			$('#model_groups_table tbody tr').hover(function(){
 				//in
-				$('#model_groups_table tr').css({"background-color":"none"})
+				//$('#model_groups_table tr').css({"background-color":"none"})
+				// change the background color to preselect it
 				$(this).css({'background-color': background_color_hover})
 
-				//$('.preselected_row').removeClass('preselected_row')
+				$('.preselected_row').removeClass('preselected_row').css({"background-color":"none"})
 				//$(this).addClass('preselected_row')
 
 			}, function() {
@@ -349,7 +354,26 @@
 
 
 
-
+		function sortTable(){
+		    var tbl = document.getElementById("model_groups_table").tBodies[0];
+		    var store = [];
+		    for(var i=0, len=tbl.rows.length; i<len; i++){
+		        var row = tbl.rows[i];
+		        console.log($(row))
+		        console.log($(row.cells[0]).html())
+		        //var sortnr = parseFloat(row.cells[0].textContent || row.cells[0].innerText);
+		        var sortnr = $(row.cells[0]).html();
+		        console.log(sortnr)
+		        if(!isNaN(sortnr)) store.push([sortnr, row]);
+		    }
+		    store.sort(function(x,y){
+		        return x[0] - y[0];
+		    });
+		    for(var i=0, len=store.length; i<len; i++){
+		        tbl.appendChild(store[i][1]);
+		    }
+		    store = null;
+		}
 
 
 
@@ -403,18 +427,23 @@
 
 	
 		function bind_keys() {
+			searchb = $('#list_search');
+			modal = $('#modal')
+
 
 			$(document).keyup(function(e) {
 				console.log("keyup", e.which )
 
 				if (e.which == 8 || e.which == 46) {    // SUPPR => mass delete
-					$('#massive_delete').click()
+					if (! searchb.is(':focus')) {
+						$('#massive_delete').click()
+					}
 				}
 
 				if (e.which == 27) {    // ESC
 					// on ESC, first remove search content, secondly unselect row
-					modal = $('#modal')
-					searchb = $('#list_search');
+					
+					
 					
 					console.log("modal visible", modal.is(':visible'))
 					console.log("search box focus", searchb.is(':focus'))
@@ -513,14 +542,13 @@
 							// unpreselect preselected_row
 							preselected_row.css({'background-color': "none"})
 						}
-						console.log("setting preselected_row")
 						$('.preselected_row').removeClass('preselected_row')
 					
 						new_selected_row.addClass('preselected_row').css({'background-color' : background_color_hover})
 
-						//
-
-						$('.tablescroll_wrapper').scrollTop(new_selected_row.position().top - 120)
+						// scroll the body to have the selected row at the middle of the screen
+						// NOTE : in chrome, selecting body is ok, but in FF we need to select html...
+						$('body,html').scrollTop(new_selected_row.position().top - $(window).height() / 2)
 					}
 				}
 
@@ -554,16 +582,17 @@
 
 				}
 				
-				if (e.which == 112) {    // p => mass perm
-					$('#massive_permissive').click()
+				if (! searchb.is(':focus')) {
+					if (e.which == 112) {    // p => mass perm
+						$('#massive_permissive').click()
+					}
+					if (e.which == 120) {    // x => mass export
+						$('#massive_export').click()
+					}
+					if (e.which == 108) {    // l => mass skel
+						$('#massive_skel').click()
+					}
 				}
-				if (e.which == 120) {    // x => mass export
-					$('#massive_export').click()
-				}
-				if (e.which == 108) {    // l => mass skel
-					$('#massive_skel').click()
-				}
-
 
 				/* page parts selection mecanism */
 				/*if (e.keyCode == 102) {    // f => focus search field
