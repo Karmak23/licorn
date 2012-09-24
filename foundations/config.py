@@ -1,0 +1,859 @@
+# -*- coding: utf-8 -*-
+"""
+Licorn foundations: configuration parser - http://docs.licorn.org/
+
+This configuration parser is completely generic. It's based on
+:py:mod:`pygments`, and reads any configuration file into an object able to
+modify it without altering comments, directive ordering, etc.
+
+It implements directive dependancies (eg. “acl directives come before
+http_access directive”) and same-directive ordering (eg. “correct ordering
+for moultiple allow,deny directives”), in memory parse-from-strings objects,
+2-objects merging (with configurable conflicts behaviour but only
+per-object behaviour, not per-directive), and full check of configuration
+objects. Obviously it implements save/write.
+
+It is meant to allow automated configuration alteration without interfering
+with human editing, as much as possible. See Licorn® extensions which use this
+module, for details and philosophy.
+
+.. versionadded:: 1.6
+
+:copyright:
+	* 2010-2012 Olivier Cortès <olive@licorn.org>
+	* partial 2011-2012 META IT http://meta-it.fr/
+
+:license: GNU GPL version 2
+
+"""
+
+# Python imports
+import itertools
+
+# Pygments imports
+from pygments.token      import *
+from pygments.filters    import RaiseOnErrorTokenFilter
+from pygments.formatters import Terminal256Formatter, NullFormatter
+
+# Other Licorn® foundations imports
+import exceptions, styles
+from styles  import *
+from ltrace  import ltrace, ltrace_func, ltrace_var
+from ltraces import TRACE_FOUNDATIONS, TRACE_CONFIG
+
+stylize = styles.stylize
+
+class ConfigurationToken:
+	""" Very small and read-only-typed configuration token (the value can be
+		changed, not the type; it is a pygments type).
+
+		The R/O implementation lies in python properties.
+		The very small nature, thanks to __slots__.
+	"""
+	__slots__ = ('__type', '__value')
+
+	def __init__(self, ttype, value):
+		self.__type  = ttype
+		self.__value = value
+
+		assert ltrace_func(TRACE_CONFIG, 1)
+	def __str__(self):
+		return self.value
+	def __repr__(self):
+		return '%s(%s), %s(%s)' % (self.__class__.__name__, self.__type,
+									type(self.__value), self.value)
+	@property
+	def type(self):
+		return self.__type
+	@property
+	def value(self):
+		return self.__value
+	@value.setter
+	def value(self, newval):
+		self.__value = newval
+	def to_pygments(self):
+		return self.__type, self.__value
+class ConfigurationBlock:
+	""" Represents a standard and usually useless configuration block. Holds
+		tokens which are not considered as a real value for a given
+		configuration file (typically: Comments), but must be kept for the
+		administrator to remain happy when he/she edits the configuration
+		file manually. """
+
+	# gentle memory use. We can have a lot of blocks coming from lots of files.
+	__slots__ = ( 'value', 'parent', )
+
+	def __init__(self, value, parent):
+
+		self.value  = value
+		self.parent = parent
+
+		assert ltrace_func(TRACE_CONFIG, 1)
+	def __str__(self):
+		return ''.join(str(x) for x in self.value)
+	def __repr__(self):
+		return '%s: %r' % (self.__class__.__name__, self.value)
+	@property
+	def flatenned(self):
+		return self.value
+class ConfigurationDirective:
+
+	# reverse index for quick finding configuration directives
+	_by_name = {}
+
+	@classmethod
+	def by_name(cls, caller, directive):
+		return cls._by_name['%s_%s' % (caller, directive)]
+
+	# gentle memory use. standard configuration files can hold a bunch of directives.
+	__slots__ = ('lineno', 'name', 'name_token', 'value', 'parent', 'end_tokens', )
+
+	def __init__(self, lineno, name, value, parent):
+		self.parent = parent
+		self.lineno = lineno
+
+		# name is a token, let's store the string/unicode value solely
+		# for faster access.
+		self.name_token = name
+		self.name	    = name.value
+
+		self.end_tokens = []
+
+		try:
+			# Strip the eventual (error-prone and useless) end-of-line
+			# Comment and Whitespace from our real value, but keep them safe
+			# for the rendering phase.
+			while value[-1].type in self.parent.useless_types:
+				self.end_tokens[0:0] = [ value[-1] ]
+				del value[-1]
+
+		except IndexError:
+			pass
+
+		self.value = value
+
+		index_key = '%s_%s' % (parent, name)
+
+		curvals = self.__class__._by_name.get(index_key, [])
+		curvals.append(self)
+		self.__class__._by_name[index_key] = curvals
+
+		assert ltrace_func(TRACE_CONFIG, 1)
+	def __eq__(self, other):
+		""" Return ``True`` if the current directive is the same as the other,
+			else ``False``.
+
+			.. note::
+				* whitespaces are not tested (they can be different, this
+				  is not a problem in the vas majority of cases), only names,
+				  keywords, values and other sort of valuable things.
+				* line-numbers are not tested, because same directives can
+				  exist at different places of 2 configurations files without
+				  any problem. If you want full equality, test self.lineno too.
+
+		"""
+
+		if self.name != other.name:
+			assert ltrace(TRACE_FOUNDATIONS, ' %s directive name %s != %s' % (
+								self.__class__.__name__, self.name,other.name))
+			return False
+
+		# Assuming same lenght of two directives coming from 2 different files
+		# is possible because Comments have been stripped out at instanciation.
+		if len(self.value) != len(other.value):
+			assert ltrace(TRACE_FOUNDATIONS, ' %s lengths %s != %s' % (
+				self.__class__.__name__, len(self.value), len(other.value)))
+			return False
+
+		for one, two in zip(self.value, other.value):
+
+			if one.type != two.type:
+				assert ltrace(TRACE_FOUNDATIONS, ' %s value type %s != %s' % (
+								self.__class__.__name__, one.type, two.type))
+				return False
+
+			# we don't care about separators, they can be different in most
+			# cases. don't assume the directives are unequal for that.
+			if one.type == Whitespace:
+				continue
+
+			if one.value != two.value:
+				assert ltrace(TRACE_FOUNDATIONS, ' %s value content %s != %s' % (
+								self.__class__.__name__, one.value, two.value))
+				return False
+
+		return True
+	def __ne__(self, other):
+		""" Return ``True`` if the current directive is NOT the same as the
+			other, else ``False``. See :meth:`__eq__` for notes. """
+
+		if self.name != other.name:
+			assert ltrace(TRACE_FOUNDATIONS, ' %s directive name %s != %s' % (
+							self.__class__.__name__, self.name, other.name))
+			return True
+
+		# assuming same lenght is possible because comments have been
+		# stripped out at ConfigurationDirective instanciation.
+		if len(self.value) != len(other.value):
+			assert ltrace(TRACE_FOUNDATIONS, ' %s lengths %s != %s' % (
+				self.__class__.__name__, len(self.value), len(other.value)))
+			return True
+
+		for one, two in zip(self.value, other.value):
+
+			if one.type != two.type:
+				assert ltrace(TRACE_FOUNDATIONS, ' %s value type %s != %s' % (
+								self.__class__.__name__, one.type, two.type))
+				return True
+
+			# we don't care about separators, they can be different in most
+			# cases. don't assume the directives are unequal for that.
+			if one.type == Whitespace:
+				continue
+
+			if one.value != two.value:
+				assert ltrace(TRACE_FOUNDATIONS, ' %s value content %s != %s' % (
+								self.__class__.__name__, one.value, two.value))
+				return True
+
+		return False
+	def __str__(self):
+		return '%s%s' % (self.name, ''.join(str(x) for x in self.value))
+	def __repr__(self):
+		return '%s(%s): %r' % (self.__class__.__name__, self.name, self.value)
+	@property
+	def flatenned(self):
+		""" See the current directive as a sequence of simple tokens. """
+		yield self.name_token
+
+		for token in self.value:
+			yield token
+
+		for token in self.end_tokens:
+			yield token
+class ConfigurationFile:
+	""" High level view of a configuration file, tokenized with the help of
+		pygments. Pygments is totally used out of its original scope, because
+		we don't use it for syntax highlightning at all, but for
+		"better than bare-text" configuration-file manipulations.
+
+		:param lexer: a pygments derivated lexer, used to tokenize our
+			configuration file. The lexer can have 2 specials attributes (not
+			known from pygments, specific to Licorn®):
+			* ``_lcn_directives_needing_order``: a list of unicode string
+			  (directives names) for which value order matters. This means
+			  that if we encounter these directives more than once, the order
+			  of their values will be taken in account to determine if 2
+			  directives are the same or not.
+			  To illustrate: in :file:`squid.conf`, we've got multiple "acl"
+			  lines, for which order doesn't matter (they are just definitions).
+			  But for ``http_access`` directives, the order in which you write
+			  them really matters (``deny all`` followed by ``allow localnet``
+			  makes the proxy deny every connection, whereas ``allow localnet``
+			  followed by ``deny all`` does what we want.
+			  ``directives_needing_order`` will thus contain ``http_access``,
+			  to be sure that the configuration file has the default values
+			  in the good order, compared to our reference configuration data.
+			* ``_lcn_directives_dependancies``: a dictionary of unicode strings
+			  (directives names) pointing to lists of unicode strings (other
+			  directives names), to make them depend on each other. This will
+			  help when parsing the configuration file, to check for directives
+			  which are written in the wrong order.
+			  To illustrate and follow our previous example, we will use
+			  ``{ 'http_access': ('acl',), 'icp_access': ('acl',) }``, because
+			  all ``acl`` directives must be written *before* any access
+			  directives (which need them to be defined prior to using them).
+			  This parameter is used only at loading time to detect configuration
+			  errors. We do not dynamically reorder file contents yet (I know
+			  this would be quite cool).
+			* ``_lcn_useless_types``: an optional list of pygments token types,
+			  which are considered useless if encountered in a configuration
+			  directive. We use them to avoid considering end-of-line comments
+			  as directive value. Default value if not set is
+			  ``(Whitespace, Comment)``. Setting it to anything other depends
+			  on your lexer contents and states (see the squid lexer for
+			  an example).
+			* ``_lcn_new_directive_types``: an optional list of pygments token
+			  types, implying that whenever one of them is found means that a
+			  new directive must be created (this is the only way to
+			  distinguish the previous directive from the next one. Default
+			  value if not set is ``(Keyword, )``. Setting it to anything other
+			  depends on your lexer contents and states (see the squid lexer
+			  for an example).
+
+		:param filename: a string (possibly ``None`` if you build a
+			:class:`ConfigurationFile` from a string in memory) containing
+			the full (absolute) path of the configuration file we are
+			controlling/abstracting.
+
+		:param text: a unicode string (possibly ``None``) holding the full
+			contents of a configuration. This parameter is used when building
+			:class:`ConfigurationFile` instance from memory (reference
+			configuration contents, mostly).
+
+		.. note:: the configuration file holds many views of its contents, to
+			speed up manipulations and ease runtime modifications and tests:
+			* an ordered list of all blocks, used to rewrite itself when needed.
+			* an ordered list of all directives, to be able to manipulate them
+			  quickly in a higher-level way.
+			* a dictionnary of directives for which content order matters:
+			  those whose name can be repeated with different contents,
+			  typically acl directives, which all start with the "acl"
+			  keyword (just an example). used in comparisons, mainly.
+
+		.. versionadded:: this class was created during the 1.3 development cycle.
+	"""
+
+	default_useless_types       = (Whitespace, Comment, )
+	default_new_directive_types = (Keyword, )
+
+	def __init__(self, lexer, filename=None, text=None, caller=None):
+		self.blocks                   = []
+		self.directives               = []
+		self.ordered_directives       = {}
+		self.filename                 = filename
+		self.text                     = text
+		self.lexer                    = lexer
+		self.__caller                 = caller
+
+		self.directives_needing_order = lexer._lcn_directives_needing_order \
+										if hasattr(lexer, '_lcn_directives_needing_order') \
+										else None
+
+		self.directives_dependancies  = lexer._lcn_directives_dependancies \
+										if hasattr(lexer, '_lcn_directives_dependancies') \
+										else None
+
+		self.useless_types  = lexer._lcn_useless_types \
+								if hasattr(lexer, '_lcn_useless_types') \
+								else self.__class__.default_useless_types
+
+		self.new_directive_types  = lexer._lcn_new_directive_types \
+								if hasattr(lexer, '_lcn_new_directive_types') \
+								else self.__class__.default_new_directive_types
+
+		self.__changed = False
+		self.load()
+	@property
+	def changed(self):
+		return self.__changed
+	@property
+	def _caller(self):
+		""" read-only property, returning the name of the caller (as a string).
+			The caller can be a thread, a module, another Licorn® object
+			instance, whatever.
+
+			If it is None (not set at creation of the current :class:`ConfigFile`)
+			instance, the name of the current thread will be returned.
+		"""
+		return self.__caller or current_thread().name
+	def __str__(self):
+		return u'%s @0x%x for %s via %s' % (self.__class__.__name__, id(self),
+								self.filename or 'in_memory', self.lexer)
+	def __eq__(self, other):
+		""" Return ``True`` if 2 configuration files are the same which means:
+			* they have the same number of configuration directives, and each
+			  of them have the same value.
+
+			.. note:: the names of the compared configuration files can be
+				  different, this doesn't affect the equality.
+			* """
+
+		if len(self.directives) != len(other.directives):
+			assert ltrace(TRACE_CONFIG, 'different by number of directives {0} != {1}.'.format(
+					len(self.directives), len(other.directives)))
+			return False
+
+		if self.directives_needing_order:
+			if self.directives_needing_order is True:
+
+				compare_sorted  = False
+				compare_ordered = False
+
+				# the only comparison needed is done here.
+				for one, two in zip(self.directives, other.directives):
+					if one != two:
+						assert ltrace(TRACE_CONFIG, 'different [unsorted,unordered] because {0} != {1}.'.format(one, two))
+						return False
+
+			else:
+				compare_sorted  = True
+				compare_ordered = True
+		else:
+			compare_sorted  = True
+			compare_ordered = False
+
+		if compare_sorted:
+			for one, two in zip(sorted(self.directives, key=str),
+								sorted(other.directives, key=str)):
+				if one != two:
+					assert ltrace(TRACE_CONFIG, 'different [sorted] because {0} != {1}.'.format(one, two))
+					return False
+
+		if compare_ordered:
+			if len(self.ordered_directives) != len(other.ordered_directives):
+				assert ltrace(TRACE_CONFIG, 'different [ordered] because not same number of ordered directives.')
+				return False
+
+			for dirname in self.directives_needing_order:
+				if dirname in self.ordered_directives:
+					if dirname in other.ordered_directives:
+						for dir1, dir2 in zip(self.ordered_directives[dirname],
+												other.ordered_directives[dirname]):
+							if dir1 != dir2:
+								assert ltrace(TRACE_CONFIG, 'different [ordered] because {0} != {1}.'.format(dir1, dir2))
+								return False
+					else:
+						return False
+				else:
+					if dirname in other.ordered_directives:
+						assert ltrace(TRACE_CONFIG, 'different [ordered] because {0} not in {2}.'.format(dirname, other))
+						return False
+
+					else:
+						continue
+
+		# If we reach here, nothing has been found different.
+		return True
+	def __ne__(self, other):
+		""" Return ``True`` if 2 configuration files are the same which means:
+			* they have the same number of configuration directives, and each
+			  of them have the same value.
+
+			.. note:: the names of the compared configuration files can be
+				  different, this doesn't affect the equality.
+			* """
+
+		if len(self.directives) != len(other.directives):
+			return True
+
+		if self.directives_needing_order:
+			if self.directives_needing_order is True:
+
+				compare_sorted  = False
+				compare_ordered = False
+
+				# the only comparison needed is done here.
+				for one, two in zip(self.directives, other.directives):
+					if one != two:
+						return True
+
+			else:
+				compare_sorted  = True
+				compare_ordered = True
+		else:
+			compare_sorted  = True
+			compare_ordered = False
+
+		if compare_sorted:
+			for one, two in zip(sorted(self.directives, key=str),
+								sorted(other.directives, key=str)):
+				if one != two:
+					return True
+
+		if compare_ordered:
+			if len(self.ordered_directives) != len(other.ordered_directives):
+				return True
+
+			for dirname in self.directives_needing_order:
+				if dirname in self.ordered_directives:
+					if dirname in other.ordered_directives:
+						for dir1, dir2 in zip(self.ordered_directives[dirname],
+												other.ordered_directives[dirname]):
+							if dir1 != dir2:
+								return True
+					else:
+						return True
+				else:
+					if dirname in other.ordered_directives:
+						return True
+					else:
+						continue
+
+		# if we reach here, nothing has been found different.
+		return False
+	def load(self):
+		""" Open the configuration file and lex it, then store the tokens
+			inside us."""
+
+		#always raise an exception when a syntax error is encountered.
+		#self.lexer.add_filter(RaiseOnErrorTokenFilter())
+
+		self.__load_from_tokens(self.lexer.get_tokens(self.text or
+								open(self.filename,'rb').read()),
+								self.__find_append_func())
+
+		self.__check_dependancies()
+	def __default_append_func(self, directive):
+		self.directives.append(directive)
+
+		#print '>>', str(directive)
+
+		#print '>>', directive.name, 'in', self.directives_needing_order, directive.name in self.directives_needing_order
+
+		if directive.name in self.directives_needing_order:
+			ordered = self.ordered_directives.get(directive.name, [])
+			ordered.append(directive)
+			self.ordered_directives[directive.name] = ordered
+	def __find_append_func(self):
+
+		if self.directives_needing_order:
+			# if directives_needing_order is True, every single line must be in the same
+			# order; __eq__ will simply use self.directives without reordering
+			# it to compare 2 configuration files.
+			if self.directives_needing_order is True:
+				return self.directives.append
+
+			# if only a subset of directives have their order which matter,
+			# we store every directive as usual (contents will be compared
+			# the same way), and keep a reference in a dictionnary from
+			# which only the order of these directives will be compared.
+			# This hoppefully speeds up the comparisons in this kind or
+			# "semi-ordered-directives" mode.
+			else:
+				return self.__default_append_func
+
+		else:
+			return self.directives.append
+	def __check_dependancies(self):
+		#resolved = pyutils.resolve_dependancies_from_dict_strings(self.directives_dependancies)
+
+		if self.directives_dependancies in (None, []):
+			return
+
+		for directive_name in self.directives_dependancies:
+
+			for directive in self.directives:
+				if directive_name == directive.name:
+					# we've got the first occurrence of our dependant directive.
+
+					for other_directive_name in self.directives_dependancies[directive_name]:
+
+						for other_directive in reversed(self.directives):
+							if other_directive_name == other_directive.name:
+								# we've got the last of depended-upon directive.
+
+								if directive.lineno < other_directive.lineno:
+									raise exceptions.BadConfigurationError(
+										_(u'{0}: all {1} directives (last '
+											'encountered: {2}, line {3}) should be '
+											'located before all {4} directives '
+											'(first encoutered: {5}, line {6}), '
+											'in {7}.').format(
+											stylize(ST_NAME, self._caller),
+											stylize(ST_ATTR, other_directive_name),
+											stylize(ST_COMMENT, str(other_directive)),
+											stylize(ST_UGID, other_directive.lineno),
+											stylize(ST_ATTR, directive_name),
+											stylize(ST_COMMENT, str(directive)),
+											stylize(ST_UGID, directive.lineno),
+											stylize(ST_PATH, self.filename)))
+
+								# the directives come ordered. If the last
+								# "other" comes after the "first" dependant,
+								# everything is OK. Avoid useless-costly testing.
+								break
+					# idem
+					break
+	def __load_from_tokens(self, tokensource, append_func):
+		""" Read tokens one by one and try to group them into higher-level
+			groups (directives, comments, etc). This method is basically the
+			same as the ``format()`` method of a `Pygments` ``Formatter``.
+
+			:param tokensource: an iterable of tuples (token_type, value), where
+				token_type is a pygments token class. See
+				http://pygments.org/docs/tokens/ for details.
+			"""
+
+		assert ltrace_func(TRACE_CONFIG)
+
+		# store the line count (guessed from the tokens contents). This will
+		# allow better display of parse errors, and knowing the order of
+		# configuration directives (higher-level than just tokens).
+		linecount = 1
+
+		stack = []
+
+		def append_block_or_directive(last=False):
+			""" create a directive if current stack contents imply that one
+				should be created, else create a standard configuration block.
+			"""
+			if stack[0].type in self.new_directive_types:
+				append_func(ConfigurationDirective(linecount,
+										name=stack[0],
+										value=(stack[1:] if last else stack[1:-1])
+											if len(stack) > 1 else (),
+										parent=self))
+
+				self.blocks.append(self.directives[-1])
+
+			else:
+				self.blocks.append(ConfigurationBlock(stack[:-1],
+									parent=self))
+
+		for ttype, value in tokensource:
+			stack.append(ConfigurationToken(ttype, value))
+
+
+			# if current token type implies creating a new directive, try to.
+			if ttype in self.new_directive_types and linecount > 1:
+
+				# reset for next line.
+				append_block_or_directive()
+
+				# keep the very last token on the stack, it's the current one.
+				# It has been stacked at the very beginning of the loop (a
+				# little too early ;-) ), and hasn't been picked by
+				# append_block_or_directive(); so don't loose it on the way.
+				stack = [ stack[-1] ]
+
+			# count lines passing by, independantly of directives and other
+			# blocks beeing tracked. This one is tricky, because newlines can
+			# be part of comments values (or anything other), depending on the
+			# lexer used to parse.
+			linecount += (len(value.split('\n')) - 1)
+
+		# don't forget the last line!
+		if stack != []:
+			append_block_or_directive(last=True)
+	def has(self, directive=None, match_value=True, directive_name=None):
+		""" Return ``True`` if a directive is already held in the current
+			instance.
+
+			:param directive: a :class:`ConfigurationDirective` instance. The
+				return value is highly dependant of the following parameter.
+				See below for details.
+
+			:param match_value: if ``True`` (which the default), a
+				full search against the specified directive will be performed;
+				if the method returns ``True``, you can assume *exact* match.
+				If ``False``, you cannot assume that the directive isn't
+				present: it could be, with a different value.
+				If ``False``, the search is roughly equivalent to a directive
+				name match only (see below). This is just another way of doing
+				the same thing.
+
+			:param directive_name: a unicode string instance, containing a
+				directive name. The first encountered directive returns
+				``True``, whatever the value is. If the method returns
+				``False``, you can assume there is *no* directive at all
+				by that name.
+
+		"""
+
+		if directive:
+			for d in self.directives:
+				if match_value:
+					if d == directive:
+						return True
+				else:
+					if d.name == directive.name:
+						return True
+			return False
+
+		if directive_name:
+			for d in self.directives:
+				if d.name == directive_name:
+					return True
+			return False
+
+		raise ValueError('no directive nor directive_name was specified.')
+	def find(self, directive=None, match_value=True, raise_partial=False, directive_name=None):
+		""" This method does roughly (but not exactly) the same thing as the
+			:meth:`has` one, but it returns the matched directive when found.
+
+			If :param:`raise_partial` is ``True`` and a partial match (only the
+			name is found), the method raises the directive found, instead
+			of returning it. This can be felt quite strange but it's an easy
+			way to indicate the match is not the exact one. Exact matches take
+			precedence on partial ones; thus if a partial match is raised, you
+			can assume that the configuration file doesn't include the exact
+			match anywhere. Use the method like this::
+
+			try:
+				result = conf_file.find(Directive(...), raise_partial=True)
+
+			except ConfigurationDirective, partial_match:
+				# do something with the partial match if you want.
+
+			except ValueError:
+				# no directive by that name either.
+
+			else:
+				# do something when exact match is found.
+			"""
+		if directive:
+			partial = None
+
+			for d in self.directives:
+
+				if match_value:
+					if d == directive:
+						return d
+
+					elif d.name == directive.name and partial is None:
+						partial = d
+
+				else:
+					if d.name == directive.name:
+						return d
+
+			if raise_partial and partial:
+				raise partial
+
+			raise ValueError(_(u'Directive {0} not found in {1}.').format(directive, repr(self)))
+
+		if directive_name:
+			for d in self.directives:
+				if d.name == directive_name:
+					return d
+
+			raise ValueError('%s not found in %r.' % (directive_name, self))
+
+		raise ValueError('no directive nor directive_name was specified.')
+	def index(self, directive):
+		for d in self.directives:
+			if d == directive:
+				return self.blocks.index(d)
+		raise ValueError('%s not found in %r.' % (directive, self))
+	def index_first(self, directive_name):
+		for d in self.directives:
+			if d.name == directive_name:
+				return self.blocks.index(d)
+		raise ValueError('%s not found in %r.' % (directive_name, self))
+	def index_last(self, directive_name):
+		for d in reversed(self.directives):
+			if d.name == directive_name:
+				return self.blocks.index(d)
+		raise ValueError('%s not found in %r.' % (directive_name, self))
+	def add(self, directive):
+		pass
+	def remove(self, directive):
+		pass
+	def remove_at(self, position):
+		pass
+	def insert_at(self, position, directive):
+		pass
+	def insert_before(self, directive):
+		pass
+	def insert_after(self, directive):
+		pass
+	def insert_before_first(self, directive_name, directive):
+		pass
+	def insert_before_last(self, directive_name, directive):
+		pass
+	def insert_after_first(self, directive_name, directive):
+		pass
+	def insert_after_last(self, directive_name, directive):
+		pass
+	def merge(self, other, on_conflicts=None, batch=False, auto_answer=None):
+		""" Try to merge "other" into us. When 2 directives conflict, do
+			whatever is specified by the :param:`on_conflicts` parameter.
+
+			:param other: the other :class:`ConfigurationFile` instance from
+				which we want to merge.
+
+			:param on_conflicts: a string describing what to do when a conflict
+				is encountered during the merge operation. Default value is
+				``raise``. Accepted values are:
+				* ``raise``: raise a MergeConflictException.
+				* ``overwrite`` or ``replace``: overwrite the current value
+				  inside us, with the value from ``other`` configuration file.
+				* ``ignore``, ``keep`` or ``pass``: ignore the value from
+				  ``other`` and keep ours.
+
+			:param batch: the Licorn® standard ``batch`` parameter. Helps
+				automatically applying the decision of ``on_conflicts``, else
+				the question (if any) is raised interactively, which is not
+				everytime what you need. Can be ``True`` or ``False`` (default).
+
+			:param auto_answer: the Licorn® standard parameter. Contains an
+				optional and eventual previous answer that the user entered. Can
+				be ``None`` (ask the the question; default value), ``True`` or
+				``False``.
+
+			.. todo:: merge comment blocks. As of current version, we only
+				merge directives, keep our own comments and forget other's
+				stand-alone comments (comments included in merged directives
+				gets merged, as part of the directive).
+		"""
+
+		my_directives    = self.directives[:]
+		other_directives = other.directives[:]
+
+		my_ordered    = self.ordered_directives.copy()
+		other_ordered = other.ordered_directives.copy()
+
+		raise NotImplementedError('merging not implemented yet')
+	def difference(self, other, on_conflicts=None, batch=False, auto_answer=None):
+		""" Remove other's directives from us. """
+		self.changed = False
+	def output(self):
+		Terminal256Formatter(encoding='utf-8').format(
+			(token.to_pygments() for token in
+				itertools.chain.from_iterable(b.flatenned
+					for b in self.blocks)),
+			sys.stderr)
+	def to_string(self):
+		return u''.join(unicode(token) for token in
+			itertools.chain.from_iterable(b.flatenned for b in self.blocks))
+	def __save(self, filename=None):
+		""" Write the configuration file contents back to the disk,
+			encapsulated with a Filelock. """
+
+		if filename is None:
+			filename = self._filename
+
+		assert ltrace_func(TRACE_CONFIG)
+
+		data = self.to_string()
+
+		with FileLock(self, filename):
+			open(filename, 'w').write(data)
+
+			# for /etc/passwd
+			ftempp, fpathp = tempfile.mkstemp(dir=os.path.dirname(filename))
+			os.write(ftempp, data)
+
+			# FIXME: implement these ch* calls properly, with dynamic values...
+			os.fchmod(ftempp, 0644)
+			#os.fchown(ftempp, 0, 0)
+
+			os.close(ftempp)
+
+			# FIXME: implement this one too...
+			#self.__hint_pwd += 1
+
+			os.rename(fpathp, filename)
+	def save(self, filename=None, batch=False, auto_answer=None):
+		""" If the configuration file changed, backup the current file on disk,
+			and save the current data into a new version (same name).
+
+			If the current instance is a "memory-only" one, and no filename
+			is given, raise an exception.
+		"""
+
+		if filename is None:
+			filename = self.filename
+
+		if self.changed:
+			if filename:
+				if batch or logging.ask_for_repair(_(u'{0}: system file {1} must be '
+					'modified for the configuration to be complete. Do it?').format(
+								stylize(ST_NAME, self._caller),
+								stylize(ST_PATH, self._filename)),
+							auto_answer=auto_answer):
+
+					fsapi.backup_file(filename)
+					self.__save(filename)
+
+					logging.notice(_(u'{0}: altered configuration file {1}.').format(
+						stylize(ST_NAME, self._caller), stylize(ST_PATH, self._filename)))
+
+				else:
+					raise exceptions.LicornModuleError(_(u'{0}: configuration file {1} '
+						'must be altered to continue.').format(self._caller, self._filename))
+
+			else:
+				raise exceptions.LicornRuntimeError(_(u'%s: cannot save a '
+					'file without any filename!') % self.name)
