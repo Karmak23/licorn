@@ -12,7 +12,6 @@ function setup_ajaxized_modal_loaders() {
 	$('.ajax-load-modal').click(function(){
 		the_link = $(this);
 		$.get(the_link.attr('href'), function(html) {
-			console.log('MODALLLL', html);
 			$('#modal').html(html).modal();
 		})
 	})
