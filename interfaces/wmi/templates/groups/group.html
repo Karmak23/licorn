@@ -72,6 +72,9 @@
 			</div>
 			{% endfor %}
 		</div>
+		{% if mode == 'edit' %}
+		<a href="#" class="btn btn-danger btn-block" id="delete_group_button" data-gid='{{group.gid}}'>{{ _('Delete group') }}</a>
+		{%endif%}
 	</div>
 	
 		
@@ -96,12 +99,10 @@
 
   {%- endblock -%}
   {%- block footer -%}
+  	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
     {% if mode == "new" %}
     <a href="#" class="btn btn-primary" id="save_group_button">{{ _('Add group') }}</a>
-    {% elif mode == 'edit' %}
-    <a href="#" class="btn btn-danger" id="delete_group_button" data-gid='{{group.gid}}'>{{ _('Delete group') }}</a>
     {%endif%}
-  	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
 
 
     <style>
