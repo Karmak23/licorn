@@ -8,12 +8,13 @@ function remove_instance(model, iid) {
 	old.remove();
 }
 
-function update_instance(model, iid, new_html, callback) {
+function update_instance(model, iid, new_html, action_func) {
 	// This function will work with anything, but best for replacing a <tr>
 	// with a new one, already rendered.
 	//
 	console.log('update_instance')
 	new_  = $(new_html);
+	new_.hide()
 
 	table = $('#model_' + model + '_table');
 
@@ -48,19 +49,15 @@ function update_instance(model, iid, new_html, callback) {
 		count.html(parseInt(count.html()) + 1);
 	}
 
-	new_.show();
-
-	if (callback != null) {
-		// if a callback is set, call it with the new row as parameter
-		if (typeof(callback) == "string") {
-			var fn = window[callback];
-			fn(new_);
-		}
-		else {
-			callback(new_);
-		}
-
+	if (action_func != null) {
+		console.log('action_func')
+		call_func(action_func, new_)
 	}
+	else {
+		console.log('show the new')
+		new_.show();
+	}
+
 
 	/* OLD CALBACK
 	// don't forget links, modals, popoversâ€¦
@@ -77,6 +74,16 @@ function update_instance(model, iid, new_html, callback) {
 
 	// remove old stuff marked as such.
 	page_cleaner();
+}
+function call_func(func, param) {
+	// if a callback is set, call it with the new row as parameter
+		if (typeof(func) == "string") {
+			var fn = window[func];
+			fn(param);
+		}
+		else {
+			func(param);
+		}
 }
 function popover_placement(objekt, parent) {
 

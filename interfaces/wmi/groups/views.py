@@ -45,27 +45,6 @@ from licorn.interfaces.wmi.libs.decorators import staff_only, check_groups
 from forms import GroupForm, get_group_form_blocks
 
 @staff_only
-def message(request, part, gid=None, *args, **kwargs):
-
-	if gid != None:
-		group = LMC.groups.by_gid(gid)
-
-	if part == 'delete':
-		html = render_to_string('groups/delete_message.html', {
-			'group_name'  : group.name,
-			'archive_dir' : settings.home_archive_dir,
-			'admin_group' : settings.defaults.admin_group,
-			})
-
-	elif part == 'skel':
-		html = render_to_string('groups/skel_message.html', {
-				'group_name'        : group.name,
-				'skel_name'         : group.groupSkel
-			})
-
-	return HttpResponse(html)
-
-@staff_only
 @check_groups('delete')
 def delete(request, gid, no_archive='', *args, **kwargs):
 	try:
@@ -150,58 +129,10 @@ def massive(request, gids, action, value='', *args, **kwargs):
 		for gid in gids.split(','):
 			groups.append(LMC.groups.guess_one(gid))
 
-		# inform the user that the UI will take time to build,
-		# to avoid re-clicks and (perfectly justified) grants.
-		nusers = len(LMC.users.keys())
-		if nusers > 50:
-			# TODO: make the notification sticky and remove it just
-			# before returning the rendered template result.
-			utils.notification(request, _('Building group {0} form, please wait…').format(
-				_('edit') if _mode == 'edit' else _('creation')), 3000 + 5 * nusers, 'wait_for_rendering')
+		return get_group_template(request, "massiv", groups)
 
-		users_list = [ (_('Standard users'),{
-						'groups' : groups,
-						'name'  : 'standard',
-						'users' : utils.select('users', default_selection=filters.STANDARD)
-					}) ]
-
-		# if super user append the system users list
-		if request.user.is_superuser:
-			users_list.append( ( _('System users') ,  {
-				'groups' : groups,
-				'name'  : 'system',
-				'users' : utils.select('users', default_selection=filters.SYSTEM)
-			}))
-
-		_dict = {
-					'gids'        : gids,
-					'mode'    	  : "massiv",
-					'title'       : _("Massive edit"),
-					'form'        : GroupForm("massiv", group),
-					'users_lists' : users_list
-				}
-
-		if request.is_ajax():
-			# TODO: use utils.format_RPC_JS('remove_notification', "wait_for_rendering")
-			return render(request, 'groups/group.html', _dict)
-
-		else:
-
-			if request.user.is_superuser:
-				sys_groups = [ g for g in utils.select('groups',
-								default_selection=filters.SYSTEM)
-									if not g.is_helper ]
-			else:
-				sys_groups = utils.select('groups', default_selection=filters.PRIVILEGED)
-
-			_dict.update({
-					'groups_list'            : utils.select('groups',
-												default_selection=filters.STANDARD),
-					'system_groups_list'     : sys_groups})
-
-			# TODO: use utils.format_RPC_JS('remove_notification', "wait_for_rendering")
-			return render(request, 'groups/group_template.html', _dict)
 	return HttpResponse('MASSIVE')
+
 @staff_only
 @check_groups('mod')
 def mod(request, gid, action, value, *args, **kwargs):
@@ -312,65 +243,6 @@ def create(request, **kwargs):
 	return HttpResponse("CREATED.")
 
 @staff_only
-def view(request, gid=None, name=None, *args, **kwargs):
-
-	if gid != None:
-		group = LMC.groups.by_gid(gid)
-
-	elif name != None:
-		group = LMC.groups.by_name(name)
-
-	if group.is_standard:
-		lists = [{
-					'title' : _('Responsibles'),
-					'kind'  : _('responsible'),
-					'users' : group.responsible_group.members
-				},
-				{
-					'title' : _('Members'),
-					'kind'  : _('standard'),
-					'users' : group.members
-				},
-				{
-					'title' : _('Guests'),
-					'kind'  : _('guest'),
-					'users' : group.guest_group.members
-				}]
-	else:
-		lists = [{
-					'title' : _('Members'),
-					'kind'  : 'standard',
-					'users' : group.members
-				}]
-
-	_dict = { 'group' : group, 'lists' : lists }
-
-	if request.is_ajax():
-		return render(request, 'groups/view.html', _dict)
-
-	else:
-		if request.user.is_superuser:
-			_sys_groups = set(g.gidNumber for g in utils.select('groups',
-								default_selection=filters.SYSTEM))
-			not_resps   = set(g.gidNumber for g in utils.select('groups',
-								default_selection=filters.NOT_RESPONSIBLE))
-			not_guests  = set(g.gidNumber for g in utils.select('groups',
-								default_selection=filters.NOT_GUEST))
-			sys_groups  = utils.select('groups',
-							_sys_groups.intersection(not_resps, not_guests))
-
-		else:
-			sys_groups = utils.select('groups', default_selection=filters.PRIVILEGED)
-
-		_dict.update({
-				'groups_list'            : utils.select('groups',
-											default_selection=filters.STANDARD),
-				'system_groups_list'     : sys_groups
-			})
-
-		return render(request, 'groups/view_template.html', _dict)
-
-@staff_only
 def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 	""" group view : used to render the GroupForm in 'edit' or 'new' mode """
 
@@ -439,9 +311,6 @@ def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 		for g in LMC.groups.select(filters.SYSTEM):
 			if not g.is_helper:
 				groups.append(g)
-
-
-		
 	else:
 		for g in LMC.groups.select(filters.PRIVILEGED):
 			groups.append(g)
@@ -521,8 +390,31 @@ def get_group_template(request, mode, groups):
 				'form_blocks' : sorted_blocks
 			})
 	if mode == 'edit':
-		_dict.update({"group" : groups })
+		_dict.update({"group" : groups[0] })
 
 	#print "rendering group.html", _dict
 
-	return render(request, '/groups/group.html', _dict)
+	if request.is_ajax():
+
+		return render(request, 'groups/group.html', _dict)
+
+	else:
+		# render the full page
+		groups = LMC.groups.select(filters.STANDARD)
+	
+		if request.user.is_superuser:
+			for g in LMC.groups.select(filters.SYSTEM):
+				if not g.is_helper:
+					groups.append(g)
+		else:
+			for g in LMC.groups.select(filters.PRIVILEGED):
+				groups.append(g)
+
+		return render(request, 'groups/index.html', {
+				'request' : request,
+				'groups' : sorted(groups, key= lambda x: attrgetter('name')(x).lower()), 
+				'modal_html'             : render_to_string('groups/group.html', _dict)
+			})
+
+def hotkeys_help(request):
+	return render(request, '/groups/parts/hotkeys_help.html')

@@ -38,23 +38,23 @@
 
 	<div class="btn-group" data-toggle="buttons-checkbox">
 		{% if request.user.is_superuser %}
-			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
+			<button id='filter_standart' class="btn filter_item btn-mini" data-filter='standard'>
 				<strong>{{ _('Standard') }}</strong>&nbsp;<i class="icon-map-marker"></i>
 			</button>
-			<button id='filter_privileged' class="btn filter_item" data-filter='privileged'>
+			<button id='filter_privileged' class="btn filter_item btn-mini" data-filter='privileged'>
 				<em>{{ _('Privileged') }}</em>&nbsp;<i class="icon-glass"></i>
 			</button>
-			<button id='filter_system' class="btn filter_item" data-filter='system'>
+			<button id='filter_system' class="btn filter_item btn-mini" data-filter='system'>
 				{{ _('Systems') }}&nbsp;<i class="icon-wrench"></i>
 			</button>
-			<button id='filter_restricted' class="btn filter_item" data-filter='restricted'>
+			<button id='filter_restricted' class="btn filter_item btn-mini" data-filter='restricted'>
 				{{ _('Restricted') }}&nbsp;<i class="icon-warning-sign"></i>
 			</button>
 		{% elif request.user.is_staff %}
-			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
+			<button id='filter_standart' class="btn filter_item btn-mini" data-filter='standard'>
 				<strong>{{ _('Standard') }}</strong>&nbsp;<i class="icon-map-marker"></i>
 			</button>
-			<button id='filter_privileged' class="btn filter_item" data-filter='privileged'>
+			<button id='filter_privileged' class="btn filter_item btn-mini" data-filter='privileged'>
 				<em>{{ _('Privileged') }}</em>&nbsp;<i class="icon-glass"></i>
 			</button>
 		{% endif %}
@@ -72,11 +72,6 @@
 {%- endblock -%}
 
 {%- block list_body -%}
-	<style>
-		.licorn_row[style~="hidden;"]{
-		    height:0;
-		}​
-	</style>
 	{%- for group in groups -%}
 		{%- include 'groups/group_row.html' -%}
 	{%- endfor -%}

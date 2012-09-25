@@ -67,10 +67,11 @@ class GroupForm(forms.Form):
 				max_length=150, 
 				required=False)
 
+			print "group_permissive is", group_permissive
 			if group is None or group.is_standard:
 				self.fields['permissive'] = forms.BooleanField(
 					widget= forms.CheckboxInput(attrs=widget_attrs('permissive', group)),
-					initial = group_permissive,
+					initial = not group_permissive,
 					label=_('Is the dir permissive ?'))
 
 				self.fields['skel'] = forms.ChoiceField(

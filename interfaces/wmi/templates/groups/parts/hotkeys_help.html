@@ -1,0 +1,27 @@
+
+{%- extends 'modal.html' -%}
+
+
+    {%- block title -%}
+      <h3>{{ _('Hotkeys help') }}</h3>
+    {%- endblock -%}
+    {%- block body -%}
+
+      <p>
+          Several hotkeys have been set to simplify your navigation.
+      </p>
+      <ul>
+        <li><strong>l</strong> : massive skeleton operation</li>
+        <li><strong>x</strong> : export operation</li>
+        <li><strong>p</strong> : permissivness operation</li>
+        <br/>
+        <li><strong>enter</strong> : edit operation</li>
+        <li><strong>delete<stong> : delete operation</li>
+      </ul>
+
+    {%- endblock -%}
+
+
+  {%- block footer -%}
+    <a href="#" class="btn" data-dismiss="modal">Close</a>
+  {%- endblock -%}

@@ -1,7 +1,8 @@
-.table_header {
-	
+.table_header{
+	position: fixed;
+	background-color: white;
+	top: 0px;
 }
-
 .centered {
 	text-align: center !important;
 }

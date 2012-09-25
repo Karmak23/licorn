@@ -59,7 +59,7 @@
 {% set current_rel = get_group_membership(groups, user)|trim %}
 
 <span class="btn btn-{{ button_types[current_rel] }} trigger_popover" data-rel="{{current_rel}}" data-id={{user.uidNumber}} id="btn_{{user.uidNumber}}">
-	{{ user.login }} {{ get_image_relationship[current_rel]}}
+	{{ user.login }} <span class='rel_img'>{{ get_image_relationship[current_rel]}}</span>
 
 
 

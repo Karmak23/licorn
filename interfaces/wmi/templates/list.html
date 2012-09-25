@@ -23,7 +23,7 @@
 
 {%- block main_content -%}
 	<div class="modal hide fade" id="modal">
-		{{ edit_html }}
+		{{ modal_html }}
 	</div>
 
 	<div class='table_header'>
@@ -33,21 +33,11 @@
 		</span>
 
 		<span id="table_header_massive_actions" class='table_header_item'>
-			<!--<table>
-				<tr>
-					<td>
-						{{ _('Massive actions:') }}
-					</td>
-					<td>
-						
-					</td>
-				</tr>
-			</table>-->
-						<div class="centered">{{ _('Massive actions:') }}</div>
-						<div class="centered">
-							{%- block massive_actions -%}
-							{%- endblock -%}
-						</div>
+			<div class="centered">{{ _('Massive actions:') }}</div>
+			<div class="centered">
+				{%- block massive_actions -%}
+				{%- endblock -%}
+			</div>
 		</span>
 
 
@@ -67,7 +57,6 @@
 		</span>
 	</div>
 
-	<div id='table_wrapper'>
 	<table class="table sortable" id="model_groups_table">
 		<thead>
 			<tr>
@@ -80,25 +69,9 @@
 			{%- endblock -%}
 		</tbody>
 	</table>
-	</div>
-
-	
-	<style>
-		.table_header{
-			position: fixed;
-			background-color: white;
-		}
-		#table_wrapper {
-			margin-top:20px;
-		}
-		.table_header {
-			top: 0px;
-		}
-
-	</style>
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
-			$('.table_header').width($('table').width())
+			
 		})
 	</script>
 
@@ -109,20 +82,31 @@
 
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
-		
+
+			// the ".table_header" has a fixed position (in order to be always on top of the window)
+			// we need to adjust its width
+			$('.table_header').width($('table').width())
+
+
+			// setup the list
 			var START_TIME = new Date().getTime();
+			
 			setup_list();
+			
 			var END_TIME = new Date().getTime();
 			totalTime = (END_TIME - START_TIME);
+			console.log("total time to setup list", totalTime);
 
-			console.log("total time to setup list", totalTime)
 
-			{%- if edit_html -%} 
-				$("#machine_modal").modal();
+			{%- if modal_html -%} 
+				// if modal_html is activated, prompt it!
+				$("#modal").modal();
 			{%- endif -%}
 		});
 
 		function groups_doubleclick_row(td) {
+			// what happens when a row has been double clicked,
+			// show the edit form.
 
 			if (! $(td).hasClass('no_double_click')) {
 
@@ -138,74 +122,55 @@
 			}
 		}
 		
-
-		function setup_list(list_name) {
-			// search field
-			//setup_table_search($('#model_groups_table'), $('#list_search'))
+		function my_setup_table_search() {
+			// setup a timer in order to let the user type several letter 
+			// in the search filed before really search 
 			var search_timeout;
 			searchbox=$('#list_search')
+
 			searchbox.keyup(function() {
 
-
-
-		
-
+				// clear the timer
 				clearTimeout(search_timeout)
-
-			
 				search_timeout = setTimeout( function() {
-						
 
-						console.log('keyup', searchbox.val())
-						val = searchbox.val()
+					// get the value to search
+					val = searchbox.val()
 
-						$('.filtered:not(.hidden)').addClass('hidden');
-						if (val == '') {
-							$('.not_filtered').css('display', '').removeClass('hidden')
-							$('.filtered').removeClass('hidden')
-						}
-						else {
-							$('.not_filtered:not(:contains('+val+'))').css('display', 'none').addClass('hidden')
-							$('.not_filtered:contains('+val+')').css('display', '').removeClass('hidden')
-							
-						}
+					// do not search through 'filtered' rows
+					$('.filtered:not(.hidden)').addClass('hidden');
 					
-					},50);
-
-
-
-
-
-
-				/*$.each($('.not_filtered.not_hidden'), function() {
-					var _this = $(this);
-					td = _this.find('td:visible')
-					text = td.text();
-
 					if (val == '') {
-						_this.css('display', '').removeClass('hidden')
+						$('.not_filtered').css('display', '').removeClass('hidden')
+						$('.filtered').removeClass('hidden')
+					}
+					else {
+						$('.not_filtered:not(:contains('+val+'))').css('display', 'none').addClass('hidden')
+						$('.not_filtered:contains('+val+')').css('display', '').removeClass('hidden')
+						
 					}
 					
-					else if (text.indexOf(val) == -1) {
-						_this.css('display', 'none').addClass('hidden')
-					}
+				},100);
 
-
-				})*/
 			})
+		}
 
+		// filters used to filter the table
+		var filters = { 'standard' : true, 'system': true, 'restricted': false, 'privileged': true}
 			
-
+		function setup_list(list_name) {
+			// search field
+			my_setup_table_search()
 
 			// make rows selectable
 			setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me');
 
 			// filters btn
-			var filters = { 'standard' : true, 'system': true, 'restricted': false, 'privileged': true}
 			setup_table_filter($('#model_groups_table tbody tr'), $('.filter_item'), filters)
 
 			// setup doubleclick on each rows
 			setup_table_row_doubleclick($('#model_groups_table tbody td'), groups_doubleclick_row);
+			
 			// setup the sort plugin
 			// PERF ISSUE
 			//setup_table_sorter([[2,0]]);
@@ -215,7 +180,8 @@
 
 			setup_hover();
 
-			setup_ajaxized_link($('#model_groups_table tbody td'));
+			// Is this still used ?
+			//setup_ajaxized_link($('#model_groups_table tbody td'));
 
 			// PERF ISSUE
 			//$('.licorn_tooltip').tooltip()
@@ -247,17 +213,13 @@
 					$(this).addClass('.active')
 					filters[$(this).data('filter')] = true;
 				}
-				console.log('>DOFITLER')
-				do_filter()
-
-				console.log('<DOFITLER')
-				console.log("tarararar")
+				do_filter();
 			})
-			do_filter()
+
+			do_filter();
+
 			function do_filter() {
 				/* really do the filter, show/hide rows */
-				//var START = new Date().getTime();
-
 				$.each(filters, function(name, on_state) {
 					filter_items = $('#table_tbody .filter_'+name+'')
 					if (on_state) {
@@ -267,11 +229,6 @@
 						filter_items.removeClass('not_filtered').addClass('filtered').css('display', 'none');
 					}
 				})
-
-				//var END = new Date().getTime();
-				//tTime = (END - START);
-
-				//console.log("do_filter", tTime)
 			}
 		}
 		function setup_ajaxized_link(items) {
@@ -350,63 +307,73 @@
 			})
 		}
 
-
-
-
-
-		function sortTable(){
-		    var tbl = document.getElementById("model_groups_table").tBodies[0];
-		    var store = [];
-		    for(var i=0, len=tbl.rows.length; i<len; i++){
-		        var row = tbl.rows[i];
-		        console.log($(row))
-		        console.log($(row.cells[0]).html())
-		        //var sortnr = parseFloat(row.cells[0].textContent || row.cells[0].innerText);
-		        var sortnr = $(row.cells[0]).html();
-		        console.log(sortnr)
-		        if(!isNaN(sortnr)) store.push([sortnr, row]);
-		    }
-		    store.sort(function(x,y){
-		        return x[0] - y[0];
-		    });
-		    for(var i=0, len=store.length; i<len; i++){
-		        tbl.appendChild(store[i][1]);
-		    }
-		    store = null;
-		}
-
-
-
-
-
-
 		var select_active_class = 'row_selected'
 		var background_color_hover = 'rgb(245, 245, 245)'
+		
+		// timer used to prevent massive operation to be ran several times
 		var setup_row_timeout;
 
 		function setup_row(row) {
+			// function called when a new row is inserted (not already displayed) into the table.
 
-			clearTimeout(setup_row_timeout)
 
+			// apply events
 			setup_table_row_doubleclick($(row), groups_doubleclick_row)
 
-			// filter the list
-            $('#list_search').trigger('keyup')
-
-			// let know the sort plugin that we updated the table
-			//$("table.sortable").trigger("update");
-
+			// because this method can be ran several times in a short period, 
+			// TRY to run these massive operations once.
+			clearTimeout(setup_row_timeout)
 			setup_row_timeout = setTimeout( function() {
-				
-				// try to do it only once because it is applyed to the whole table
+				// make rows selectable
 				setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me')
+				// setup hover animation
 				setup_hover();
-				},
-				1000);
-			setup_ajaxized_link($(row))
 
-			$('.licorn_tooltip').tooltip()
+
+			}, 1000);
+
+
+			// check the table context (search and filters) before showing the row
+			if (filters[get_row_filter($(row))] && does_row_match_search($(row))) {
+				$(row).show();
+			}
+			else {
+				console.log('row not matching table context')
+			}
+
+
+
+
+			//setup_ajaxized_link($(row))
+
+			//$('.licorn_tooltip').tooltip()
 			
+		}
+		function get_row_filter(row) {
+			var found;
+			$.each(filters, function(filter) {
+				console.log(filter)
+				if ($(row).hasClass('filter_'+filter)) {
+					console.log('filter found ', filter)
+					found = filter
+				}
+			
+			})
+			return found
+
+		}
+		function does_row_match_search(row) {
+			search_val = $('#list_search').val()
+
+			if (search_val == '') {
+				return true;
+			}
+			else if ($(row).text().indexOf(search_val) != -1) {
+				return true;
+			}
+			else {
+				return false
+			}
 		}
 
 
@@ -475,10 +442,10 @@
 			$(document).keypress(function(e) {
 				/* if a table filter as been set, unset it.
 				If not, if rows are selected, unselect them. */
-				console.log('key :', e.which)
-				console.log('alt:', e.altKey)
-				console.log('ctrl : ', e.ctrlKey)
-				console.log('shift : ', e.shiftKey)
+				//console.log('key :', e.which)
+				//console.log('alt:', e.altKey)
+				//console.log('ctrl : ', e.ctrlKey)
+				//console.log('shift : ', e.shiftKey)
 				
 
 				/* Rows selection mecanism */
@@ -577,12 +544,15 @@
 							$('#massive_edit').click()
 						}
 					}
+					else {
+						$('#apply_massive_action').trigger('click')
+					}
 
 
 
 				}
 				
-				if (! searchb.is(':focus')) {
+				if (! searchb.is(':focus') && $('#modal').is(':hidden')) {
 					if (e.which == 112) {    // p => mass perm
 						$('#massive_permissive').click()
 					}
@@ -592,7 +562,17 @@
 					if (e.which == 108) {    // l => mass skel
 						$('#massive_skel').click()
 					}
+					
 				}
+
+
+
+
+				if (e.which == 63 && e.shiftKey) {    // ? => help
+						$.get('/groups/hotkeys_help', function(html) {
+							$('#modal').html(html).modal();
+						})
+					}
 
 				/* page parts selection mecanism */
 				/*if (e.keyCode == 102) {    // f => focus search field

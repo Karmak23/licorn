@@ -10,16 +10,12 @@ urlpatterns = patterns('groups.views',
     (r'^edit/(?P<name>%s)/?$' % hlstr.regex['group_name'][1:-1]  , 'group', {'action': 'edit'}),
     (r'^new/?$', 'group', { 'action': 'new' }),
 
-    (r'^view/(?P<gid>\d+)/?$', 'view'),
-    (r'^view/(?P<name>%s)/?$' % hlstr.regex['group_name'][1:-1]  , 'view'),
-
 	(r'^mod/(?P<gid>\d+)/(?P<action>\w+)/(?P<value>.+)?$', 'mod'),
 
 	(r'^create/?$', 'create'),
+    (r'^hotkeys_help/?$', 'hotkeys_help'),
 
 	(r'^delete/(?P<gid>\d+)/(?P<no_archive>.*)/?$', 'delete'),
-
-	(r'^.*message/(?P<part>.+)/(?P<gid>\d+)?/?$', 'message'),
 
     (r'^massive/(?P<action>\w+)/(?P<gids>[^/]+)/(?P<value>.*)/?$', 'massive'),
     (r'^massive_select_template/(?P<action_name>.+)/(?P<gids>.+)/?$', 'massive_select_template'),

@@ -21,6 +21,7 @@ $(document).ready(function() {
 			is_checked = ""
 		}
 		instant_timeout = setTimeout(function(){
+			console.log(instant_checkbox.data('instant-url')+is_checked)
 			$.get(instant_checkbox.data('instant-url')+is_checked)
 		}, instant_interval);
 	})
@@ -66,6 +67,13 @@ function init_instant_click(div) {
 }
 
 var button_types = [ 'default', 'primary', 'success', 'danger', 'warning' ];
+var get_relationship_img = [
+	"",
+	'<img src="/media/images/24x24/guest+3px.png"/>',
+	'<img src="/media/images/24x24/member+3px.png"/>',
+	'<img src="/media/images/24x24/resp+3px.png"/>',
+	"",
+]
 
 function update_relationship(item_id, rel_id) {
 	/* Update the relationship of an element */
@@ -82,6 +90,8 @@ function update_relationship(item_id, rel_id) {
 	console.log("btn", btn)
 	btn.removeClass('btn-default btn-primary btn-success btn-danger btn-warning').addClass('btn-'+button_types[rel_id])
 
+	// update image
+	btn.find('.rel_img').html(get_relationship_img[rel_id])
 
 
 	/*
