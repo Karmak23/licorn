@@ -66,7 +66,10 @@
 	</td>
 	<!-- permissive -->
 	<td class='centered' width="10%" data-sort='{{ group.is_permissive }}' data-search="">
-		<a href="/groups/massive/permissivness/{{group.gid}}" class="ajaxized_link">{{ get_group_permissivness_img(group) }}</a>
+		<!-- <a href="/groups/massive/permissivness/{{group.gid}}" class="ajaxized_link">
+			{{ get_group_permissivness_img(group) }}
+		</a> -->
+		{{ get_group_permissivness_img(group) }}
 	</td>
 	<!-- name -->
 	<td data-sort="{{ group.name }}" width="10%" data-search="{{ group.name }}">
