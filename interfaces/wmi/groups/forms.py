@@ -73,7 +73,7 @@ class GroupForm(forms.Form):
 					widget= forms.CheckboxInput(attrs=widget_attrs('permissive', group)),
 					initial = not group_permissive,
 					label=_('Permissive group ?'),
-					help_text=_('More information about <a href="http://docs.licorn.org/groups/permissions.en.html#permissiveness-en" target=_blank>permissivness</a>'),
+					help_text=_('More information about <a href="http://docs.licorn.org/groups/permissions" target=_blank>permissivness</a>'),
 					)
 
 				self.fields['skel'] = forms.ChoiceField(
