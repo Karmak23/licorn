@@ -72,7 +72,9 @@ class GroupForm(forms.Form):
 				self.fields['permissive'] = forms.BooleanField(
 					widget= forms.CheckboxInput(attrs=widget_attrs('permissive', group)),
 					initial = not group_permissive,
-					label=_('Is the dir permissive ?'))
+					label=_('Permissive group ?'),
+					help_text=_('More information about <a href="http://docs.licorn.org/groups/permissions.en.html#permissiveness-en" target=_blank>permissivness</a>'),
+					)
 
 				self.fields['skel'] = forms.ChoiceField(
 					widget= forms.Select(attrs=widget_attrs('skel', group)),
