@@ -65,13 +65,13 @@
 
 	<div class="popover">
 		<div width="auto">
-			<span class="instant_click btn btn-default rel_0" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/0">no membership {{ get_image_relationship['0']}}</span>
+			<span class="instant_click btn btn-default rel_0" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/0" data-dismiss='clickover'>no membership {{ get_image_relationship['0']}}</span>
 			{% if user.is_standard %}
-			<span class="instant_click btn btn-primary rel_1" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/1">guest {{ get_image_relationship['1']}}</span>
+			<span class="instant_click btn btn-primary rel_1" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/1" data-dismiss='clickover'>guest {{ get_image_relationship['1']}}</span>
 			{% endif %}
-			<span class="instant_click btn btn-success rel_2" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/2">member {{ get_image_relationship['2']}}</span>
+			<span class="instant_click btn btn-success rel_2" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/2" data-dismiss='clickover'>member {{ get_image_relationship['2']}}</span>
 			{% if user.is_standard %}
-			<span class="instant_click btn btn-danger rel_3" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/3">responsible {{ get_image_relationship['3']}}</span>
+			<span class="instant_click btn btn-danger rel_3" data-instant-url="/groups/massive/users/{{gids|join(',')}}/{{ user.uidNumber }}/3" data-dismiss='clickover'>responsible {{ get_image_relationship['3']}}</span>
 			{% endif %}
 		</div>
 	</div>
