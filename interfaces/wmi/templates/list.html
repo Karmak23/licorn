@@ -33,19 +33,27 @@
 		</span>
 
 		<span id="table_header_massive_actions" class='table_header_item'>
-			<div class="centered">{{ _('Massive actions:') }}</div>
+			<div class="centered">&nbsp;</div>
 			<div class="centered">
+				<div class="input-prepend" >
+					<span class="add-on">{{_("Massive actions&nbsp;:")}}</span>
+			
 				{%- block massive_actions -%}
 				{%- endblock -%}
+				</div>
 			</div>
 		</span>
 
 
 		<span id="table_header_filter" class='table_header_item'>
-			<div class="centered">{{ _('Filters:') }}</div>
+			<div class="centered">&nbsp;</div>
 			<div class="centered" id='list_filter'>
+				<div class="input-prepend" >
+					<span class="add-on">{{_("Filters&nbsp;:")}}</span>
+			
 				{%- block list_filters -%}
 				{%- endblock -%}
+				</div>
 			</div>
 		</span>
 

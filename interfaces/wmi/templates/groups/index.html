@@ -13,53 +13,56 @@
 {%- endblock -%}
 
 {%- block massive_actions -%}
-	<div class="btn-group">
+	
+	<span class="btn-group">
 		<button class="btn massive_action" data-url='/groups/massive/delete/' data-name='delete' id="massive_delete">
-			<img src="/media/images/24x24/mass_del.png" title="{{ _('Massively delete groups.') }}" alt="massive delete icon"/>
+			<img src="/media/images/14x14/mass_del.png" title="{{ _('Massively delete groups.') }}" alt="massive delete icon"/>
 		</button>
 		<button class="btn massive_action" data-url='/groups/massive/permissivness/' data-name='permissive' id="massive_permissive">
-			<img src="/media/images/24x24/mass_lock.png" title="{{ _('Massively make/unmake groups permissive.') }}" alt="massive permissive icon"/>
+			<img src="/media/images/14x14/mass_lock.png" title="{{ _('Massively make/unmake groups permissive.') }}" alt="massive permissive icon"/>
 		</button>
 		<button class="btn massive_action" data-url='/groups/massive/export/' data-name='export' id="massive_export">
-			<img src="/media/images/24x24/mass_export.png" title="{{ _('Massively export groups.') }}" alt="massive export icon"/>
+			<img src="/media/images/14x14/mass_export.png" title="{{ _('Massively export groups.') }}" alt="massive export icon"/>
 		</button>
 		<button class="btn massive_action" data-url='/groups/massive/apply_skel/' data-name='skel' id="massive_skel">
-			<img src="/media/images/24x24/mass_skel.png" title="{{ _('Massively reapply groups\' skel on groups\' members.') }}" alt="massive apply skel icon"/>
+			<img src="/media/images/14x14/mass_skel.png" title="{{ _('Massively reapply groups\' skel on groups\' members.') }}" alt="massive apply skel icon"/>
 		</button>
 		<button class="btn massive_action" data-url='/groups/massive/edit/' data-name='edit' id="massive_edit">
-			<img src="/media/images/24x24/mass_group.png" title="{{ _('Massively edit groups.') }}" alt="massive edit groups icon"/>
+			<img src="/media/images/14x14/mass_group.png" title="{{ _('Massively edit groups.') }}" alt="massive edit groups icon"/>
 		</button>
-	</div>
+	</span>
+	
 {%- endblock -%}
 
 {%- block list_filters -%}
 
+	
 
 
-	<div class="btn-group" data-toggle="buttons-checkbox">
+	<span class="btn-group" data-toggle="buttons-checkbox">
 		{% if request.user.is_superuser %}
-			<button id='filter_standart' class="btn filter_item btn-mini" data-filter='standard'>
-				<strong>{{ _('Standard') }}</strong>&nbsp;<i class="icon-map-marker"></i>
+			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
+				<i class="icon-map-marker" title="{{ _('Standard') }}"></i>
 			</button>
-			<button id='filter_privileged' class="btn filter_item btn-mini" data-filter='privileged'>
-				<em>{{ _('Privileged') }}</em>&nbsp;<i class="icon-glass"></i>
+			<button id='filter_privileged' class="btn filter_item" data-filter='privileged'>
+				<i class="icon-glass"></i>
 			</button>
-			<button id='filter_system' class="btn filter_item btn-mini" data-filter='system'>
-				{{ _('Systems') }}&nbsp;<i class="icon-wrench"></i>
+			<button id='filter_system' class="btn filter_item" data-filter='system'>
+				<i class="icon-wrench" title="{{ _('Systems') }}"></i>
 			</button>
-			<button id='filter_restricted' class="btn filter_item btn-mini" data-filter='restricted'>
-				{{ _('Restricted') }}&nbsp;<i class="icon-warning-sign"></i>
+			<button id='filter_restricted' class="btn filter_item" data-filter='restricted'>
+				<i class="icon-warning-sign" title="{{ _('Restricted') }}"></i>
 			</button>
 		{% elif request.user.is_staff %}
-			<button id='filter_standart' class="btn filter_item btn-mini" data-filter='standard'>
-				<strong>{{ _('Standard') }}</strong>&nbsp;<i class="icon-map-marker"></i>
+			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
+				<i class="icon-map-marker" title="{{ _('Standard') }}"></i>
 			</button>
-			<button id='filter_privileged' class="btn filter_item btn-mini" data-filter='privileged'>
-				<em>{{ _('Privileged') }}</em>&nbsp;<i class="icon-glass"></i>
+			<button id='filter_privileged' class="btn filter_item" data-filter='privileged'>
+				<i class="icon-glass" title="{{ _('Privileged') }}"></i>
 			</button>
 		{% endif %}
 
-	</div>
+	</span>
 {%- endblock -%}
 
 {%- block list_headers -%}
