@@ -335,10 +335,11 @@
 
 			// check the table context (search and filters) before showing the row
 			if (filters[get_row_filter($(row))] && does_row_match_search($(row))) {
-				$(row).show();
+				$(row).addClass('not_filtered').show();
 			}
 			else {
 				console.log('row not matching table context')
+				$(row).addClass('filtered')
 			}
 
 
@@ -402,7 +403,7 @@
 				console.log("keyup", e.which )
 
 				if (e.which == 8 || e.which == 46) {    // SUPPR => mass delete
-					if (! searchb.is(':focus')) {
+					if (! searchb.is(':focus') && modal.is(':hidden')) {
 						$('#massive_delete').click()
 					}
 				}
@@ -449,87 +450,88 @@
 				
 
 				/* Rows selection mecanism */
-				if (e.which == 106 || e.which == 107 || e.which == 115) {
-					var preselected_row  = null;
+				if ( !searchb.is(':focus') && modal.is(':hidden')) {
+					if (e.which == 106 || e.which == 107 || e.which == 115) {
+						var preselected_row  = null;
 
-					var next_row         = null
-					var previus_row      = null
-					var new_selected_row = null
+						var next_row         = null
+						var previus_row      = null
+						var new_selected_row = null
 
-					// find where to start 
-					console.log('seeking where to start')
-					if ($('.preselected_row').length == 0) {
+						// find where to start 
+						console.log('seeking where to start')
+						if ($('.preselected_row').length == 0) {
 
-						$.each($('tbody tr'), function() {
-							//console.log($(this).css('background-color'), background_color_hover, $(this).css('background-color') == background_color_hover)
-							if ($(this).css('background-color') == background_color_hover) {
-								preselected_row = $(this);
+							$.each($('tbody tr'), function() {
+								//console.log($(this).css('background-color'), background_color_hover, $(this).css('background-color') == background_color_hover)
+								if ($(this).css('background-color') == background_color_hover) {
+									preselected_row = $(this);
+								}
+							});
+						}
+						else {
+							preselected_row = $('.preselected_row')
+						}
+					}
+
+					if (e.which == 107) {    // K = next
+						if (preselected_row == null) {
+							// no, preselected row, start from the top
+							new_selected_row = $('table tbody tr:first');
+						}
+						else {
+							// one row is already preselected, start from it
+							next_row = preselected_row.next(':visible')
+							if (next_row.length == 0) {
+								next_row = preselected_row.nextUntil(':visible').last().next()
 							}
-						});
+							new_selected_row = next_row;					}
 					}
-					else {
-						preselected_row = $('.preselected_row')
-					}
-				}
 
-				if (e.which == 107) {    // K = next
-					if (preselected_row == null) {
-						// no, preselected row, start from the top
-						new_selected_row = $('table tbody tr:first');
-					}
-					else {
-						// one row is already preselected, start from it
-						next_row = preselected_row.next(':visible')
-						if (next_row.length == 0) {
-							next_row = preselected_row.nextUntil(':visible').last().next()
+					if (e.which == 106) {    // J = previus
+						if (preselected_row == null) {
+							// no, preselected row, start from the top
+							new_selected_row = $('table tbody tr:first');
 						}
-						new_selected_row = next_row;					}
-				}
+						else {
+							// one row is already preselected, start from it
+							prev_row = preselected_row.prev(':visible')
+							if (prev_row.length == 0) {
+								prev_row = preselected_row.prevUntil(':visible').prev().last();
+							}
+							new_selected_row = prev_row;
+							
+						}
 
-				if (e.which == 106) {    // J = previus
-					if (preselected_row == null) {
-						// no, preselected row, start from the top
-						new_selected_row = $('table tbody tr:first');
 					}
-					else {
-						// one row is already preselected, start from it
-						prev_row = preselected_row.prev(':visible')
-						if (prev_row.length == 0) {
-							prev_row = preselected_row.prevUntil(':visible').prev().last();
-						}
-						new_selected_row = prev_row;
+					if (e.which == 106 || e.which == 107) {
 						
-					}
+						if (new_selected_row.length != 0) {
+							if (preselected_row != null) {
+								// unpreselect preselected_row
+								preselected_row.css({'background-color': "none"})
+							}
+							$('.preselected_row').removeClass('preselected_row')
+						
+							new_selected_row.addClass('preselected_row').css({'background-color' : background_color_hover})
 
-				}
-				if (e.which == 106 || e.which == 107) {
-					
-					if (new_selected_row.length != 0) {
-						if (preselected_row != null) {
-							// unpreselect preselected_row
-							preselected_row.css({'background-color': "none"})
+							// scroll the body to have the selected row at the middle of the screen
+							// NOTE : in chrome, selecting body is ok, but in FF we need to select html...
+							$('body,html').scrollTop(new_selected_row.position().top - $(window).height() / 2)
 						}
-						$('.preselected_row').removeClass('preselected_row')
-					
-						new_selected_row.addClass('preselected_row').css({'background-color' : background_color_hover})
+					}
 
-						// scroll the body to have the selected row at the middle of the screen
-						// NOTE : in chrome, selecting body is ok, but in FF we need to select html...
-						$('body,html').scrollTop(new_selected_row.position().top - $(window).height() / 2)
+					if (e.which == 115) {    // s
+						if (preselected_row.hasClass(select_active_class)) {
+							preselected_row.removeClass(select_active_class)
+						}
+						else {
+							// if a row is "preselected", select it
+							$('.preselected_row').removeClass('preselected_row')
+							preselected_row.addClass('preselected_row').addClass(select_active_class)
+						}
 					}
 				}
-
-				if (e.which == 115) {    // s
-					if (preselected_row.hasClass(select_active_class)) {
-						preselected_row.removeClass(select_active_class)
-					}
-					else {
-						// if a row is "preselected", select it
-						$('.preselected_row').removeClass('preselected_row')
-						preselected_row.addClass('preselected_row').addClass(select_active_class)
-					}
-				}
-
 				if (e.which == 13) {    // enter
 					if (modal.is(':hidden')) {
 						selected_rows = get_selected_rows($('#model_groups_table tbody'), select_active_class);
