@@ -208,7 +208,7 @@ def create(request, **kwargs):
 	if request.method == 'POST':
 
 		name        = request.POST.get('name')
-		permissive  = True if request.POST.get('permissive') == 'on' else False
+		permissive  = False if request.POST.get('permissive') == 'on' else True
 		description = request.POST.get('description')
 		groupSkel   = request.POST.get('skel')
 
@@ -413,7 +413,8 @@ def get_group_template(request, mode, groups):
 		return render(request, 'groups/index.html', {
 				'request' : request,
 				'groups' : sorted(groups, key= lambda x: attrgetter('name')(x).lower()), 
-				'modal_html'             : render_to_string('groups/group.html', _dict)
+				'modal_html' : render(request, 'groups/group.html', _dict) \
+						if mode == 'new' else render_to_string('groups/group.html', _dict)
 			})
 
 def hotkeys_help(request):

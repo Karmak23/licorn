@@ -39,31 +39,9 @@ $(document).ready(function() {
 })
 
 function init_instant_click(div) {
-	console.log(">>>>>", $(div), $(div).find('.instant_click'))
 	$(div).find('.instant_click').click(function(){
-		console.log('instant click')
 		$.get($(this).data('instant-url'))
 	});
-
-
-	$(div).find('.popover_item').click(function() {
-			// update the current popover
-			user_id = $(this).attr('id');
-			new_rel = $(this).attr('value');
-
-			div = $('#sub_content').find('#'+user_id).filter('.click_item');
-			div.find('.item_hidden_input').attr('value', ''); // erase old membership
-			div.find('input[name$="'+new_rel+'_users"]').attr('value', user_id); // update new membership
-
-
-			// IF MODE IS NEW
-			// visual feedback on users because no instant_apply in new
-			//update_relationship('user', user_id, null, new_rel) ;
-
-			//close the popover
-			$(".click_item#"+user_id).popover('hide');
-		});
-
 }
 
 var button_types = [ 'default', 'primary', 'success', 'danger', 'warning' ];
@@ -81,34 +59,18 @@ function update_relationship(item_id, rel_id) {
 
 	// find the popover
 	popover = $('#popover_'+item_id)
-	//show all relationship and hide the current
-	popover.find('.btn').show()
-	popover.find('.rel_'+rel_id).hide()
-
+	
 	// update the current click_item
 	btn = $('#btn_'+item_id)
 	console.log("btn", btn)
+	btn.attr('data-rel', rel_id)
 	btn.removeClass('btn-default btn-primary btn-success btn-danger btn-warning').addClass('btn-'+button_types[rel_id])
+
+	//show all relationship and hide the current
+	btn.find('.popover .instant_click').show()
+	btn.find('.popover .rel_'+rel_id).hide()
 
 	// update image
 	btn.find('.rel_img').html(get_relationship_img[rel_id])
-
-
-	/*
-	new_rel = relationships[rel_id];
-	div = $(".click_item#"+item_id);
-	popover = $('.popover_item').filter('#'+item_id).parent();
-	hidden_input = div.find('input[name$="' + new_rel + '_' + name + 's"]');
-
-	popover.children().show();
-	popover.find('.rel_'+new_rel).hide();
-
-	div.attr('value', new_rel)
-	div.find('.item_hidden_input').attr('value', ''); // erase old membership
-	hidden_input.attr('value', i); // update new membership
-
-	div.find('.item_title')
-		.removeClass('no_membership_bkg guest_bkg member_bkg resp_bkg incomplete_bkg')
-		.addClass(new_rel+'_bkg');*/
 }
 

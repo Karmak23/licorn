@@ -123,61 +123,66 @@
 			// display only relevant relationship (do not display the current one)
 			current_rel = $(this).data('rel')
 			$(this).find('.rel_'+current_rel).hide();
-			popover_content = $(this).find('.popover').html()
 			var popover_id = $(this).data('id')
 
 			// init tht popover
 			$(this).clickover({
 				title : 'relationship',
-				content  : popover_content,
+				content  : function() { return $(this).find('.popover').html();},
+				html: true,
 				placement : 'top',
 				template: '<div class="popover my_popover" id="popover_'+popover_id+'"><div class="arrow"></div><div class="popover-inner"><div class="popover-content"><p></p></div></div></div>'
 
 			}).click(function() {
+
 				// on popover display, initialize instant_click, if 'edit' or 'massiv' mode
 				{% if mode == 'edit' or mode == 'massiv' %}
 					console.log('inti',popover_id, $("#popover_"+$(this).data('id')))
 					init_instant_click($("#popover_"+$(this).data('id')))
+				{% elif mode == 'new' %}
+					{# no instant apply, but give a visual feedback #}
+					$('#popover_'+$(this).data('id')+' .instant_click').click(function() {
+						update_relationship($(this).data('id'), $(this).data('relid'))
+					});
 				{% endif -%}
 			});
 		});
 
-		{% if mode == 'new' %}
-
-			{# no instant apply, but give a visual feedback #}
-			$('.popover btn').click(function() {
-				console.log("click sqdoushdklqhbdq")
-			});
-						
-		{% endif -%}
+		
 
 
 
-
-
-		$('.click_item').each(function() {
-			// display only relevant groups
-			rel = $(this).attr('value');
-			$(this).find('.rel_'+rel).hide();
-			
-			// initialize the popover
-			$(this).popover({
-				content: $(this).find('.user_popover_content'), 
-				position: 'top',
-			}).click(function() {
-					// on popover display, initialize instant_click, if 'edit' or 'massiv' mode
-					{% if mode == 'edit' or mode == 'massiv' %}
-						init_instant_click($('#user_popover_'+$(this).attr('id')))
-					{% endif -%}
-				});
-			
-		});
-
+		
 
 		{%- if mode == 'new' -%}
 			
 			function post_form() {
-				$.post("/groups/create/", $('#user_form').serialize());
+				console.log(typeof($('#user_form').serialize()))
+				var serialized_form = $('#user_form').serialize()
+
+				//console.log(serialized_form)
+
+				$.each($('form .trigger_popover'), function() {
+					
+					rel = $(this).attr('data-rel')
+					
+					if (rel == "0") {
+						serialized_form += "&no_membership_users="+$(this).data('id')
+					}
+					else if (rel == "1") {
+						serialized_form += "&guest_users="+$(this).data('id')
+					}
+					else if (rel == "2") {
+						serialized_form += "&member_users="+$(this).data('id')
+					}
+					else if (rel == "3") {
+						serialized_form += "&resp_users="+$(this).data('id')
+					}
+					
+				})
+
+				//console.log(serialized_form)
+				$.post("/groups/create/", serialized_form);
 			};
 
 			$(document).keyup(function(e) {
