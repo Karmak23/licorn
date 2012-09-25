@@ -394,7 +394,30 @@
 
 
 	
-		function bind_keys() {
+		function bind_hotkeys() {
+			/* Bind all hotkeys
+
+				- J/K : preselect previus/following row
+				- S : select/unselect a preselected row
+
+				- ENTER :
+					- if modal is not visible : edit/mass edit selected row(s)
+
+				if modal not visible and searchbox not focused :
+					- SUPPR / DELETE : massive delete operation on selected row(s)
+					- L : massive reapply skel to groups' members operation on selected row(s)
+					- X : massive export operation on selected row(s)
+					- p : massive toggle permissive operation on selected row(s)
+				
+				- ESCAPE : (in order)
+					- if modal visible : hide the modal
+					- if searchbox focused : unfocus it
+					- if row(s) selected : unselect it
+
+				NOTE : we are catching keyup and keypressed
+			*/
+
+			// cache selectors used
 			searchb = $('#list_search');
 			modal = $('#modal')
 
@@ -409,18 +432,13 @@
 				}
 
 				if (e.which == 27) {    // ESC
-					// on ESC, first remove search content, secondly unselect row
-					
-					
-					
-					console.log("modal visible", modal.is(':visible'))
-					console.log("search box focus", searchb.is(':focus'))
+					// on ESC, first hide modal is visible, secondly 
+					// remove search content, thirdly unselect row
 
 					if (modal.is(':visible')) {
 						modal.modal('hide')
 					}
 					else if (searchb.is(':focus')) {
-						console.log("has focus")
 						searchb.val('');
 						searchb.keyup();
 						searchb.blur();
@@ -430,10 +448,6 @@
 
 					} 
 					else {
-						/*$.each(get_selected_rows($('#model_machines_table tbody'), select_active_class), function(i, item) {
-							console.log(i, item)
-							$(item).removeClass('row_selected').trigger('mousedown').trigger('mouseup');
-						})*/
 						$('.row_selected').removeClass('row_selected')
 					}
 					
@@ -441,13 +455,6 @@
 				}
 			});
 			$(document).keypress(function(e) {
-				/* if a table filter as been set, unset it.
-				If not, if rows are selected, unselect them. */
-				//console.log('key :', e.which)
-				//console.log('alt:', e.altKey)
-				//console.log('ctrl : ', e.ctrlKey)
-				//console.log('shift : ', e.shiftKey)
-				
 
 				/* Rows selection mecanism */
 				if ( !searchb.is(':focus') && modal.is(':hidden')) {
@@ -459,7 +466,7 @@
 						var new_selected_row = null
 
 						// find where to start 
-						console.log('seeking where to start')
+						//console.log('seeking where to start')
 						if ($('.preselected_row').length == 0) {
 
 							$.each($('tbody tr'), function() {
@@ -539,7 +546,7 @@
 						if (selected_rows.length == 1) {
 							gid = $(selected_rows).data('gid');
 							$.get('/groups/edit/'+gid, function(modal_html) {
-								$("#modal").html(modal_html).modal()
+								modal.html(modal_html).modal()
 							})
 						}
 						else if (selected_rows.length > 1) {
@@ -572,7 +579,7 @@
 
 				if (e.which == 63 && e.shiftKey) {    // ? => help
 						$.get('/groups/hotkeys_help', function(html) {
-							$('#modal').html(html).modal();
+							modal.html(html).modal();
 						})
 					}
 

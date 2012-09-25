@@ -63,22 +63,14 @@
 	<script language="javascript" text='script/javascript'>
 		$(document).ready(function() {
 
-			var TOTAL_ST_TIME = new Date().getTime();
-			
-			
-
-
 			push_setup();
+
 			$('#notification').hide();
+
 			setup_auto_cleaner();
 
-			// you need to define this function in your code
-			bind_keys();
-
-			var TOTAL_END_TIME = new Date().getTime();
-			totalTime = (TOTAL_END_TIME - TOTAL_ST_TIME);
-
-			console.log("TOTAL :", totalTime)
+			// you need to define this function in your page extending this template
+			bind_hotkeys();
 
 		});
 	</script>
