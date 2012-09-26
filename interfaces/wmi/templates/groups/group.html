@@ -183,6 +183,8 @@
 
 				//console.log(serialized_form)
 				$.post("/groups/create/", serialized_form);
+
+				$('#modal').modal('hide')
 			};
 
 			$(document).keyup(function(e) {

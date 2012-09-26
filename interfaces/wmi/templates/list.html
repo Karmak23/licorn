@@ -10,7 +10,7 @@
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.uitablefilter.js"></script>
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.iselectable.js"></script>
-	<script language="javascript" type="text/javascript" src="/media/js/sorttable.js"></script>
+	<!--<script language="javascript" type="text/javascript" src="/media/js/sorttable.js"></script>-->
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.tablescroll.js"></script>
 
 	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/ug-popover.css" />
@@ -181,7 +181,29 @@
 			
 			// setup the sort plugin
 			// PERF ISSUE
-			//setup_table_sorter([[2,0]]);
+			//setup_table_sorter();
+
+			table=$('table.sortable');
+			table.tablesorter( {
+				// for performance issue, do not sort the list on load
+				//sortList:[[2,0]],
+			})
+			table[0].config.sortList = [[2,0]]
+				
+
+			/*table.on("sortStart",function() {
+				$("#wait").show();
+				console.log("start")
+			}).on("sortEnd",function() {
+				$("#wait").hide();
+
+				console.log("stop")
+			});*/
+
+			// setup active sort
+			$($('.table_column_header').get(2)).addClass('headerSortDown')
+
+
 
 			//massives actions
 			setup_massive_actions();
@@ -337,8 +359,13 @@
 				// setup hover animation
 				setup_hover();
 
-
-			}, 1000);
+				// table sort update
+				$('#model_groups_table')
+					//
+					.trigger('update')
+					//.trigger("sorton", [[[2,0]]])
+					//.trigger('appendCache')
+			}, 500);
 
 
 			// check the table context (search and filters) before showing the row
