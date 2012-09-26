@@ -347,6 +347,8 @@ class ModulesManager(LockedController):
 										stylize(ST_PATH,
 											settings.main_config_file)))
 
+					disable_dependants(module_name)
+
 		assert ltrace(self._trace_name, '< load(%s)' % changed)
 		return changed
 	def find_compatibles(self, controller):
