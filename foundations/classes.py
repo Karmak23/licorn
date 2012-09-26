@@ -32,7 +32,7 @@ class ConfigFile(Enumeration):
 	"""
 
 	def __init__(self, filename, name=None, reader=readers.generic_reader,
-		separator=None, caller=None):
+												separator=None, caller=None):
 		assert ltrace(TRACE_OBJECTS, '| ConfigFile.__init__(filename=%s, name=%s)' %
 			(filename, name))
 		Enumeration.__init__(self, name=name if name else filename)
@@ -45,22 +45,21 @@ class ConfigFile(Enumeration):
 		self._separator = separator
 		self._reader = reader
 
-		self.__caller = caller
+		if caller:
+			self.__caller = caller
 
 		self.reload()
 	@property
 	def _caller(self):
-		""" read-only property, returning the name of the caller (as a string).
-			The caller can be a thread, a module, another Licorn® object
-			instance, whatever.
-
-			If it is None (not set at creation of the current :class:`ConfigFile`)
-			instance, the name of the current thread will be returned.
+		""" Read-only property, returning the name of the caller (as a
+			colorified-string). The caller can be a thread name, a module name,
+			another Licorn® object instance name, whatever.
 		"""
-		if self.__caller is None:
-			return current_thread()
-		else:
+		try:
 			return self.__caller
+
+		except AttributeError:
+			return stylize(ST_NAME, current_thread().name)
 	def __str__(self):
 		data = ''
 
@@ -96,26 +95,27 @@ class ConfigFile(Enumeration):
 						pyutils.add_or_dupe_enumeration(self, key, v)
 				else:
 					self[key] = value
-	def backup_and_save(self, batch=False, auto_answer=None):
+	def backup_and_save(self, batch=False, auto_answer=None, full_display=True):
 		""" do the "backup and save" operation in one method call, which wraps
 			logging and user questioning, to avoid code duplication when this
 			functionnality is required (and it is *a lot*)."""
 
 		if batch or logging.ask_for_repair(_(u'{0}: system file {1} must be '
 			'modified for the configuration to be complete. Do it?').format(
-						stylize(ST_NAME, self._caller),
-						stylize(ST_PATH, self._filename)),
+						self._caller, stylize(ST_PATH, self._filename)),
 					auto_answer=auto_answer):
 
 			self.backup()
 			self.save()
 
-			logging.notice(_(u'{0}: altered configuration file {1}.').format(
-				stylize(ST_NAME, self._caller), stylize(ST_PATH, self._filename)))
+			if full_display:
+				logging.info(_(u'{0}: altered configuration file {1}.').format(
+								self._caller, stylize(ST_PATH, self._filename)))
 
 		else:
 			raise exceptions.LicornModuleError(_(u'{0}: configuration file {1} '
-				'must be altered to continue.').format(self._caller, self._filename))
+										u'must be altered to continue.').format(
+											self._caller, self._filename))
 	def backup(self):
 		return fsapi.backup_file(self._filename)
 	def save(self, filename=None):
