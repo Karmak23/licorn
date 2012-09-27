@@ -60,3 +60,17 @@ th.headerSortDown {
 	cursor: pointer;
 }
 .waiting {cursor:wait}
+
+.sort-arrow {
+	float: right;
+	height:4px;
+	width:20px;
+	border: 0;
+	margin-top:10px;
+}
+.sort-arrow.descending {
+	background-image: url('/media/images/sort/desc.gif');
+}
+.sort-arrow.ascending {
+	background-image: url('/media/images/sort/asc.gif');
+}

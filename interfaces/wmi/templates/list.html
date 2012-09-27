@@ -10,7 +10,7 @@
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.uitablefilter.js"></script>
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.iselectable.js"></script>
-	<!--<script language="javascript" type="text/javascript" src="/media/js/sorttable.js"></script>-->
+	<script language="javascript" type="text/javascript" src="/media/js/sortabletable.js"></script>
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.tablescroll.js"></script>
 
 	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/ug-popover.css" />
@@ -165,7 +165,7 @@
 
 		// filters used to filter the table
 		var filters = { 'standard' : true, 'system': true, 'restricted': false, 'privileged': true}
-			
+		var st;
 		function setup_list(list_name) {
 			// search field
 			my_setup_table_search()
@@ -183,13 +183,28 @@
 			// PERF ISSUE
 			//setup_table_sorter();
 
-			table=$('table.sortable');
+			/*table=$('table.sortable');
 			table.tablesorter( {
 				// for performance issue, do not sort the list on load
 				//sortList:[[2,0]],
 			})
-			table[0].config.sortList = [[2,0]]
-				
+			table[0].config.sortList = [[2,0]]*/
+
+			st = new SortableTable(document.getElementById("model_groups_table"),
+				["None", "None", "Name", "Description", "gid", "skel"])
+			
+			// setup default sort state
+			$('#model_groups_table').attr('data-sort-col', 2)
+			$('.table_column_header').each(function(i, header) {
+				$(header).attr('data-sort-col', i)
+				$(header).attr('data-sort-way', 0)
+			})
+			$('.table_column_header').click(function() {
+				// set new context
+				$(this).attr('data-sort-way', $(this).data('sort-way') == 1 ? 0 : 1 )
+				$('#model_groups_table').attr('data-sort-col', $(this).data('sort-col'))
+			})
+
 
 			/*table.on("sortStart",function() {
 				$("#wait").show();
@@ -201,7 +216,7 @@
 			});*/
 
 			// setup active sort
-			$($('.table_column_header').get(2)).addClass('headerSortDown')
+			//$($('.table_column_header').get(2)).addClass('headerSortDown')
 
 
 
@@ -343,9 +358,9 @@
 		// timer used to prevent massive operation to be ran several times
 		var setup_row_timeout;
 
-		function setup_row(row) {
+		function setup_row(row, old) {
 			// function called when a new row is inserted (not already displayed) into the table.
-
+			console.log('setup_row', row, old)
 
 			// apply events
 			setup_table_row_doubleclick($(row), groups_doubleclick_row)
@@ -358,13 +373,42 @@
 				setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me')
 				// setup hover animation
 				setup_hover();
+				
 
-				// table sort update
-				$('#model_groups_table')
+				var sort_START_TIME = new Date().getTime();
+				
+				
+				
+				// sort the list
+				// 4356
+				// ff : 640
+				col = $('#model_groups_table').data('sort-col')
+				
+				loading_animation_func(gettext('Please wait while sorting list'));
+				
+				tim = setTimeout( function() {
+					st.sort(col, $($('.table_column_header').get(parseInt(col))).data('sort-way'))
+					remove_loading_animation();
+				}, 500);
+
+
+
+				// second method
+				// 6796 ; 7500
+				// ff : 1200
+				/*$('#model_groups_table')
 					//
 					.trigger('update')
 					//.trigger("sorton", [[[2,0]]])
-					//.trigger('appendCache')
+					//.trigger('appendCache')*/
+				var sort_END_TIME = new Date().getTime();
+				totalSortTime = (sort_END_TIME - sort_START_TIME);
+				console.log("total time to sort list", totalSortTime);
+
+
+
+
+				
 			}, 500);
 
 
@@ -376,6 +420,8 @@
 				console.log('row not matching table context')
 				$(row).addClass('filtered')
 			}
+
+			$(row).css('display', '')
 
 
 
@@ -435,6 +481,8 @@
 				- J/K : preselect previus/following row
 				- S : select/unselect a preselected row
 
+				- N : add a new group
+
 				- ENTER :
 					- if modal is not visible : edit/mass edit selected row(s)
 
@@ -488,8 +536,20 @@
 					
 
 				}
+				if (! searchb.is(':focus') && $('#modal').is(':hidden')) {
+					
+					if (e.which == 78) {    // n => new group
+						console.log('toototototototo')
+						$.get('/groups/new', function(html) {
+							modal.html(html).modal()
+						})
+					}
+					
+				}
 			});
 			$(document).keypress(function(e) {
+
+				console.log('keypress', e.which)
 
 				/* Rows selection mecanism */
 				if ( !searchb.is(':focus') && modal.is(':hidden')) {
@@ -606,17 +666,16 @@
 					if (e.which == 108) {    // l => mass skel
 						$('#massive_skel').click()
 					}
-					
+					if (e.which == 63 && e.shiftKey) {    // ? => help
+							$.get('/groups/hotkeys_help', function(html) {
+								modal.html(html).modal();
+							})
+						}
 				}
 
 
 
 
-				if (e.which == 63 && e.shiftKey) {    // ? => help
-						$.get('/groups/hotkeys_help', function(html) {
-							modal.html(html).modal();
-						})
-					}
 
 				/* page parts selection mecanism */
 				/*if (e.keyCode == 102) {    // f => focus search field

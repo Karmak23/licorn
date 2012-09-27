@@ -36,9 +36,12 @@ function head_over_to(next_location) {
 	document.location = next_location;
 }
 
-function loading_animation_func() {
+function loading_animation_func(msg) {
+	if (msg == null) {
+		msg == gettext('Collecting data, please wait&hellip;');
+	}
 	$('body').prepend('<div id="loading_information"><span class="push_reconnection_notification">'
-		+ gettext('Collecting data, please wait&hellip;') + '</span></div>');
+		+ msg + '</span></div>');
 	$("#loading_information").fadeIn('slow');
 }
 

@@ -51,7 +51,13 @@ function update_instance(model, iid, new_html, action_func) {
 
 	if (action_func != null) {
 		console.log('action_func')
-		call_func(action_func, new_)
+		if (typeof(action_func) == "string") {
+			var fn = window[action_func];
+			fn(new_, old);
+		}
+		else {
+			action_func(new_, old);
+		}
 	}
 	else {
 		console.log('show the new')
@@ -75,16 +81,7 @@ function update_instance(model, iid, new_html, action_func) {
 	// remove old stuff marked as such.
 	page_cleaner();
 }
-function call_func(func, param) {
-	// if a callback is set, call it with the new row as parameter
-		if (typeof(func) == "string") {
-			var fn = window[func];
-			fn(param);
-		}
-		else {
-			func(param);
-		}
-}
+
 function popover_placement(objekt, parent) {
 
 	if ($(parent).hasClass('popover-left')){
