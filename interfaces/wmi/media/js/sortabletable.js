@@ -50,7 +50,7 @@ function SortableTable(oTable, oSortTypes) {
 
 	var oThis = this;
 	this._headerOnclick = function (e) {
-		oThis.headerOnclick(e);
+		//oThis.headerOnclick(e);
 	};
 
 	if (oTable) {

@@ -201,8 +201,28 @@
 			})
 			$('.table_column_header').click(function() {
 				// set new context
-				$(this).attr('data-sort-way', $(this).data('sort-way') == 1 ? 0 : 1 )
-				$('#model_groups_table').attr('data-sort-col', $(this).data('sort-col'))
+				_THIS = $(this)
+				current_way = _THIS.attr('data-sort-way')
+				if (current_way == 1) {
+					new_way = 0;
+				}
+				else {
+					new_way = 1;
+				}
+				
+				_THIS.attr('data-sort-way', new_way)
+				$('#model_groups_table').attr('data-sort-col', _THIS.data('sort-col'))
+
+				loading_animation_func(gettext('Please wait while sorting list'));
+				
+				tim = setTimeout( function() {
+
+					st.sort(_THIS.attr('data-sort-col'), new_way)
+					remove_loading_animation();
+				}, 500);
+
+
+				
 			})
 
 
@@ -387,7 +407,8 @@
 				loading_animation_func(gettext('Please wait while sorting list'));
 				
 				tim = setTimeout( function() {
-					st.sort(col, $($('.table_column_header').get(parseInt(col))).data('sort-way'))
+					console.log('tigger sort on col ', col, $($('.table_column_header').get(parseInt(col))).data('sort-way'))
+					st.sort(col, $($('.table_column_header').get(parseInt(col))).attr('data-sort-way'))
 					remove_loading_animation();
 				}, 500);
 
