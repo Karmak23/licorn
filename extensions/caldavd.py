@@ -32,7 +32,8 @@ from licorn.extensions import ServiceExtension
 
 from calendarserver.tools.principals   import action_addProxy, addProxy, principalForPrincipalID
 from calendarserver.tools.util         import getDirectory, loadConfig, setupMemcached
-from twistedcaldav.config              import config, ConfigDict
+from twistedcaldav.config              import config as caldav_config
+from twistedcaldav.config              import ConfigDict
 from twistedcaldav.directory.directory import DirectoryRecord
 
 
@@ -239,43 +240,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 										distros.DEBIAN):
 			self.paths.service_defaults = '/etc/default/calendarserver'
 
-
-			"""
-			<plist version="1.0">
-			  <dict>
-
-			    <!--
-			        Public network address information
-
-			        This is the server's public network address, which is provided to
-			        clients in URLs and the like.  It may or may not be the network
-			        address that the server is listening to directly, though it is by
-			        default.  For example, it may be the address of a load balancer or
-			        proxy which forwards connections to the server.
-			      -->
-
-			    <!-- Network host name [empty = system host name] -->
-			    <key>ServerHostName</key>
-			    <string></string> <!-- The hostname clients use when connecting -->
-
-			    <!-- HTTP port [0 = disable HTTP] -->
-			    <key>HTTPPort</key>
-			    <integer>8008</integer>
-
-			    <!-- SSL port [0 = disable HTTPS] -->
-			    <!-- (Must also configure SSLCertificate and SSLPrivateKey below) -->
-			    <!--
-			    <key>SSLPort</key>
-			    <integer>8443</integer>
-			    -->
-
-			    <!-- Redirect non-SSL ports to an SSL port (if configured for SSL) -->
-			    <key>RedirectHTTPToHTTPS</key>
-			    <false/>"""
-
-
-
-		# config
+		# create default directoryservice config for ldap and xml backends
 		self.default_config = LicornConfigObject()
 		self.default_config.ldap_directory = { 
 			
@@ -345,22 +310,13 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				'authMethod': 'PAM'
 			}
 		}
-
-
 		self.default_config.xml_directory = { 
 			'type': 'twistedcaldav.directory.xmlfile.XMLDirectoryService', 
 			'params': {
 				'xmlFile': '/etc/caldavd/accounts.xml'
 			}
 		}
-		#d = XML2Dict(coding='utf-8').parse(open(self.paths.configuration, 'r').read())
-		#print d
-
-
-
-
-
-
+		
 
 
 	def initialize(self):
@@ -397,6 +353,11 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		return self.available
 	def switch_directoryService(self, key):
+		""" TODO """
+
+
+
+
 		# load calendarserver config file
 		config_xml = my_Configdict2xmlEtree(self.default_config.ldap_directory if key=='ldap' else self.default_config.xml_directory)
 
@@ -416,8 +377,17 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 	def check(self, batch=False, auto_answer=None):
 		""" Check eveything needed for the caldavd extension and service.
-			Currently we just check ``chmod`` on caldavd files (because they
-			contain user passwords in clear-text). """
+			First check ``chmod`` on caldavd files (because they
+			contain user passwords in clear-text). 
+
+			Secondly, match the caldav backend to the licorn backend.
+
+			If backend 'openldap' is activated on Licorn side, only users and 
+				groups from licorn ldap backend will be used into calendarserver
+			
+			If backend 'openldap' not activated, use default 'shadow' backend.
+
+		"""
 
 		assert ltrace_func(TRACE_CALDAVD)
 
@@ -430,31 +400,35 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		
 
-		#print calendarserver_conf
+		# check licorn backends
 		shadow_backend = LMC.backends.guess_one('shadow')
 		ldap_backend   = LMC.backends.guess_one('openldap')
 
+		CALDAV_LDAP_BACKEND = "twistedcaldav.directory.ldapdirectory.LdapDirectoryService"
 
+		caldav_backend = caldav_config.DirectoryService.type
 		need_reload = False
-		current_dir_service = config.DirectoryService.type
 
+		# if current licorn backend is LDAP and caldav backend is not LDAP,
+		# change caldav backend to LDAP
 		if ldap_backend.enabled:
-			if current_dir_service != "twistedcaldav.directory.ldapdirectory.LdapDirectoryService":
+			if caldav_backend != CALDAV_LDAP_BACKEND:
 				need_reload = True
 				self.switch_directoryService('ldap')
 
+		# elif current licorn backend is SHADOW, change caldav backend to SHADOW
 		elif shadow_backend.enabled:
-			if current_dir_service == "twistedcaldav.directory.ldapdirectory.LdapDirectoryService":
+			if caldav_backend == CALDAV_LDAP_BACKEND:
 				need_reload = True
 				self.switch_directoryService('xml')
 
 
 		if need_reload:
-			# save config in xml file
+			# we changed something, reload the service in order to changes take
+			# effect.
 			self.service(svccmds.RELOAD)
 
 		# after reload check existing users/groups
-
 		if not ldap_backend.enabled:
 			# check if already existing STD users have a calendar.
 			for user in LMC.users.select(filters.STANDARD):
@@ -487,8 +461,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 	def setup_calendarserver_environement(self):
 		loadConfig(None)
-		config.directory = getDirectory()
-		setupMemcached(config)
+		caldav_config.directory = getDirectory()
+		setupMemcached(caldav_config)
 
 	def __parse_files(self):
 		""" Create locks and load all caldavd data files. """
