@@ -226,7 +226,8 @@ def create(request, **kwargs):
 				# We don't use these directly, to avoid #771.
 				#members_to_add=std_users,
 				#guests_to_add=guest_users,
-				#responsibles_to_add=resp_users
+				#responsibles_to_add=resp_users,
+				from_wmi=True
 				)
 
 			for post_name, rel in (('guest_users', relation.GUEST),

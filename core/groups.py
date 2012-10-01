@@ -2225,40 +2225,67 @@ class GroupsController(DictSingleton, CoreFSController):
 			assert ltrace(TRACE_GROUPS, '| to_JSON(%r)' % groups)
 
 			return '[ %s ]' % ','.join(group.to_JSON() for group in groups)
-	def _validate_fields(self, name, description, groupSkel):
+	def _validate_fields(self, name, description, groupSkel, *args, **kwargs):
 		""" apply sane tests on AddGroup needed arguments. """
 		if name is None:
 			raise exceptions.BadArgumentError(u"You must specify a group name.")
 
 		if not hlstr.cregex['group_name'].match(name):
-			raise exceptions.BadArgumentError(_(u'Malformed group name "{0}", '
-				u'must match /{1}/i.').format(stylize(ST_NAME, name),
-				stylize(ST_REGEX, hlstr.regex['group_name'])))
+			template = _(u'Malformed group name "{0}", '
+				u'must match /{1}/i.')
+			if kwargs.get('from_wmi', False):
+				msg = template.format(name, hlstr.regex['group_name'])
+			else:
+				msg = template.format(stylize(ST_NAME, name),
+								stylize(ST_REGEX, hlstr.regex['group_name']))
+
+			raise exceptions.BadArgumentError(msg)
 
 		if len(name) > LMC.configuration.groups.name_maxlenght:
-			raise exceptions.LicornRuntimeError(_(u'Group name must be '
+			template = _(u'Group name must be '
 				u'smaller than {0} characters ("{1}" is {2} chars '
-				u'long).').format(
+				u'long).')
+			if kwargs.get('from_wmi', False):
+				msg = template.format(LMC.configuration.groups.name_maxlenght,
+																name, len(name))
+			else:
+				msg = template.format(
 					stylize(ST_ATTR, LMC.configuration.groups.name_maxlenght),
-					stylize(ST_NAME, name), stylize(ST_BAD, len(name))))
+					stylize(ST_NAME, name), stylize(ST_BAD, len(name)))
+
+			raise exceptions.LicornRuntimeError(msg)
 
 		if description in (None, ''):
 			description = _(u'Members of group “%s”') % name
 
 		elif not hlstr.cregex['description'].match(description):
-			raise exceptions.BadArgumentError(_(u'Malformed group description '
-				u'"{0}", must match /{1}/i.').format(
+			template = _(u'Malformed group description '
+												u'"{0}", must match /{1}/i.')
+
+			if kwargs.get('from_wmi', False):
+				msg = template.format(description, hlstr.regex['description'])
+			else:
+				msg = template.format(
 					stylize(ST_COMMENT, description),
-					stylize(ST_REGEX, hlstr.regex['description'])))
+					stylize(ST_REGEX, hlstr.regex['description']))
+
+			raise exceptions.LicornRuntimeError(msg)
 
 		if groupSkel in (None, ''):
 			groupSkel = LMC.configuration.users.default_skel
 
 		elif groupSkel not in LMC.configuration.users.skels:
-			raise exceptions.BadArgumentError(_(u'Invalid skel {0}. Valid '
-				u'skels are: {1}.').format(stylize(ST_BAD, skel),
+			template = _(u'Invalid skel {0}. Valid skels are: {1}.')
+
+			if kwargs.get('from_wmi', False):
+				msg = template.format(skel, ', '.join(stylize(ST_PATH, x)
+										for x in LMC.configuration.users.skels))
+			else:
+				msg = template.format(stylize(ST_BAD, skel),
 					', '.join(stylize(ST_PATH, x)
-						for x in LMC.configuration.users.skels)))
+						for x in LMC.configuration.users.skels))
+
+			raise exceptions.LicornRuntimeError(msg)
 
 		return name, description, groupSkel
 	def add_Group(self, name, desired_gid=None, system=False, permissive=False,
@@ -2267,7 +2294,7 @@ class GroupsController(DictSingleton, CoreFSController):
 											responsibles_to_add=None,
 											guests_to_add=None, batch=False,
 											force=False, async=True,
-											inotified=True):
+											inotified=True, *args, **kwargs):
 		""" Add a Licorn group (the group + the guest/responsible group +
 			the shared dir + permissions (ACL)). """
 
@@ -2275,7 +2302,7 @@ class GroupsController(DictSingleton, CoreFSController):
 
 		with self.lock:
 			name, description, groupSkel = self._validate_fields(name,
-													description, groupSkel)
+										description, groupSkel, *args, **kwargs)
 			try:
 				not_already_exists = True
 

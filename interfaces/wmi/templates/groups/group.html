@@ -195,6 +195,7 @@
 
 			// click save button
 			$('#save_group_button').click( function() {
+				$('#save_group_button').unbind('click');
 				post_form();
 			});
 			
