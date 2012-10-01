@@ -8,14 +8,7 @@ body {
 	font-family: "Bitstream Charter", Georgia, Serif;
 }
 #main_content {
-	margin-top: 3%;
-	margin-bottom: 3%;
-	margin-left: 15%;
-	margin-right: 5%;
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	width: 83%;
+	
 }
 #loading_information {
 	position: absolute;

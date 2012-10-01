@@ -36,6 +36,8 @@
 
 {%- block end_media -%}
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/bootstrap.min.css" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href="/media/css/bootstrap-responsive.css" rel="stylesheet">
 	{#- "LESS" needs to be loaded last, in case extended_media loads more less-CSS. -#}
 	<script language="javascript" type="text/javascript" src="/media/js/less-1.1.5.min.js"></script>
 {%- endblock -%}
@@ -43,23 +45,32 @@
 
 {%- block body -%}
 
-	{%- include 'sidebar.html' -%}
+	<div class="row-fluid">
+		<div class="span2">
+			{%- include 'sidebar.html' -%}
+		</div>
+		<div class="span10">
+			<div id="content">
+				{%- block content -%}
+					<div id="notification" style="display:none"></div>
+					<div id="main_content" class="">
+						{%- block main_content -%}
+							{%- if main_content_template -%}
+								{%- include main_content_template -%}
 
-	<div id="content">
-		{%- block content -%}
-			<div id="notification" style="display:none"></div>
-			<div id="main_content" class="span10 offset1">
-				{%- block main_content -%}
-					{%- if main_content_template -%}
-						{%- include main_content_template -%}
-
-					{%- else -%}
-						<h1>{{ _('Please define <code>main_content_template</code> in your current view.') }}</h1>
-					{%- endif -%}
+							{%- else -%}
+								<h1>{{ _('Please define <code>main_content_template</code> in your current view.') }}</h1>
+							{%- endif -%}
+						{%- endblock -%}
+					</div><!-- end main_content -->
 				{%- endblock -%}
-			</div><!-- end main_content -->
-		{%- endblock -%}
-	</div><!-- end content -->
+			</div><!-- end content -->
+		</div>
+
+	</div>
+	
+
+	
 	<script language="javascript" text='script/javascript'>
 		$(document).ready(function() {
 
