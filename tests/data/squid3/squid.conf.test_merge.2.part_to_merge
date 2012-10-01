@@ -1,0 +1,2 @@
+acl localnet src 192.168.111.0/24
+refresh_pattern .		0	20%	4320
