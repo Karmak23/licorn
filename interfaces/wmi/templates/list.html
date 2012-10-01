@@ -395,7 +395,6 @@
 				setup_hover();
 				
 
-				var sort_START_TIME = new Date().getTime();
 				
 				
 				
@@ -407,9 +406,15 @@
 				loading_animation_func(gettext('Please wait while sorting list'));
 				
 				tim = setTimeout( function() {
-					console.log('tigger sort on col ', col, $($('.table_column_header').get(parseInt(col))).data('sort-way'))
-					st.sort(col, $($('.table_column_header').get(parseInt(col))).attr('data-sort-way'))
+					var sort_START_TIME = new Date().getTime();
+					
+					current_way = $($('.table_column_header').get(parseInt(col))).attr('data-sort-way')
+					st.sort(col, parseInt(current_way))
 					remove_loading_animation();
+					
+					var sort_END_TIME = new Date().getTime();
+					totalSortTime = (sort_END_TIME - sort_START_TIME);
+					console.log("total time to sort list", totalSortTime);
 				}, 500);
 
 
@@ -422,9 +427,6 @@
 					.trigger('update')
 					//.trigger("sorton", [[[2,0]]])
 					//.trigger('appendCache')*/
-				var sort_END_TIME = new Date().getTime();
-				totalSortTime = (sort_END_TIME - sort_START_TIME);
-				console.log("total time to sort list", totalSortTime);
 
 
 
