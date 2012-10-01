@@ -43,7 +43,13 @@ from ltraces import TRACE_FOUNDATIONS, TRACE_CONFIG
 
 stylize = styles.stylize
 
-class ConfigurationToken:
+class PartialMatch(BaseException):
+	""" Used in search methods """
+
+	def __init__(self, match, *args, **kwargs):
+		self.match = match
+		BaseException.__init__(self, *args, **kwargs)
+class ConfigurationToken(object):
 	""" Very small and read-only-typed configuration token (the value can be
 		changed, not the type; it is a pygments type).
 
@@ -73,7 +79,7 @@ class ConfigurationToken:
 		self.__value = newval
 	def to_pygments(self):
 		return self.__type, self.__value
-class ConfigurationBlock:
+class ConfigurationBlock(object):
 	""" Represents a standard and usually useless configuration block. Holds
 		tokens which are not considered as a real value for a given
 		configuration file (typically: Comments), but must be kept for the
@@ -96,7 +102,7 @@ class ConfigurationBlock:
 	@property
 	def flatenned(self):
 		return self.value
-class ConfigurationDirective:
+class ConfigurationDirective(object):
 
 	# reverse index for quick finding configuration directives
 	_by_name = {}
@@ -231,7 +237,7 @@ class ConfigurationDirective:
 
 		for token in self.end_tokens:
 			yield token
-class ConfigurationFile:
+class ConfigurationFile(object):
 	""" High level view of a configuration file, tokenized with the help of
 		pygments. Pygments is totally used out of its original scope, because
 		we don't use it for syntax highlightning at all, but for
@@ -240,7 +246,7 @@ class ConfigurationFile:
 		:param lexer: a pygments derivated lexer, used to tokenize our
 			configuration file. The lexer can have 2 specials attributes (not
 			known from pygments, specific to Licorn®):
-			* ``_lcn_directives_needing_order``: a list of unicode string
+			* ``directives_needing_order``: a list of unicode string
 			  (directives names) for which value order matters. This means
 			  that if we encounter these directives more than once, the order
 			  of their values will be taken in account to determine if 2
@@ -254,7 +260,7 @@ class ConfigurationFile:
 			  ``directives_needing_order`` will thus contain ``http_access``,
 			  to be sure that the configuration file has the default values
 			  in the good order, compared to our reference configuration data.
-			* ``_lcn_directives_dependancies``: a dictionary of unicode strings
+			* ``directives_dependancies``: a dictionary of unicode strings
 			  (directives names) pointing to lists of unicode strings (other
 			  directives names), to make them depend on each other. This will
 			  help when parsing the configuration file, to check for directives
@@ -266,14 +272,14 @@ class ConfigurationFile:
 			  This parameter is used only at loading time to detect configuration
 			  errors. We do not dynamically reorder file contents yet (I know
 			  this would be quite cool).
-			* ``_lcn_useless_types``: an optional list of pygments token types,
+			* ``useless_types``: an optional list of pygments token types,
 			  which are considered useless if encountered in a configuration
 			  directive. We use them to avoid considering end-of-line comments
 			  as directive value. Default value if not set is
 			  ``(Whitespace, Comment)``. Setting it to anything other depends
 			  on your lexer contents and states (see the squid lexer for
 			  an example).
-			* ``_lcn_new_directive_types``: an optional list of pygments token
+			* ``new_directive_types``: an optional list of pygments token
 			  types, implying that whenever one of them is found means that a
 			  new directive must be created (this is the only way to
 			  distinguish the previous directive from the next one. Default
@@ -288,24 +294,33 @@ class ConfigurationFile:
 
 		:param text: a unicode string (possibly ``None``) holding the full
 			contents of a configuration. This parameter is used when building
-			:class:`ConfigurationFile` instance from memory (reference
-			configuration contents, mostly).
+			:class:`ConfigurationFile` instances in memory.
 
-		.. note:: the configuration file holds many views of its contents, to
-			speed up manipulations and ease runtime modifications and tests:
+		.. note:: the :class:`ConfigurationFile` holds many “views” of its
+			contents, to speed up manipulations and ease runtime modifications
+			and tests:
 			* an ordered list of all blocks, used to rewrite itself when needed.
+			  With this view, the written file will be the exact replica of
+			  the file on disk (with comments, etc).
 			* an ordered list of all directives, to be able to manipulate them
-			  quickly in a higher-level way.
+			  quickly in a higher-level way. This avoids the comments and
+			  blank-line pseudo-directives (from the `pygments` point of view).
 			* a dictionnary of directives for which content order matters:
-			  those whose name can be repeated with different contents,
-			  typically acl directives, which all start with the "acl"
-			  keyword (just an example). used in comparisons, mainly.
+			  those whose name can be repeated with different values,
+			  typically “acl” related directives, which all start with the same
+			  keyword (just an example). This view is used in comparisons
+			  methods, mainly.
 
-		.. versionadded:: this class was created during the 1.3 development cycle.
+		.. versionadded:: this class was created during the 1.3 development
+			cycle but never found its way to the stable branch. It has been
+			finished and integrated into the 1.6 instead.
 	"""
 
-	default_useless_types       = (Whitespace, Comment, )
-	default_new_directive_types = (Keyword, )
+	# These can be overridden in sub-classes. This is encouraged.
+	useless_types               = (Whitespace, Comment, )
+	new_directive_types         = (Keyword, )
+	directives_needing_order    = []
+	directives_dependancies     = {}
 
 	def __init__(self, lexer, filename=None, text=None, caller=None):
 		self.blocks                   = []
@@ -316,27 +331,21 @@ class ConfigurationFile:
 		self.lexer                    = lexer
 		self.__caller                 = caller
 
-		self.directives_needing_order = lexer._lcn_directives_needing_order \
-										if hasattr(lexer, '_lcn_directives_needing_order') \
-										else None
-
-		self.directives_dependancies  = lexer._lcn_directives_dependancies \
-										if hasattr(lexer, '_lcn_directives_dependancies') \
-										else None
-
-		self.useless_types  = lexer._lcn_useless_types \
-								if hasattr(lexer, '_lcn_useless_types') \
-								else self.__class__.default_useless_types
-
-		self.new_directive_types  = lexer._lcn_new_directive_types \
-								if hasattr(lexer, '_lcn_new_directive_types') \
-								else self.__class__.default_new_directive_types
+		# TODO: integrate the Inotifier's hint,
+		# to avoid false-positive reload on write.
 
 		self.__changed = False
 		self.load()
 	@property
 	def changed(self):
 		return self.__changed
+	@changed.setter
+	def changed(self, changed):
+		if changed is not True:
+			raise RuntimeError(u'Cannot set `changed` to `False` manually, this '
+								u'must be done from the `save()` method only!')
+
+		self.__changed = True
 	@property
 	def _caller(self):
 		""" read-only property, returning the name of the caller (as a string).
@@ -473,23 +482,31 @@ class ConfigurationFile:
 		# if we reach here, nothing has been found different.
 		return False
 	def load(self):
-		""" Open the configuration file and lex it, then store the tokens
-			inside us."""
+		""" Open the configuration file and "lex it", then store the tokens
+			inside us.
 
-		#always raise an exception when a syntax error is encountered.
+			After that, chech directive order and dependancies. Any error or
+			exception will be raised barely: the file must be correct before
+			beiing used. We have currently no way to automatically check a
+			broken configuration file, this is the human's work, be he
+			system administrator or package maintainer.
+		"""
+
+		# Always raise an exception when a syntax error is encountered.
+		# NOTE: not a good idea for now, we will crash!
 		#self.lexer.add_filter(RaiseOnErrorTokenFilter())
 
 		self.__load_from_tokens(self.lexer.get_tokens(self.text or
-								open(self.filename,'rb').read()),
-								self.__find_append_func())
+								open(self.filename,'rb').read()))
 
+		self.__check_order()
 		self.__check_dependancies()
 	def __default_append_func(self, directive):
 		self.directives.append(directive)
 
 		#print '>>', str(directive)
-
-		#print '>>', directive.name, 'in', self.directives_needing_order, directive.name in self.directives_needing_order
+		#print '>>', directive.name, 'in', self.directives_needing_order, \
+		#	directive.name in self.directives_needing_order
 
 		if directive.name in self.directives_needing_order:
 			ordered = self.ordered_directives.get(directive.name, [])
@@ -498,42 +515,66 @@ class ConfigurationFile:
 	def __find_append_func(self):
 
 		if self.directives_needing_order:
-			# if directives_needing_order is True, every single line must be in the same
-			# order; __eq__ will simply use self.directives without reordering
-			# it to compare 2 configuration files.
+			# If directives_needing_order is True, every single line must be
+			# in the same order; `__eq__()` will simply use self.directives
+			# without reordering it to compare 2 configuration files.
 			if self.directives_needing_order is True:
 				return self.directives.append
 
-			# if only a subset of directives have their order which matter,
+			# If only a subset of directives have their order which matter,
 			# we store every directive as usual (contents will be compared
 			# the same way), and keep a reference in a dictionnary from
 			# which only the order of these directives will be compared.
-			# This hoppefully speeds up the comparisons in this kind or
+			# This hoppefully speeds up the comparisons in this kind of
 			# "semi-ordered-directives" mode.
 			else:
 				return self.__default_append_func
 
 		else:
 			return self.directives.append
+	def __check_order(self):
+
+		for directive_name in self.directives_needing_order:
+
+			if not directive_name in self.ordered_directives:
+				# No need to check order for this kind of directive, we
+				# have none of them in the current configuration snipplet.
+				continue
+
+			try:
+				getattr(self, '_order_check_' + directive_name)(
+										self.ordered_directives[directive_name])
+
+			except AttributeError:
+				# We don't try/except this one: either the current class has a
+				# dedicated checker method, either it has a generic checker one.
+				# But it should have at least one of them.
+				getattr(self, '_order_check_generic')(directive_name,
+									self.ordered_directives[directive_name])
 	def __check_dependancies(self):
 		#resolved = pyutils.resolve_dependancies_from_dict_strings(self.directives_dependancies)
 
-		if self.directives_dependancies in (None, []):
+		if self.directives_dependancies in (None, {}):
 			return
 
-		for directive_name in self.directives_dependancies:
+		for directive_name, depended_on_directives in self.directives_dependancies.iteritems():
 
 			for directive in self.directives:
 				if directive_name == directive.name:
 					# we've got the first occurrence of our dependant directive.
 
-					for other_directive_name in self.directives_dependancies[directive_name]:
+					for other_directive_name in depended_on_directives:
 
 						for other_directive in reversed(self.directives):
 							if other_directive_name == other_directive.name:
 								# we've got the last of depended-upon directive.
 
 								if directive.lineno < other_directive.lineno:
+
+									# TODO: try to correct the problem by moving
+									# the culprit(s) just before the dependancy,
+									# in the same order if there are many.
+
 									raise exceptions.BadConfigurationError(
 										_(u'{0}: all {1} directives (last '
 											'encountered: {2}, line {3}) should be '
@@ -555,7 +596,7 @@ class ConfigurationFile:
 								break
 					# idem
 					break
-	def __load_from_tokens(self, tokensource, append_func):
+	def __load_from_tokens(self, tokensource):
 		""" Read tokens one by one and try to group them into higher-level
 			groups (directives, comments, etc). This method is basically the
 			same as the ``format()`` method of a `Pygments` ``Formatter``.
@@ -566,6 +607,8 @@ class ConfigurationFile:
 			"""
 
 		assert ltrace_func(TRACE_CONFIG)
+
+		append_func = self.__find_append_func()
 
 		# store the line count (guessed from the tokens contents). This will
 		# allow better display of parse errors, and knowing the order of
@@ -593,7 +636,6 @@ class ConfigurationFile:
 
 		for ttype, value in tokensource:
 			stack.append(ConfigurationToken(ttype, value))
-
 
 			# if current token type implies creating a new directive, try to.
 			if ttype in self.new_directive_types and linecount > 1:
@@ -699,7 +741,7 @@ class ConfigurationFile:
 						return d
 
 			if raise_partial and partial:
-				raise partial
+				raise PartialMatch(partial)
 
 			raise ValueError(_(u'Directive {0} not found in {1}.').format(directive, repr(self)))
 
@@ -712,19 +754,46 @@ class ConfigurationFile:
 
 		raise ValueError('no directive nor directive_name was specified.')
 	def index(self, directive):
+		""" Given a :param:`ConfigurationDirective` (already parsed, coming
+			from another :class:`ConfigurationFile` for example), return the
+			index of the first occurence of the same directive in the
+			current :class:`ConfigurationFile` instance.
+
+			Raises :class:`ValueError` if not found.
+
+			.. note:: this method doesn't work on comments. It won't find them,
+				even if they are present, because it search only **directives**.
+		"""
 		for d in self.directives:
 			if d == directive:
 				return self.blocks.index(d)
+
 		raise ValueError('%s not found in %r.' % (directive, self))
 	def index_first(self, directive_name):
+		""" Given a directive name (as a string), return the
+			index of the first occurence of the directive with the same name
+			(whatever the value) in the current :class:`ConfigurationFile`
+			instance.
+
+			Raises :class:`ValueError` if not found.
+
+			.. note:: this method doesn't work on comments. It won't find them,
+				even if they are present, because it search only **directives**.
+
+		"""
 		for d in self.directives:
 			if d.name == directive_name:
 				return self.blocks.index(d)
+
 		raise ValueError('%s not found in %r.' % (directive_name, self))
 	def index_last(self, directive_name):
+		""" See the :meth:`index_first` method. This one do the same, starting
+			from the end of :class:`ConfigurationFile`. """
+
 		for d in reversed(self.directives):
 			if d.name == directive_name:
 				return self.blocks.index(d)
+
 		raise ValueError('%s not found in %r.' % (directive_name, self))
 	def add(self, directive):
 		pass
@@ -733,7 +802,11 @@ class ConfigurationFile:
 	def remove_at(self, position):
 		pass
 	def insert_at(self, position, directive):
-		pass
+		"""
+
+			.. todo:: needs implementation for :meth:`merge`.
+		"""
+		logging.notice('insert "{0}" at position {1}.'.format(''.join(directive.flatenned), position))
 	def insert_before(self, directive):
 		pass
 	def insert_after(self, directive):
@@ -747,8 +820,10 @@ class ConfigurationFile:
 	def insert_after_last(self, directive_name, directive):
 		pass
 	def merge(self, other, on_conflicts=None, batch=False, auto_answer=None):
-		""" Try to merge "other" into us. When 2 directives conflict, do
-			whatever is specified by the :param:`on_conflicts` parameter.
+		""" Try to merge another instance of :class:`ConfigurationFile` into
+			the current instance, beiing smart in the process. When 2 directives
+			conflict, do whatever is specified by the :param:`on_conflicts`
+			parameter.
 
 			:param other: the other :class:`ConfigurationFile` instance from
 				which we want to merge.
@@ -773,21 +848,78 @@ class ConfigurationFile:
 				``False``.
 
 			.. todo:: merge comment blocks. As of current version, we only
-				merge directives, keep our own comments and forget other's
+				merge directives, keep our own comments and forget "other's"
 				stand-alone comments (comments included in merged directives
 				gets merged, as part of the directive).
+
+			..versionadded:: 1.6
 		"""
 
-		my_directives    = self.directives[:]
-		other_directives = other.directives[:]
+		for directive_to_merge in other.directives:
+			try:
+				already_present = self.index(directive_to_merge)
 
-		my_ordered    = self.ordered_directives.copy()
-		other_ordered = other.ordered_directives.copy()
+			except ValueError:
+				# We don't have it, go merging.
+				self.__merge_one_directive(directive_to_merge)
 
-		raise NotImplementedError('merging not implemented yet')
+				# Note that we changed.
+				self.changed = True
+
+		return self.changed
+	def __merge_one_directive(self, directive):
+
+		# By default, insert new directives at the end of file.
+		best_insert_index = self.blocks[-1].lineno + 1
+
+		# And see if we can find a better index, earlier in the file.
+
+		if directive.name in self.ordered_directives:
+			# TODO: implement this.
+			pass
+
+		for dependant_name, dependancies in self.directives_dependancies.iteritems():
+			if directive.name == dependant_name:
+				for dep_name in dependancies:
+					try:
+						better_attempt = self.index_first(dep_name)
+
+					except ValueError:
+						continue
+
+					if better_attempt < best_insert_index:
+						best_insert_index = better_attempt
+
+			# If directive is a "dependant" one, no need to test against
+			# dependancies of the current rule: the directive won't depend
+			# on itself. Thus the 'elif'.
+			elif directive.name in dependancies:
+
+				# Find the first dependant occurence, and insert just before.
+				try:
+					better_attempt = self.index_first(dependant_name) - 1
+
+				except ValueError:
+					continue
+
+				# Testing dependants, we must insert *before* all of them.
+				if better_attempt < best_insert_index:
+					best_insert_index = better_attempt
+
+				# Don't break the loop: in case the directive we're merging
+				# is a dependancy of more than one others, all of them must be
+				# tested to be sure we insert in the file before the first of
+				# the earliest of them all.
+				# As dependancies are not ordered in any way between each
+				# other in the file and in the current instance internal data
+				# structures, we have no mean to do this faster.
+				#break
+
+		self.insert_at(best_insert_index, directive)
 	def difference(self, other, on_conflicts=None, batch=False, auto_answer=None):
 		""" Remove other's directives from us. """
-		self.changed = False
+
+		self.__changed = False
 	def output(self):
 		Terminal256Formatter(encoding='utf-8').format(
 			(token.to_pygments() for token in
@@ -857,3 +989,7 @@ class ConfigurationFile:
 			else:
 				raise exceptions.LicornRuntimeError(_(u'%s: cannot save a '
 					'file without any filename!') % self.name)
+
+__all__ = ('ConfigurationFile', 'ConfigurationDirective',
+			'ConfigurationBlock', 'ConfigurationToken',
+			'PartialMatch',)
