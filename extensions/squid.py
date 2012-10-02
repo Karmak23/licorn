@@ -201,8 +201,6 @@ class LicornSquidConfigurationFile(ConfigurationFile):
 
 		last_value = directives[-1].value
 
-		#print '>> LAST', str(last_value), special_value, special_value in last_value
-
 		if not (_allow in last_value or _deny in last_value):
 			raise exceptions.BadConfigurationError(_(u'{0}: last "{1}" '
 					u'directive must be an "allow" or a "deny" one.').format(
@@ -234,9 +232,13 @@ class LicornSquidConfigurationFile(ConfigurationFile):
 	def _order_check_icp_access(self, directives):
 		self._order_check_common_allow_deny('icp_access', directives)
 	def _order_check_refresh_pattern(self, directives):
-		""" basic check: refresh_pattern '.' must be the last. """
+		""" Basic check: refresh_pattern '.' must be the last. """
 
-		return True
+		if not ConfigurationToken(Token.Text, u'.') in directives[-1].value:
+			raise exceptions.BadConfigurationError(_(u'{0}: last "{1}" '
+								u'directive must have pattern "{2}".').format(
+									self.filename, directive_name, '.'))
+
 class SquidExtension(ObjectSingleton, ServiceExtension):
 	""" A proxy extension using squid.
 
