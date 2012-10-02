@@ -26,13 +26,13 @@
 		{{ modal_html }}
 	</div>
 
-	<div class='table_header'>
-		<span id="table_header_title">
+	<div class='table_header row-fluid'>
+		<span id="table_header_title" class="span2">
 			{%- block list_title -%}
 			{%- endblock -%}
 		</span>
 
-		<span id="table_header_massive_actions" class='table_header_item'>
+		<span id="table_header_massive_actions" class='span4'>
 			<div class="centered">&nbsp;</div>
 			<div class="centered">
 				<div class="input-prepend" >
@@ -45,7 +45,7 @@
 		</span>
 
 
-		<span id="table_header_filter" class='table_header_item'>
+		<span id="table_header_filter" class='span3'>
 			<div class="centered">&nbsp;</div>
 			<div class="centered" id='list_filter'>
 				<div class="input-prepend" >
@@ -57,10 +57,11 @@
 			</div>
 		</span>
 
-		<span id="table_header_search" class='table_header_item'>
+		<span id="table_header_search" class='span2'>
 			<div class="centered">&nbsp;</div>
 			<div class="input-prepend" >
-				<span class="add-on"><i class="icon-search"></i></span><input type='text' accesskey="f" id="list_search"/>
+				<span class="add-on"><i class="icon-search"></i></span>
+				<input class="input-large" type='text' accesskey="f" id="list_search"/>
 			</div>
 		</span>
 	</div>
