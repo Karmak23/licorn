@@ -13,7 +13,7 @@ import os, re, netifaces
 from pygments.token import *
 from pygments.lexer import RegexLexer
 
-from licorn.foundations           import logging, settings
+from licorn.foundations           import logging, settings, exceptions
 from licorn.foundations           import process, network, hlstr
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
@@ -22,7 +22,7 @@ from licorn.foundations.pyutils   import add_or_dupe_enumeration
 from licorn.foundations.constants import services, svccmds, distros, roles, priorities
 from licorn.foundations.base      import ObjectSingleton, Enumeration
 from licorn.foundations.classes   import ConfigFile
-from licorn.foundations.config    import ConfigurationFile
+from licorn.foundations.config    import ConfigurationFile, ConfigurationToken
 
 from licorn.core                  import LMC
 from licorn.extensions            import ServiceExtension
@@ -186,26 +186,53 @@ class LicornSquidConfigurationFile(ConfigurationFile):
 	def __init__(self, *args, **kwargs):
 		""" """
 		ConfigurationFile.__init__(self, self.__class__.class_lexer, *args, **kwargs)
-	def _order_check_common_allow_deny(self, directive_name, directives):
+	def _order_check_common_allow_deny(self, directive_name, directives, special_value=None):
 		""" basic check: if last directive is "deny", check that its value is
 			"all" and that all other are of the form "allow …" (but not "all"),
 			and vice-versa for "deny, allow". """
-		for directive in directives:
-			print '>>', directive
 
-		return True
+		if special_value is None:
+			# WARNING: 'all' is a constant, not a `Token.Text`.
+			# This depends on the lexer contents declaration, BTW.
+			special_value = ConfigurationToken(Token.Name.Constant, u'all')
+
+		_allow   = ConfigurationToken(Token.Name.Constant, u'allow')
+		_deny    = ConfigurationToken(Token.Name.Constant, u'deny')
+
+		last_value = directives[-1].value
+
+		#print '>> LAST', str(last_value), special_value, special_value in last_value
+
+		if not (_allow in last_value or _deny in last_value):
+			raise exceptions.BadConfigurationError(_(u'{0}: last "{1}" '
+					u'directive must be an "allow" or a "deny" one.').format(
+									self.filename, directive_name))
+
+		elif special_value not in last_value:
+			raise exceptions.BadConfigurationError(_(u'{0}: last "{1}" '
+									u'directive must concern "{2}".').format(
+										self.filename, directive_name,
+										special_value.value))
 	def _order_check_http_access(self, directives):
 
-		# The "manager" part is special.
-
-		mandir = []
+		# The "manager" part stands alone, it must be checked on its own.
+		mandirs  = []
+		_manager = ConfigurationToken(Token.Text, u'manager')
 
 		for directive in directives:
+			if _manager in directive.value:
+				mandirs.append(directive)
 
+		# TODO: this is not feature complete and will fail to check correctly,
+		# because 'http_access allow manager localhost' can be last and the
+		# test will only check "allow manager" which is True. It should check
+		# that they are the only values, not only that they are present.
+		if mandirs:
+			self._order_check_common_allow_deny('http_access', mandirs, _manager)
 
-		return self._order_check_common_allow_deny('http_access', directives)
+		self._order_check_common_allow_deny('http_access', directives)
 	def _order_check_icp_access(self, directives):
-		return self._order_check_common_allow_deny('icp_access', directives)
+		self._order_check_common_allow_deny('icp_access', directives)
 	def _order_check_refresh_pattern(self, directives):
 		""" basic check: refresh_pattern '.' must be the last. """
 

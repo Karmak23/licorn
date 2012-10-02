@@ -92,11 +92,17 @@ def test_equality():
 	assert s1 == s4
 	assert s2 == s4
 def test_bad_config_syntax_or_ordering():
-		for filename in ('/squid3/squid.conf.orig.short.baddly_written_01',
-						'/squid3/squid.conf.orig.short.baddly_written_02',
-						'/squid3/squid.conf.orig.short.bad_ordering_01',
-						'/squid3/squid.conf.orig.short.bad_ordering_02'):
-			yield bad_config_syntax_func, filename
+	"""
+
+		.. todo:: create a test for the "manager" part of  ``*_access``
+			directives when the check-related code is implemented.
+	"""
+
+	for filename in ('/squid3/squid.conf.orig.short.baddly_written_01',
+					'/squid3/squid.conf.orig.short.baddly_written_02',
+					'/squid3/squid.conf.orig.short.bad_ordering_01',
+					'/squid3/squid.conf.orig.short.bad_ordering_02'):
+		yield bad_config_syntax_func, filename
 
 def test_merge():
 	m1 = ConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.1.start',

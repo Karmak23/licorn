@@ -54,7 +54,11 @@ class ConfigurationToken(object):
 		changed, not the type; it is a pygments type).
 
 		The R/O implementation lies in python properties.
-		The very small nature, thanks to __slots__.
+		The very small nature is thanks to __slots__.
+
+		This class implements :meth:`__eq__` and :meth:`__ne__` methods, which
+		are used in :class:`ConfigurationFile` *ordering check* methods to
+		compare tokens and quickly (un-)select directives.
 	"""
 	__slots__ = ('__type', '__value')
 
@@ -77,6 +81,10 @@ class ConfigurationToken(object):
 	@value.setter
 	def value(self, newval):
 		self.__value = newval
+	def __eq__(self, other):
+		return self.__type == other.type and self.__value == other.value
+	def __ne__(self, other):
+		return self.__type != other.type or self.__value != other.value
 	def to_pygments(self):
 		return self.__type, self.__value
 class ConfigurationBlock(object):
