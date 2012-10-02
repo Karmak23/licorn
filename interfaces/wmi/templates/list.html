@@ -78,16 +78,6 @@
 			{%- endblock -%}
 		</tbody>
 	</table>
-	<script language="javascript" type="text/javascript">
-		$(document).ready(function() {
-			
-		})
-	</script>
-
-
-
-
-
 
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
@@ -166,7 +156,9 @@
 
 		// filters used to filter the table
 		var filters = { 'standard' : true, 'system': true, 'restricted': false, 'privileged': true}
+		// sortableTable object
 		var st;
+		
 		function setup_list(list_name) {
 			// search field
 			my_setup_table_search()
@@ -307,7 +299,7 @@
 			$('.massive_action').click(function() {
 				// get selected items
 				selected_rows = get_selected_rows($('#model_groups_table tbody'), select_active_class);
-				console.log(selected_rows)
+				
 				action_name = $(this).data('name')
 				action_url = $(this).data('url')
 
@@ -322,7 +314,7 @@
 
 					// get the massive selection template
 					url = '/groups/massive_select_template/'+action_name+'/'+gids.join(',')
-					console.log(url);
+					//console.log(url);
 					$.get(url, function(modal_html) {
 						$("#modal").html(modal_html).modal()
 						init_massive_select_events(action_name, action_url, gids);
@@ -331,7 +323,7 @@
 			})
 		}
 		function init_massive_select_events(action_name, action_url, gids) {
-			console.log("init_massive_select_events", action_name, action_url, gids)
+			//console.log("init_massive_select_events", action_name, action_url, gids)
 			$('#apply_massive_action').click(function() {
 				// close the modal
 				$("#machine_modal").modal('hide')
