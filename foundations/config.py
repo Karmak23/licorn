@@ -815,6 +815,11 @@ class ConfigurationFile(object):
 			.. todo:: needs implementation for :meth:`merge`.
 		"""
 		logging.notice('insert "{0}" at position {1}.'.format(''.join(directive.flatenned), position))
+
+
+
+
+		pass
 	def insert_before(self, directive):
 		pass
 	def insert_after(self, directive):
@@ -865,7 +870,7 @@ class ConfigurationFile(object):
 
 		for directive_to_merge in other.directives:
 			try:
-				already_present = self.index(directive_to_merge)
+				self.index(directive_to_merge)
 
 			except ValueError:
 				# We don't have it, go merging.
@@ -927,19 +932,24 @@ class ConfigurationFile(object):
 	def difference(self, other, on_conflicts=None, batch=False, auto_answer=None):
 		""" Remove other's directives from us. """
 
-		self.__changed = False
+		#self.changed = True
+		pass
+
 	def output(self):
 		Terminal256Formatter(encoding='utf-8').format(
-			(token.to_pygments() for token in
-				itertools.chain.from_iterable(b.flatenned
-					for b in self.blocks)),
-			sys.stderr)
+											(token.to_pygments() for token in
+												itertools.chain.from_iterable(
+													b.flatenned
+													for b in self.blocks)),
+											sys.stderr)
 	def to_string(self):
 		return u''.join(unicode(token) for token in
-			itertools.chain.from_iterable(b.flatenned for b in self.blocks))
+										itertools.chain.from_iterable(
+											b.flatenned for b in self.blocks))
 	def __save(self, filename=None):
 		""" Write the configuration file contents back to the disk,
-			encapsulated with a Filelock. """
+			encapsulated with a Filelock.
+		"""
 
 		if filename is None:
 			filename = self._filename
@@ -951,17 +961,18 @@ class ConfigurationFile(object):
 		with FileLock(self, filename):
 			open(filename, 'w').write(data)
 
-			# for /etc/passwd
 			ftempp, fpathp = tempfile.mkstemp(dir=os.path.dirname(filename))
+
 			os.write(ftempp, data)
 
-			# FIXME: implement these ch* calls properly, with dynamic values...
+			# FIXME: implement these ch* calls properly, with dynamic
+			# values taken from the original file we are replacing.
 			os.fchmod(ftempp, 0644)
 			#os.fchown(ftempp, 0, 0)
 
 			os.close(ftempp)
 
-			# FIXME: implement this one too...
+			# TODO: implement the INotifier Hint…
 			#self.__hint_pwd += 1
 
 			os.rename(fpathp, filename)
@@ -978,8 +989,9 @@ class ConfigurationFile(object):
 
 		if self.changed:
 			if filename:
-				if batch or logging.ask_for_repair(_(u'{0}: system file {1} must be '
-					'modified for the configuration to be complete. Do it?').format(
+				if batch or logging.ask_for_repair(_(u'{0}: system file {1} '
+							u'must be modified for the configuration to be '
+							u'complete. Do it?').format(
 								stylize(ST_NAME, self._caller),
 								stylize(ST_PATH, self._filename)),
 							auto_answer=auto_answer):
@@ -987,16 +999,22 @@ class ConfigurationFile(object):
 					fsapi.backup_file(filename)
 					self.__save(filename)
 
+					# Alter the property via the underlying private attribute,
+					# else modifications are not allowed.
+					self.__changed = False
+
 					logging.notice(_(u'{0}: altered configuration file {1}.').format(
-						stylize(ST_NAME, self._caller), stylize(ST_PATH, self._filename)))
+											stylize(ST_NAME, self._caller),
+											stylize(ST_PATH, self._filename)))
 
 				else:
-					raise exceptions.LicornModuleError(_(u'{0}: configuration file {1} '
-						'must be altered to continue.').format(self._caller, self._filename))
+					raise exceptions.LicornModuleError(_(u'{0}: configuration '
+							u'file {1} must be altered to continue.').format(
+								self._caller, self._filename))
 
 			else:
 				raise exceptions.LicornRuntimeError(_(u'%s: cannot save a '
-					'file without any filename!') % self.name)
+								u'file without any filename!') % self.name)
 
 __all__ = ('ConfigurationFile', 'ConfigurationDirective',
 			'ConfigurationBlock', 'ConfigurationToken',
