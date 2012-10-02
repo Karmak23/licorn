@@ -213,25 +213,12 @@ $(document).ready(function() {
 			link = "HOME";
 
 		if (current_page.match(link)) {
-
 			$(this).find(".menu-text").addClass("menu-current");
-			$(this).find(".menu-back").css({'background':"0"});
-			$(this).css({'background':"url('/media/images/fleche_bleue.png') no-repeat"});
 			$(this).find(".menu-content").delay(250).slideDown();
 		}
 	});
 
-	// menu animation
-	$(".menu-text").hover(function() {
-		if (! $(this).hasClass('menu-current')) {
-			$(this).stop(true, false).animate({ backgroundPositionX: 0 }, 500, 'easeOutCubic');
-		}
-	}, function() {
-		if (! $(this).hasClass('menu-current')) {
-			$(this).stop(true, false).animate({ backgroundPositionX: -220 }, 500, 'linear');
-		}
-	});
-
+	
 	// Setup base "normal links". Items which have CSS attr 'ajax-sidebar-menuitem'
 	setup_ajaxized_links('.ajax-sidebar-menuitem', ['ajax-load-content',
 		'ajax-load-main-content', 'ajax-load-sub-content', 'ajax-menu-link-item']);

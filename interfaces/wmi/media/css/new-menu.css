@@ -1,0 +1,95 @@
+.menu-current {
+	background-color: #7BE5FF !important;
+}
+.menu-text {
+	background-color: #580D27;
+	padding-left: 50px;
+	vertical-align: middle;
+	line-height: 40px;
+	color:white;
+	text-decoration: none;
+}
+.menu-text:hover {
+	background-color: #8d153e;
+}
+#banner {
+	background: url('/media/images/bkg_menu_1px.png');
+	height: 100%;
+}
+
+#logo_wrapper {
+	text-align: center;
+	width: 100%;
+	margin-bottom: 20px;
+	margin-top: 10px;
+}
+.menu-content-item {
+	display: block;
+	width: 100%;
+	padding-left: 45px;
+	margin-bottom: 2px;
+	
+	vertical-align: center;
+	cursor: pointer;
+	opacity:0.5;
+}
+.menu_link, .menu_link:hover {
+	text-decoration: none;
+}
+.menu-content-text {
+	margin-top: 1px;
+}
+.menu-content-item:hover {
+	opacity: 1;
+}
+.menu-content-item a {
+	color: white;
+}
+.menu-content-item img{
+	border: 0;
+	vertical-align: middle;
+}
+.menu-content-item:first-of-type {
+	padding-top: 10px;
+}
+.menu-content-item:last-of-type {
+	padding-bottom: 10px;
+	margin-bottom: 0;
+}
+
+/* ================================================== Metanav navigation bar */
+
+#metanav {
+	position: absolute;
+	left: 0;
+	bottom: 25px;
+	text-align: center;
+	width: 100%;
+}
+
+#metanav ul {
+	margin: 0 auto;
+	text-align: center;
+}
+
+#metanav ul li {
+	display: inline;
+	margin: 0;
+	padding: 2px 6px 2px 4px;
+	border-right: 1px dotted white;
+}
+
+#metanav ul li.last {
+	border-right: 0;
+}
+
+.licorn_version {
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	text-align: center;
+	font-size: 80%;
+	color: #f55;
+	margin-left: -10px;
+	width: 100%;
+}

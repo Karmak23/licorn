@@ -7,8 +7,15 @@
 @menu_link_color: white;
 
 div#banner {
-	background: @back_color url('/media/images/bkg_menu_1px.png');
+	background: @back_color url('/media/images/banner_back.png') top left no-repeat;
+	color: #fff;
 	height: 100%;
+	width: 220px;
+	position: fixed;
+	overflow: hidden;
+	left: 0px;
+	top: -1px;
+	float: left;
 }
 
 @menu_link_font_size: 16px;
@@ -21,9 +28,18 @@ div#dynamic_mainnav_list {
 	border: none;
 	font: inherit;
 	font-size: 120%;
-	}
+	width: @menu_width;
+}
 div#dynamic_mainnav_list {
 	margin:0;
+}
+.menu-current {
+	background-color: #7BE5FF !important;
+	width:156px !important;
+}
+.menu-text:hover {
+	background-color: #8d153e;
+	width:156px !important;
 }
 #auxnav {
 	border: none;
@@ -40,9 +56,7 @@ div#dynamic_mainnav_list {
 }
 
 .menu-item {
-}
-.menu-current {
-	background-color: #7BE5FF !important;
+	width: @menu_width + 20;
 }
 
 .menu_link {
@@ -107,15 +121,21 @@ div#dynamic_mainnav_list {
 }
 
 .menu-text {
-	background-color: #580D27;
-	padding-left: 50px;
-}
-.menu-text:hover {
-	background-color: #8d153e;
+	padding-left: 45px;
+	position: relative;
+	/* WARNING: don't ever type "- @menu_line_height" with a space between
+		the minus and the variable; this won't work. */
+	top: -@menu_line_height;
+	left: 0;
+	background: url('/media/images/fleche_pourpre.png') no-repeat;
+	background-position: -(@menu_width + 20) top;
+
+	font-size: @menu_link_font_size;
 }
 
 .menu-back {
 	background: url('/media/images/background_item_menu.png');
+	width: @menu_width;
 	position: relative;
 	top:0;
 	left: 0;
