@@ -10,6 +10,10 @@ body {
 #main_content {
 	
 }
+#content {
+	margin-right:2.56%;
+}
+
 #loading_information {
 	position: absolute;
 	top: 0;

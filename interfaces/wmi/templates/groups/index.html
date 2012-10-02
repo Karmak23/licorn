@@ -15,20 +15,20 @@
 {%- block massive_actions -%}
 	
 	<span class="btn-group">
-		<button class="btn massive_action" data-url='/groups/massive/delete/' data-name='delete' id="massive_delete">
-			<img src="/media/images/14x14/mass_del.png" title="{{ _('Massively delete groups.') }}" alt="massive delete icon"/>
+		<button class="btn massive_action" data-url='/groups/massive/delete/' title="{{ _('Massively delete selected groups.') }}"  data-name='delete' id="massive_delete">
+			<img src="/media/images/14x14/mass_del.png" alt="massive delete icon"/>
 		</button>
-		<button class="btn massive_action" data-url='/groups/massive/permissivness/' data-name='permissive' id="massive_permissive">
-			<img src="/media/images/14x14/mass_lock.png" title="{{ _('Massively make/unmake groups permissive.') }}" alt="massive permissive icon"/>
+		<button class="btn massive_action" data-url='/groups/massive/permissivness/' data-name='permissive' id="massive_permissive" title="{{ _('Massively make/unmake selected groups permissive.') }}" >
+			<img src="/media/images/14x14/mass_lock.png" alt="massive permissive icon"/>
 		</button>
-		<button class="btn massive_action" data-url='/groups/massive/export/' data-name='export' id="massive_export">
-			<img src="/media/images/14x14/mass_export.png" title="{{ _('Massively export groups.') }}" alt="massive export icon"/>
+		<button class="btn massive_action" data-url='/groups/massive/export/' data-name='export' id="massive_export" title="{{ _('Massively export seleted groups.') }}" >
+			<img src="/media/images/14x14/mass_export.png" alt="massive export icon"/>
 		</button>
-		<button class="btn massive_action" data-url='/groups/massive/apply_skel/' data-name='skel' id="massive_skel">
-			<img src="/media/images/14x14/mass_skel.png" title="{{ _('Massively reapply groups\' skel on groups\' members.') }}" alt="massive apply skel icon"/>
+		<button class="btn massive_action" data-url='/groups/massive/apply_skel/' data-name='skel' id="massive_skel" title="{{ _('Massively reapply groups\' skel on groups\' members.') }}">
+			<img src="/media/images/14x14/mass_skel.png" alt="massive apply skel icon"/>
 		</button>
-		<button class="btn massive_action" data-url='/groups/massive/edit/' data-name='edit' id="massive_edit">
-			<img src="/media/images/14x14/mass_group.png" title="{{ _('Massively edit groups.') }}" alt="massive edit groups icon"/>
+		<button class="btn massive_action" data-url='/groups/massive/edit/' data-name='edit' id="massive_edit" title="{{ _('Massively edit groups.') }}">
+			<img src="/media/images/14x14/mass_group.png" alt="massive edit groups icon"/>
 		</button>
 	</span>
 	

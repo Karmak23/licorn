@@ -3,11 +3,13 @@
 }
 .menu-text {
 	background-color: #580D27;
-	padding-left: 50px;
+	padding-left: 40px;
 	vertical-align: middle;
 	line-height: 40px;
 	color:white;
 	text-decoration: none;
+	font-size:16px;
+	margin-top:5px;
 }
 .menu-text:hover {
 	background-color: #8d153e;
@@ -26,7 +28,7 @@
 .menu-content-item {
 	display: block;
 	width: 100%;
-	padding-left: 45px;
+	padding-left: 55px;
 	margin-bottom: 2px;
 	
 	vertical-align: center;

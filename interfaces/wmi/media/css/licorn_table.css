@@ -2,6 +2,7 @@
 	position: fixed;
 	background-color: white;
 	top: 0px;
+	width:97.64% !important;
 }
 .centered {
 	text-align: center !important;
