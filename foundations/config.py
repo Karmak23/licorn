@@ -36,10 +36,10 @@ from pygments.filters    import RaiseOnErrorTokenFilter
 from pygments.formatters import Terminal256Formatter, NullFormatter
 
 # Other Licorn® foundations imports
-import exceptions, styles
+import exceptions, styles, logging
 from styles  import *
 from ltrace  import ltrace, ltrace_func, ltrace_var
-from ltraces import TRACE_FOUNDATIONS, TRACE_CONFIG
+from ltraces import TRACE_CONFIG
 
 stylize = styles.stylize
 
@@ -65,8 +65,6 @@ class ConfigurationToken(object):
 	def __init__(self, ttype, value):
 		self.__type  = ttype
 		self.__value = value
-
-		assert ltrace_func(TRACE_CONFIG, 1)
 	def __str__(self):
 		return self.value
 	def __repr__(self):
@@ -101,8 +99,6 @@ class ConfigurationBlock(object):
 
 		self.value  = value
 		self.parent = parent
-
-		assert ltrace_func(TRACE_CONFIG, 1)
 	def __str__(self):
 		return ''.join(str(x) for x in self.value)
 	def __repr__(self):
@@ -137,7 +133,7 @@ class ConfigurationDirective(object):
 			# Strip the eventual (error-prone and useless) end-of-line
 			# Comment and Whitespace from our real value, but keep them safe
 			# for the rendering phase.
-			while value[-1].type in self.parent.useless_types:
+			while value[-1].type in self.parent.token_ignored_types:
 				self.end_tokens[0:0] = [ value[-1] ]
 				del value[-1]
 
@@ -151,8 +147,6 @@ class ConfigurationDirective(object):
 		curvals = self.__class__._by_name.get(index_key, [])
 		curvals.append(self)
 		self.__class__._by_name[index_key] = curvals
-
-		assert ltrace_func(TRACE_CONFIG, 1)
 	def __eq__(self, other):
 		""" Return ``True`` if the current directive is the same as the other,
 			else ``False``.
@@ -168,21 +162,21 @@ class ConfigurationDirective(object):
 		"""
 
 		if self.name != other.name:
-			assert ltrace(TRACE_FOUNDATIONS, ' %s directive name %s != %s' % (
+			assert ltrace(TRACE_CONFIG, ' %s directive name %s != %s' % (
 								self.__class__.__name__, self.name,other.name))
 			return False
 
 		# Assuming same lenght of two directives coming from 2 different files
 		# is possible because Comments have been stripped out at instanciation.
 		if len(self.value) != len(other.value):
-			assert ltrace(TRACE_FOUNDATIONS, ' %s lengths %s != %s' % (
+			assert ltrace(TRACE_CONFIG, ' %s lengths %s != %s' % (
 				self.__class__.__name__, len(self.value), len(other.value)))
 			return False
 
 		for one, two in zip(self.value, other.value):
 
 			if one.type != two.type:
-				assert ltrace(TRACE_FOUNDATIONS, ' %s value type %s != %s' % (
+				assert ltrace(TRACE_CONFIG, ' %s value type %s != %s' % (
 								self.__class__.__name__, one.type, two.type))
 				return False
 
@@ -192,7 +186,7 @@ class ConfigurationDirective(object):
 				continue
 
 			if one.value != two.value:
-				assert ltrace(TRACE_FOUNDATIONS, ' %s value content %s != %s' % (
+				assert ltrace(TRACE_CONFIG, ' %s value content %s != %s' % (
 								self.__class__.__name__, one.value, two.value))
 				return False
 
@@ -202,21 +196,21 @@ class ConfigurationDirective(object):
 			other, else ``False``. See :meth:`__eq__` for notes. """
 
 		if self.name != other.name:
-			assert ltrace(TRACE_FOUNDATIONS, ' %s directive name %s != %s' % (
+			assert ltrace(TRACE_CONFIG, ' %s directive name %s != %s' % (
 							self.__class__.__name__, self.name, other.name))
 			return True
 
 		# assuming same lenght is possible because comments have been
 		# stripped out at ConfigurationDirective instanciation.
 		if len(self.value) != len(other.value):
-			assert ltrace(TRACE_FOUNDATIONS, ' %s lengths %s != %s' % (
+			assert ltrace(TRACE_CONFIG, ' %s lengths %s != %s' % (
 				self.__class__.__name__, len(self.value), len(other.value)))
 			return True
 
 		for one, two in zip(self.value, other.value):
 
 			if one.type != two.type:
-				assert ltrace(TRACE_FOUNDATIONS, ' %s value type %s != %s' % (
+				assert ltrace(TRACE_CONFIG, ' %s value type %s != %s' % (
 								self.__class__.__name__, one.type, two.type))
 				return True
 
@@ -226,7 +220,7 @@ class ConfigurationDirective(object):
 				continue
 
 			if one.value != two.value:
-				assert ltrace(TRACE_FOUNDATIONS, ' %s value content %s != %s' % (
+				assert ltrace(TRACE_CONFIG, ' %s value content %s != %s' % (
 								self.__class__.__name__, one.value, two.value))
 				return True
 
@@ -280,7 +274,7 @@ class ConfigurationFile(object):
 			  This parameter is used only at loading time to detect configuration
 			  errors. We do not dynamically reorder file contents yet (I know
 			  this would be quite cool).
-			* ``useless_types``: an optional list of pygments token types,
+			* ``token_ignored_types``: an optional list of pygments token types,
 			  which are considered useless if encountered in a configuration
 			  directive. We use them to avoid considering end-of-line comments
 			  as directive value. Default value if not set is
@@ -304,6 +298,11 @@ class ConfigurationFile(object):
 			contents of a configuration. This parameter is used when building
 			:class:`ConfigurationFile` instances in memory.
 
+		:param snipplet: a boolean telling if the ``filename`` or ``text`` is
+			a snipplet or a “real” configuration file. If it's a snipplet, a
+			number of checks will be relaxed because snipplets are incomplete
+			by nature.
+
 		.. note:: the :class:`ConfigurationFile` holds many “views” of its
 			contents, to speed up manipulations and ease runtime modifications
 			and tests:
@@ -324,19 +323,20 @@ class ConfigurationFile(object):
 			finished and integrated into the 1.6 instead.
 	"""
 
-	# These can be overridden in sub-classes. This is encouraged.
-	useless_types               = (Whitespace, Comment, )
+	# These can be overridden in sub-classes, and it's encouraged.
+	token_ignored_types         = (Whitespace, Comment, )
 	new_directive_types         = (Keyword, )
 	directives_needing_order    = []
 	directives_dependancies     = {}
 
-	def __init__(self, lexer, filename=None, text=None, caller=None):
+	def __init__(self, lexer, filename=None, text=None, snipplet=False, caller=None):
 		self.blocks                   = []
 		self.directives               = []
 		self.ordered_directives       = {}
 		self.filename                 = filename
 		self.text                     = text
 		self.lexer                    = lexer
+		self.snipplet                 = snipplet
 		self.__caller                 = caller
 
 		# TODO: integrate the Inotifier's hint,
@@ -349,11 +349,14 @@ class ConfigurationFile(object):
 		return self.__changed
 	@changed.setter
 	def changed(self, changed):
-		if changed is not True:
-			raise RuntimeError(u'Cannot set `changed` to `False` manually, this '
-								u'must be done from the `save()` method only!')
 
-		self.__changed = True
+		if changed is True:
+			self.__changed = True
+			return
+
+		raise RuntimeError(u'Cannot set `changed` to `False` manually, '
+					u'this must be done from the `save()` method only!')
+
 	@property
 	def _caller(self):
 		""" read-only property, returning the name of the caller (as a string).
@@ -368,17 +371,20 @@ class ConfigurationFile(object):
 		return u'%s @0x%x for %s via %s' % (self.__class__.__name__, id(self),
 								self.filename or 'in_memory', self.lexer)
 	def __eq__(self, other):
-		""" Return ``True`` if 2 configuration files are the same which means:
+		""" Return ``True`` if 2 configuration files are equals, which means:
 			* they have the same number of configuration directives, and each
 			  of them have the same value.
+			* all ordered directives are the same, compared ordered.
+			* all other directives are the same.
 
 			.. note:: the names of the compared configuration files can be
-				  different, this doesn't affect the equality.
-			* """
+				  different, this doesn't affect the equality. You can compare
+				  a file on disk with an in-memory instance, too.
+		"""
 
 		if len(self.directives) != len(other.directives):
-			assert ltrace(TRACE_CONFIG, 'different by number of directives {0} != {1}.'.format(
-					len(self.directives), len(other.directives)))
+			assert ltrace(TRACE_CONFIG, 'different by number of directives {0} '
+				'!= {1}.'.format(len(self.directives), len(other.directives)))
 			return False
 
 		if self.directives_needing_order:
@@ -390,7 +396,8 @@ class ConfigurationFile(object):
 				# the only comparison needed is done here.
 				for one, two in zip(self.directives, other.directives):
 					if one != two:
-						assert ltrace(TRACE_CONFIG, 'different [unsorted,unordered] because {0} != {1}.'.format(one, two))
+						assert ltrace(TRACE_CONFIG, 'different [unsorted,'
+							'unordered] because {0} != {1}.'.format(one, two))
 						return False
 
 			else:
@@ -404,12 +411,14 @@ class ConfigurationFile(object):
 			for one, two in zip(sorted(self.directives, key=str),
 								sorted(other.directives, key=str)):
 				if one != two:
-					assert ltrace(TRACE_CONFIG, 'different [sorted] because {0} != {1}.'.format(one, two))
+					assert ltrace(TRACE_CONFIG, 'different [sorted] because '
+												'{0} != {1}.'.format(one, two))
 					return False
 
 		if compare_ordered:
 			if len(self.ordered_directives) != len(other.ordered_directives):
-				assert ltrace(TRACE_CONFIG, 'different [ordered] because not same number of ordered directives.')
+				assert ltrace(TRACE_CONFIG, 'different [ordered] because not '
+										'same number of ordered directives.')
 				return False
 
 			for dirname in self.directives_needing_order:
@@ -418,13 +427,15 @@ class ConfigurationFile(object):
 						for dir1, dir2 in zip(self.ordered_directives[dirname],
 												other.ordered_directives[dirname]):
 							if dir1 != dir2:
-								assert ltrace(TRACE_CONFIG, 'different [ordered] because {0} != {1}.'.format(dir1, dir2))
+								assert ltrace(TRACE_CONFIG, 'different [ordered] '
+									'because {0} != {1}.'.format(dir1, dir2))
 								return False
 					else:
 						return False
 				else:
 					if dirname in other.ordered_directives:
-						assert ltrace(TRACE_CONFIG, 'different [ordered] because {0} not in {2}.'.format(dirname, other))
+						assert ltrace(TRACE_CONFIG, 'different [ordered] because '
+								'{0} not in {2}.'.format(dirname, other))
 						return False
 
 					else:
@@ -507,14 +518,11 @@ class ConfigurationFile(object):
 		self.__load_from_tokens(self.lexer.get_tokens(self.text or
 								open(self.filename,'rb').read()))
 
-		self.__check_order()
+		self.__check_duplicates()
+		self.__check_ordering()
 		self.__check_dependancies()
 	def __default_append_func(self, directive):
 		self.directives.append(directive)
-
-		#print '>>', str(directive)
-		#print '>>', directive.name, 'in', self.directives_needing_order, \
-		#	directive.name in self.directives_needing_order
 
 		if directive.name in self.directives_needing_order:
 			ordered = self.ordered_directives.get(directive.name, [])
@@ -540,7 +548,13 @@ class ConfigurationFile(object):
 
 		else:
 			return self.directives.append
-	def __check_order(self):
+	def __check_duplicates(self):
+		# Check duplicate lines, else we could end with some, coming
+		# from manual errors and `index*()` methods will only return
+		# the first match of them.
+
+		logging.warning2('Please implement foundations.config.ConfigurationFile.__check_duplicates()!')
+	def __check_ordering(self):
 
 		for directive_name in self.directives_needing_order:
 
@@ -562,10 +576,8 @@ class ConfigurationFile(object):
 	def __check_dependancies(self):
 		#resolved = pyutils.resolve_dependancies_from_dict_strings(self.directives_dependancies)
 
-		if self.directives_dependancies in (None, {}):
-			return
-
-		for directive_name, depended_on_directives in self.directives_dependancies.iteritems():
+		for directive_name, depended_on_directives \
+								in self.directives_dependancies.iteritems():
 
 			for directive in self.directives:
 				if directive_name == directive.name:
@@ -579,9 +591,12 @@ class ConfigurationFile(object):
 
 								if directive.lineno < other_directive.lineno:
 
-									# TODO: try to correct the problem by moving
-									# the culprit(s) just before the dependancy,
-									# in the same order if there are many.
+									# TODO: try to correct the problem ? By
+									# moving the culprit(s) just before the
+									# dependancy, in the same order if there
+									# are many ?
+									# This is not the same job, I think. It
+									# would complexify a lot this class. Later.
 
 									raise exceptions.BadConfigurationError(
 										_(u'{0}: all {1} directives (last '
@@ -612,7 +627,7 @@ class ConfigurationFile(object):
 			:param tokensource: an iterable of tuples (token_type, value), where
 				token_type is a pygments token class. See
 				http://pygments.org/docs/tokens/ for details.
-			"""
+		"""
 
 		assert ltrace_func(TRACE_CONFIG)
 
@@ -809,17 +824,43 @@ class ConfigurationFile(object):
 		pass
 	def remove_at(self, position):
 		pass
-	def insert_at(self, position, directive):
+	def insert_at(self, position, directive, sub_pos=None):
+		""" Insert in the current configuration, at a given position.
+
+			:param position: an integer, passed verbatim to the :meth:`~list.insert`
+				method of our internal list.
+
+			:param directive: a :class:`ConfigurationDirective` instance.
+
+			:param sub_pos: an integer index in the ``ordered_directives``
+				sub-list. It must be set to something valid when inserting a
+				directive which belongs to an ordered kind, else this method
+				will not insert it, and will raise
+				a :class:`~foundations.exceptions.LicornRuntimeError`
+				exception instead.
+
+			.. versionchanged:: this method was implemented for 1.6.
 		"""
 
-			.. todo:: needs implementation for :meth:`merge`.
-		"""
-		logging.notice('insert "{0}" at position {1}.'.format(''.join(directive.flatenned), position))
+		assert ltrace_func(TRACE_CONFIG)
 
+		# Update ordered directives if this one belongs to them.
+		if directive.name in self.ordered_directives:
+			if sub_pos is None:
+				raise exceptions.LicornRuntimeError('sub_pos should be filled '
+										'when inserting an ordered directive.')
 
+			self.ordered_directives[directive.name].insert(sub_pos, directive)
 
+		# Insert in the directives. Costly, but quick-search is at this price.
+		self.directives.insert(self.directives.index(self.blocks[position]),
+								directive)
 
-		pass
+		# Then insert in the "all" blocks.
+		self.blocks.insert(position, directive)
+
+		# Note that we changed.
+		self.changed = True
 	def insert_before(self, directive):
 		pass
 	def insert_after(self, directive):
@@ -876,65 +917,111 @@ class ConfigurationFile(object):
 				# We don't have it, go merging.
 				self.__merge_one_directive(directive_to_merge)
 
-				# Note that we changed.
-				self.changed = True
-
 		return self.changed
 	def __merge_one_directive(self, directive):
 
-		# By default, insert new directives at the end of file.
-		best_insert_index = self.blocks[-1].lineno + 1
+		assert ltrace_func(TRACE_CONFIG)
 
-		# And see if we can find a better index, earlier in the file.
+		# By default, we insert new directives at the end of file.
+		best_insert_index = len(self.blocks)
+		best_sub_position = None
 
+		# Then we try to find a better position, earlier in the file.
 		if directive.name in self.ordered_directives:
-			# TODO: implement this.
-			pass
+			try:
+				best_insert_index, \
+					best_sub_position = getattr(self, '_insert_index_for_'
+														+ directive.name)(
+															directive,
+															self.ordered_directives[
+																directive.name])
 
-		for dependant_name, dependancies in self.directives_dependancies.iteritems():
-			if directive.name == dependant_name:
-				for dep_name in dependancies:
+			except AttributeError:
+				try:
+					best_insert_index, \
+						best_sub_position = getattr(self, '_insert_index_generic')(
+													directive.name,
+													directive,
+													self.ordered_directives[
+														directive.name])
+
+				except AttributeError:
 					try:
-						better_attempt = self.index_first(dep_name)
+						# When no better match can be determined via dedicated
+						# methods, insert at the end of the ordered block
+						# (= after the last ordered directive). This could
+						# eventually lead to errors in the configuration file,
+						# but this problem should be known by the developer
+						# of the sub-class.
+						best_insert_index = self.index_last(directive.name)
+						best_sub_position = len(self.ordered_directives[
+														directive.name])
+
+					except ValueError:
+						# The current configuration does not include any
+						# directive of that kind. The one we insert is the
+						# first. Just continue, the dependancy search will
+						# insert it before all dependants directives.
+						#
+						# If this kind of directive has no dependants, it
+						# will be inserted at the end like any other kind.
+						pass
+
+		# No need to test dependancies if the directive was ordered, the
+		# insert postition is already the best we can find: it's in the
+		# block of ordered directives, which has already been checked at
+		# file load to be in good order. Thus the 'else'.
+		else:
+			for dependant_name, dependancies in self.directives_dependancies.iteritems():
+
+				if directive.name == dependant_name:
+					for dep_name in dependancies:
+						try:
+							# Try to insert the new directive after the last
+							# of this dependants block. If there are many
+							# dependants block, we will try each, to be sure
+							# the new is inserted after all of them.
+							better_attempt = self.index_last(dep_name) + 1
+
+						except ValueError:
+							continue
+
+						# The new directive must be inserted *after* all of
+						# its dependants, thus '>' instead of '<'.
+						if better_attempt > best_insert_index:
+							best_insert_index = better_attempt
+
+				# If directive is a "dependant" one, no need to test against
+				# dependancies of the current rule: the directive won't depend
+				# on itself. Thus the 'elif'.
+				elif directive.name in dependancies:
+
+					# Find the first dependant occurence, and insert just before.
+					try:
+						better_attempt = self.index_first(dependant_name) - 1
 
 					except ValueError:
 						continue
 
+					# Testing dependants, we must insert *before* all of them.
 					if better_attempt < best_insert_index:
 						best_insert_index = better_attempt
 
-			# If directive is a "dependant" one, no need to test against
-			# dependancies of the current rule: the directive won't depend
-			# on itself. Thus the 'elif'.
-			elif directive.name in dependancies:
+					# Don't break the loop: in case the directive we're merging
+					# is a dependancy of more than one others, all of them must be
+					# tested to be sure we insert in the file before the first of
+					# the earliest of them all.
+					# As dependancies are not ordered in any way between each
+					# other in the file and in the current instance internal data
+					# structures, we have no mean to do this faster.
+					#break
 
-				# Find the first dependant occurence, and insert just before.
-				try:
-					better_attempt = self.index_first(dependant_name) - 1
-
-				except ValueError:
-					continue
-
-				# Testing dependants, we must insert *before* all of them.
-				if better_attempt < best_insert_index:
-					best_insert_index = better_attempt
-
-				# Don't break the loop: in case the directive we're merging
-				# is a dependancy of more than one others, all of them must be
-				# tested to be sure we insert in the file before the first of
-				# the earliest of them all.
-				# As dependancies are not ordered in any way between each
-				# other in the file and in the current instance internal data
-				# structures, we have no mean to do this faster.
-				#break
-
-		self.insert_at(best_insert_index, directive)
+		self.insert_at(best_insert_index, directive, best_sub_position)
 	def difference(self, other, on_conflicts=None, batch=False, auto_answer=None):
 		""" Remove other's directives from us. """
 
 		#self.changed = True
 		pass
-
 	def output(self):
 		Terminal256Formatter(encoding='utf-8').format(
 											(token.to_pygments() for token in

@@ -181,10 +181,10 @@ class LicornSquidConfigurationFile(ConfigurationFile):
 		u'http_access' : (u'acl', ),
 	}
 
-	useless_types       = (Whitespace, Comment, String.Escape, )
+	token_ignored_types = (Whitespace, Comment, String.Escape, )
 	new_directive_types = (Keyword.Namespace, )
+
 	def __init__(self, *args, **kwargs):
-		""" """
 		ConfigurationFile.__init__(self, self.__class__.class_lexer, *args, **kwargs)
 	def _order_check_common_allow_deny(self, directive_name, directives, special_value=None):
 		""" basic check: if last directive is "deny", check that its value is
@@ -207,7 +207,8 @@ class LicornSquidConfigurationFile(ConfigurationFile):
 									self.filename, directive_name))
 
 		elif special_value not in last_value:
-			raise exceptions.BadConfigurationError(_(u'{0}: last "{1}" '
+			if len(directives) > 1 and not self.snipplet:
+				raise exceptions.BadConfigurationError(_(u'{0}: last "{1}" '
 									u'directive must concern "{2}".').format(
 										self.filename, directive_name,
 										special_value.value))
@@ -235,10 +236,27 @@ class LicornSquidConfigurationFile(ConfigurationFile):
 		""" Basic check: refresh_pattern '.' must be the last. """
 
 		if not ConfigurationToken(Token.Text, u'.') in directives[-1].value:
-			raise exceptions.BadConfigurationError(_(u'{0}: last "{1}" '
-								u'directive must have pattern "{2}".').format(
-									self.filename, directive_name, '.'))
+			if len(directives) > 1 and not self.snipplet:
+				raise exceptions.BadConfigurationError(_(u'{0}: last "refresh_'
+						u'pattern" directive must be for URL "." (dot).').format(
+							self.filename))
+	def _insert_index_generic(self, directive_name, directive, directives):
 
+		if directives:
+			# Insert before the last directive of that kind. This should
+			# insert just before any "*_access deny all", "*_access allow all"
+			# or "refresh_pattern .", which should be sufficiently precise to
+			# make squid not deny localnet or allow anyone (reference: #558).
+			#
+			# The second value tells insert() where to put the directive in
+			# the subset of ordered directives. This is obvious in *this*
+			# implementation, but could be different in others.
+			return self.blocks.index(directives[-1]), -1
+
+		# No directive of that kind, just insert at the start of the file.
+		# No need for complex computations, dependancy checking in the main
+		# method will affinate this result afterwards if needed.
+		return 0, 0
 class SquidExtension(ObjectSingleton, ServiceExtension):
 	""" A proxy extension using squid.
 
@@ -579,7 +597,6 @@ refresh_pattern .					0		20%		4320
 
 		logging.progress(_(u'{0}: updated variables in our own '
 									u'environment…').format(self.pretty_name))
-
 	def __setup_etc_environment(self, batch=False, auto_answer=None):
 		env_file = ConfigFile(self.defaults_conf.client_file,
 								separator='=', caller=self.name)
