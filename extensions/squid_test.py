@@ -31,6 +31,8 @@ def bad_config_syntax_func(filename):
 		py.test outputs. """
 	py.test.raises(exceptions.BadConfigurationError, bad_config_syntax, filename)
 def print_file(f):
+	""" Small helper used to debug the testsuite and file contents, to be sure
+		results are the ones that we want to acheive. """
 	print '>>', f, '\n'.join('%s, %s' % (x.name, x.lineno) for x in f.directives)
 
 def test_parse_and_rewrite():
@@ -103,14 +105,13 @@ def test_bad_config_syntax_or_ordering():
 					'/squid3/squid.conf.orig.short.bad_ordering_01',
 					'/squid3/squid.conf.orig.short.bad_ordering_02'):
 		yield bad_config_syntax_func, filename
-
 def test_merge():
-	m1 = ConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.1.start',
-						lexer=LicornSquidConfLexer(), caller='squid')
-	m2 = ConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.2.part_to_merge',
-						lexer=LicornSquidConfLexer(), caller='squid')
-	m3 = ConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.3.final',
-						lexer=LicornSquidConfLexer(), caller='squid')
+	m1 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.1.start',
+										caller='squid')
+	m2 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.2.part_to_merge',
+										caller='squid', snipplet=True)
+	m3 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.3.final',
+										caller='squid')
 
 	m1.merge(m2)
 
@@ -122,20 +123,5 @@ def test_merge():
 	# But there are many ways to write the same file, thus the stringified
 	# versions will be different (the .final file was voluntarily made to be).
 	assert m1.to_string() != m3.to_string()
-
-	m1 = ConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge_with_comments.1.start',
-						lexer=LicornSquidConfLexer(), caller='squid')
-
-	m1.merge(m2)
-
-	assert m1.changed
-
-	# The 2 instances should be equal. This is the important result
-	assert m1 == m3
-
-	# But there are many ways to write the same file, thus the stringified
-	# versions will be different (the .final file was voluntarily made to be).
-	assert m1.to_string() != m3.to_string()
-
 def test_difference():
 	pass
