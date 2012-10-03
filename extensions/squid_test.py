@@ -123,5 +123,21 @@ def test_merge():
 	# But there are many ways to write the same file, thus the stringified
 	# versions will be different (the .final file was voluntarily made to be).
 	assert m1.to_string() != m3.to_string()
-def test_difference():
-	pass
+def test_wipe():
+	m1 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.1.start',
+										caller='squid')
+	m2 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.2.part_to_merge',
+										caller='squid', snipplet=True)
+	m3 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.3.final',
+										caller='squid')
+
+	m3.wipe(m2)
+
+	assert m3.changed
+
+	# The 2 instances should be equal. This is the important test.
+	assert m1 == m3
+
+	# This time, due to the simple nature of the wipe operation,
+	# the stringified files should be equal.
+	assert m1.to_string() == m3.to_string()

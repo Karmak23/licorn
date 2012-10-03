@@ -823,7 +823,27 @@ class ConfigurationFile(object):
 	def remove(self, directive):
 		pass
 	def remove_at(self, position):
-		pass
+		""" Remove the directive at :param:`position`. No check at all is done.
+
+			This method is used by :meth:`wipe` a lot. See there for more
+			explanations.
+		"""
+		assert ltrace_func(TRACE_CONFIG)
+
+		directive = self.blocks[position]
+
+		# Update ordered directives if this one belongs to them.
+		if directive.name in self.ordered_directives:
+			self.ordered_directives[directive.name].remove(directive)
+
+		# Remove from the directives.
+		self.directives.remove(directive)
+
+		# Then remove from the "all" blocks.
+		del self.blocks[position]
+
+		# Note that we changed.
+		self.changed = True
 	def insert_at(self, position, directive, sub_pos=None):
 		""" Insert in the current configuration, at a given position.
 
@@ -1017,11 +1037,47 @@ class ConfigurationFile(object):
 					#break
 
 		self.insert_at(best_insert_index, directive, best_sub_position)
-	def difference(self, other, on_conflicts=None, batch=False, auto_answer=None):
-		""" Remove other's directives from us. """
+	def wipe(self, other, on_conflicts=None, batch=False, auto_answer=None):
+		""" Remove other's directives from us. Parameters are the same as in
+			the :meth:`merge` method: :meth:`wipe` is its pure opposite.
 
-		#self.changed = True
-		pass
+			.. warning:: This method doesn't check that the file is in a good
+				shape, functionnaly speaking, after directives have been wiped.
+				Eg. you can easily remove an essential part of the configuration
+				and make the underlying service unusable. It's up to the caller
+				to be sure nothing critical is removed, or something to replace
+				it is resinserted after the wipe.
+
+			.. note:: This method won't alter comments in the current instance.
+
+				This means that even after some directives have been wiped from
+				self, we could still hold the related comments, which will be
+				useless and potentially non-sense or counter-sense in the file
+				written on disk.
+
+				Comments are put in place by humans, Licorn®
+				doesn't use them at all. I think the solution lies on the human
+				side. As comments are not linked to directives in any fashion,
+				I couldn't figure any reliable way to remove them.
+		"""
+
+		for directive_to_wipe in other.directives:
+			try:
+				position = self.index(directive_to_wipe)
+
+			except ValueError:
+				# We already don't have it, continue.
+				continue
+
+			else:
+				self.__wipe_one_directive(position)
+	def __wipe_one_directive(self, position):
+		""" This method exists just because it has a merge() counterpart.
+			Internally it does nothing more than :meth:`remove_at` for the
+			moment, because we don't check dependancies and such at wipe time.
+		"""
+
+		self.remove_at(position)
 	def output(self):
 		Terminal256Formatter(encoding='utf-8').format(
 											(token.to_pygments() for token in
