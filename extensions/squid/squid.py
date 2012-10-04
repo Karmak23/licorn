@@ -16,7 +16,7 @@ from pygments.lexer import RegexLexer
 from licorn.foundations           import logging, settings, exceptions
 from licorn.foundations           import process, network, hlstr
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import ltrace, ltrace_func
 from licorn.foundations.ltraces   import *
 from licorn.foundations.pyutils   import add_or_dupe_enumeration
 from licorn.foundations.constants import services, svccmds, distros, roles, priorities
@@ -400,10 +400,11 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 		conf['client_cmd_http'] = 'http_proxy'
 		conf['client_cmd_ftp']  = 'ftp_proxy'
 
-		# APT configuration
-		conf['apt_conf']        = '/etc/apt/apt.conf.d/00proxy'
-		conf['apt_cmd_http']    = 'Acquire::http::Proxy'
-		conf['apt_cmd_ftp']     = 'Acquire::ftp::Proxy'
+		if LMC.configuration.distro in (distros.UBUNTU, distros.DEBIAN):
+			# APT configuration
+			conf['apt_conf']        = '/etc/apt/apt.conf.d/00proxy'
+			conf['apt_cmd_http']    = 'Acquire::http::Proxy'
+			conf['apt_cmd_ftp']     = 'Acquire::ftp::Proxy'
 
 		if settings.role == roles.SERVER:
 			conf['host']   = '127.0.0.1'
@@ -437,104 +438,46 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 												conf['port'])
 
 		# Store the generated configuration in the extension.
-		self.defaults_conf = conf
+		self.defaults = conf
 	def __build_squid_configuration_defaults(self):
+
+		datadir = self.paths.data_dir
+		opjoin  = os.path.join
 
 		unwanted_default_conf = ''
 
-		wanted_default_conf = """
-# 24Gb proxy spool dir
-cache_dir ufs {spool_dir} 24576 64 128
-access_log {log_dir}/access.log squid
-# 16Gb maximum object size -> we cache DVDs ISO if needed
-maximum_object_size 16777216
-coredump_dir {spool_dir}
-hierarchy_stoplist cgi-bin ?
-hosts_file /etc/hosts
-acl manager proto cache_object
-acl localhost src 127.0.0.0/8
-acl localnet src 10.0.0.0/8	# RFC1918 possible internal network
-acl localnet src 172.16.0.0/12	# RFC1918 possible internal network
-acl localnet src 192.168.0.0/16	# RFC1918 possible internal network
-acl to_localhost dst 127.0.0.0/8 0.0.0.0/32
-acl SSL_ports port 443
-acl SSL_ports port 563
-acl SSL_ports port 873
-acl Safe_ports port 80
-acl Safe_ports port 21
-acl Safe_ports port 443
-acl Safe_ports port 70
-acl Safe_ports port 210
-acl Safe_ports port 1025-65535
-acl Safe_ports port 280
-acl Safe_ports port 488
-acl Safe_ports port 591
-acl Safe_ports port 777
-acl Safe_ports port 631
-acl Safe_ports port 873
-acl Safe_ports port 901
-acl purge method PURGE
-acl CONNECT method CONNECT
-acl shoutcast rep_header X-HTTP09-First-Line ^ICY.[0-9]
-acl apache rep_header Server ^Apache
-http_access allow manager localhost
-http_access deny manager
-http_access allow purge localhost
-http_access deny purge
-http_access deny !Safe_ports
-http_access deny CONNECT !SSL_ports
-http_access allow localhost
-http_access allow localnet
-http_access deny all
-http_port {http_port}
-icp_access allow localhost
-icp_access allow localnet
-icp_access deny all
-refresh_pattern ^ftp:		   		1440	20%		10080
-refresh_pattern ^gopher:			1440	0%		1440
-refresh_pattern -i (/cgi-bin/|\?)	0	 	0%		0
-""".format(
-			spool_dir='/var/spool/squid' if self.version in (2, None)
-										else '/var/spool/squid3',
-			log_dir='/var/log/squid' if self.version in (2, None)
-									else '/var/log/squid3',
-			http_port=self.defaults_conf.port,
-		)
+		wanted_default_conf = open(opjoin(datadir, 'squid.common.conf')
+								).read().format(
+									spool_dir='/var/spool/squid'
+												if self.version in (2, None)
+												else '/var/spool/squid3',
+									log_dir='/var/log/squid'
+												if self.version in (2, None)
+												else '/var/log/squid3',
+									http_port=self.defaults.port,
+								)
 
-		directives_for_v2 = """
-acl all src all
-broken_vary_encoding allow apache
-extension_methods REPORT MERGE MKACTIVITY CHECKOUT
-"""
+		directives_for_v2 = open(opjoin(datadir, 'squid.v2.conf')).read()
 
-		directives_for_v3 = """
-hierarchy_stoplist cgi-bin ?
-coredump_dir /var/spool/squid3
-refresh_pattern .					0		20%		4320
-"""
+		directives_for_v3 = open(opjoin(datadir, 'squid.v3.conf')).read()
 
-		if settings.role == roles.SERVER:
-			localnet_conf = 'acl localnet src {0}\n'.format(' '.join(
-													self.defaults_conf.subnet))
+		localnet_conf = 'acl localnet src {0}\n'.format(' '.join(
+												self.defaults.subnet))
 
-			# Still needed ? What for ?
-			#for key, value in self.wanted_default_conf:
-			#	add_or_dupe_enumeration(self.defaults, key, value)
+		# TODO: add peers here. iterate other licorn servers on the same LAN
+		# and add a 'cache_peer sibling' directive for them. Then, make them
+		# reflect this change and add us to their siblings list.
 
-			# TODO: add peers here. iterate other licorn servers on the same LAN
-			# and add a 'cache_peer sibling' directive for them. Then, make them
-			# reflect this change and add us to their siblings list.
+		if self.version in (2, None):
+			to_add = directives_for_v2
+			to_del = directives_for_v3
 
-			if self.version in (2, None):
-				to_add = directives_for_v2
-				to_del = directives_for_v3
+		else:
+			to_add = directives_for_v3
+			to_del = directives_for_v2
 
-			else:
-				to_add = directives_for_v3
-				to_del = directives_for_v2
-
-			return (localnet_conf + to_add + wanted_default_conf,
-							to_del + unwanted_default_conf)
+		return (wanted_default_conf, localnet_conf + to_add,
+											unwanted_default_conf, to_del)
 	def check(self, batch=False, auto_answer=None, full_display=True):
 
 		if self.available:
@@ -558,8 +501,8 @@ refresh_pattern .					0		20%		4320
 											u'mode.').format(self.pretty_name))
 			return
 
-		logging.progress(_(u'{0}: checking current configuration…').format(
-															self.pretty_name))
+		logging.progress(_(u'{0}: checking Squid\'s current '
+									u'configuration…').format(self.pretty_name))
 
 		# This instance will be loaded on checks and unloaded at the end,
 		# ensuring that any manual alteration while licornd is running will
@@ -570,50 +513,41 @@ refresh_pattern .					0		20%		4320
 													else self.paths.squid3_conf,
 										caller=self.name)
 
-		wanted_str, unwanted_str = self.__build_squid_configuration_defaults()
+		wanted_str, add_str, unwanted_str, del_str = self.__build_squid_configuration_defaults()
 
-		# Idem for other LicornSquidConfigurationFile instances.
-		wanted_conf   = LicornSquidConfigurationFile(text=wanted_str)
-		unwanted_conf = LicornSquidConfigurationFile(text=unwanted_str)
+		# Idem for other instances: loaded on the fly.
+		current_configuration.merge(LicornSquidConfigurationFile(text=wanted_str))
+		current_configuration.merge(LicornSquidConfigurationFile(text=add_str, snipplet=True))
+		current_configuration.wipe(LicornSquidConfigurationFile(text=unwanted_str, snipplet=True))
+		current_configuration.wipe(LicornSquidConfigurationFile(text=del_str, snipplet=True))
 
-		need_rewrite = False
-
-		if current_configuration.merge(wanted_conf):
-			need_rewrite = True
-
-		if current_configuration.difference(unwanted_conf):
-			need_rewrite = True
-
-		if need_rewrite:
+		if current_configuration.changed:
 			# TODO: if batch or logging.ask_for_repair(…)
 			current_configuration.save(batch=batch, auto_answer=auto_answer)
 			self.service(svccmds.RELOAD)
 	def __setup_shell_environment(self, batch=False, auto_answer=None):
 
-		os.environ[self.defaults_conf.client_cmd_http]         = self.defaults_conf.client_cmd_http_value
-		os.environ[self.defaults_conf.client_cmd_ftp]          = self.defaults_conf.client_cmd_ftp_value
-		os.environ[self.defaults_conf.client_cmd_http.upper()] = self.defaults_conf.client_cmd_http_value
-		os.environ[self.defaults_conf.client_cmd_ftp.upper()]  = self.defaults_conf.client_cmd_ftp_value
+		os.environ[self.defaults.client_cmd_http]         = self.defaults.client_cmd_http_value
+		os.environ[self.defaults.client_cmd_ftp]          = self.defaults.client_cmd_ftp_value
+		os.environ[self.defaults.client_cmd_http.upper()] = self.defaults.client_cmd_http_value
+		os.environ[self.defaults.client_cmd_ftp.upper()]  = self.defaults.client_cmd_ftp_value
 
 		logging.progress(_(u'{0}: updated variables in our own '
 									u'environment…').format(self.pretty_name))
 	def __setup_etc_environment(self, batch=False, auto_answer=None):
-		env_file = ConfigFile(self.defaults_conf.client_file,
+		env_file = ConfigFile(self.defaults.client_file,
 								separator='=', caller=self.name)
 		env_need_rewrite = False
 
 		# set 'http_proxy' in /etc/environment
 		for cmd, value in (
-			(self.defaults_conf.client_cmd_http,
-				self.defaults_conf.client_cmd_http_value),
-			(self.defaults_conf.client_cmd_http.upper(),
-				self.defaults_conf.client_cmd_http_value),
-			(self.defaults_conf.client_cmd_ftp.upper(),
-				self.defaults_conf.client_cmd_ftp_value),
-			(self.defaults_conf.client_cmd_ftp,
-				self.defaults_conf.client_cmd_ftp_value)):
+				(self.defaults.client_cmd_http,	        self.defaults.client_cmd_http_value),
+				(self.defaults.client_cmd_http.upper(), self.defaults.client_cmd_http_value),
+				(self.defaults.client_cmd_ftp,          self.defaults.client_cmd_ftp_value),
+				(self.defaults.client_cmd_ftp.upper(),  self.defaults.client_cmd_ftp_value),
+			):
 
-			# HEADS UP: we enclose the value in double quotes, this is intended.
+			# HEADS UP: we enclose values in double quotes; this is intended.
 			if env_file.has('export ' + cmd):
 				if env_file['export ' + cmd] != value:
 
@@ -632,15 +566,15 @@ refresh_pattern .					0		20%		4320
 				# set mandatory proxy params for gnome.
 				gconf_values = (
 					['string', '--set', '/system/http_proxy/host',
-						self.defaults_conf.host ],
+						self.defaults.host ],
 					[ 'string', '--set', '/system/proxy/ftp_host',
-						self.defaults_conf.host ],
+						self.defaults.host ],
 					[ 'string', '--set', '/system/proxy/mode', 'manual' ],
 					[ 'bool', '--set', '/system/http_proxy/use_http_proxy', 'true'],
 					[ 'int', '--set', '/system/http_proxy/port',
-						str(self.defaults_conf.port) ],
+						str(self.defaults.port) ],
 					[ 'int', '--set', '/system/proxy/ftp_port',
-						str(self.defaults_conf.port) ] )
+						str(self.defaults.port) ] )
 					# TODO : addresses in ignore_host.
 					#[ 'list', '--set', '/system/http_proxy/ignore_hosts', '[]',
 					#'--list-type',  'string'])
@@ -655,28 +589,28 @@ refresh_pattern .					0		20%		4320
 	def __setup_apt(self, batch=False, auto_answer=None):
 
 			# set params in apt conf
-			apt_file = ConfigFile(self.defaults_conf.apt_conf,
+			apt_file = ConfigFile(self.defaults.apt_conf,
 									separator=' ', caller=self.name)
 			apt_need_rewrite = False
 
-			if not apt_file.has(key=self.defaults_conf.apt_cmd_http):
+			if not apt_file.has(key=self.defaults.apt_cmd_http):
 				apt_need_rewrite = True
-				apt_file.add(key=self.defaults_conf.apt_cmd_http,
-					value=self.defaults_conf.apt_cmd_http_value)
+				apt_file.add(key=self.defaults.apt_cmd_http,
+					value=self.defaults.apt_cmd_http_value)
 
-			if not apt_file.has(key=self.defaults_conf.apt_cmd_ftp):
+			if not apt_file.has(key=self.defaults.apt_cmd_ftp):
 				apt_need_rewrite = True
-				apt_file.add(key=self.defaults_conf.apt_cmd_ftp,
-					value=self.defaults_conf.apt_cmd_ftp_value)
+				apt_file.add(key=self.defaults.apt_cmd_ftp,
+					value=self.defaults.apt_cmd_ftp_value)
 
 			if apt_need_rewrite:
 				apt_file.backup_and_save(batch=batch, auto_answer=auto_answer)
 	def __unset_shell_environment(self, batch=False, auto_answer=None):
 
-		for var in (self.defaults_conf.client_cmd_http,
-					self.defaults_conf.client_cmd_ftp,
-					self.defaults_conf.client_cmd_http.upper(),
-					self.defaults_conf.client_cmd_ftp.upper()):
+		for var in (self.defaults.client_cmd_http,
+					self.defaults.client_cmd_ftp,
+					self.defaults.client_cmd_http.upper(),
+					self.defaults.client_cmd_ftp.upper()):
 
 			try:
 				del os.environ[var]
@@ -685,19 +619,19 @@ refresh_pattern .					0		20%		4320
 				# the ENV variable is not set.
 				pass
 	def __unset_etc_environment(self, batch=False, auto_answer=None):
-		env_file = ConfigFile(self.defaults_conf.client_file,
+		env_file = ConfigFile(self.defaults.client_file,
 								separator='=', caller=self.name)
 		env_need_rewrite = False
 
 		# unset current environment variables
-		os.putenv(self.defaults_conf.client_cmd_http, '')
-		os.putenv(self.defaults_conf.client_cmd_ftp, '')
+		os.putenv(self.defaults.client_cmd_http, '')
+		os.putenv(self.defaults.client_cmd_ftp, '')
 
 		# unset 'http_proxy' in /etc/environment
-		for cmd in (self.defaults_conf.client_cmd_http,
-					self.defaults_conf.client_cmd_http.upper(),
-					self.defaults_conf.client_cmd_ftp,
-					self.defaults_conf.client_cmd_ftp.upper()):
+		for cmd in (self.defaults.client_cmd_http,
+					self.defaults.client_cmd_http.upper(),
+					self.defaults.client_cmd_ftp,
+					self.defaults.client_cmd_ftp.upper()):
 
 			if env_file.has(cmd):
 				env_file.remove(key=cmd)
@@ -721,7 +655,7 @@ refresh_pattern .					0		20%		4320
 
 		# Unset APT configuration parameters, don't bother if they don't exist.
 		try:
-			os.unlink(self.defaults_conf.apt_conf)
+			os.unlink(self.defaults.apt_conf)
 
 		except (IOError, OSError), e:
 			if e.errno != errno.ENOENT:
