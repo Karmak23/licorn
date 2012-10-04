@@ -46,7 +46,7 @@ class ConfigFile(Enumeration):
 		self._reader = reader
 
 		if caller:
-			self.__caller = caller
+			self.__caller = stylize(ST_NAME, caller)
 
 		self.reload()
 	@property
