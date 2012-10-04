@@ -13,22 +13,25 @@ from licorn.foundations         import exceptions
 from licorn.foundations.config  import *
 from licorn.extensions.squid    import *
 
-ts_data_path = os.path.dirname(__file__) + '/../tests/data'
+LSCF = LicornSquidConfigurationFile
 
-s1 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.orig.short',
-									caller='squid')
-s2 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.orig.short.same',
-									caller='squid')
-s3 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.orig.short.different',
-									caller='squid')
-s4 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.orig',
-									caller='squid')
+ts_data_path = os.path.dirname(__file__) + '/../tests/data/squid3/'
+
+s1 = LSCF(filename=ts_data_path	+ 'squid.conf.orig.short')
+s2 = LSCF(filename=ts_data_path + 'squid.conf.orig.short.same')
+s3 = LSCF(filename=ts_data_path + 'squid.conf.orig.short.different')
+s4 = LSCF(filename=ts_data_path + 'squid.conf.orig')
 
 def bad_config_syntax(filename):
-	LicornSquidConfigurationFile(filename=ts_data_path + filename, caller='squid')
+	""" Just instanciate from the filename. The given file should have a
+		syntax or ordering error in it, and the constructor will raise an
+		exception, which is what is intended. """
+
+	LSCF(filename=ts_data_path + filename)
 def bad_config_syntax_func(filename):
 	""" just a wrapper, to avoid strange and unrelated long messages in
 		py.test outputs. """
+
 	py.test.raises(exceptions.BadConfigurationError, bad_config_syntax, filename)
 def print_file(f):
 	""" Small helper used to debug the testsuite and file contents, to be sure
@@ -43,7 +46,7 @@ def test_parse_and_rewrite():
 		splitted tokens can still produce a valid final output.
 	"""
 
-	assert open(ts_data_path + '/squid3/squid.conf.orig.short', 'rb').read() == s1.to_string()
+	assert open(ts_data_path + 'squid.conf.orig.short', 'rb').read() == s1.to_string()
 def test_search():
 
 	py.test.raises(ValueError, s1.find)
@@ -95,23 +98,19 @@ def test_equality():
 	assert s2 == s4
 def test_bad_config_syntax_or_ordering():
 	"""
-
 		.. todo:: create a test for the "manager" part of  ``*_access``
 			directives when the check-related code is implemented.
 	"""
 
-	for filename in ('/squid3/squid.conf.orig.short.baddly_written_01',
-					'/squid3/squid.conf.orig.short.baddly_written_02',
-					'/squid3/squid.conf.orig.short.bad_ordering_01',
-					'/squid3/squid.conf.orig.short.bad_ordering_02'):
+	for filename in ('squid.conf.orig.short.baddly_written_01',
+					'squid.conf.orig.short.baddly_written_02',
+					'squid.conf.orig.short.bad_ordering_01',
+					'squid.conf.orig.short.bad_ordering_02'):
 		yield bad_config_syntax_func, filename
 def test_merge():
-	m1 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.1.start',
-										caller='squid')
-	m2 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.2.part_to_merge',
-										caller='squid', snipplet=True)
-	m3 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.3.final',
-										caller='squid')
+	m1 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.1.start')
+	m2 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.2.part_to_merge', snipplet=True)
+	m3 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.3.final')
 
 	m1.merge(m2)
 
@@ -120,16 +119,13 @@ def test_merge():
 	# The 2 instances should be equal. This is the important test.
 	assert m1 == m3
 
-	# But there are many ways to write the same file, thus the stringified
+	# As there are many ways to write the same file, these stringified
 	# versions will be different (the .final file was voluntarily made to be).
 	assert m1.to_string() != m3.to_string()
 def test_wipe():
-	m1 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.1.start',
-										caller='squid')
-	m2 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.2.part_to_merge',
-										caller='squid', snipplet=True)
-	m3 = LicornSquidConfigurationFile(filename=ts_data_path + '/squid3/squid.conf.test_merge.3.final',
-										caller='squid')
+	m1 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.1.start')
+	m2 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.2.part_to_merge', snipplet=True)
+	m3 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.3.final')
 
 	m3.wipe(m2)
 

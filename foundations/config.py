@@ -29,6 +29,7 @@ module, for details and philosophy.
 
 # Python imports
 import itertools
+from threading import current_thread
 
 # Pygments imports
 from pygments.token      import *
