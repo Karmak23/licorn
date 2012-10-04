@@ -78,6 +78,47 @@
 	{%- for group in groups -%}
 		{%- include 'groups/group_row.html' -%}
 	{%- endfor -%}
+
+
+	<script language="javascript" type="text/javascript">
+	
+		$(document).ready(function() {
+
+			// setup the list
+			var START_TIME = new Date().getTime();
+			
+			setup_list('groups');
+			
+			var END_TIME = new Date().getTime();
+			totalTime = (END_TIME - START_TIME);
+			console.log("total time to setup user list", totalTime);
+		});
+
+		function func_doubleclick_row(td) {
+			// what happens when a row has been double clicked,
+			// show the edit form.
+
+			if (! $(td).hasClass('no_double_click')) {
+
+				gid = td.data('id')
+
+				if (gid == null) {
+					gid = td.parent('.licorn_row').data('id')
+				}
+
+				$.get('/groups/edit/'+gid, function(modal_html) {
+					$("#modal").html(modal_html).modal()
+				})
+			}
+		}
+
+		function get_list_column() {
+			return ["None", "None", "Name", "Description", "gid", "skel"]
+		}
+
+		
+
+	</script>
 {%- endblock -%}
 
 

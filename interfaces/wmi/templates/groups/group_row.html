@@ -59,7 +59,7 @@
 {%- endmacro -%}
 
 
-<tr class='licorn_row {{ get_group_filter_class(group) }}' data-gid="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}'>
+<tr class='licorn_row {{ get_group_filter_class(group) }}' data-id="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}'>
 	<!-- type -->
 	<td class='centered' width="5%" data-search="{{ get_group_type(group) }}">
 		{{ get_group_type_img(group) }}

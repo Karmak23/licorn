@@ -1,64 +1,115 @@
 
-{% set uid   = item.uidNumber %}
-{% set login = item.login %}
 
-{%- if item.is_system -%}
-	{%- set profile_text = _("System account") -%}
 
-{%- else -%}
-	{%- if item.profile -%}
-		{%- set profile_text = item.profile.name -%}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{%- macro get_user_type_img(user) -%}
+
+	{% if user.is_system_restricted %}
+		<i title="{{ _('Restricted user') }}" class="icon-warning-sign"></i>
+	{% elif user.is_system %}
+		<i title="{{ _('System user') }}" class="icon-wrench"></i>
+	{% elif user.is_standard %}
+		<i title="{{ _('Standard user') }}" class="icon-map-marker"></i>
+	{% endif %}
+{%- endmacro -%}
+
+{%- macro get_user_type(user) -%}
+	{% if user.is_system_restricted %}
+		{{ _('restricted') }}
+	{% elif user.is_system %}
+		{{ _('system') }}
+	{% elif user.is_standard %}
+		{{ _('standard') }}
+	{% endif %}
+{%- endmacro -%}
+
+{%- macro get_user_filter_class(user) -%}
+	{% if user.is_system_restricted %}
+		filter_restricted
+	{% elif user.is_system %}
+		filter_system
+	{% elif user.is_standard %}
+		filter_standard
+	{% endif %}
+{%- endmacro -%}
+
+
+{%- macro get_user_profile(user) -%}
+	{% if user.is_system %}
+		
+	{% elif user.is_standard %}
+		{%- if user.profile -%}
+			{{ user.profile.name }}
+		{%- else -%}
+			{{ _("No profile") }}
+		{%- endif -%}
+	{%- endif -%}
+{%- endmacro -%}
+
+
+
+
+
+
+
+
+{%- macro get_user_lock_img(user) -%}
+	
+	{%- if user.locked -%}
+		{%- set message = _('Unlock user account {0}').format(login) -%}
+		{%- set icon    = "locked.png" -%}
 
 	{%- else -%}
-		{%- set profile_text = _("No profile") -%}
+		{%- set message = _('Lock user account {0}').format(login) -%}
+		{%- set icon    = "locked_box.png" -%}
 
 	{%- endif -%}
 
-{%- endif -%}
+	<img src="/media/images/24x24/{{icon}}" title="{{message}}" alt='lock/unlock user'>
+{%- endmacro -%}
 
-{%- if item.locked -%}
-	{%- set message = _('Unlock user account {0}').format(login) -%}
-	{%- set icon    = "locked.png" -%}
 
-{%- else -%}
-	{%- set message = _('Lock user account {0}').format(login) -%}
-	{%- set icon    = "locked_box.png" -%}
+<tr class='licorn_row {{ get_user_filter_class(user) }}' data-id="{{ user.uidNumber }}" id='users_{{ user.uidNumber }}'>
+	<!-- type -->
+	<td class='centered' width="5%">
+		{{ get_user_type_img(user) }}
+	</td>
+	<!-- lock -->
+	<td class='centered' width="10%">
+		
+		{{ get_user_lock_img(user) }}
+	</td>
+	<!-- login -->
+	<td width="10%">
+		<span>{{ user.login }}</span>
+	</td>
+	<!-- gecos -->
+	<td width="55%">
+		<span>{{ user.gecos }}</span>
+	</td>
+	<!-- uidNumber -->
+	<td width="5%">
+		<div class="centered">{{ user.uidNumber }}</div>
+	</td>
+	<!-- Profile -->
+	<td width="10%" class="centered">
+		<span>{{ get_user_profile(user) }}</span>
+	</td>
+	
+	
+</tr>
 
-{%- endif -%}
 
-<div class='{{ name }}_row row' id="{{ uid }}">
-	<span class="{{ name }}_select">
-		<input type="checkbox" name="selected" class="{{ name }}_checkbox">
-	</span>
-	<span class="{{ name }}_locked odd_even_typed {{ 'is_locked' if item.locked }}">
-		<img src='/media/images/24x24/{{ icon }}'
-			alt='{{ message }}' title='{{ message }}'/>
-	</span>
-	<span title="{{ _('Click to edit user {0}').format(login) }}" class="{{ name }}_content">
-		<span class="{{ name }}_login odd_even_typed"> {{ login }}</span>
-		<span class="{{ name }}_gecos odd_even_typed {{ 'grayed_out'
-			if not item.gecos }}">{{ item.gecos or _('No name given') }}</span>
-		<span class="{{ name }}_uidNumber odd_even_typed">{{ uid }}</span>
-		<span class="{{ name }}_profile odd_even_typed">
-			<span class="{{ name }}_profile_content {{ 'grayed_out'
-				if not item.profile and item.is_standard }}">{{ profile_text }}</span>
-		</span>
-	</span>
-	<span class="{{ name }}_nav odd_even_typed">
-		<span class="item_menu">
-			<div class="{{ name }}_reapply_skel">
-				{%- set message = _('Reapply skel of user {0}').format(login) -%}
-				<img src="/media/images/16x16/reapply-skel.png"
-					title="{{ message }}" alt="{{ message }}"/>
-			</div>
-			<div class="{{ name }}_delete">
-				{%- set message = _('Delete user {0}').format(login) -%}
-				<img src="/media/images/16x16/supprimer.png"
-				title="{{ message }}" alt="{{ message }}"/>
-			</div>
-		</span>
-	</span>
-</div>
-<script type='text/javascript'>
-	users_list_event_items.push(['{{ name }}', '{{ uid }}', '{{ login }}', 'uidNumber']);
-</script>

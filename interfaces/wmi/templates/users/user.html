@@ -1,161 +1,312 @@
 {#- Copyright 2011 META IT, Olivier Cortès <oc@meta-it.fr>, Robin Lucbernet<rl@meta-it.fr>
     Distributed under the terms of the GNU GPL version 2. -#}
 
-<div id='sub_content_header'>
-	<h1 id='sub_content_title'>{{ title }}</h1>
-</div>
 
-<div id='sub_content_area'>
-	<form id='user_form'>{% csrf_token %}
-	<div id='table' name='{{ user_uid }}'>
-	<br />
 
-		{%- for field in form.visible_fields() -%}
-			{%- set immutable = field.name in form.immutables -%}
-				<div class='sub_content_line big_line'>
-					<div class='sub_content_half_line'>
-						<strong>{{ field.label_tag() }}</strong>{{ _('(fixed)') if immutable }}</div>
-					<div class='sub_content_half_line align_right'>
-						{%- if immutable -%}
-							{{ field.value() }}
-						{%- else -%}
-							{%- if field.name == 'password' -%}
-								<span><img id="generate_pwds" src="/media/images/16x16/generate.png" alt="'+ gettext("Generate passwords") +'"/></span> {{ field }}
-								<span id='pwd_strenght' style='font-size:12px;'></span>
-							{%- elif field.name == 'password_confirm'-%}
-								<span id="check_pwds"></span> {{ field }}
-							{%- else -%}
-								{{ field }}
-							{%- endif -%}
 
-						{%- endif -%}
 
-					</div>
+{%- extends 'modal.html' -%}
+
+    {%- block title -%}
+	    {%- if mode == 'new' -%}
+	    	<h3>{{ _('New user') }}</h3>
+	    {%- elif mode == 'edit' -%}
+	    	<h3>{{ _('Edit user') }} {{ '<span>{0}</span>'.format(user.login) }}</h3>
+	    {%- elif mode == 'massiv' -%}
+	    	<h3>{{ _('Massive user edition') }}</h3>
+	    {%- endif -%}
+    {%- endblock -%}
+
+
+  {%- block body -%}
+
+  	{% if form.errors and not form.non_field_errors() -%}
+	    <div class="error_div error_text">
+			{% trans count=form.errors.items()|length() %}
+			    Merci de corriger l'erreur ci-dessous&nbsp;:
+			{% pluralize %}
+			    Merci de corriger les erreurs suivantes&nbsp;:
+			{% endtrans %}
+	    </div>
+	{% endif -%}
+
+	{% if form.non_field_errors() %}
+	    {% for error in form.non_field_errors() %}
+			<p class="errornote">
+				{{ error }}
+			</p>
+	    {% endfor %}
+	{% endif %}
+
+	<form class="form-horizontal" id='user_form'>
+
+		{% csrf_token %}
+		
+
+
+
+
+	<ul class="nav nav-tabs" id="myTab">
+		{% for block in form_blocks %}
+			<li {{ 'class="active"' if form_blocks[block][2] }}><a href="#{{ form_blocks[block][0] }}" data-toggle="tab">{{ form_blocks[block][1] }}</a></li>
+		{% endfor %}
+	</ul>
+	<div class="tab-content">
+
+
+	<div class="tab-pane active" id="general">
+
+		<div class="control-group">
+			{% for field in form.visible_fields() %}
+			<div style="min-height:40px;">
+				<label class="control-label" for="id_{{ field.name }}">
+					{{ field.label }}
+					{%-if field.field.required -%}
+						&nbsp;
+						<span class="required_field">*</span>
+					{%- endif -%}
+				</label>
+				<div class="controls" style="vertical-align:center;">
+					{{ field }}
+
+					{%-if field.field.help_text -%}
+						<p class="help-block">{{ field.field.help_text }}</p>
+					{%- endif -%}
 				</div>
-		{%- endfor -%}
+			</div>
+			{% endfor %}
+			{% if mode == 'edit' %}
+		<a href="#" class="btn btn-danger btn-block" id="delete_user_button" data-id='{{user.uid}}'>{{ _('Delete user') }}</a>
+	{% endif %}
+		</div>
+		
 	</div>
+	
+		
+	{# add users and sys_user pane #}
 
-	{%- for title, groups_list in groups_lists -%}
-		{%- include 'users/groups_list.html' -%}
+	{%- for list in groups_lists -%}
+		<div class="tab-pane" id="{{ list.list_name }}">
+			<div>
+				<div style="text-align:right;margin-bottom:20px;">
+					{{ _('Sort by:') }}
+					<span class="btn-group" data-toggle="buttons-radio">
+						<button type="button" id='sort_alpha' class="btn sort_item" data-sort="alpha" data-id="{{ list.list_name }}">
+							{{ _("Group name") }}
+						</button>
+						<button type="button" id='sort_relation' class="btn sort_item" data-sort="relation" data-id="{{ list.list_name }}">
+							{{ _("Relationship") }}
+						</button>
+						
+					
+
+					</span>
+				</div>
+				{{list.list_content}}
+			</div>
+    	</div>
 	{%- endfor -%}
 
-	{%- if _mode == 'new' -%}
-	<div id='new_item__modes' class="one_line">
-		<span class='sub_content_half_line'>
-			<div id='cancel_button' class="interface_button float_left">{{ _('Cancel') }}</div>
-		</span>
-		<span class='sub_content_half_line'>
-			<div id='save_user_button' class="interface_button float_right">{{ _('Add') }}</div>
-		</span>
-	</div>
-	{%- endif -%}
+
+	</div> <!-- end tab-content -->
+	
+
+
+
 	</form>
-</div>
 
-<script type="text/javascript">
+
+  {%- endblock -%}
+  {%- block footer -%}
+  	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+    {% if mode == "new" %}
+    <a href="#" class="btn btn-primary" id="save_group_button">{{ _('Add group') }}</a>
+
+    {%endif%}
+
+
+    <style>
+    	.my_popover{
+    		width:auto;
+    	}
+    </style>
+    <script type="text/javascript">
+	var tab_sort = { "alpha": true, "relation": false}
+	
+
 	$(document).ready(function() {
+		
+		// .click_item are our user box, when click is triggered, 
+		// show the popover containing possible relationship
 
-		content = $('#sub_content_area');
-		var passwords_match = false;
-		var check_user_pwd;
-		// from main.js
-		password_helpers(content)
+		setup_sort_items('.trigger_popover', $('.sort_item'));
 
-		$('.click_item').each(function() {
-			// display only relevant groups
-			rel = $(this).attr('value');
-			$(this).find('.rel_'+rel).hide();
+		function setup_sort_items(elements, sort_items) {
+			console.log('setup_sort_items', elements, sort_items)
 
-			var popover_content = $(this).find('.popover')
-			$(this).popover({
-				title : null,
-				content:  popover_content,
-				trigger: 'click',
-				position: 'top',	
-			});
-
-
-			//$(this).popover({content: $(this).find('.group_popover_content') });
-		});
-
-		$('.popover_item').click(function() {
-			// update the current popover
-			group_id = $(this).attr('id');
-			new_rel = $(this).attr('value');
-
-			div = $('#sub_content').find('#'+group_id).filter('.click_item');
-			div.find('.item_hidden_input').attr('value', ''); // erase old membership
-			div.find('input[name$="'+new_rel+'_users"]').attr('value', group_id); // update new membership
-
-			{%- if _mode == 'new' -%}
-				// visual feedback on users because no instant_apply in new
-				update_relationship('group', null, group_id, new_rel) ;
-			{%- endif -%}
-
-			//close the popover
-			$('.click_item#'+group_id).popover('hide');
-		});
-
-		{%- if _mode == 'edit' -%}
-			init_instant_apply('users');
-
-			lock_sub_content("{{ user_uid }}");
-			select_row($('.current_list').find('#_list_name').text(),
-						"{{ user_uid }}");
-
-		{%- endif -%}
-		{%- if _mode == 'massiv' -%}
-			// init massive mode
-
-			// for shell :
-			$('#id_shell').change(function() {
-				console.log('/users/massive/shell/'+$.URLEncode("{{uids}}")+'/'+$.URLEncode($('#id_shell').val()))
-				$.get('/users/massive/shell/'+$.URLEncode("{{uids}}")+'/'+$.URLEncode($('#id_shell').val()))
-			})
-
-			// for groups :
-			var rel_ids = {
-				'no_membership' : 0,
-				'guest'         : 1,
-				'member'        : 2,
-				'resp'          : 3 }
-
-			$('.instant_apply_click').click(function() {
-				console.log('group click '+$('#sub_content').attr('value'))
-				div = $('#sub_content').find('#'+$(this).attr('id')).filter('.click_item');
-				console.log(div)
-				div.find('.item_hidden_input').addClass('item_currently_selected');
-
-				url = '/users/massive/groups/'+$.URLEncode("{{uids}}")+'/'+$(this).attr('id')
-							+ '/' + rel_ids[$(this).attr('value')]
-				console.log(url)
-				$.get(url);
-			});
-
-
-		{%- endif -%}
-		{%- if _mode == 'new' -%}
-			// unselect row in case a user has been selected
-			unselect_row();
-			lock_sub_content();
-
-			function post_form() {
-				if ($('#id_password').val() == $('#id_password_confim').val()) {
-					if ($('#id_login').val() == '' && $('#id_gecos').val() == "") {
-						show_message_through_notification('Login and gecos cannot be both empty, impossible to save user')
-					}
-					else {
-						$.post("/users/create/", $('#user_form').serialize());
-					}
-				} else {
-					show_message_through_notification('Passwords empty or missmatch, impossible to save user.')
+			$.each(sort_items, function(i, item) {
+				console.log(item, tab_sort, $(item).data('sort'))
+				// setup interface
+				if (tab_sort[$(item).data('sort')]) {
+					$(item).addClass('active')
 				}
+				else {
+					$(item).removeClass('active')
+				}
+			})
+			$(sort_items).click(function(e) {
+				
+				do_sort($(this).data('id'), $(this).data('sort'));
+
+			})
+			//do_sort();
+
+			function do_sort(div, sort_item) {
+				console.log("do_sort")
+				tab = $('#'+div+' '+elements)
+				console.log($(tab))
+				tab.sort(function(a, b) {
+					//console.log($(a).data('rel'), $(b).data('rel'))
+					if (sort_item == 'alpha') {
+						if ($(a).find('.group_name').text().toLowerCase() < $(b).find('.group_name').text().toLowerCase()) {
+							return -1
+						}
+						else if ($(a).find('.group_name').text().toLowerCase() > $(b).find('.group_name').text().toLowerCase()) {
+							return 1
+						}
+						else {
+							return 0
+						}
+					}
+					else if (sort_item == 'relation') {
+						return ($(a).data('rel') - $(b).data('rel'))
+					}
+				})
+				if (sort_item == 'relation') {
+					$.fn.reverse = [].reverse;
+					tab = tab.reverse();
+				}
+				console.log('sorted', $(tab))
+
+				//$.each(tab, function(i, item) {
+				//	console.log($(item))
+				//})
+
+				$('#'+div+' '+elements).hide()
+				$.each(tab, function(i, item) {
+					$('#'+div).append($(item))
+				})
+
+				$('#'+div+' '+elements).show()
+
+
+
+
+
+
 			}
 
-			// click save button
-			$('#save_user_button').click(function() {
-				post_form();
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		// init the popover
+		$('.trigger_popover').each(function() {
+
+			// display only relevant relationship (do not display the current one)
+			current_rel = $(this).data('rel')
+			$(this).find('.rel_'+current_rel).hide();
+			var popover_id = $(this).data('id')
+
+			// init tht popover
+			$(this).clickover({
+				title : 'relationship',
+				content  : function() { return $(this).find('.popover').html();},
+				html: true,
+				placement : 'top',
+				template: '<div class="popover my_popover" id="popover_'+popover_id+'"><div class="arrow"></div><div class="popover-inner"><div class="popover-content"><p></p></div></div></div>'
+
+			}).click(function() {
+
+				// on popover display, initialize instant_click, if 'edit' or 'massiv' mode
+				{% if mode == 'edit' or mode == 'massiv' %}
+					console.log('inti',popover_id, $("#popover_"+$(this).data('id')))
+					init_instant_click($("#popover_"+$(this).data('id')))
+				{% elif mode == 'new' %}
+					{# no instant apply, but give a visual feedback #}
+					$('#popover_'+$(this).data('id')+' .instant_click').click(function() {
+						update_relationship($(this).data('id'), $(this).data('relid'))
+					});
+				{% endif -%}
 			});
+		});
+
+		
+
+
+
+		
+
+		{%- if mode == 'new' -%}
+			
+			function post_form() {
+				console.log(typeof($('#user_form').serialize()))
+				var serialized_form = $('#user_form').serialize()
+
+				//console.log(serialized_form)
+
+				$.each($('form .trigger_popover'), function() {
+					
+					rel = $(this).attr('data-rel')
+					
+					if (rel == "0") {
+						serialized_form += "&no_membership_users="+$(this).data('id')
+					}
+					else if (rel == "1") {
+						serialized_form += "&guest_users="+$(this).data('id')
+					}
+					else if (rel == "2") {
+						serialized_form += "&member_users="+$(this).data('id')
+					}
+					else if (rel == "3") {
+						serialized_form += "&resp_users="+$(this).data('id')
+					}
+					
+				})
+
+				//console.log(serialized_form)
+				$.post("/groups/create/", serialized_form);
+
+				$('#modal').modal('hide')
+			};
 
 			$(document).keyup(function(e) {
 				if (e.keyCode == 13) { // enter
@@ -163,24 +314,73 @@
 				}
 			});
 
-			// click cancel button
-			$('#cancel_button').click(function() {
-				reload_div('#sub_content','');
-				unlock_sub_content();
+			// click save button
+			$('#save_group_button').click( function() {
+				$('#save_group_button').unbind('click');
+				post_form();
 			});
+			
+
+			$('#modal').modal('hide');
+
+			
 		{%- endif -%}
 
-		// we need to wait a small amount of time, else the subcontent is
-		// not yet reloaded and the focus won't work.
-		setTimeout(function() {
-			{%- if _mode == 'edit' -%}
-				$('#id_gecos').focus();
+		$('#id_permissive').checkbox({
+	        'on_text': "{{ _('No') }}",
+	        'off_text' : "{{ _('Yes') }}"
+	    })
 
-			{%- else -%}
-				$('#id_login').focus();
+	    $('#delete_group_button').click( function() {
+				
+				$('#groups_'+$(this).data('gid')).addClass(select_active_class)
+				$('#massive_delete').trigger('click');
 
-			{%- endif -%}
-		}, 250);
+			});
+
+
 
 	});
 </script>
+
+
+
+    
+  {%- endblock -%}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

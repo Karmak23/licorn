@@ -1,0 +1,51 @@
+
+
+
+{%- extends 'users/massive_select.html' -%}
+
+
+{%- block confirm_text -%}
+	<p>{{ _('Do you really want to <em><strong>delete</strong></em> all selected users ?') }}</p>
+{%- endblock -%}
+
+{%- block end_text -%}
+<div>
+	<p>
+		{{
+			_('The user\'s <strong>personnal data</strong> (HOME directory) will be '
+			'<strong>archived</strong> in directory <strong>{0}</strong>. '
+			'Members of group <strong>{1}</strong> will be able to access it '
+			'to operate an eventual recover.').format(archive_dir, admin_group)
+		}}
+	</p>
+	<p>{{ _("However, you can decide to remove them permanently.") }}</p>
+
+	<span>
+		<table>
+			<tr>
+				<td>
+					<label class="control-label" for="delete_group_no_archive">
+						{{ _("Definitely remove group shared data (no archiving).") }}
+					</label>
+				</td>
+				<td>&nbsp;</td>
+				<td><input type='checkbox' id='delete_group_no_archive'/></td>
+			</tr>
+		</table>
+
+		
+
+	</span>
+</div>
+
+<script language="javascript" type="text/javascript">
+
+$(document).ready(function() {
+	$('#delete_group_no_archive').checkbox({
+        'on_text': "{{ _('Yes') }}",
+        'off_text' : "{{ _('No') }}"
+    })
+});
+
+</script>
+{%- endblock -%}

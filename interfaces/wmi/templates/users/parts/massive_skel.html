@@ -1,0 +1,12 @@
+{%- extends 'users/massive_select.html' -%}
+
+
+{%- block confirm_text -%}
+	<p>{{ _('Do you really want to reapply users\' <em><strong>skeleton</strong></em> on all selected users?') }}</p>
+{%- endblock -%}
+
+
+{%- block end_text -%}
+	<p>	{{ _("This will reset the desktops, icons and menus of all members of the group, according to the content of the skel you choose. This will NOT alter any of the user personnal data, nor the group shared data.") }}
+	</p>
+{%- endblock -%}

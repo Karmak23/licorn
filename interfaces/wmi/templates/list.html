@@ -12,6 +12,7 @@
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.iselectable.js"></script>
 	<script language="javascript" type="text/javascript" src="/media/js/sortabletable.js"></script>
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.tablescroll.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/my_utils.js"></script>
 
 	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/ug-popover.css" />
 	
@@ -63,7 +64,7 @@
 		</span>
 	</div>
 
-	<table class="table sortable" id="model_groups_table">
+	<table class="table sortable" id="">
 		<thead>
 			<tr>
 				{%- block list_headers -%}
@@ -79,39 +80,13 @@
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
 
-			// setup the list
-			var START_TIME = new Date().getTime();
-			
-			setup_list();
-			
-			var END_TIME = new Date().getTime();
-			totalTime = (END_TIME - START_TIME);
-			console.log("total time to setup list", totalTime);
-
-
 			{%- if modal_html -%} 
 				// if modal_html is activated, prompt it!
 				$("#modal").modal();
 			{%- endif -%}
 		});
 
-		function groups_doubleclick_row(td) {
-			// what happens when a row has been double clicked,
-			// show the edit form.
-
-			if (! $(td).hasClass('no_double_click')) {
-
-				gid = td.data('gid')
-
-				if (gid == null) {
-					gid = td.parent('.licorn_row').data('gid')
-				}
-
-				$.get('/groups/edit/'+gid, function(modal_html) {
-					$("#modal").html(modal_html).modal()
-				})
-			}
-		}
+		
 		
 		function my_setup_table_search() {
 			// setup a timer in order to let the user type several letter 
@@ -152,17 +127,22 @@
 		var st;
 		
 		function setup_list(list_name) {
+
+			$('.table').attr('id', "model_"+list_name+"_table")
+
+
+
 			// search field
 			my_setup_table_search()
 
 			// make rows selectable
-			setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me');
+			setup_table_row_selectable($('#model_'+list_name+'_table tbody'), select_active_class, '.not-me');
 
 			// filters btn
-			setup_table_filter($('#model_groups_table tbody tr'), $('.filter_item'), filters)
+			setup_table_filter('model_'+list_name+'_table tbody', $('.filter_item'), filters)
 
 			// setup doubleclick on each rows
-			setup_table_row_doubleclick($('#model_groups_table tbody td'), groups_doubleclick_row);
+			setup_table_row_doubleclick($('#model_'+list_name+'_table tbody td'), func_doubleclick_row);
 			
 			// setup the sort plugin
 			// PERF ISSUE
@@ -175,11 +155,11 @@
 			})
 			table[0].config.sortList = [[2,0]]*/
 
-			st = new SortableTable(document.getElementById("model_groups_table"),
-				["None", "None", "Name", "Description", "gid", "skel"])
+			st = new SortableTable(document.getElementById("model_"+list_name+"_table"),
+				get_list_column())
 			
 			// setup default sort state
-			$('#model_groups_table').attr('data-sort-col', 2)
+			$('#model_'+list_name+'_table').attr('data-sort-col', 2)
 			$('.table_column_header').each(function(i, header) {
 				$(header).attr('data-sort-col', i)
 				$(header).attr('data-sort-way', 0)
@@ -196,12 +176,11 @@
 				}
 				
 				_THIS.attr('data-sort-way', new_way)
-				$('#model_groups_table').attr('data-sort-col', _THIS.data('sort-col'))
+				$('#model_'+list_name+'_table').attr('data-sort-col', _THIS.data('sort-col'))
 
 				loading_animation_func(gettext('Please wait while sorting list'));
 				
 				tim = setTimeout( function() {
-
 					st.sort(_THIS.attr('data-sort-col'), new_way)
 					remove_loading_animation();
 				}, 500);
@@ -226,9 +205,9 @@
 
 
 			//massives actions
-			setup_massive_actions();
+			setup_massive_actions(list_name);
 
-			setup_hover();
+			setup_hover(list_name);
 
 			// Is this still used ?
 			//setup_ajaxized_link($('#model_groups_table tbody td'));
@@ -238,7 +217,7 @@
 		}
 
 		// to move in common.js
-		function setup_table_filter(table_rows, items, filters) {
+		function setup_table_filter(div, items, filters) {
 			/* setup table filters */
 
 			$.each(items, function(i, item) {
@@ -271,7 +250,7 @@
 			function do_filter() {
 				/* really do the filter, show/hide rows */
 				$.each(filters, function(name, on_state) {
-					filter_items = $('#table_tbody .filter_'+name+'')
+					filter_items = $('#'+div+' .filter_'+name+'')
 					if (on_state) {
 						filter_items.addClass('not_filtered').removeClass('filtered').css('display', '')
 					}
@@ -287,33 +266,43 @@
 				return false;
 			})
 		}
-		function setup_massive_actions() {
+		function setup_massive_actions(list_name) {
+			if (list_name[list_name.length-1] == 's') {
+				item_name = list_name.substring(0, list_name.length-1)
+			}
+			else {
+				item_name = list_name
+			}
+
+			console.log('setup_massive_actions', list_name, item_name)
+
 			$('.massive_action').click(function() {
 				// get selected items
-				selected_rows = get_selected_rows($('#model_groups_table tbody'), select_active_class);
+				selected_rows = get_selected_rows($('#model_'+list_name+'_table tbody'), select_active_class);
 				
 				action_name = $(this).data('name')
 				action_url = $(this).data('url')
 
 				if (selected_rows.length == 0) {
-					show_message_through_notification('{{ _("Please select at least one group to apply massive action <strong><em>'+action_name+'</em></strong> on") }}');
+					show_message_through_notification('{{ _("Please select at least one <strong><em>'+item_name+'</em></strong> to apply massive action <strong><em>'+action_name+'</em></strong> on") }}');
 				}
 				else {
-					gids=[]
-					$.each(get_selected_rows($('#model_groups_table tbody'), select_active_class), function(i, item) {
-						gids.push($(item).data('gid'))
+					ids=[]
+					$.each(get_selected_rows($('#model_'+list_name+'_table tbody'), select_active_class), function(i, item) {
+						ids.push($(item).data('id'))
 					})
 
 					// get the massive selection template
-					url = '/groups/massive_select_template/'+action_name+'/'+gids.join(',')
-					//console.log(url);
+					url = '/'+list_name+'/massive_select_template/'+action_name+'/'+ids.join(',')
+					console.log(url);
 					$.get(url, function(modal_html) {
 						$("#modal").html(modal_html).modal()
-						init_massive_select_events(action_name, action_url, gids);
+						init_massive_select_events(action_name, action_url, ids);
 					})
 				}
 			})
 		}
+
 		function init_massive_select_events(action_name, action_url, gids) {
 			//console.log("init_massive_select_events", action_name, action_url, gids)
 			$('#apply_massive_action').click(function() {
@@ -322,7 +311,7 @@
 
 				// run the action
 				if (action_name == 'export') {
-					$.get(action_url + gids, function(data) {
+					$.get(action_url + gids+ '/' + $('#id_export_type').val(), function(data) {
 						file_name = data.file_name
 						iframe = document.getElementById('download_iframe')
 						iframe.src = "/system/download/"+file_name
@@ -340,9 +329,11 @@
 
 			})
 		}
-		function setup_hover() {
+
+
+		function setup_hover(list_name) {
 			// on row hover, always clean interface in case of previus preselection with keyboard
-			$('#model_groups_table tbody tr').hover(function(){
+			$('#model_'+list_name+'_table tbody tr').hover(function(){
 				//in
 				//$('#model_groups_table tr').css({"background-color":"none"})
 				// change the background color to preselect it
@@ -368,7 +359,7 @@
 			console.log('setup_row', row, old)
 
 			// apply events
-			setup_table_row_doubleclick($(row), groups_doubleclick_row)
+			setup_table_row_doubleclick($(row), func_doubleclick_row)
 
 			// because this method can be ran several times in a short period, 
 			// TRY to run these massive operations once.

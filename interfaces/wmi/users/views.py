@@ -5,12 +5,12 @@ Licorn® WMI - users views
 :copyright:
 	* 2008-2011 Olivier Cortès <olive@deep-ocean.net>
 	* 2010-2011 META IT - Olivier Cortès <oc@meta-it.fr>
-	* 2011 Robin Lucbernet <robinlucbernet@gmail.com>
+	* 2011-2012 Robin Lucbernet <robinlucbernet@gmail.com>
 	* 2012 Olivier Cortès <olive@licorn.org>
 :license: GNU GPL version 2
 """
 
-import os, time, base64, tempfile, crack, json
+import os, time, base64, tempfile, crack, json, types
 
 from threading import current_thread
 from operator  import attrgetter
@@ -31,6 +31,8 @@ from licorn.foundations.ltraces   import *
 
 from licorn.core                  import LMC
 
+from collections import OrderedDict
+
 # FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
 # WARNING: this import will fail if nobody has previously called `wmi.init()`.
 # This should have been done in the WMIThread.run() method. Anyway, this must
@@ -41,7 +43,7 @@ from licorn.interfaces.wmi.app             import wmi_event_app
 from licorn.interfaces.wmi.libs            import utils
 from licorn.interfaces.wmi.libs.decorators import staff_only, check_users
 
-from forms import UserForm, SkelInput, ImportForm
+from forms import UserForm, SkelInput, ImportForm, get_user_form_blocks
 
 @staff_only
 def message(request, part, uid=None, *args, **kwargs):
@@ -174,7 +176,7 @@ def delete(request, uid, no_archive, *args, **kwargs):
 	return HttpResponse('DONE.')
 
 @staff_only
-def massive(request, uids, action, *args, **kwargs):
+def massive(request, uids, action, value, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
 
@@ -202,11 +204,11 @@ def massive(request, uids, action, *args, **kwargs):
 				mod(request, uid=uid, action='skel', value=kwargs.get('skel'))
 	if action == 'export':
 
-		_type = kwargs.get('type', False)
-
 		selected_uids = [int(u) for u in uids.split(',')]
 
-		if _type.lower() == 'csv':
+		print "EXPORTING USERS IN ", value
+
+		if value.lower() == 'csv':
 			export = LMC.users.ExportCSV(selected=selected_uids)
 			extension = '.csv'
 
@@ -374,150 +376,7 @@ def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 		utils.notification(request, _('Building user {0} form, please wait…').format(
 			_('edit') if _mode else _('creation')), 3000 + 5 * ngroups, 'wait_for_rendering')
 
-	f = UserForm(_mode, user)
-
-	groups_list = [ (_('Standard groups'),{
-					'user': user,
-					'name': 'standard',
-					'groups' : utils.select("groups", default_selection=filters.STANDARD)
-				}),
-				(_('Privileged groups'), {
-					'user': user,
-					'name': 'privileged',
-					'groups' : utils.select("groups", default_selection=filters.PRIVILEGED)
-				}) ]
-
-	if request.user.is_superuser:
-		groups_list.append( ( _('System groups') ,  {
-			'user': user,
-			'name': 'system',
-			'groups' : [ group for group in
-				utils.select("groups", default_selection=filters.SYSTEM)
-					if not group.is_helper and not group.is_privilege ]
-		}))
-
-	_dict = {
-				'user_uid'              : user_id,
-				'_mode'                 : _mode,
-				'title'                 : title,
-				'form'                  : f,
-				'groups_lists'          : groups_list
-			}
-
-	if request.is_ajax():
-		return render(request, 'users/user.html', _dict)
-
-	else:
-		_dict.update({
-				'users_list'            : utils.select('users', default_selection=filters.STANDARD),
-				'system_users_list'     : utils.select('users', default_selection=filters.SYSTEM)
-			})
-
-		return render(request, 'users/user_template.html', _dict)
-
-@staff_only
-def view(request, uid=None, login=None, *args, **kwargs):
-
-	assert ltrace_func(TRACE_DJANGO)
-
-	if uid != None:
-		user = LMC.users.by_uid(uid)
-
-	elif login != None:
-		user = LMC.users.by_login(login)
-
-	try:
-		profile = user.primaryGroup.profile.name
-
-	except Exception:
-		profile = _("Standard account")
-
-	resps     = []
-	guests    = []
-	stdgroups = []
-	privs     = []
-	sysgroups = []
-
-	for group in user.groups:
-		if group.is_responsible:
-			resps.append(group.standard_group)
-
-		elif group.is_guest:
-			guests.append(group.standard_group)
-
-		elif group.is_standard:
-			stdgroups.append(group)
-
-		elif group.is_privilege:
-			privs.append(group)
-
-		else:
-			sysgroups.append(group)
-
-	lists = [
-				{
-					'title'  : _('Responsibilities'),
-					'kind'   : _('responsible'),
-					'groups' : resps
-				},
-				{
-					'title'  : _('Memberships'),
-					'kind'   : _('member'),
-					'groups' : stdgroups
-				},
-				{
-					'title'  : _('Invitations'),
-					'kind'   : _('guest'),
-					'groups' : guests
-				},
-				{
-					'title'  : _('Privileges'),
-					'kind'   : _('privileged member'),
-					'groups' : privs
-				},
-				{
-					'title'  : _('Other system groups'),
-					'kind'   : _('system member'),
-					'groups' : sysgroups
-				},
-
-		]
-
-	# TODO: reactivate the extensions methods
-	#
-	#exts_wmi_group_meths = [ ext._wmi_group_data
-	#							for ext in LMC.extensions
-	#							if 'groups' in ext.controllers_compat
-	#							and hasattr(ext, '_wmi_group_data')
-	#						]
-	exts_wmi_group_meths = []
-
-	colspan = 2 + len(exts_wmi_group_meths)
-
-	#extensions_data='\n'.join('<tr><td><strong>%s</strong></td>'
-	#	'<td class="not_modifiable">%s</td></tr>\n'
-	#		% ext._wmi_user_data(user, hostname=kwargs['wmi_hostname'])
-	#			for ext in LMC.extensions
-	#				if 'users' in ext.controllers_compat
-	#					and hasattr(ext, '_wmi_user_data'))
-	extensions_data = ''
-
-	_dict = {
-				'user'             : user,
-				'colspan'          : colspan,
-				'extensions_data'  : extensions_data,
-				'lists'            : lists,
-			}
-	if request.is_ajax():
-		return render(request, 'users/view.html', _dict)
-
-	else:
-		_dict.update({
-				'users_list'        : utils.select('users', default_selection=filters.STANDARD),
-				'system_users_list' : utils.select('users', default_selection=filters.SYSTEM),
-				'is_super_user'     : request.user.is_superuser
-			})
-		return render(request, 'users/view_template.html', _dict)
+	return get_user_template(request, _mode, user)
 
 @staff_only
 def upload_file(request, *args, **kwargs):
@@ -587,24 +446,22 @@ def import_view(request, confirm='', *args, **kwargs):
 
 @staff_only
 def main(request, sort="login", order="asc", select=None, **kwargs):
-
+	""" render the user main page """
 	assert ltrace_func(TRACE_DJANGO)
 
-	# auto-sort the users on login, to avoid the first JS sort,
-	# it can take ages if there are many users.
-	users_list = sorted(LMC.users.select(filters.STANDARD), key=attrgetter('login'))
-
+	users = LMC.users.select(filters.STANDARD)
+	
 	if request.user.is_superuser:
-		system_users_list = LMC.users.select(filters.SYSTEM)
-
-	else:
-		system_users_list = []
-
+		for u in LMC.users.select(filters.SYSTEM):
+				users.append(u)
+	
 	return render(request, 'users/index.html', {
-			'users_list'        : users_list,
-			'system_users_list' : system_users_list,
-			'is_super_user'     : request.user.is_superuser,
+			'request' : request,
+			'users' : sorted(users, key= lambda x: attrgetter('login')(x).lower()
+			)
 		})
+
+
 
 # ================================================================ Helper Views
 #
@@ -626,3 +483,99 @@ def check_pwd_strenght(request, pwd, *args, **kwargs):
 
 def generate_pwd(request, *args, **kwargs):
 	return HttpResponse(hlstr.generate_password())
+
+
+
+
+
+
+def massive_select_template(request, action_name, uids, *args, **kwargs):
+	users = [ LMC.users.guess_one(u) for u in uids.split(',') ]
+	template = None
+
+	_dict = { 'users' : users }
+
+	if action_name == 'delete':
+		_dict.update({
+			"archive_dir" : settings.home_archive_dir, 
+			'admin_group' : settings.defaults.admin_group })
+	if action_name == 'edit':
+		return get_user_template(request, "massiv", users)
+
+	return HttpResponse(
+		render_to_string('users/parts/massive_{0}.html'.format(action_name),
+			_dict))
+
+
+
+def get_user_template(request, mode, users):
+	print "get_user_template", mode, users
+
+	if type(users) != types.ListType:
+		users = [ users ]
+	
+	_dict = {}
+
+
+	groups_lists = [
+		{
+			'list_name'    : 'standard',
+			'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
+				'users' : users,
+				'group' : g
+				}) for g in sorted(LMC.groups.select(filters.STANDARD), key= lambda x: attrgetter('name')(x).lower())])
+		}
+	]
+
+	# if super user append the system users list
+	if request.user.is_superuser:
+		groups_lists.append(
+			{
+				'list_name'    : 'system',
+				'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
+					'users' : users,
+					'group' : g
+					}) for g in sorted(LMC.groups.select(filters.SYSTEM), key= lambda x: attrgetter('name')(x).lower()) if not g.is_helper])
+			}
+		)
+		
+	# we need to sort the form_blocks dict to display headers in order
+	sorted_blocks = OrderedDict({})
+	form_blocks = get_user_form_blocks(request)
+	for k in sorted(form_blocks.iterkeys()):
+		sorted_blocks.update({ k: form_blocks[k]})
+
+	_dict.update({
+				'mode'    	  : mode,
+				'form'        : UserForm(mode, users[0]),
+				'groups_lists' : groups_lists,
+				'form_blocks' : sorted_blocks
+			})
+	
+	if mode == 'edit':
+		_dict.update({"user" : users[0] })
+
+	#print "rendering group.html", _dict
+
+	if request.is_ajax():
+
+		return render(request, 'users/user.html', _dict)
+
+	else:
+		# render the full page
+		groups = LMC.groups.select(filters.STANDARD)
+	
+		if request.user.is_superuser:
+			for g in LMC.groups.select(filters.SYSTEM):
+				if not g.is_helper:
+					groups.append(g)
+		else:
+			for g in LMC.groups.select(filters.PRIVILEGED):
+				groups.append(g)
+
+		return render(request, 'users/index.html', {
+				'request' : request,
+				'users' : sorted(users, key= lambda x: attrgetter('login')(x).lower()), 
+				'modal_html' : render(request, 'users/user.html', _dict) \
+						if mode == 'new' else render_to_string('users/user.html', _dict)
+			})
