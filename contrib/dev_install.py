@@ -274,6 +274,9 @@ def make_symlinks():
 			('{0}/core/backends/schemas'.format(devel_dir),
 			'{0}/schemas'.format(share_dir)),
 
+			('{0}/extensions'.format(devel_dir),
+			'{0}/extensions'.format(share_dir)),
+
 			('{0}/locale/fr.mo'.format(devel_dir),
 			'/usr/share/locale/fr/LC_MESSAGES/licorn.mo'),
 		):
