@@ -15,7 +15,7 @@ from licorn.extensions.squid    import *
 
 LSCF = LicornSquidConfigurationFile
 
-ts_data_path = os.path.dirname(__file__) + '/../tests/data/squid3/'
+ts_data_path = os.path.dirname(__file__) + '/../../tests/data/squid3/'
 
 s1 = LSCF(filename=ts_data_path	+ 'squid.conf.orig.short')
 s2 = LSCF(filename=ts_data_path + 'squid.conf.orig.short.same')
