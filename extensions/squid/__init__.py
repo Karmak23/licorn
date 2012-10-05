@@ -5,5 +5,5 @@ Licorn extensions: squid - http://docs.licorn.org/extensions/squid
 """
 
 # get the class here for the ExtensionsManager to find it.
-from squid import SquidExtension
+from squid import *
 
