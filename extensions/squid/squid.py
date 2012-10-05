@@ -185,7 +185,7 @@ class LicornSquidConfigurationFile(ConfigurationFile):
 	new_directive_types = (Keyword.Namespace, )
 
 	def __init__(self, *args, **kwargs):
-		ConfigurationFile.__init__(self, self.__class__.class_lexer, *args, **kwargs)
+		ConfigurationFile.__init__(self, lexer=self.__class__.class_lexer, *args, **kwargs)
 	def _order_check_common_allow_deny(self, directive_name, directives, special_value=None):
 		""" basic check: if last directive is "deny", check that its value is
 			"all" and that all other are of the form "allow …" (but not "all"),
@@ -453,7 +453,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 												if self.version in (2, None)
 												else '/var/log/squid3',
 									http_port=self.defaults.port,
-									localnet=self.defaults.subnet)
+									localnet=' '.join(self.defaults.subnet))
 
 		# TODO: add peers here. iterate other licorn servers on the same LAN
 		# and add a 'cache_peer sibling' directive for them. Then, make them
@@ -472,8 +472,9 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 
 		for filename2str, action, partial, conflict, snipplet in (
 				(pre_parse('squid.common.conf'),       'merge', False,    None,      False),
-				(pre_parse('squid.replacements.conf'), 'merge', True,     'replace', True),
-				(pre_parse('squid.licorn_lan.conf'),   'merge', False,    None,      True),
+				(pre_parse('squid.replacements.conf'), 'merge', True,    'replace',  True),
+				(pre_parse('squid.licorn_lan_1.conf'), 'merge', True,    'replace',  True),
+				(pre_parse('squid.licorn_lan_2.conf'), 'merge', False,    None,      True),
 				(to_add,                               'merge', False,    None,      True),
 				(to_del,                               'wipe',  False,    None,      True),
 			):
