@@ -761,11 +761,11 @@ class ConfigurationFile(object):
 			return False
 
 		raise ValueError('no directive nor directive_name was specified.')
-	def find(self, directive=None, match_value=True, raise_partial=False, directive_name=None):
+	def find(self, directive=None, match_value=True, partial_match=False, directive_name=None):
 		""" This method does roughly (but not exactly) the same thing as the
 			:meth:`has` one, but it returns the matched directive when found.
 
-			If :param:`raise_partial` is ``True`` and a partial match (only the
+			If :param:`partial_match` is ``True`` and a partial match (only the
 			name is found), the method raises the directive found, instead
 			of returning it. This can be felt quite strange but it's an easy
 			way to indicate the match is not the exact one. Exact matches take
@@ -774,7 +774,7 @@ class ConfigurationFile(object):
 			match anywhere. Use the method like this::
 
 			try:
-				result = conf_file.find(Directive(...), raise_partial=True)
+				result = conf_file.find(Directive(...), partial_match=True)
 
 			except ConfigurationDirective, partial_match:
 				# do something with the partial match if you want.
@@ -801,7 +801,7 @@ class ConfigurationFile(object):
 					if d.name == directive.name:
 						return d
 
-			if raise_partial and partial:
+			if partial_match and partial:
 				raise PartialMatch(partial)
 
 			raise ValueError(_(u'Directive {0} not found in {1}.').format(directive, repr(self)))
@@ -911,8 +911,18 @@ class ConfigurationFile(object):
 			self.ordered_directives[directive.name].insert(sub_pos, directive)
 
 		# Insert in the directives. Costly, but quick-search is at this price.
-		self.directives.insert(self.directives.index(self.blocks[position]),
-								directive)
+		try:
+			current_directive = self.blocks[position]
+
+		except IndexError:
+			# We are trying to insert a new directive at the
+			# end of file, position is > len(self.blocks).
+			dirposition = len(self.directives)
+
+		else:
+			dirposition = self.directives.index(current_directive)
+
+		self.directives.insert(dirposition, directive)
 
 		# Then insert in the "all" blocks.
 		self.blocks.insert(position, directive)
@@ -931,26 +941,33 @@ class ConfigurationFile(object):
 		pass
 	def insert_after_last(self, directive_name, directive):
 		pass
-	def merge(self, other, on_conflicts=None, batch=False, auto_answer=None):
+	def merge(self, other, partial_match=False, on_conflict=None, batch=False, auto_answer=None):
 		""" Try to merge another instance of :class:`ConfigurationFile` into
 			the current instance, beiing smart in the process. When 2 directives
-			conflict, do whatever is specified by the :param:`on_conflicts`
+			conflict, do whatever is specified by the :param:`on_conflict`
 			parameter.
 
 			:param other: the other :class:`ConfigurationFile` instance from
 				which we want to merge.
 
-			:param on_conflicts: a string describing what to do when a conflict
+			:param partial_match: a boolean (defaults to ``False``) indicating
+				if we want to match only directive names or full value. This
+				helps separating merges for configuration directives that
+				we want verbatim, and others for which we just want to update
+				the values without duplicating the whole line.
+
+			:param on_conflict: a string describing what to do when a conflict
 				is encountered during the merge operation. Default value is
 				``raise``. Accepted values are:
-				* ``raise``: raise a MergeConflictException.
 				* ``overwrite`` or ``replace``: overwrite the current value
 				  inside us, with the value from ``other`` configuration file.
 				* ``ignore``, ``keep`` or ``pass``: ignore the value from
 				  ``other`` and keep ours.
+				* any other value will be treated as ``raise``, and the method
+				  will an exception on any conflict it encounters.
 
 			:param batch: the Licorn® standard ``batch`` parameter. Helps
-				automatically applying the decision of ``on_conflicts``, else
+				automatically applying the decision of ``on_conflict``, else
 				the question (if any) is raised interactively, which is not
 				everytime what you need. Can be ``True`` or ``False`` (default).
 
@@ -967,13 +984,41 @@ class ConfigurationFile(object):
 			..versionadded:: 1.6
 		"""
 
+		if on_conflict:
+			on_conflict = on_conflict.lower()
+
 		for directive_to_merge in other.directives:
+
 			try:
 				self.index(directive_to_merge)
 
 			except ValueError:
-				# We don't have it, go merging.
-				self.__merge_one_directive(directive_to_merge)
+				# We don't have the exact directive (name/value) in the file.
+				# Then, should we try to match only the name, or do we
+				# *exactly* want this particular directive?
+				if partial_match:
+					try:
+						self.find(directive_to_merge, partial_match=True)
+
+					except PartialMatch, p:
+						if on_conflict in ('replace', 'overwrite'):
+							p.match.value = directive_to_merge.value
+							self.__changed = True
+
+						elif on_conflict in ('ignore', 'keep', 'pass'):
+							continue
+
+						else:
+							raise
+
+					except ValueError:
+						self.__merge_one_directive(directive_to_merge)
+
+				else:
+					self.__merge_one_directive(directive_to_merge)
+
+			# implicit: "else: continue" (we already have
+			# the very same directive with the same value).
 
 		return self.changed
 	def __merge_one_directive(self, directive):
@@ -1075,9 +1120,15 @@ class ConfigurationFile(object):
 					#break
 
 		self.insert_at(best_insert_index, directive, best_sub_position)
-	def wipe(self, other, on_conflicts=None, batch=False, auto_answer=None):
+	def wipe(self, other, partial_match=False, on_conflict=None, batch=False, auto_answer=None):
 		""" Remove other's directives from us. Parameters are the same as in
 			the :meth:`merge` method: :meth:`wipe` is its pure opposite.
+
+			:param partial_match: this parameter is currently ignored. It
+				exists to allow to call :meth:`merge` and :meth:`wipe` methods
+				in loops without having to trick arguments for each method. In
+				the future it will probably not be ignored any more, and have
+				the same kind of behaviour that in the merge method.
 
 			.. warning:: This method doesn't check that the file is in a good
 				shape, functionnaly speaking, after directives have been wiped.
