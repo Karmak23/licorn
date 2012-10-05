@@ -345,15 +345,15 @@ class ConfigurationFile(object):
 	directives_needing_order    = []
 	directives_dependancies     = {}
 
-	def __init__(self, lexer, filename=None, text=None, snipplet=False, caller=None):
+	def __init__(self, *args, **kwargs):
 		self.blocks                   = []
 		self.directives               = []
 		self.ordered_directives       = {}
-		self.filename                 = filename
-		self.text                     = text
-		self.lexer                    = lexer
-		self.snipplet                 = snipplet
-		self.__caller                 = caller
+		self.lexer                    = kwargs.pop('lexer')
+		self.filename                 = kwargs.pop('filename', None)
+		self.text                     = kwargs.pop('text', None)
+		self.snipplet                 = kwargs.pop('snipplet', False)
+		self.__caller                 = kwargs.pop('caller', None)
 
 		# TODO: integrate the Inotifier's hint,
 		# to avoid false-positive reload on write.
@@ -903,24 +903,32 @@ class ConfigurationFile(object):
 		assert ltrace_func(TRACE_CONFIG)
 
 		# Update ordered directives if this one belongs to them.
-		if directive.name in self.ordered_directives:
+		if directive.name in self.directives_needing_order:
 			if sub_pos is None:
 				raise exceptions.LicornRuntimeError('sub_pos should be filled '
 										'when inserting an ordered directive.')
 
-			self.ordered_directives[directive.name].insert(sub_pos, directive)
+			ordered = self.ordered_directives.get(directive.name, [])
+			ordered.insert(sub_pos, directive)
+			self.ordered_directives[directive.name] = ordered
 
-		# Insert in the directives. Costly, but quick-search is at this price.
-		try:
-			current_directive = self.blocks[position]
-
-		except IndexError:
-			# We are trying to insert a new directive at the
-			# end of file, position is > len(self.blocks).
-			dirposition = len(self.directives)
+		if position == 0:
+			# Shortcut: if we're inserting at start, no need to look for
+			# a directive to insert before, just insert at start too.
+			dirposition = 0
 
 		else:
-			dirposition = self.directives.index(current_directive)
+			# Insert in the directives. Costly, but quick-search is at this price.
+			try:
+				current_block = self.blocks[position]
+
+			except IndexError:
+				# We are trying to insert a new directive at the
+				# end of file, position is > len(self.blocks).
+				dirposition = len(self.directives)
+
+			else:
+				dirposition = self.directives.index(current_block)
 
 		self.directives.insert(dirposition, directive)
 
@@ -1030,7 +1038,8 @@ class ConfigurationFile(object):
 		best_sub_position = None
 
 		# Then we try to find a better position, earlier in the file.
-		if directive.name in self.ordered_directives:
+		if directive.name in self.directives_needing_order:
+
 			try:
 				best_insert_index, \
 					best_sub_position = getattr(self, '_insert_index_for_'
@@ -1038,6 +1047,10 @@ class ConfigurationFile(object):
 															directive,
 															self.ordered_directives[
 																directive.name])
+
+				assert ltrace(TRACE_CONFIG, 'best ordered direct insert: '
+											'{0}/{1}'.format(best_insert_index,
+															best_sub_position))
 
 			except AttributeError:
 				try:
@@ -1048,6 +1061,10 @@ class ConfigurationFile(object):
 													self.ordered_directives[
 														directive.name])
 
+					assert ltrace(TRACE_CONFIG, 'best ordered generic insert: '
+											'{0}/{1}'.format(best_insert_index,
+															best_sub_position))
+
 				except AttributeError:
 					try:
 						# When no better match can be determined via dedicated
@@ -1057,9 +1074,12 @@ class ConfigurationFile(object):
 						# but this problem should be known by the developer
 						# of the sub-class.
 						best_insert_index = self.index_last(directive.name)
-						best_sub_position = len(self.ordered_directives[
-														directive.name])
+						best_sub_position = len(self.ordered_directives.get(
+														directive.name, [])) or 1
 
+						assert ltrace(TRACE_CONFIG, 'best ordered default insert: '
+											'{0}/{1}'.format(best_insert_index,
+															best_sub_position))
 					except ValueError:
 						# The current configuration does not include any
 						# directive of that kind. The one we insert is the
@@ -1119,6 +1139,8 @@ class ConfigurationFile(object):
 					# structures, we have no mean to do this faster.
 					#break
 
+		assert ltrace(TRACE_CONFIG, 'final insert positions: {0}/{1}'.format(
+										best_insert_index, best_sub_position))
 		self.insert_at(best_insert_index, directive, best_sub_position)
 	def wipe(self, other, partial_match=False, on_conflict=None, batch=False, auto_answer=None):
 		""" Remove other's directives from us. Parameters are the same as in
