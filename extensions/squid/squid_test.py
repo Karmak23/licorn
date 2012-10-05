@@ -50,6 +50,7 @@ def test_parse_and_rewrite():
 def test_search():
 
 	py.test.raises(ValueError, s1.find)
+
 	assert s1.has(directive_name='prout') == False
 
 	directive = copy.deepcopy(s1.directives[1])
@@ -75,13 +76,13 @@ def test_search():
 	assert s1.has(directive_name=directive.name) == True
 
 	py.test.raises(ValueError, s1.find, directive)
-	py.test.raises(PartialMatch, s1.find, directive, raise_partial=True)
+	py.test.raises(PartialMatch, s1.find, directive, partial_match=True)
 
 	assert s1.find(directive, match_value=False) == s1.directives[0]
 	assert s1.find(directive, match_value=False) != s1.directives[1]
 
 	try:
-		s1.find(directive, raise_partial=True)
+		s1.find(directive, partial_match=True)
 
 	except PartialMatch, e:
 		assert e.match == s1.directives[0]
