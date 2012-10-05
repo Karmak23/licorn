@@ -108,7 +108,7 @@ def test_bad_config_syntax_or_ordering():
 					'squid.conf.orig.short.bad_ordering_01',
 					'squid.conf.orig.short.bad_ordering_02'):
 		yield bad_config_syntax_func, filename
-def test_merge():
+def test_merge_basic():
 	m1 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.1.start')
 	m2 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.2.part_to_merge', snipplet=True)
 	m3 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.3.final')
@@ -123,6 +123,24 @@ def test_merge():
 	# As there are many ways to write the same file, these stringified
 	# versions will be different (the .final file was voluntarily made to be).
 	assert m1.to_string() != m3.to_string()
+def test_merge_standard_from_existing():
+
+	os.chdir('/usr/share/licorn/extensions/squid/data')
+
+	# start with an empty file.
+	m1 = LSCF(filename='squid.minimal.test.conf')
+
+	m1.merge(LSCF(filename='squid.replacements.conf', snipplet=True), partial_match=True, on_conflict='replace')
+	#print '>> +replacements', m1.to_string()
+	assert m1.changed
+
+	m1.merge(LSCF(filename='squid.licorn_lan_1.conf', snipplet=True), partial_match=True, on_conflict='replace')
+	#print '>> +lan_1', m1.to_string()
+	assert m1.changed
+
+	m1.merge(LSCF(filename='squid.licorn_lan_2.conf', snipplet=True))
+	print '>> +lan_2\n', m1.to_string()
+	assert m1.changed
 def test_wipe():
 	m1 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.1.start')
 	m2 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.2.part_to_merge', snipplet=True)
