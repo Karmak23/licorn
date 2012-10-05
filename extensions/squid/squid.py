@@ -439,15 +439,13 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 
 		# Store the generated configuration in the extension.
 		self.defaults = conf
-	def __build_squid_configuration_defaults(self):
+	def __squid_configuration_defaults(self):
 
 		datadir = self.paths.data_dir
 		opjoin  = os.path.join
 
-		unwanted_default_conf = ''
-
-		wanted_default_conf = open(opjoin(datadir, 'squid.common.conf')
-								).read().format(
+		def pre_parse(filename):
+			return open(opjoin(datadir, filename)).read().format(
 									spool_dir='/var/spool/squid'
 												if self.version in (2, None)
 												else '/var/spool/squid3',
@@ -455,18 +453,14 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 												if self.version in (2, None)
 												else '/var/log/squid3',
 									http_port=self.defaults.port,
-								)
-
-		directives_for_v2 = open(opjoin(datadir, 'squid.v2.conf')).read()
-
-		directives_for_v3 = open(opjoin(datadir, 'squid.v3.conf')).read()
-
-		localnet_conf = 'acl localnet src {0}\n'.format(' '.join(
-												self.defaults.subnet))
+									localnet=self.defaults.subnet)
 
 		# TODO: add peers here. iterate other licorn servers on the same LAN
 		# and add a 'cache_peer sibling' directive for them. Then, make them
 		# reflect this change and add us to their siblings list.
+
+		directives_for_v2 = pre_parse('squid.v2.conf')
+		directives_for_v3 = pre_parse('squid.v3.conf')
 
 		if self.version in (2, None):
 			to_add = directives_for_v2
@@ -476,8 +470,14 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 			to_add = directives_for_v3
 			to_del = directives_for_v2
 
-		return (wanted_default_conf, localnet_conf + to_add,
-											unwanted_default_conf, to_del)
+		for filename2str, action, partial, conflict, snipplet in (
+				(pre_parse('squid.common.conf'),       'merge', False,    None,      False),
+				(pre_parse('squid.replacements.conf'), 'merge', True,     'replace', True),
+				(pre_parse('squid.licorn_lan.conf'),   'merge', False,    None,      True),
+				(to_add,                               'merge', False,    None,      True),
+				(to_del,                               'wipe',  False,    None,      True),
+			):
+			yield filename2str, action, partial, conflict, snipplet
 	def check(self, batch=False, auto_answer=None, full_display=True):
 
 		if self.available:
@@ -501,25 +501,24 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 											u'mode.').format(self.pretty_name))
 			return
 
+		LSCF = LicornSquidConfigurationFile
+
 		logging.progress(_(u'{0}: checking Squid\'s current '
 									u'configuration…').format(self.pretty_name))
 
 		# This instance will be loaded on checks and unloaded at the end,
 		# ensuring that any manual alteration while licornd is running will
 		# be taken in account. This avoids useless memory consumption, too.
-		current_configuration = LicornSquidConfigurationFile(
-										filename=self.paths.squid_conf
-													if self.version == 2
-													else self.paths.squid3_conf,
+		current_configuration = LSCF(filename=self.paths.squid_conf
+												if self.version == 2
+												else self.paths.squid3_conf,
 										caller=self.name)
 
-		wanted_str, add_str, unwanted_str, del_str = self.__build_squid_configuration_defaults()
-
-		# Idem for other instances: loaded on the fly.
-		current_configuration.merge(LicornSquidConfigurationFile(text=wanted_str))
-		current_configuration.merge(LicornSquidConfigurationFile(text=add_str, snipplet=True))
-		current_configuration.wipe(LicornSquidConfigurationFile(text=unwanted_str, snipplet=True))
-		current_configuration.wipe(LicornSquidConfigurationFile(text=del_str, snipplet=True))
+		for text, action, partial, conflict, snipplet in self.__squid_configuration_defaults():
+			getattr(current_configuration, action)(
+										LSCF(text=text, snipplet=snipplet),
+										partial_match=partial,
+										on_conflict=conflict)
 
 		if current_configuration.changed:
 			# TODO: if batch or logging.ask_for_repair(…)
