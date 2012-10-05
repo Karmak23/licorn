@@ -28,7 +28,7 @@ module, for details and philosophy.
 """
 
 # Python imports
-import itertools
+import os, itertools, tempfile, errno
 from threading import current_thread
 
 # Pygments imports
@@ -37,7 +37,8 @@ from pygments.filters    import RaiseOnErrorTokenFilter
 from pygments.formatters import Terminal256Formatter, NullFormatter
 
 # Other Licorn® foundations imports
-import exceptions, styles, logging
+import exceptions, styles, logging, fsapi
+from classes import FileLock
 from styles  import *
 from ltrace  import ltrace, ltrace_func, ltrace_var
 from ltraces import TRACE_CONFIG
@@ -162,6 +163,13 @@ class ConfigurationDirective(object):
 
 		"""
 
+		if self.__class__ != other.__class__:
+			# Happens when comparing a ConfigurationDirective to something else.
+			assert ltrace(TRACE_CONFIG, 'different class {0} '
+				'!= {1}.'.format(self.__class__.__name__,
+								other.__class__.__name__))
+			return False
+
 		if self.name != other.name:
 			assert ltrace(TRACE_CONFIG, ' %s directive name %s != %s' % (
 								self.__class__.__name__, self.name,other.name))
@@ -195,6 +203,13 @@ class ConfigurationDirective(object):
 	def __ne__(self, other):
 		""" Return ``True`` if the current directive is NOT the same as the
 			other, else ``False``. See :meth:`__eq__` for notes. """
+
+		if self.__class__ != other.__class__:
+			# Happens when comparing a ConfigurationDirective to something else.
+			assert ltrace(TRACE_CONFIG, 'different class {0} '
+				'!= {1}.'.format(self.__class__.__name__,
+								other.__class__.__name__))
+			return True
 
 		if self.name != other.name:
 			assert ltrace(TRACE_CONFIG, ' %s directive name %s != %s' % (
@@ -383,6 +398,13 @@ class ConfigurationFile(object):
 				  a file on disk with an in-memory instance, too.
 		"""
 
+		if self.__class__ != other.__class__:
+			# Happens when comparing a ConfigurationFile to something else.
+			assert ltrace(TRACE_CONFIG, 'different class {0} '
+				'!= {1}.'.format(self.__class__.__name__,
+								other.__class__.__name__))
+			return False
+
 		if len(self.directives) != len(other.directives):
 			assert ltrace(TRACE_CONFIG, 'different by number of directives {0} '
 				'!= {1}.'.format(len(self.directives), len(other.directives)))
@@ -516,8 +538,23 @@ class ConfigurationFile(object):
 		# NOTE: not a good idea for now, we will crash!
 		#self.lexer.add_filter(RaiseOnErrorTokenFilter())
 
-		self.__load_from_tokens(self.lexer.get_tokens(self.text or
-								open(self.filename,'rb').read()))
+		try:
+			# We test the filename instead of the text because in some
+			# cases the developer wants a ConfigurationFile(text='').
+			# This is completely possible but would crash trying to
+			# open(None) if we simply test "self.text or open(…)".
+			strdata = open(self.filename,'rb').read() \
+											if self.filename \
+											else self.text
+
+		except (IOError, OSError), e:
+			if e.errno == errno.ENOENT:
+				strdata = ''
+
+			else:
+				raise
+
+		self.__load_from_tokens(self.lexer.get_tokens(strdata))
 
 		self.__check_duplicates()
 		self.__check_ordering()
@@ -1096,14 +1133,14 @@ class ConfigurationFile(object):
 		"""
 
 		if filename is None:
-			filename = self._filename
+			filename = self.filename
 
 		assert ltrace_func(TRACE_CONFIG)
 
 		data = self.to_string()
 
 		with FileLock(self, filename):
-			open(filename, 'w').write(data)
+			#open(filename, 'w').write(data)
 
 			ftempp, fpathp = tempfile.mkstemp(dir=os.path.dirname(filename))
 
@@ -1131,13 +1168,13 @@ class ConfigurationFile(object):
 		if filename is None:
 			filename = self.filename
 
-		if self.changed:
+		if self.__changed:
 			if filename:
 				if batch or logging.ask_for_repair(_(u'{0}: system file {1} '
 							u'must be modified for the configuration to be '
 							u'complete. Do it?').format(
 								stylize(ST_NAME, self._caller),
-								stylize(ST_PATH, self._filename)),
+								stylize(ST_PATH, self.filename)),
 							auto_answer=auto_answer):
 
 					fsapi.backup_file(filename)
@@ -1149,12 +1186,12 @@ class ConfigurationFile(object):
 
 					logging.notice(_(u'{0}: altered configuration file {1}.').format(
 											stylize(ST_NAME, self._caller),
-											stylize(ST_PATH, self._filename)))
+											stylize(ST_PATH, self.filename)))
 
 				else:
 					raise exceptions.LicornModuleError(_(u'{0}: configuration '
 							u'file {1} must be altered to continue.').format(
-								self._caller, self._filename))
+								self._caller, self.filename))
 
 			else:
 				raise exceptions.LicornRuntimeError(_(u'%s: cannot save a '
