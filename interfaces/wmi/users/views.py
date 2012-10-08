@@ -176,8 +176,8 @@ def delete(request, uid, no_archive, *args, **kwargs):
 	return HttpResponse('DONE.')
 
 @staff_only
-def massive(request, uids, action, value, *args, **kwargs):
-
+def massive(request, uids, action, *args, **kwargs):
+	print "massive ", uids, action, value
 	assert ltrace_func(TRACE_DJANGO)
 
 	if action == 'delete':
@@ -206,9 +206,9 @@ def massive(request, uids, action, value, *args, **kwargs):
 
 		selected_uids = [int(u) for u in uids.split(',')]
 
-		print "EXPORTING USERS IN ", value
+		print "EXPORTING USERS IN ", kwargs.get('value')
 
-		if value.lower() == 'csv':
+		if kwargs.get('value').lower() == 'csv':
 			export = LMC.users.ExportCSV(selected=selected_uids)
 			extension = '.csv'
 
@@ -232,51 +232,12 @@ def massive(request, uids, action, value, *args, **kwargs):
 			mod(request, uid=uid, action='shell', value=kwargs.get('shell'))
 	if action == 'groups':
 		for uid in uids.split(','):
-			mod(request, uid=uid, action='groups', value=kwargs.get('group'))
+			mod(request, uid=uid, action='groups', value=kwargs.get('value'))
 			# group is : group_id/rel_id
 	
 	if action == 'edit':
-
-		groups_list = [ (_('Standard groups'),{
-						'user': None,
-						'name': 'standard',
-						'groups' : utils.select("groups", default_selection=filters.STANDARD)
-					}),
-					(_('Privileged groups'), {
-						'user': None,
-						'name': 'privileged',
-						'groups' : utils.select("groups", default_selection=filters.PRIVILEGED)
-					}) ]
-
-		if request.user.is_superuser:
-			groups_list.append( ( _('System groups') ,  {
-				'user': None,
-				'name': 'system',
-				'groups' : [ group for group in
-					utils.select("groups", default_selection=filters.SYSTEM)
-						if not group.is_helper and not group.is_privilege ]
-			}))
-
-		# inform the user that the UI will take time to build,
-		# to avoid re-clicks and (perfectly justified) grants.
-		ngroups = len(LMC.groups.keys())
-		if ngroups > 50:
-			# TODO: make the notification sticky and remove it just
-			# before returning the rendered template result.
-			utils.notification(request, _('Building user massiv form, please '
-							'wait…'), 3000 + 5 * ngroups, 'wait_for_rendering')
-
-		_dict = {
-					'uids'                  : uids,
-					'users'                 : [ LMC.users.guess_one(u) for \
-														u in uids.split(',')],
-					'_mode'                 : "massiv",
-					'form'                  : UserForm("massiv", None),
-					'groups_lists'          : groups_list,
-					'title'                 : _("Massive edit")
-				}
-
-		return render(request, 'users/user.html', _dict)
+		return get_user_template(request, "massiv", 
+			[ groups.append(LMC.groups.guess_one(gid)) for gid in uids.split(',')])
 
 	return HttpResponse('MASSIVE DONE.')
 

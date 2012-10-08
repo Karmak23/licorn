@@ -53,10 +53,10 @@ function update_instance(model, iid, new_html, action_func) {
 		console.log('action_func')
 		if (typeof(action_func) == "string") {
 			var fn = window[action_func];
-			fn(new_, old);
+			fn(model, new_, old);
 		}
 		else {
-			action_func(new_, old);
+			action_func(model, new_, old);
 		}
 	}
 	else {

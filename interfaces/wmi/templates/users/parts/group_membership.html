@@ -2,7 +2,7 @@
 
 
 {%- macro get_group_membership(users, group) -%}
-	{% if groups == [ None ] %}
+	{% if group == [ None ] %}
 		
 		{%- set rel = 0 -%}
 		
@@ -17,7 +17,7 @@
 			{% if rel_ref == [] %}
 				{%- do rel_ref.append(u.get_relationship(group.gidNumber)) -%}
 			{% else %}
-				{% if rel_ref[0] != u.get_relationship(groups.gidNumber) %}
+				{% if rel_ref[0] != u.get_relationship(group.gidNumber) %}
 					{%- do same_rel.append(0) -%}
 				{% endif %}
 			{% endif %}

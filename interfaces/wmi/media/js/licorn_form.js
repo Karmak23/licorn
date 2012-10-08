@@ -53,15 +53,19 @@ var get_relationship_img = [
 	"",
 ]
 
-function update_relationship(item_id, rel_id) {
+function update_relationship(user_id, group_id, rel_id) {
 	/* Update the relationship of an element */
-	console.log('update', item_id, rel_id)
+	console.log('update', user_id, group_id, rel_id)
 
 	// find the popover
-	popover = $('#popover_'+item_id)
+	btn = $('#btn_'+user_id)
+	if (btn.length == 0) {
+		console.log('not')
+		btn = $('#btn_'+group_id)
+		
+	}
 	
 	// update the current click_item
-	btn = $('#btn_'+item_id)
 	console.log("btn", btn)
 	btn.attr('data-rel', rel_id)
 	btn.removeClass('btn-default btn-primary btn-success btn-danger btn-warning').addClass('btn-'+button_types[rel_id])

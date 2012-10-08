@@ -160,7 +160,7 @@
 				get_list_column())
 			
 			// setup default sort state
-			$('#model_'+list_name+'_table').attr('data-sort-col', 2)
+			$('#model_'+list_name+'_table').attr('data-sort-col', 3)
 			$('.table_column_header').each(function(i, header) {
 				$(header).attr('data-sort-col', i)
 				$(header).attr('data-sort-way', 0)
@@ -355,7 +355,7 @@
 		// timer used to prevent massive operation to be ran several times
 		var setup_row_timeout;
 
-		function setup_row(row, old) {
+		function setup_row(list_name, row, old) {
 			// function called when a new row is inserted (not already displayed) into the table.
 			console.log('setup_row', row, old)
 
@@ -378,7 +378,8 @@
 				// sort the list
 				// 4356
 				// ff : 640
-				col = $('#model_groups_table').data('sort-col')
+				console.log('list_name', list_name)
+				col = $('#model_'+list_name+'_table').data('sort-col')
 				
 				loading_animation_func(gettext('Please wait while sorting list'));
 				
@@ -386,6 +387,11 @@
 					var sort_START_TIME = new Date().getTime();
 					
 					current_way = $($('.table_column_header').get(parseInt(col))).attr('data-sort-way')
+					console.log('current_way', current_way)
+					if (current_way == null) {
+						current_way = 0
+					}
+					console.log('current_way', current_way, col)
 					st.sort(col, parseInt(current_way))
 					remove_loading_animation();
 					

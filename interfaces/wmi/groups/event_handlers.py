@@ -61,9 +61,11 @@ def group_member_deleted_handler(request, event):
 	user  = event.kwargs['user']
 	group = event.kwargs['group']
 
+	gid = group.gidNumber if not group.is_helper else group.standard_group.gidNumber
+
 	yield utils.format_RPC_JS(
 		'update_relationship', 
-		user.uidNumber, 0)
+		user.uidNumber, gid, 0)
 
 	yield utils.notify(_(u'User "{0}" has no more relationship with '
 		u'group "{1}".').format(user.login,
@@ -75,9 +77,10 @@ def group_member_added_handler(request, event):
 	group = event.kwargs['group']
 
 	rel = group.get_relationship(user.uidNumber)
+	gid = group.gidNumber if not group.is_helper else group.standard_group.gidNumber
 
 	yield utils.format_RPC_JS('update_relationship',
-		user.uidNumber,
+		user.uidNumber, gid,
 		rel)
 
 	yield utils.notify(_(u'User "{0}" is now a {1} of group "{2}".').format(

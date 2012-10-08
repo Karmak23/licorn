@@ -62,8 +62,14 @@
 
 
 
+{%- macro get_user_backend_img(user) -%}
 
-
+	{%- if user.backend.name == 'openldap' -%}
+		<i title="{{ _('Openldap backend') }}" class="icon-tasks"></i>
+	{%- else -%}
+		<i title="{{ _('Shadow backend') }}" class="icon-hdd"></i>
+	{%- endif -%}
+{%- endmacro -%}
 
 
 {%- macro get_user_lock_img(user) -%}
@@ -86,6 +92,10 @@
 	<!-- type -->
 	<td class='centered' width="5%">
 		{{ get_user_type_img(user) }}
+	</td>
+	<!-- type -->
+	<td class='centered' width="5%">
+		{{ get_user_backend_img(user) }}
 	</td>
 	<!-- lock -->
 	<td class='centered' width="10%">
