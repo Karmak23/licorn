@@ -9,7 +9,7 @@
 	:license: Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, os, getpass, time, code, rlcompleter, uuid, __builtin__
+import sys, os, getpass, time, code, socket, rlcompleter, uuid, __builtin__
 import Pyro.core, Pyro.util, Pyro.configuration
 
 from threading import current_thread, enumerate
@@ -22,7 +22,7 @@ from ltrace    import *
 from ltraces   import *
 from threads   import RLock
 from base      import NamedObject, pyro_protected_attrs
-from constants import message_type, verbose, interactions
+from constants import message_type, verbose, interactions, roles
 
 def remote_output(text_message, clear_terminal=False, *args, **kwargs):
 	""" Output a text message remotely, in CLI caller process, whose
@@ -112,7 +112,11 @@ class ListenerObject(object):
 			:param listener: the client-side Pyro proxy for the client-side
 				:class:`MessageProcessor` instance.
 		"""
-		current_thread().listener = listener
+		th = current_thread()
+
+		#print '>> SET listener on', th.name, listener
+
+		th.listener = listener
 	def setup_listener_gettext(self):
 		""" define a "_" attribute on the current thread, based on languages
 			known by the current daemon instance. The "_" will be called,
@@ -120,6 +124,8 @@ class ListenerObject(object):
 			every running thread.
 		"""
 		th = current_thread()
+
+		#print '>> listener gettext in ', th.name
 
 		try:
 			th._ = th._licornd.langs[th.listener.lang].ugettext
@@ -220,9 +226,89 @@ class ListenerObject(object):
 
 		logging.notice(_(u'Trace session UUID {0} ended.').format(
 													stylize(ST_UGID, muuid)))
+	def get_events_list(self, opts, args):
+		""" Output the list of internal events. """
+
+		import events
+
+		self.setup_listener_gettext()
+
+		# we need to merge, because some events have only
+		# handlers, and others have only callbacks.
+		events_names = set(events.events_handlers.keys()
+							+ events.events_callbacks.keys())
+		max_name_len = max(len(x) for x in events_names)
+
+		if opts.verbose >= verbose.INFO:
+			remote_output(_(u'{0} distinct event(s), {1} handler(s) '
+					u'and {2} callback(s)').format(len(events_names),
+					sum(len(x) for x in events.events_handlers.itervalues()),
+					sum(len(x) for x in events.events_callbacks.itervalues())
+					) + u'\n')
+			for event_name in events_names:
+				handlers  = events.events_handlers.get(event_name, ())
+				callbacks = events.events_callbacks.get(event_name, ())
+
+				remote_output(_(u'Event: {0}\n\tHandlers:{1}{2}\n'
+						u'\tCallbacks:{3}{4}\n').format(
+					stylize(ST_NAME, event_name),
+					u'\n\t\t' if len(handlers) else u'',
+					u'\n\t\t'.join(_(u'{0} in module {1}').format(
+						stylize(ST_NAME, h.__name__),
+						stylize(ST_COMMENT, h.__module__)) for h
+							in handlers),
+					u'\n\t\t' if len(callbacks) else u'',
+					u'\n\t\t'.join(_(u'{0} in module {1}').format(
+						stylize(ST_NAME, c.__name__),
+						stylize(ST_COMMENT, c.__module__)) for c
+							in callbacks),
+				))
+		else:
+			for event_name in events_names:
+				remote_output(_(u'{0}: {1} handler(s), {2} callback(s).\n').format(
+							stylize(ST_NAME, event_name.rjust(max_name_len)),
+							len(events.events_handlers.get(event_name, ())),
+							len(events.events_callbacks.get(event_name, ())),
+						))
+
+	# =================================================== Licorn® daemon status
+
+	def get_daemon_status(self, opts=None, args=None, cli_output=True):
+		""" This method is called from CLI tools. """
+
+		import logging
+		from licorn.core import LMC
+
+		try:
+			if cli_output:
+				self.setup_listener_gettext()
+
+				remote_output(LMC.licornd.dump_status(opts.long_output,
+							opts.precision), clear_terminal=opts.monitor_clear)
+			else:
+				return LMC.licornd.dump_status(as_string=False)
+
+		except Exception:
+			# When the daemon is restarting, the CommandListener thread
+			# shutdowns the Pyro daemon, and its reference attribute is
+			# deleted, producing an AttributeError, forwarded to the
+			# client-side caller. We catch any other 'Exception' to avoid
+			# borking the client side.
+			#
+			# We just avoid forwarding it, this nothing to care about. As
+			# the current method is called many times in a 'while 1' loop
+			# on the client side, only one iteration of the loop will not
+			# produce any output, which will get totally un-noticed and
+			# is harmless.
+			logging.exception(_('Exception in .get_daemon_status()'))
 
 	# ====================================== Licornd remote interactive console
 
+	def console_informations(self):
+		from _settings   import settings
+		from licorn.core import version
+		return (socket.gethostname(), roles[settings.role],
+					version, sys.version.replace('\n', ''), sys.platform)
 	def console_start(self, is_tty=True):
 		# we have to import 'logging' not at the top of the module
 		import logging, events
@@ -298,7 +384,6 @@ class ListenerObject(object):
 		else:
 			remote_output(_(u'>>> batched remote console terminated.') + '\n',
 							_message_channel_=2)
-
 	def console_complete(self, phrase, state):
 		return self._console_completer.complete(phrase, state)
 	def console_runsource(self, source, filename=None):

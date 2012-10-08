@@ -232,7 +232,7 @@ class ModulesManager(LockedController):
 			# Is module already loaded ?
 
 			if module_name in self.iterkeys():
-				module = self[module]
+				module = self[module_name]
 
 				if module.enabled:
 					# module already loaded locally. Enventually sync with the
@@ -261,11 +261,14 @@ class ModulesManager(LockedController):
 				# the module instanciation, at last!
 				module = module_class()
 
+				if settings.role != roles.SERVER and module.server_only:
+					continue
+
 				assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
 					self.module_type, stylize(ST_NAME, module_name)))
 
 				LicornEvent('%s_%s_loads' % (self.module_type, module_name)
-									).emit(synchronous=True)
+													).emit(synchronous=True)
 
 				try:
 					module.load(server_modules=server_side_modules)
@@ -275,7 +278,7 @@ class ModulesManager(LockedController):
 					events.collect(module)
 
 					LicornEvent('%s_%s_loaded' % (self.module_type, module_name)
-										).emit(synchronous=True)
+														).emit(synchronous=True)
 
 				except Exception:
 					# an uncatched exception occured, the module is buggy or
@@ -343,6 +346,8 @@ class ModulesManager(LockedController):
 										stylize(ST_NAME, module_name),
 										stylize(ST_PATH,
 											settings.main_config_file)))
+
+					disable_dependants(module_name)
 
 		assert ltrace(self._trace_name, '< load(%s)' % changed)
 		return changed
@@ -484,6 +489,7 @@ class ModulesManager(LockedController):
 			# the only way to make sure they can be fully usable before
 			# enabling them.
 			for module in self:
+
 				#assert ltrace(self._trace_name, '  check(%s)' % module.name)
 				try:
 					module.check(batch=batch, auto_answer=auto_answer)
@@ -638,10 +644,31 @@ class CoreModule(CoreUnitObject, NamedObject):
 		#: replicated / configured on CLIENTS).
 		self.server_only = False
 	def event(self, event_name):
+		""" Get the current state of a module event, and return ``True`` if
+			the event is **set**, else ``False``.
+
+			This method is meant to be used from remote network clients, where
+			getting the whole extension via Pyro would not transmit threads,
+			locks and other sort of special attributes. As the method exists
+			on the remote side, Pyro will execute it correctly via RPC and the
+			remote code will be able to test the :class:`~threading.Event`.
+		"""
 		assert ltrace_locks(self.events[event_name])
 		return self.events[event_name].is_set()
-	def lock(self, lock_name):
-		the_lock = self.locks[lock_name]
+	def lock(self, lock_name=None):
+		""" Get the current state of a module lock, and return ``True``
+			if the lock is currently acquired, else ``False``.
+
+			:param lock_name: a string specifying which lock to test. If
+				ommited, the global module lock will be tested.
+
+			This method is meant to be used from remote network clients, where
+			getting the whole extension via Pyro would not transmit threads,
+			locks and other sort of special attributes. As the method exists
+			on the remote side, Pyro will execute it correctly via RPC and the
+			remote code will be able to test the :class:`~threading.RLock`.
+		"""
+		the_lock = self.locks[lock_name] if lock_name else self.locks._global
 		if the_lock.acquire(blocking=False):
 			the_lock.release()
 			return False

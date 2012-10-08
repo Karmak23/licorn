@@ -1045,8 +1045,6 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			if os.path.exists(self.__homeDirectory):
 
-				checked = set()
-
 				for event in fsapi.check_dirs_and_contents_perms_and_acls_new(
 						[ fsapi.FsapiObject(name='%s_home' % self.__login,
 									path = self.__homeDirectory,
@@ -1061,9 +1059,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 						],
 						batch=batch, auto_answer=auto_answer,
 						full_display=full_display):
-					checked.add(event)
-
-				del checked
+					pass
 
 			self._checking.clear()
 

@@ -59,7 +59,10 @@ class CliInteractor(ttyutils.LicornInteractor):
 			# the local side (CLI process)
 			self.listener.verbose += 1
 
-			# the daemon side (remote Pyro thread)
+			# The daemon side (remote Pyro connections)
+			LMC.system.set_listener_verbose(
+						self.listener.getAttrProxy(),
+						self.listener.verbose)
 			LMC.rwi.set_listener_verbose(
 						self.listener.getAttrProxy(),
 						self.listener.verbose)
@@ -87,6 +90,9 @@ class CliInteractor(ttyutils.LicornInteractor):
 			self.listener.verbose -= 1
 
 			# the daemon side (remote thread)
+			LMC.system.set_listener_verbose(
+						self.listener.getAttrProxy(),
+						self.listener.verbose)
 			LMC.rwi.set_listener_verbose(
 						self.listener.getAttrProxy(),
 						self.listener.verbose)
@@ -160,7 +166,7 @@ class LicornCliApplication(ObjectSingleton, LicornInterfaceBaseApplication):
 				functions[self.mode][2](self.opts, self.args, listener=self.local_listener)
 
 			else:
-				getattr(self.RWI, functions[self.mode][1])(opts=self.opts, args=self.args)
+				getattr(LMC.rwi, functions[self.mode][1])(opts=self.opts, args=self.args)
 
 		cmd_start_time = time.time()
 

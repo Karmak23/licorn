@@ -9,7 +9,7 @@ Licensed under the terms of the GNU GPL version 2.
 import Pyro
 from threading import current_thread
 
-from licorn.foundations           import logging
+from licorn.foundations           import settings, logging
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
@@ -30,21 +30,30 @@ def client_hello():
 	#	'addresses', ServerLMC.system.local_ip_addresses())
 
 	from licorn.daemon.cmdlistener import LicornPyroValidator
-	LicornPyroValidator.server_addresses = \
-			ServerLMC.system.local_ip_addresses()
+
+	LicornPyroValidator.server_addresses = ServerLMC.system.local_ip_addresses()
 
 	ServerLMC.system.hello_from(LMC.system.local_ip_addresses())
 
 	logging.notice('%s: %s to Licorn® server %s.' % (
-		current_thread().name,
-		stylize(ST_OK, 'Successfully connected'),
-		stylize(ST_ADDRESS, 'pyro://%s:%s' % (settings.server_main_address,
-												settings.pyro.port))))
+						current_thread().name,
+						stylize(ST_OK, 'Successfully connected'),
+						stylize(ST_ADDRESS, 'pyro://%s:%s' % (
+							settings.server_main_address,
+							settings.pyro.port))))
 
 	# NO NEED to do this, the server updates automatically the status if the
 	# previous connection succeeds.
 	#ServerLMC.machines.update_status(network.local_ip_addresses(),
 	#	host_status.ONLINE)
+def client_goodbye():
+	try:
+		ServerLMC.system.goodbye_from(LMC.system.local_ip_addresses())
+		ServerLMC.release()
+
+	except Pyro.errors.PyroError, e:
+		logging.warning('%s: exception %s encountered while shutting down.' % (
+			current_thread().name, e))
 
 def server_shutdown(remote_interfaces):
 	from licorn.daemon.cmdlistener import LicornPyroValidator
@@ -59,7 +68,6 @@ def server_shutdown(remote_interfaces):
 	else:
 		#lprint('>> other server shutdown')
 		pass
-
 def server_reconnect(remote_interfaces):
 	from licorn.daemon.cmdlistener import LicornPyroValidator
 
@@ -71,11 +79,6 @@ def server_reconnect(remote_interfaces):
 			stylize(ST_ADDRESS, 'pyro://%s:%s' % (settings.server_main_address,
 													settings.pyro.port))))
 
-
-def client_goodbye():
-	try:
-		ServerLMC.system.goodbye_from(LMC.system.local_ip_addresses())
-		ServerLMC.release()
-	except Pyro.errors.PyroError, e:
-		logging.warning('%s: exception %s encountered while shutting down.' % (
-			current_thread().name, e))
+__all__ = ('ServerLMC',
+			'client_hello', 'client_goodbye',
+			'server_shutdown', 'server_reconnect' )

@@ -47,7 +47,7 @@ def dynamic_status(request):
 		if not m.connected:
 			pri1 = render_to_string('shares/parts/disconnected.html', {
 				'extension' : m,
-				'request'   : request
+				'request'   : request,
 			})
 
 		elif not m.reachable:

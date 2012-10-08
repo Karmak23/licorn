@@ -141,7 +141,6 @@ from licorn.core.classes          import CoreController, CoreStoredObject, \
 										SelectableController
 
 from licorn.daemon.threads        import LicornJobThread
-from licorn.interfaces.wmi.app    import wmi_event_app
 
 from licorn.foundations.events    import LicornEvent
 

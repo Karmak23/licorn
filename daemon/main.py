@@ -23,7 +23,7 @@ This daemon exists:
 import time
 dstart_time = time.time()
 
-import os, sys, signal, resource, gc, __builtin__
+import os, sys, signal, select, socket, resource, pybonjour, gc, __builtin__
 
 from threading  import current_thread, Thread, active_count
 
@@ -70,6 +70,8 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.__restart_event = Event()
 
 		self.__threads = LicornThreads('daemon_threads')
+
+		self.hostname = socket.gethostname()
 
 		LMC.licornd = self
 		events.collect(self)
@@ -172,7 +174,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			LMC.init_client_first_pass()
 
 			# The remaining client configuration occurs in the
-			# `configuration_loaded` callback below.
+			# `lmc_initialized` callback below.
 
 		# see foundations.settings (CLIENT -> inotifier disabled)
 		# create the INotifier thread, and map its WatchManager methods to
@@ -234,16 +236,20 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		pass
 
 	@events.callback_method
-	def configuration_loaded(self, event, *args, **kwargs):
+	def lmc_initialized(self, event, *args, **kwargs):
 		if settings.role == roles.CLIENT:
 
+			# We start the `CommandListener` manually here just before the
+			# `client.ServerLMC.connect()`, else the 2-way pyro authentication
+			# will fail because of a race condition between mainthread and here.
+			# Thus, don't try to move this block in :meth:`init_daemon_services`
+			# to factorize it with the server code. This *will* trigger the race.
 			self.__threads.CommandListener = CommandListener(
 												pids_to_wake1=self.pids_to_wake1,
+												pids_to_wake2=set(self.pids_to_wake2),
 												licornd=self)
 			self.__threads.CommandListener.start()
 
-			# NOTE: the remaining of the client processing takes place later,
-			# in the 'configuration_loaded' callback.
 
 			from licorn.daemon import client
 			client.ServerLMC.connect()
@@ -258,6 +264,13 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 			# TODO: get the cache from the server, it has the
 			# one in sync with the NFS-served files.
+
+			# write down the favorite server if none was already present.
+			# We will automatically look for it at next start.
+			if settings.favorite_server is None:
+				#print '>> my UUID', LMC.system.system_uuid()
+				#print '>> Server UUID', client.ServerLMC.system.system_uuid()
+				settings.set('favorite_server', client.ServerLMC.system.system_uuid())
 
 			self.collect_and_start_threads()
 
@@ -355,9 +368,16 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				u'line or by configuration directive.').format(self))
 	@events.callback_method
 	def wmi_starts(self, event, *args, **kwargs):
-		""" When `LicornEvent('licornd_wmi_forks')` returns, fork the WMI process.
-			Used as a callback because WMI2 setup can take a while (installing
-			packages and al.).
+		""" This callback will start the WMI Thread. It's a callback (not an
+			handler) because WMI2 pre-setup and setup is done via handlers,
+			and can take a while (installing packages and al.); using a
+			callback makes us sure that everything is OK before the WMI2
+			really starts.
+
+			.. versionchanged:: 1.6
+				This callback now triggers the registry of the service via
+				``Bonjour``, and emits the ``wmi_started`` event at the end.
+
 		"""
 
 		self.eventually_end_initial_check('wmi')
@@ -372,13 +392,36 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		from licorn.daemon.wmi import WebManagementInterface
 
 		self.__threads._wmi = WebManagementInterface().start()
+
+		# We enqueue this to avoid making the eventlooper directly run the
+		# method, which contains a 'while True' loop, and cound block it.
+		workers.network_enqueue(priorities.HIGH, self.__register_bonjour_wmi)
+
+		LicornEvent('wmi_started').emit()
 	@events.callback_method
 	def command_listener_starts(self, event, *args, **kwargs):
+		""" This callback just handle the ``initial_check`` stuff (eg.
+			participates in stopping licornd if ``initial_check`` is in
+			progress), and registers the Pyro service via Bonjour.
+
+			.. versionchanged:: 1.6
+				This callback now triggers the registry of the service via
+				``Bonjour``. Before, it didn't.
+
+		"""
 		self.eventually_end_initial_check('cmdlistener')
+
+		if self.opts.initial_check:
+			logging.notice(_(u'{0}: not registering Pyro via Bonjour because '
+								u'initial check in progress.').format(self))
+			return
+
+		# We enqueue this to avoid making the eventlooper directly run the
+		# method, which contains a 'while True' loop, and cound block it.
+		workers.network_enqueue(priorities.HIGH, self.__register_bonjour_pyro)
 	@events.callback_method
 	def all_thread_started(self, event, *args, **kwargs):
 		self.eventually_end_initial_check('threads')
-
 	def eventually_end_initial_check(self, event_waited_name):
 
 		if self.opts.initial_check:
@@ -391,7 +434,6 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				# we can't call self.terminate(), we are in a worker thread,
 				# this would raise a RuntimeError when blocking on queues.
 				os.kill(self.pid, signal.SIGTERM)
-
 	def run(self):
 
 		assert ltrace_func(TRACE_DAEMON)
@@ -445,9 +487,11 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			sys.stderr.write('-' * (ttyutils.terminal_size()[1] or 80) + '\n')
 
 		logging.notice(_(u'{0}: Licorn® daemon version {1} '
-						u'role {2} warming up…').format(
+						u'role {2}{3} warming up…').format(
 							self, stylize(ST_SPECIAL, version),
-							stylize(ST_SPECIAL, roles[settings.role].lower())))
+							stylize(ST_SPECIAL, roles[settings.role].lower()),
+							_(' group {0}').format(
+								stylize(ST_ATTR, settings.group))))
 
 		if self.opts.initial_check:
 			# disable the LAN scan during the initial check,
@@ -587,13 +631,14 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 											long_output, precision, as_string)
 
 		if as_string:
-			data = _(u'Licorn® {role} daemon {full}status: '
-				u'up {uptime}, {nb_threads} threads, {nb_controllers} controllers, '
+			data = _(u'Licorn® {hostname} {role} daemon {full}status: up {uptime}\n'
+				u'{nb_threads} threads, {nb_controllers} controllers, '
 				u'{nb_queues} queues, {nb_locked}/{nb_locks} Mlocks, {sub_locked}/{sub_locks} Ulocks\n'
 				u'CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s '
 				u'MEM: res {mem_res:.2}Mb shr {mem_shr:.2}Mb '
 					u'ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n').format(
 				full=stylize(ST_COMMENT, 'full ') if long_output else '',
+				hostname=self.hostname,
 				role=stylize(ST_ATTR, roles[settings.role]),
 				uptime=stylize(ST_COMMENT,
 					pyutils.format_time_delta(time.time() - dstart_time)),
@@ -675,6 +720,57 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 									in workers.queues.iteritems()),
 				threads_data=tdata,
 			)
+	def __register_bonjour_wmi(self):
+
+		def wmi_registered_callback(sdRef, flags, errorCode, name, regtype, domain):
+			logging.info(_(u'{0}: successfully published WMI service via '
+				u'Bonjour.').format(stylize(ST_NAME, current_thread().name)))
+
+		self.register_bonjour_service(	'Licorn(R) Web Management Interface',
+										'_https._tcp',
+										settings.licornd.wmi.port,
+										wmi_registered_callback)
+	def __register_bonjour_pyro(self):
+
+		def pyro_registered_callback(sdRef, flags, errorCode, name, regtype, domain):
+			logging.info(_(u'{0}: successfully published Pyro service via '
+				u'Bonjour.').format(stylize(ST_NAME, current_thread().name)))
+
+		self.register_bonjour_service(	'Licorn(R) Server',
+										'_licorn_pyro._tcp',
+										settings.pyro.port,
+										pyro_registered_callback,
+										pybonjour.TXTRecord({
+											'uuid' : LMC.configuration.system_uuid,
+											'group': settings.group,
+										}))
+	def register_bonjour_service(self, service_name, service_type, service_port,
+												callback=None, txtRecord=None):
+		""" Register a given service in the Bonjour stack via :py:mod:`pybonjour`.
+
+			..warning:: This method internally uses ``select`` in a ``while
+				True`` loop, and must never be called directly in any
+				important thread nor event handler or callback. It should
+				ideally be run via a network worker thread To avoid blocking
+				anything important.
+		"""
+
+		sdRef = pybonjour.DNSServiceRegister(name = service_name,
+											 regtype = service_type,
+											 port = service_port,
+											 callBack = callback,
+											 txtRecord = txtRecord)
+
+		try:
+			while not current_thread()._stop_event.is_set():
+				ready = select.select([sdRef], [], [])
+
+				if sdRef in ready[0]:
+					pybonjour.DNSServiceProcessResult(sdRef)
+
+		finally:
+			sdRef.close()
+
 	@events.handler_method
 	def need_restart(self, *args, **kwargs):
 
