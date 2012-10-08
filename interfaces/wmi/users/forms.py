@@ -116,13 +116,14 @@ class ImportForm(forms.Form):
 # key : (id, text, active)
 def get_user_form_blocks(request):
 	group_form_blocks = {
-		'gid' : ('general', u'General information', True),
-		'standard' : ('standard', u'Groups', False),
+		'agid' : ('ageneral', u'General information', True),
+		'bstandard' : ('bstandard', u'Groups', False),
 	}
 
 	if request.user.is_superuser:
 		group_form_blocks.update({
-			'system' : ('system', u'Systems groups', False)
+			'cprivileged' : ('cprivileged', u'Privileged groups', False),
+			'dsystem' : ('dsystem', u'Systems groups', False)
 		})
 
 	return group_form_blocks

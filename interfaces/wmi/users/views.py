@@ -519,7 +519,7 @@ def get_user_template(request, mode, users):
 
 	groups_lists = [
 		{
-			'list_name'    : 'standard',
+			'list_name'    : 'bstandard',
 			'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
 				'users' : users,
 				'group' : g
@@ -531,7 +531,16 @@ def get_user_template(request, mode, users):
 	if request.user.is_superuser:
 		groups_lists.append(
 			{
-				'list_name'    : 'system',
+				'list_name'    : 'cprivileged',
+				'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
+					'users' : users,
+					'group' : g
+					}) for g in sorted(LMC.groups.select(filters.PRIVILEGED), key= lambda x: attrgetter('name')(x).lower()) if not g.is_helper])
+			}
+		)
+		groups_lists.append(
+			{
+				'list_name'    : 'dsystem',
 				'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
 					'users' : users,
 					'group' : g
@@ -544,6 +553,9 @@ def get_user_template(request, mode, users):
 	form_blocks = get_user_form_blocks(request)
 	for k in sorted(form_blocks.iterkeys()):
 		sorted_blocks.update({ k: form_blocks[k]})
+
+
+	print "BLOCKSSS", sorted_blocks
 
 	_dict.update({
 				'mode'    	  : mode,

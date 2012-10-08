@@ -130,7 +130,8 @@
 
 			$('.table').attr('id', "model_"+list_name+"_table")
 
-
+			// bind keys
+			bind_hotkeys(list_name);
 
 			// search field
 			my_setup_table_search()
@@ -474,7 +475,7 @@
 
 
 	
-		function bind_hotkeys() {
+		function bind_hotkeys(list_name) {
 			/* Bind all hotkeys
 
 				- J/K : preselect previus/following row
@@ -539,7 +540,7 @@
 					
 					if (e.which == 78) {    // n => new group
 						console.log('toototototototo')
-						$.get('/groups/new', function(html) {
+						$.get('/'+list_name+'/new', function(html) {
 							modal.html(html).modal()
 						})
 					}
@@ -635,11 +636,11 @@
 				}
 				if (e.which == 13) {    // enter
 					if (modal.is(':hidden')) {
-						selected_rows = get_selected_rows($('#model_groups_table tbody'), select_active_class);
+						selected_rows = get_selected_rows($('#model_'+list_name+'_table tbody'), select_active_class);
 						console.log($(selected_rows))
 						if (selected_rows.length == 1) {
-							gid = $(selected_rows).data('gid');
-							$.get('/groups/edit/'+gid, function(modal_html) {
+							gid = $(selected_rows).data('id');
+							$.get('/'+list_name+'/edit/'+gid, function(modal_html) {
 								modal.html(modal_html).modal()
 							})
 						}
@@ -666,7 +667,7 @@
 						$('#massive_skel').click()
 					}
 					if (e.which == 63 && e.shiftKey) {    // ? => help
-							$.get('/groups/hotkeys_help', function(html) {
+							$.get('/'+list_name+'/hotkeys_help', function(html) {
 								modal.html(html).modal();
 							})
 						}
