@@ -123,12 +123,39 @@ def test_merge_basic():
 	# As there are many ways to write the same file, these stringified
 	# versions will be different (the .final file was voluntarily made to be).
 	assert m1.to_string() != m3.to_string()
-def test_merge_standard_from_existing():
+def disabled_test_merge_standard_from_existing():
+	""" This test should be activated when the feature is ready.
+
+		As of 20121008, merging anything into an empty ConfigurationFile
+		doesn't work as expected.
+	"""
 
 	os.chdir('/usr/share/licorn/extensions/squid/data')
 
 	# start with an empty file.
 	m1 = LSCF(filename='squid.minimal.test.conf')
+
+	m1.merge(LSCF(filename='squid.replacements.conf', snipplet=True), partial_match=True, on_conflict='replace')
+	#print '>> +replacements', m1.to_string()
+	assert m1.changed
+
+	m1.merge(LSCF(filename='squid.licorn_lan_1.conf', snipplet=True), partial_match=True, on_conflict='replace')
+	#print '>> +lan_1', m1.to_string()
+	assert m1.changed
+
+	m1.merge(LSCF(filename='squid.licorn_lan_2.conf', snipplet=True))
+	print '>> +lan_2\n', m1.to_string()
+	assert m1.changed
+def test_merge_standard_from_empty():
+	""" Same test as previous, but starting from an empty file. Should bring
+		up the same result. """
+
+	os.chdir('/usr/share/licorn/extensions/squid/data')
+
+	# start with an empty file.
+	m1 = LSCF(text='')
+
+	m1.merge(LSCF(filename='squid.minimal.test.conf'))
 
 	m1.merge(LSCF(filename='squid.replacements.conf', snipplet=True), partial_match=True, on_conflict='replace')
 	#print '>> +replacements', m1.to_string()
