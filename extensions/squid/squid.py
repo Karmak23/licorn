@@ -226,17 +226,19 @@ class LicornSquidConfigurationFile(ConfigurationFile):
 		# because 'http_access allow manager localhost' can be last and the
 		# test will only check "allow manager" which is True. It should check
 		# that they are the only values, not only that they are present.
-		if mandirs:
+		if mandirs and not self.snipplet:
 			self._order_check_common_allow_deny('http_access', mandirs, _manager)
 
-		self._order_check_common_allow_deny('http_access', directives)
+		if len(directives) > 1 and not self.snipplet:
+			self._order_check_common_allow_deny('http_access', directives)
 	def _order_check_icp_access(self, directives):
-		self._order_check_common_allow_deny('icp_access', directives)
+		if len(directives) > 1 and not self.snipplet:
+			self._order_check_common_allow_deny('icp_access', directives)
 	def _order_check_refresh_pattern(self, directives):
 		""" Basic check: refresh_pattern '.' must be the last. """
 
-		if not ConfigurationToken(Token.Text, u'.') in directives[-1].value:
-			if len(directives) > 1 and not self.snipplet:
+		if len(directives) > 1 and not self.snipplet:
+			if not ConfigurationToken(Token.Text, u'.') in directives[-1].value:
 				raise exceptions.BadConfigurationError(_(u'{0}: last "refresh_'
 						u'pattern" directive must be for URL "." (dot).').format(
 							self.filename))
