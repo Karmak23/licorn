@@ -66,3 +66,72 @@ function password_helpers(content) {
 
 	});
 }
+
+var tab_sort = { "alpha": true, "relation": false}
+	
+function setup_sort_items(elements, sort_items, alpha_search) {
+	console.log('setup_sort_items', elements, sort_items)
+
+	$.each(sort_items, function(i, item) {
+		console.log(item, tab_sort, $(item).data('sort'))
+		// setup interface
+		if (tab_sort[$(item).data('sort')]) {
+			$(item).addClass('active')
+		}
+		else {
+			$(item).removeClass('active')
+		}
+	})
+	$(sort_items).click(function(e) {
+		
+		do_sort($(this).data('id'), $(this).data('sort'));
+
+	})
+	//do_sort();
+
+	function do_sort(div, sort_item) {
+		console.log("do_sort on ", sort_item)
+		tab = $('#'+div+' '+elements)
+		console.log($(tab))
+		tab.sort(function(a, b) {
+			//console.log($(a).data('rel'), $(b).data('rel'))
+			if (sort_item == 'alpha') {
+				if ($(a).find('.'+alpha_search).text().toLowerCase() < $(b).find('.'+alpha_search).text().toLowerCase()) {
+					return -1
+				}
+				else if ($(a).find('.'+alpha_search).text().toLowerCase() > $(b).find('.'+alpha_search).text().toLowerCase()) {
+					return 1
+				}
+				else {
+					return 0
+				}
+			}
+			else if (sort_item == 'relation') {
+				return ($(a).data('rel') - $(b).data('rel'))
+			}
+		})
+		if (sort_item == 'relation') {
+			$.fn.reverse = [].reverse;
+			tab = tab.reverse();
+		}
+		console.log('sorted', $(tab))
+
+		//$.each(tab, function(i, item) {
+		//	console.log($(item))
+		//})
+
+		$('#'+div+' '+elements).hide()
+		$.each(tab, function(i, item) {
+			$('#'+div).append($(item))
+		})
+
+		$('#'+div+' '+elements).show()
+
+
+
+
+
+
+	}
+
+}

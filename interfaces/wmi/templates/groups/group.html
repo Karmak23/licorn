@@ -79,6 +79,20 @@
 	{%- for list in users_lists -%}
 		<div class="tab-pane" id="{{ list.list_name }}">
 			<div>
+				<div style="text-align:right;margin-bottom:20px;">
+					{{ _('Sort by:') }}
+					<span class="btn-group" data-toggle="buttons-radio">
+						<button type="button" id='sort_alpha' class="btn sort_item" data-sort="alpha" data-id="{{ list.list_name }}">
+							{{ _("User name") }}
+						</button>
+						<button type="button" id='sort_relation' class="btn sort_item" data-sort="relation" data-id="{{ list.list_name }}">
+							{{ _("Relationship") }}
+						</button>
+						
+					
+
+					</span>
+				</div>
 				{{list.list_content}}
 			</div>
     	</div>
@@ -111,6 +125,12 @@
 		
 		// .click_item are our user box, when click is triggered, 
 		// show the popover containing possible relationship
+
+		setup_sort_items('.trigger_popover', $('.sort_item'), "user_login");
+
+	
+
+
 
 
 		// init the popover
