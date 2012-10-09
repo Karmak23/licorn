@@ -35,7 +35,14 @@
 	{% endif %}
 {%- endmacro -%}
 
+{%- macro get_group_backend_img(group) -%}
 
+	{%- if group.backend.name == 'openldap' -%}
+		<i title="{{ _('Openldap backend') }}" class="icon-tasks"></i>
+	{%- else -%}
+		<i title="{{ _('Shadow backend') }}" class="icon-hdd"></i>
+	{%- endif -%}
+{%- endmacro -%}
 
 {%- macro get_group_permissivness_img(group) -%}
 	
@@ -61,18 +68,19 @@
 
 <tr class='licorn_row {{ get_group_filter_class(group) }}' data-id="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}'>
 	<!-- type -->
-	<td class='centered' width="5%" data-search="{{ get_group_type(group) }}">
+	<td class='centered' width="5%">
 		{{ get_group_type_img(group) }}
 	</td>
+	<!-- backend -->
+	<td class='centered' width="5%">
+		{{ get_group_backend_img(group) }}
+	</td>
 	<!-- permissive -->
-	<td class='centered' width="10%" data-sort='{{ group.is_permissive }}' data-search="">
-		<!-- <a href="/groups/massive/permissivness/{{group.gid}}" class="ajaxized_link">
-			{{ get_group_permissivness_img(group) }}
-		</a> -->
+	<td class='centered' width="10%">
 		{{ get_group_permissivness_img(group) }}
 	</td>
 	<!-- name -->
-	<td data-sort="{{ group.name }}" width="10%" data-search="{{ group.name }}">
+	<td width="10%">
 		{%- if group.is_standard -%}
 			<strong>
 		{%- elif group.is_privilege -%}
@@ -88,15 +96,15 @@
 		{%-endif-%}
 	</td>
 	<!-- description -->
-	<td data-sort="{{ group.name }}" width="55%" data-search="{{ group.name }}">
+	<td width="55%">
 		<span>{{ group.description }}</span>
 	</td>
 	<!-- gidNumber -->
-	<td data-sort="{{ group.gidNumber }}" width="5%" data-search="{{ group.name }}">
+	<td width="5%">
 		<div class="centered">{{ group.gidNumber }}</div>
 	</td>
 	<!-- skel -->
-	<td data-search="{{ group.groupSkel }}" width="10%" class="centered">
+	<td width="10%" class="centered">
 		<a href='#' class='licorn_tooltip' title="{{ group.groupSkel }}">{{ group.groupSkel.split('/')[-1] }}</div>
 	</td>
 	
