@@ -123,7 +123,7 @@ def test_merge_basic():
 	# As there are many ways to write the same file, these stringified
 	# versions will be different (the .final file was voluntarily made to be).
 	assert m1.to_string() != m3.to_string()
-def disabled_test_merge_standard_from_existing():
+def test_merge_standard_from_existing():
 	""" This test should be activated when the feature is ready.
 
 		As of 20121008, merging anything into an empty ConfigurationFile
@@ -144,8 +144,11 @@ def disabled_test_merge_standard_from_existing():
 	assert m1.changed
 
 	m1.merge(LSCF(filename='squid.licorn_lan_2.conf', snipplet=True))
-	print '>> +lan_2\n', m1.to_string()
+	#print '>> +lan_2\n', m1.to_string()
 	assert m1.changed
+
+	mcheck = LSCF(filename='squid.merged.for_check.conf')
+	assert m1 == mcheck
 def test_merge_standard_from_empty():
 	""" Same test as previous, but starting from an empty file. Should bring
 		up the same result. """
@@ -166,8 +169,11 @@ def test_merge_standard_from_empty():
 	assert m1.changed
 
 	m1.merge(LSCF(filename='squid.licorn_lan_2.conf', snipplet=True))
-	print '>> +lan_2\n', m1.to_string()
+	#print '>> +lan_2\n', m1.to_string()
 	assert m1.changed
+
+	mcheck = LSCF(filename='squid.merged.for_check.conf')
+	assert m1 == mcheck
 def test_wipe():
 	m1 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.1.start')
 	m2 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.2.part_to_merge', snipplet=True)
