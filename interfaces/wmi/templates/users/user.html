@@ -76,8 +76,13 @@
 			</div>
 			{% endfor %}
 			{% if mode == 'edit' %}
-		<a href="#" class="btn btn-danger btn-block" id="delete_user_button" data-id='{{user.uid}}'>{{ _('Delete user') }}</a>
-	{% endif %}
+				{% if user.locked %}
+					<a href="#" class="btn btn-danger btn-block" id="lock_user_button" data-id='{{user.uid}}'>{{ _('Unlock user') }}</a>
+				{% else %}
+					<a href="#" class="btn btn-danger btn-block" id="unlock_user_button" data-id='{{user.uid}}'>{{ _('Lock user') }}</a>
+				{% endif %}
+				<a href="#" class="btn btn-danger btn-block" id="delete_user_button" data-id='{{user.uid}}'>{{ _('Delete user') }}</a>
+			{% endif %}
 		</div>
 		
 	</div>
@@ -331,12 +336,15 @@
 	        'off_text' : "{{ _('Yes') }}"
 	    })
 
-	    $('#delete_group_button').click( function() {
-				
-				$('#groups_'+$(this).data('gid')).addClass(select_active_class)
-				$('#massive_delete').trigger('click');
+	    $('#delete_user_button').click( function() {
+			$('#users_'+$(this).data('id')).addClass(select_active_class);
+			$('#massive_delete').trigger('click');
+		});
 
-			});
+		$('#lock_user_button, #unlock_user_button').click(function(event) {
+			$('#users_'+$(this).data('id')).addClass(select_active_class);
+			$('#massive_lock').trigger('click');
+		})
 
 
 
