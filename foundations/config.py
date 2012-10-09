@@ -554,6 +554,11 @@ class ConfigurationFile(object):
 			else:
 				raise
 
+		# Pre-create empty arrays, this will avoid some
+		# mic-mac in various places of the current class.
+		for directive in self.directives_needing_order:
+			self.ordered_directives[directive] = []
+
 		self.__load_from_tokens(self.lexer.get_tokens(strdata))
 
 		self.__check_duplicates()
@@ -563,9 +568,7 @@ class ConfigurationFile(object):
 		self.directives.append(directive)
 
 		if directive.name in self.directives_needing_order:
-			ordered = self.ordered_directives.get(directive.name, [])
-			ordered.append(directive)
-			self.ordered_directives[directive.name] = ordered
+			self.ordered_directives[directive.name].append(directive)
 	def __find_append_func(self):
 
 		if self.directives_needing_order:
@@ -856,10 +859,6 @@ class ConfigurationFile(object):
 				return self.blocks.index(d)
 
 		raise ValueError('%s not found in %r.' % (directive_name, self))
-	def add(self, directive):
-		pass
-	def remove(self, directive):
-		pass
 	def remove_at(self, position):
 		""" Remove the directive at :param:`position`. No check at all is done.
 
@@ -883,7 +882,10 @@ class ConfigurationFile(object):
 		# Note that we changed.
 		self.changed = True
 	def insert_at(self, position, directive, sub_pos=None):
-		""" Insert in the current configuration, at a given position.
+		""" Insert a :param:`directive` in the current configuration, at a
+			given :param:`position`, and at given :param:`sub_pos` in the
+			ordered directives dictionnary (only if the directive is one
+			needing ordering).
 
 			:param position: an integer, passed verbatim to the :meth:`~list.insert`
 				method of our internal list.
@@ -895,7 +897,8 @@ class ConfigurationFile(object):
 				directive which belongs to an ordered kind, else this method
 				will not insert it, and will raise
 				a :class:`~foundations.exceptions.LicornRuntimeError`
-				exception instead.
+				exception instead. If the inserted directive doesn't need
+				ordering, this parameter can be simply ommited, or set to None.
 
 			.. versionchanged:: this method was implemented for 1.6.
 		"""
@@ -908,9 +911,7 @@ class ConfigurationFile(object):
 				raise exceptions.LicornRuntimeError('sub_pos should be filled '
 										'when inserting an ordered directive.')
 
-			ordered = self.ordered_directives.get(directive.name, [])
-			ordered.insert(sub_pos, directive)
-			self.ordered_directives[directive.name] = ordered
+			self.ordered_directives[directive.name].insert(sub_pos, directive)
 
 		if position == 0:
 			# Shortcut: if we're inserting at start, no need to look for
@@ -937,18 +938,8 @@ class ConfigurationFile(object):
 
 		# Note that we changed.
 		self.changed = True
-	def insert_before(self, directive):
-		pass
-	def insert_after(self, directive):
-		pass
-	def insert_before_first(self, directive_name, directive):
-		pass
-	def insert_before_last(self, directive_name, directive):
-		pass
-	def insert_after_first(self, directive_name, directive):
-		pass
-	def insert_after_last(self, directive_name, directive):
-		pass
+
+		return directive, position, sub_pos
 	def merge(self, other, partial_match=False, on_conflict=None, batch=False, auto_answer=None):
 		""" Try to merge another instance of :class:`ConfigurationFile` into
 			the current instance, beiing smart in the process. When 2 directives
@@ -992,8 +983,31 @@ class ConfigurationFile(object):
 			..versionadded:: 1.6
 		"""
 
+		def insert_or_merge(last_merged, directive_to_merge):
+			# Try to keep order of merged lines if they
+			# concern the same kind of directive. This
+			# speeds merges, too.
+			if last_merged and (
+								last_merged[0].name
+									== directive_to_merge.name
+								and
+								directive_to_merge.name
+									in self.directives_needing_order):
+				new_last = self.insert_at(last_merged[1] + 1,
+										directive_to_merge,
+										last_merged[2] + 1)
+
+			else:
+				# Merge the traditional way, via order
+				# checking and dependancies resolving.
+				new_last = self.__merge_one_directive(directive_to_merge)
+
+			return new_last
+
 		if on_conflict:
 			on_conflict = on_conflict.lower()
+
+		last_merged = None
 
 		for directive_to_merge in other.directives:
 
@@ -1020,10 +1034,9 @@ class ConfigurationFile(object):
 							raise
 
 					except ValueError:
-						self.__merge_one_directive(directive_to_merge)
-
+						last_merged = insert_or_merge(last_merged, directive_to_merge)
 				else:
-					self.__merge_one_directive(directive_to_merge)
+					last_merged = insert_or_merge(last_merged, directive_to_merge)
 
 			# implicit: "else: continue" (we already have
 			# the very same directive with the same value).
@@ -1090,58 +1103,60 @@ class ConfigurationFile(object):
 						# will be inserted at the end like any other kind.
 						pass
 
-		# No need to test dependancies if the directive was ordered, the
-		# insert postition is already the best we can find: it's in the
-		# block of ordered directives, which has already been checked at
-		# file load to be in good order. Thus the 'else'.
-		else:
-			for dependant_name, dependancies in self.directives_dependancies.iteritems():
 
-				if directive.name == dependant_name:
-					for dep_name in dependancies:
-						try:
-							# Try to insert the new directive after the last
-							# of this dependants block. If there are many
-							# dependants block, we will try each, to be sure
-							# the new is inserted after all of them.
-							better_attempt = self.index_last(dep_name) + 1
+		# Refine the global insert position based on dependancies.
+		# In most cases this won't find a more accurate one, except
+		# when there are currently no directive of an ordered kind
+		# in the current configuration. In that particular case, we
+		# *must* refine the position to place the new first directive
+		# after all of its dependants.
+		for dependant_name, dependancies in self.directives_dependancies.iteritems():
 
-						except ValueError:
-							continue
-
-						# The new directive must be inserted *after* all of
-						# its dependants, thus '>' instead of '<'.
-						if better_attempt > best_insert_index:
-							best_insert_index = better_attempt
-
-				# If directive is a "dependant" one, no need to test against
-				# dependancies of the current rule: the directive won't depend
-				# on itself. Thus the 'elif'.
-				elif directive.name in dependancies:
-
-					# Find the first dependant occurence, and insert just before.
+			if directive.name == dependant_name:
+				for dep_name in dependancies:
 					try:
-						better_attempt = self.index_first(dependant_name) - 1
+						# Try to insert the new directive after the last
+						# of this dependants block. If there are many
+						# dependants block, we will try each, to be sure
+						# the new is inserted after all of them.
+						better_attempt = self.index_last(dep_name) + 1
 
 					except ValueError:
 						continue
 
-					# Testing dependants, we must insert *before* all of them.
-					if better_attempt < best_insert_index:
+					# The new directive must be inserted *after* all of
+					# its dependants, thus '>' instead of '<'.
+					if better_attempt > best_insert_index:
 						best_insert_index = better_attempt
 
-					# Don't break the loop: in case the directive we're merging
-					# is a dependancy of more than one others, all of them must be
-					# tested to be sure we insert in the file before the first of
-					# the earliest of them all.
-					# As dependancies are not ordered in any way between each
-					# other in the file and in the current instance internal data
-					# structures, we have no mean to do this faster.
-					#break
+			# If directive is a "dependant" one, no need to test against
+			# dependancies of the current rule: the directive won't depend
+			# on itself. Thus the 'elif'.
+			elif directive.name in dependancies:
+
+				# Find the first dependant occurence, and insert just before.
+				try:
+					better_attempt = self.index_first(dependant_name) - 1
+
+				except ValueError:
+					continue
+
+				# Testing dependants, we must insert *before* all of them.
+				if better_attempt < best_insert_index:
+					best_insert_index = better_attempt
+
+				# Don't break the loop: in case the directive we're merging
+				# is a dependancy of more than one others, all of them must be
+				# tested to be sure we insert in the file before the first of
+				# the earliest of them all.
+				# As dependancies are not ordered in any way between each
+				# other in the file and in the current instance internal data
+				# structures, we have no mean to do this faster.
+				#break
 
 		assert ltrace(TRACE_CONFIG, 'final insert positions: {0}/{1}'.format(
 										best_insert_index, best_sub_position))
-		self.insert_at(best_insert_index, directive, best_sub_position)
+		return self.insert_at(best_insert_index, directive, best_sub_position)
 	def wipe(self, other, partial_match=False, on_conflict=None, batch=False, auto_answer=None):
 		""" Remove other's directives from us. Parameters are the same as in
 			the :meth:`merge` method: :meth:`wipe` is its pure opposite.
