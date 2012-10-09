@@ -2,7 +2,7 @@
 
 
 {%- macro get_group_membership(users, group) -%}
-	{% if group == [ None ] %}
+	{% if users == [ None ] %}
 		
 		{%- set rel = 0 -%}
 		

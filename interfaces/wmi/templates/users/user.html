@@ -93,20 +93,22 @@
 	{%- for list in groups_lists -%}
 		<div class="tab-pane" id="{{ list.list_name }}">
 			<div>
-				<div style="text-align:right;margin-bottom:20px;">
-					{{ _('Sort by:') }}
-					<span class="btn-group" data-toggle="buttons-radio">
-						<button type="button" id='sort_alpha' class="btn sort_item" data-sort="alpha" data-id="{{ list.list_name }}">
-							{{ _("Group name") }}
-						</button>
-						<button type="button" id='sort_relation' class="btn sort_item" data-sort="relation" data-id="{{ list.list_name }}">
-							{{ _("Relationship") }}
-						</button>
+				{% if mode != 'new' %}
+					<div style="text-align:right;margin-bottom:20px;">
+						{{ _('Sort by:') }}
+						<span class="btn-group" data-toggle="buttons-radio">
+							<button type="button" id='sort_alpha' class="btn sort_item" data-sort="alpha" data-id="{{ list.list_name }}">
+								{{ _("Group name") }}
+							</button>
+							<button type="button" id='sort_relation' class="btn sort_item" data-sort="relation" data-id="{{ list.list_name }}">
+								{{ _("Relationship") }}
+							</button>
+							
 						
-					
 
-					</span>
-				</div>
+						</span>
+					</div>
+				{% endif %}
 				{{list.list_content}}
 			</div>
     	</div>
@@ -125,7 +127,7 @@
   {%- block footer -%}
   	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
     {% if mode == "new" %}
-    <a href="#" class="btn btn-primary" id="save_group_button">{{ _('Add group') }}</a>
+    <a href="#" class="btn btn-primary" id="save_user_button">{{ _('Add user') }}</a>
 
     {%endif%}
 
@@ -200,7 +202,7 @@
 				{% elif mode == 'new' %}
 					{# no instant apply, but give a visual feedback #}
 					$('#popover_'+$(this).data('id')+' .instant_click').click(function() {
-						update_relationship($(this).data('id'), $(this).data('relid'))
+						update_relationship($(this).data('id'), null, $(this).data('relid'))
 					});
 				{% endif -%}
 			});
@@ -225,22 +227,22 @@
 					rel = $(this).attr('data-rel')
 					
 					if (rel == "0") {
-						serialized_form += "&no_membership_users="+$(this).data('id')
+						serialized_form += "&no_membership_groups="+$(this).data('id')
 					}
 					else if (rel == "1") {
-						serialized_form += "&guest_users="+$(this).data('id')
+						serialized_form += "&guest_groups="+$(this).data('id')
 					}
 					else if (rel == "2") {
-						serialized_form += "&member_users="+$(this).data('id')
+						serialized_form += "&member_groups="+$(this).data('id')
 					}
 					else if (rel == "3") {
-						serialized_form += "&resp_users="+$(this).data('id')
+						serialized_form += "&resp_groups="+$(this).data('id')
 					}
 					
 				})
 
 				//console.log(serialized_form)
-				$.post("/groups/create/", serialized_form);
+				$.post("/users/create/", serialized_form);
 
 				$('#modal').modal('hide')
 			};
@@ -252,8 +254,8 @@
 			});
 
 			// click save button
-			$('#save_group_button').click( function() {
-				$('#save_group_button').unbind('click');
+			$('#save_user_button').click( function() {
+				$('#save_user_button').unbind('click');
 				post_form();
 			});
 			

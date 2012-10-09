@@ -79,20 +79,22 @@
 	{%- for list in users_lists -%}
 		<div class="tab-pane" id="{{ list.list_name }}">
 			<div>
-				<div style="text-align:right;margin-bottom:20px;">
-					{{ _('Sort by:') }}
-					<span class="btn-group" data-toggle="buttons-radio">
-						<button type="button" id='sort_alpha' class="btn sort_item" data-sort="alpha" data-id="{{ list.list_name }}">
-							{{ _("User name") }}
-						</button>
-						<button type="button" id='sort_relation' class="btn sort_item" data-sort="relation" data-id="{{ list.list_name }}">
-							{{ _("Relationship") }}
-						</button>
+				{% if mode != 'new' %}
+					<div style="text-align:right;margin-bottom:20px;">
+						{{ _('Sort by:') }}
+						<span class="btn-group" data-toggle="buttons-radio">
+							<button type="button" id='sort_alpha' class="btn sort_item" data-sort="alpha" data-id="{{ list.list_name }}">
+								{{ _("User name") }}
+							</button>
+							<button type="button" id='sort_relation' class="btn sort_item" data-sort="relation" data-id="{{ list.list_name }}">
+								{{ _("Relationship") }}
+							</button>
+							
 						
-					
 
-					</span>
-				</div>
+						</span>
+					</div>
+				{% endif %}
 				{{list.list_content}}
 			</div>
     	</div>
@@ -158,7 +160,7 @@
 				{% elif mode == 'new' %}
 					{# no instant apply, but give a visual feedback #}
 					$('#popover_'+$(this).data('id')+' .instant_click').click(function() {
-						update_relationship($(this).data('id'), $(this).data('relid'))
+						update_relationship(null, $(this).data('id'), $(this).data('relid'))
 					});
 				{% endif -%}
 			});
