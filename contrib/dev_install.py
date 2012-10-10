@@ -176,39 +176,28 @@ def install_all_packages():
 		apt_install(dev_packages)
 		apt_install(build_packages)
 
-		# Now that we are sure that python-apt is installed, we can compare
-		# release versions in a reliable way.
+		# There is no Ubuntu version i'm aware of that has a package for pybonjour.
+		pip_install(('pybonjour', ))
+
 		from apt_pkg import version_compare
 		import apt_pkg
 		apt_pkg.init()
 
-		# There is no Ubuntu version i'm aware of that has a package for pybonjour.
-		pip_install(('pybonjour', ))
-
-		if (distro == 'Ubuntu' and version_compare(rel_ver, '8.04') == 0
-			) or (distro == 'Debian' and version_compare(rel_ver, '6.0') < 1):
-			pip_install(('pyudev', ))
-			unlink('/usr/lib/python2.5/site-packages/licorn')
-			symlink(devel_dir, '/usr/lib/python2.5/site-packages/licorn')
-
-		elif (distro == 'Ubuntu' and (
+		if (distro == 'Ubuntu' and (
 					version_compare(rel_ver, '10.04') == 0
 					or version_compare(rel_ver, '10.10') == 0)
 				) or (distro == 'Debian' and (
 					version_compare(rel_ver, '6.0') >= 0
 					and version_compare(rel_ver, '7.0') < 0)):
 			pip_install(('pyudev', ))
-			unlink('/usr/lib/python2.6/dist-packages/licorn')
-			symlink(devel_dir, '/usr/lib/python2.6/dist-packages/licorn')
 
 		elif (distro == 'Ubuntu' and version_compare(rel_ver, '11.04') >= 0
 			) or (distro == 'Debian' and version_compare(rel_ver, '7.0') >=0):
 			apt_install(('python-pyudev', ))
-			unlink('/usr/lib/python2.7/dist-packages/licorn')
-			symlink(devel_dir, '/usr/lib/python2.7/dist-packages/licorn')
 
 		else:
-			err('Your Ubuntu/Debian distro is not supported anymore. Please consider upgrading.')
+			err('Your Ubuntu/Debian distro is not supported. Please consider upgrading.')
+
 	else:
 		if '--packages-installed' not in sys.argv:
 			err('Your distro is not officially supported. Please install the '
@@ -240,6 +229,35 @@ def user_post_installation():
 	sys.exit(0)
 def make_symlinks():
 	err('Symlinking everything from {0}, please wait…'.format(devel_dir))
+
+	# Now that we are sure that python-apt is installed, we can compare
+	# release versions in a reliable way.
+	from apt_pkg import version_compare
+	import apt_pkg
+	apt_pkg.init()
+
+	if (distro == 'Ubuntu' and version_compare(rel_ver, '8.04') == 0
+		) or (distro == 'Debian' and version_compare(rel_ver, '6.0') < 1):
+		pip_install(('pyudev', ))
+		unlink('/usr/lib/python2.5/site-packages/licorn')
+		symlink(devel_dir, '/usr/lib/python2.5/site-packages/licorn')
+
+	elif (distro == 'Ubuntu' and (
+				version_compare(rel_ver, '10.04') == 0
+				or version_compare(rel_ver, '10.10') == 0)
+			) or (distro == 'Debian' and (
+				version_compare(rel_ver, '6.0') >= 0
+				and version_compare(rel_ver, '7.0') < 0)):
+		unlink('/usr/lib/python2.6/dist-packages/licorn')
+		symlink(devel_dir, '/usr/lib/python2.6/dist-packages/licorn')
+
+	elif (distro == 'Ubuntu' and version_compare(rel_ver, '11.04') >= 0
+			) or (distro == 'Debian' and version_compare(rel_ver, '7.0') >=0):
+		unlink('/usr/lib/python2.7/dist-packages/licorn')
+		symlink(devel_dir, '/usr/lib/python2.7/dist-packages/licorn')
+
+	else:
+		err('Your Ubuntu/Debian distro is not supported. Please consider upgrading.')
 
 	for executable in ('add', 'mod', 'del', 'chk', 'get'):
 		unlink('/usr/bin/{0}'.format(executable))
