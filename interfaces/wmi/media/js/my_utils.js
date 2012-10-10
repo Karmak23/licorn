@@ -2,8 +2,28 @@
 function password_helpers(content) {
 	//console.log("init password helpers")
 	//console.log(content.find('input:password'))
+
+	// setup interface, add  the #check_pwds and #pwd_strenght spans
+	pwd_strenght = $('<span></span>')
+	pwd_check = $('<span></span>')
+	generate_pwd = $('<span><img id="generate_pwds" src="/media/images/16x16/generate.png" alt="'+ gettext("Generate passwords") +'"/></span>')
+	generate_pwd.clickover({
+				title : gettext("Random password generator"),
+				content : '',
+			})
+	$.get('/users/generate_pwd/', function(html) {
+			
+			generate_pwd.attr("data-content", html);
+		})
+
+
+	content.find("input:password:first").parent().append(generate_pwd).append(pwd_strenght)
+	content.find("input:password:last").parent().append(pwd_check)
+
+	var url_tim;
 	content.find('input:password').keyup(function() {
-		//console.log('keyup')
+		console.log('keyup')
+		clearTimeout(url_tim)
 
 		var empty = false;
 		content.find('input:password').each(function() {
@@ -11,7 +31,7 @@ function password_helpers(content) {
 				empty = true;
 			}
 		});
-
+		console.log('One is empty ', empty)
 		// while one of the two password field is empty do not do
 		// anything.
 		if ( !empty ) {
@@ -28,22 +48,28 @@ function password_helpers(content) {
 				});
 				if ( match ) {
 					//if they match check password strenght
-					content.find('#check_pwds').html('<img src="/media/images/16x16/check_ok.png"/>');
+					console.log('match')
+					pwd_check.html('<img src="/media/images/16x16/check_ok.png"/>');
 					$.get("/users/check_pwd_strenght/"+pwd, function(html) {
 						if (html != pwd) {
-							content.find('#pwd_strenght').html("<div class='check_pwd_recap' style='color:red;'>" + html +"</div>")
+							pwd_strenght.html("<div class='check_pwd_recap' style='color:red;'>" + html +"</div>")
 						}
 						else {
-							content.find('#pwd_strenght').html("<div class='check_pwd_recap' style='color:green;'> Mot de passe sécurisé </div>" )
+							pwd_strenght.html("<div class='check_pwd_recap' style='color:green;'> Mot de passe sécurisé </div>" )
 						}
+						url_tim = setTimeout(function() {
+							$.get($('input:password:last').data('instant-url')+$('input:password:last').val())
+						}, 1000);
 					});
 					passwords_match = true;
 				}
 				else {
-					content.find('#check_pwds').html('<img src="/media/images/16x16/check_bad.png"/>');
+					pwd_check.html('<img src="/media/images/16x16/check_bad.png"/>');
 					passwords_match = false
 
-					content.find('#pwd_strenght').html('')
+					pwd_strenght.html('')
+					console.log('no match')
+					
 				}
 		}
 		else {
@@ -52,16 +78,13 @@ function password_helpers(content) {
 		}
 	});
 
-	$('#generate_pwds').click(function() {
+	generate_pwd.click(function() {
 		var pwd_generated = null;
-		$.get('/users/generate_pwd/', function(pwd) {
-			pwd_generated = pwd
-			gen_pwd_dialog = new dialog(gettext("Random password generator"),
-				strargs(gettext("<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</code> button, and remember it."), [pwd_generated]),
-				true, function() {
-					content.find('input:password').val(pwd_generated).trigger('keyup');
-			});
-			gen_pwd_dialog.show();
+		$.get('/users/generate_pwd/', function(html) {
+			generate_pwd.attr("data-content", html);
+		})
+		$('#confirm_generated_password').click(function(event) {
+			content.find('input:password').val($('#generated_password').text()).keyup();
 		})
 
 	});

@@ -443,7 +443,9 @@ def check_pwd_strenght(request, pwd, *args, **kwargs):
 		return HttpResponse(pwd)
 
 def generate_pwd(request, *args, **kwargs):
-	return HttpResponse(hlstr.generate_password())
+	return HttpResponse(render_to_string('/users/parts/generate_password.html', {
+		'password' : hlstr.generate_password(),
+		}))
 
 
 

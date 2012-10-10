@@ -64,8 +64,8 @@ class UserForm(forms.Form):
 
 			self.fields['profile'] = forms.ChoiceField(
 				widget=forms.Select(attrs={'readonly':'readonly'}),
-						choices = [(p.gidNumber, p.name) for p in LMC.profiles ],
-						initial = user_profile)
+				choices = [(p.gidNumber, p.name) for p in LMC.profiles ],
+				initial = user_profile)
 
 			self.fields['gecos'] = forms.CharField(
 				widget= forms.TextInput(attrs=widget_attrs('gecos', user)),
@@ -74,7 +74,8 @@ class UserForm(forms.Form):
 				label=_('Full name'))
 
 			self.fields['password'] = forms.CharField(widget=forms.PasswordInput)
-			self.fields['password_confim'] = forms.CharField(widget=forms.PasswordInput)
+			self.fields['password_confim'] = forms.CharField(
+				widget=forms.PasswordInput(attrs=widget_attrs('password', user)))
 
 		self.fields['shell'] = forms.ChoiceField(
 			widget= forms.Select(attrs=widget_attrs('shell', user)),
