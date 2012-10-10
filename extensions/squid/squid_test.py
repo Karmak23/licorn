@@ -148,6 +148,7 @@ def test_merge_standard_from_existing():
 	assert m1.changed
 
 	mcheck = LSCF(filename='squid.merged.for_check.conf')
+	#print '>> +check\n', mcheck.to_string()
 	assert m1 == mcheck
 def test_merge_standard_from_empty():
 	""" Same test as previous, but starting from an empty file. Should bring
@@ -173,6 +174,7 @@ def test_merge_standard_from_empty():
 	assert m1.changed
 
 	mcheck = LSCF(filename='squid.merged.for_check.conf')
+	#print '>> +check\n', mcheck.to_string()
 	assert m1 == mcheck
 def test_wipe():
 	m1 = LSCF(filename=ts_data_path + 'squid.conf.test_merge.1.start')
