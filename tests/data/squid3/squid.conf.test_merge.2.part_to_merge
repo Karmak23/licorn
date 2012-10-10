@@ -1,0 +1,3 @@
+acl localnet src 192.168.111.0/24
+http_access allow localnet
+refresh_pattern (Release|Packages(.gz)*)$      0       20%     2880

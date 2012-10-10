@@ -1,4 +1,5 @@
 acl manager proto cache_object
+acl localnet src 192.168.111.0/24
 acl localhost src 127.0.0.1/32 ::1
 acl to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1
 acl SSL_ports port 443
@@ -17,10 +18,10 @@ http_access allow manager localhost
 http_access deny manager
 http_access deny !Safe_ports
 http_access deny CONNECT !SSL_ports
-http_port 3128
-# intentionnaly not "localhost", for test-suite purposes
-http_access allow localnet
 http_access deny all
+http_access allow localhost
+http_access allow localnet
+http_port 3128
 hierarchy_stoplist cgi-bin ?
 coredump_dir /var/spool/squid3
 refresh_pattern ^ftp:		1440	20%	10080

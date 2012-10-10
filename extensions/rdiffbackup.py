@@ -324,8 +324,8 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 				self.commands.ionice = []
 
 		else:
-			logging.warning2('%s: not available because rdiff-binary not '
-												'found in $PATH.' % self.name)
+			logging.warning2(_(u'{0}: not available because rdiff-backup '
+					u'binary not found in $PATH.').format(self.pretty_name))
 
 		assert ltrace(self._trace_name, '< initialize(%s)' % self.available)
 		return self.available

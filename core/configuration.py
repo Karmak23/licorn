@@ -569,7 +569,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		import stat
 
-		for skel_path in ("%s/skels" % \
+		for skel_path in ("%s/skels" %
 			settings.defaults.home_base_path, "/usr/share/skels"):
 
 			if os.path.exists(skel_path):
