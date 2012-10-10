@@ -15,8 +15,20 @@
 	{%- endif -%}
 {%- endmacro -%}
 
-<tr class='licorn_row' data-mid="{{ machine.mid }}" id='machines_{{ machine.wid }}'>
-	<td class='centered' data-sort='{{ machine.status }}' data-filter='{{ machine.status }}'>
+{%- macro get_machine_backend_img(machine) -%}
+	{{ machine.backend.name }}
+{%- endmacro -%}
+{%- macro get_machine_filter_class(machine) -%}
+	filter_other
+{%- endmacro -%}
+<tr class='licorn_row {{ get_machine_filter_class(machine) }}' data-id="{{ machine.mid }}" id='machines_{{ machine.wid }}'>
+	<td class='centered'>
+		<img src="/media/images/16x16/{{ get_host_type_html(machine.system_type)[0] }}" alt="{{ get_host_type_html(machine.system_type)[1] }}" title="{{ get_host_type_html(machine.system_type)[1] }}" width="16" height="16" />
+	</td>
+	<td class='centered'>
+		{{ get_machine_backend_img(machine) }}
+	</td>
+	<td class='centered'>
 		<img src="/media/images/16x16/{{ get_host_status_html[machine.status][0] }}"
 					alt="{{ get_host_status_html[machine.status][1] }}" title="{{ get_host_status_html[machine.status][1] }}" width="16" height="16" />
 	</td>
@@ -31,9 +43,6 @@
 		<span id="machine_status" class='no_double_click'>
 			{{ updates_status(machine) }}
 		</span>
-	</td>
-	<td class='centered' data-sort='{{ machine.system_type }}' data-filter="toto">
-		<img src="/media/images/16x16/{{ get_host_type_html(machine.system_type)[0] }}" alt="{{ get_host_type_html(machine.system_type)[1] }}" title="{{ get_host_type_html(machine.system_type)[1] }}" width="16" height="16" />
 	</td>
 	<td class='centered' data-sort='{{ machine.system_type }}'>
 		<img src="/media/images/16x16/{{ get_host_os_html(machine.system_type)[0] }}"
