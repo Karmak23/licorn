@@ -76,12 +76,19 @@
 			</div>
 			{% endfor %}
 			{% if mode == 'edit' %}
-				{% if user.locked %}
-					<a href="#" class="btn btn-danger btn-block" id="lock_user_button" data-id='{{user.uid}}'>{{ _('Unlock user') }}</a>
-				{% else %}
-					<a href="#" class="btn btn-danger btn-block" id="unlock_user_button" data-id='{{user.uid}}'>{{ _('Lock user') }}</a>
-				{% endif %}
-				<a href="#" class="btn btn-danger btn-block" id="delete_user_button" data-id='{{user.uid}}'>{{ _('Delete user') }}</a>
+				<div class="row-fluid">
+					<div class="span6">
+						{% if user.locked %}
+							<a href="#" class="btn btn-danger btn-block" id="lock_user_button" data-id='{{user.uid}}'>{{ _('Unlock user') }}</a>
+						{% else %}
+							<a href="#" class="btn btn-danger btn-block" id="unlock_user_button" data-id='{{user.uid}}'>{{ _('Lock user') }}</a>
+						{% endif %}
+					</div>
+					<div class="span6">
+						<a href="#" class="btn btn-danger btn-block" id="delete_user_button" data-id='{{user.uid}}'>{{ _('Delete user') }}</a>
+					</div>
+				</div>
+				
 			{% endif %}
 		</div>
 		
