@@ -71,10 +71,6 @@
 	<td class='centered' width="5%">
 		{{ get_group_type_img(group) }}
 	</td>
-	<!-- backend -->
-	<td class='centered' width="5%">
-		{{ get_group_backend_img(group) }}
-	</td>
 	<!-- permissive -->
 	<td class='centered' width="10%">
 		{{ get_group_permissivness_img(group) }}
@@ -102,6 +98,10 @@
 	<!-- gidNumber -->
 	<td width="5%">
 		<div class="centered">{{ group.gidNumber }}</div>
+	</td>
+	<!-- backend -->
+	<td class='centered' width="5%">
+		{{ get_group_backend_img(group) }}
 	</td>
 	<!-- skel -->
 	<td width="10%" class="centered">

@@ -93,10 +93,6 @@
 	<td class='centered' width="5%">
 		{{ get_user_type_img(user) }}
 	</td>
-	<!-- type -->
-	<td class='centered' width="5%">
-		{{ get_user_backend_img(user) }}
-	</td>
 	<!-- lock -->
 	<td class='centered' width="10%">
 		
@@ -113,6 +109,10 @@
 	<!-- uidNumber -->
 	<td width="5%">
 		<div class="centered">{{ user.uidNumber }}</div>
+	</td>
+	<!-- backend -->
+	<td class='centered' width="5%">
+		{{ get_user_backend_img(user) }}
 	</td>
 	<!-- Profile -->
 	<td width="10%" class="centered">
