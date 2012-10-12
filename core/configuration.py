@@ -1215,9 +1215,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		assert ltrace(TRACE_CONFIGURATION, '> check()')
 
-		self.check_system_groups(minimal=minimal, batch=batch,
-							auto_answer=auto_answer, full_display=full_display)
-
 		self.check_system_dirs(minimal=minimal, batch=batch,
 							auto_answer=auto_answer, full_display=full_display)
 
@@ -1229,6 +1226,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		assert ltrace(TRACE_CONFIGURATION, '< check()')
 	def check_system_dirs(self, minimal=True, batch=False, auto_answer=None, full_display=True):
 		""" Check settings directories. """
+
+		# We need this for ACLs to apply correctly.
+		self.check_system_groups(minimal=minimal, batch=batch,
+							auto_answer=auto_answer, full_display=full_display)
 
 		for directory in (settings.config_dir, settings.cache_dir, settings.data_dir):
 
