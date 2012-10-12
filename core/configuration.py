@@ -1391,10 +1391,16 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		needed_groups = [ self.users.group, self.acls.group,
 							settings.defaults.admin_group ]
-
+		
+		# We need to check 'privileges', because this method can be called very
+		# early in the daemon boot process (even in `upgrades`), at a moment
+		# where not everything is ready in the LMC.
 		if not minimal:
-			needed_groups.extend(group.name for group in LMC.privileges
+			try:
+				needed_groups.extend(group.name for group in LMC.privileges
 											if group not in needed_groups)
+			except:
+				pass
 
 		return needed_groups
 	def check_system_groups(self, minimal=True, batch=False, auto_answer=None, full_display=True):
