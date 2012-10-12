@@ -8,7 +8,7 @@ Licorn extensions: squid - http://docs.licorn.org/extensions/squid.html
 
 """
 
-import os, re, netifaces
+import os, re, errno, netifaces
 
 from pygments.token import *
 from pygments.lexer import RegexLexer
@@ -26,6 +26,8 @@ from licorn.foundations.config    import ConfigurationFile, ConfigurationToken
 
 from licorn.core                  import LMC
 from licorn.extensions            import ServiceExtension
+
+SQUID_DEFAULT_HTTP_PORT = '3128'
 
 class LicornSquidConfLexer(RegexLexer, ObjectSingleton):
 	"""
@@ -303,6 +305,8 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 		# standalone one (no data, just configuration).
 		self.controllers_compat = []
 
+		self.defaults = Enumeration()
+
 		# Common data
 		self.service_name      = 'squid'
 		self.paths.squid_pid   = '/var/run/squid.pid'
@@ -340,6 +344,9 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 					'is not installed (neither version 2 nor 3).').format(
 						self.pretty_name, stylize(ST_NAME, 'squid')))
 
+				# in case Squid was deinstalled recently, we should clean.
+				self.remove_client_configuration(batch=True)
+
 		else:
 			# Squid extension is always available on clients. What it will
 			# do depends on server squid extension beiing enabled or not.
@@ -365,6 +372,8 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 		if not self.available or not self.enabled:
 			return
 
+		self.__build_external_configuration_defaults(minimal=False)
+
 		self.__setup_shell_environment(batch, auto_answer)
 
 		self.__setup_etc_environment(batch, auto_answer)
@@ -377,6 +386,9 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 
 		assert ltrace_func(TRACE_SQUID, 1)
 	def remove_client_configuration(self, batch=False, auto_answer=None):
+		""" Clean the system from local Squid usage. """
+
+		self.__build_external_configuration_defaults()
 
 		self.__unset_shell_environment(batch, auto_answer)
 
@@ -387,60 +399,54 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 
 		if LMC.configuration.distro in (distros.UBUNTU, distros.DEBIAN):
 			self.__unset_apt(batch, auto_answer)
-	def __build_external_configuration_defaults(self):
-		""" TODO """
+	def __build_external_configuration_defaults(self, minimal=True):
+
+		# This will setup different things, based on the current "role". This
+		# is the first thing to do because everything else (CLIENT and SERVER)
+		# depends on this.
+		#
+		# NOTE: we need this method to be run even if the extension is not 
+		# available, to clean the system from eventual old stuff.
 
 		assert ltrace_func(TRACE_SQUID)
 
-		conf = Enumeration()
-
-		# Squid configuration
-		conf['port']            = '3128'
-
+		# Keep the enumeration handy.
+		conf = self.defaults
+	
 		# Shell environment variables.
-		conf['client_file']     = '/etc/environment'
-		conf['client_cmd_http'] = 'http_proxy'
-		conf['client_cmd_ftp']  = 'ftp_proxy'
+		conf.client_file     = '/etc/environment'
+		conf.client_cmd_http = 'http_proxy'
+		conf.client_cmd_ftp  = 'ftp_proxy'
 
 		if LMC.configuration.distro in (distros.UBUNTU, distros.DEBIAN):
 			# APT configuration
-			conf['apt_conf']        = '/etc/apt/apt.conf.d/00proxy'
-			conf['apt_cmd_http']    = 'Acquire::http::Proxy'
-			conf['apt_cmd_ftp']     = 'Acquire::ftp::Proxy'
+			conf.apt_conf     = '/etc/apt/apt.conf.d/00proxy'
+			conf.apt_cmd_http = 'Acquire::http::Proxy'
+			conf.apt_cmd_ftp  = 'Acquire::ftp::Proxy'
 
 		if settings.role == roles.SERVER:
-			conf['host']   = '127.0.0.1'
-			conf['subnet'] = []
+			conf.host   = '127.0.0.1'
+			conf.subnet = []
 
 			for iface in network.interfaces():
 				iface_infos = netifaces.ifaddresses(iface)
 
 				if 2 in iface_infos:
-					conf['subnet'].append('%s.0/%s' % (
+					conf.subnet.append('%s.0/%s' % (
 						iface_infos[2][0]['addr'].rsplit('.', 1)[0],
 						network.netmask2prefix(iface_infos[2][0]['netmask'])))
 
 		else:
-			conf['host'] = settings.server_main_address
+			conf.host = settings.server_main_address
 
-		conf['client_cmd_http_value'] = 'http://%s:%s/' % (
-												conf['host'],
-												conf['port'])
-
-		conf['client_cmd_ftp_value'] = 'ftp://%s:%s/' % (
-												conf['host'],
-												conf['port'])
-
-		# APT configuration needs the double-quotes
-		conf['apt_cmd_http_value'] = '"http://%s:%s/";' % (
-												conf['host'],
-												conf['port'])
-		conf['apt_cmd_ftp_value']  = '"ftp://%s:%s/";' % (
-												conf['host'],
-												conf['port'])
-
-		# Store the generated configuration in the extension.
-		self.defaults = conf
+		if not minimal:
+			# Shell / environment configuration must not have double-quotes
+			conf.client_cmd_http_value = 'http://%s:%s/' % (conf.host, conf.port)
+			conf.client_cmd_ftp_value  = 'ftp://%s:%s/'  % (conf.host, conf.port)
+	
+			# Whereas APT configuration needs double-quotes
+			conf.apt_cmd_http_value = '"http://%s:%s/";' % (conf.host, conf.port)
+			conf.apt_cmd_ftp_value  = '"ftp://%s:%s/";'  % (conf.host, conf.port)
 	def __squid_configuration_defaults(self):
 
 		datadir = self.paths.data_dir
@@ -482,23 +488,13 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 			):
 			yield filename2str, action, partial, conflict, snipplet
 	def check(self, batch=False, auto_answer=None, full_display=True):
-
-		if self.available:
-			# This will setup different things, based on role. This is the
-			# first thing to do because everything else (CLIENT and SERVER)
-			# depends on this.
-			self.__build_external_configuration_defaults()
-
-			# Finally, update the local system to deal or not with the
-			# extension, regarding related "client" configuration (APT, Shell
-			# environment, etc).
-			self.update_client_configuration(batch=batch, auto_answer=auto_answer)
-
-		else:
+		""" .. todo:: write this description. """
+		
+		if not self.available:
 			self.remove_client_configuration(batch, auto_answer)
 			return
 
-		# implicit: if self.enabled:
+		# Implicit: if self.enabled: (we are always enabled if available)
 		if settings.role != roles.SERVER:
 			logging.progress(_(u'{0}: not checking anything in CLIENT '
 											u'mode.').format(self.pretty_name))
@@ -517,7 +513,24 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 												else self.paths.squid3_conf,
 										caller=self.name)
 
-		for text, action, partial, conflict, snipplet in self.__squid_configuration_defaults():
+		try:
+			self.defaults.port = str(current_configuration.find(
+											directive_name='http_port').value)
+
+		except ValueError:
+			self.defaults.port = '3128'
+
+		# Update the local system to deal or not with the extension,
+		# regarding related "client" configuration (APT, Shell
+		# environment, etc).
+		#
+		# NOTE: this method will setup the remaining part of our internal 
+		# configuration, which is needed as a base for 
+		# self.__squid_configuration_defaults(). 
+		self.update_client_configuration(batch=batch, auto_answer=auto_answer)
+
+		for (text, action, partial, conflict, snipplet
+								) in self.__squid_configuration_defaults():
 			getattr(current_configuration, action)(
 										LSCF(text=text, snipplet=snipplet),
 										partial_match=partial,
@@ -527,6 +540,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 			# TODO: if batch or logging.ask_for_repair(…)
 			current_configuration.save(batch=batch, auto_answer=auto_answer)
 			self.service(svccmds.RELOAD)
+		
 	def __setup_shell_environment(self, batch=False, auto_answer=None):
 
 		os.environ[self.defaults.client_cmd_http]         = self.defaults.client_cmd_http_value
