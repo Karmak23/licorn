@@ -1351,8 +1351,16 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					# the directory creation to assign the wanted
 					# permissive state.
 					return permissive
+			elif e.errno == 0:
+				# a very special case. Should probably be investigated more,
+				# but I don't even know how and where to do it.
+				logging.exception(_(u'group {0}: unable to resolve permissive '
+								u'state (was: {1}). Is the FS mounted with ACL '
+								u'option?').format(self.pretty_name, e))
+				return None
+			
 			else:
-				raise e
+				raise
 	def __check_mutual_exclusions(self, user, force):
 		""" Verify a given user is not a member of two or more groups, from
 			the tuple (group, resp_group, guest_group).
