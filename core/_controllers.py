@@ -16,7 +16,7 @@ from threading import current_thread
 
 
 from licorn.foundations           import settings, exceptions, logging
-from licorn.foundations           import fsapi
+from licorn.foundations           import fsapi, events
 from licorn.foundations.threads   import RLock
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -246,6 +246,8 @@ class CoreController(LockedController):
 
 		else:
 			self.extensions = None
+
+		events.collect(self)
 	def reload(self):
 		""" load extensions if possible. This could not be possible if the
 			controller is :meth:`reload` ing during the CLIENT-daemon first

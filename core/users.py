@@ -16,7 +16,7 @@ from operator   import attrgetter
 from traceback  import print_exc
 
 from licorn.foundations           import logging, exceptions, hlstr, settings
-from licorn.foundations           import pyutils, fsapi, process
+from licorn.foundations           import pyutils, fsapi, process, events
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
@@ -1802,13 +1802,18 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				'argument, this is too dangerous.') %
 					stylize(ST_NAME, user.login))
 
-		# Delete user from his groups
-		# '[:]' to fix #14, see
+		try:
+			LicornEvent('user_pre_del', user=user.proxy, force=force).emit(synchronous=True)
+
+		except exceptions.LicornStopException, e:
+			logging.warning(_(u'{0}: {1} deletion prevented: {2}.').format(
+										self.pretty_name, user.pretty_name, e))
+			return
+
+		# Delete user from his groups. We use '[:]' to fix #14, see
 		# http://docs.python.org/tut/node6.html#SECTION006200000000000000000
 		for group in user.groups[:]:
 			group.del_Users([ user ], batch=True, emit_event=False)
-
-		LicornEvent('user_pre_del', user=user.proxy).emit(synchronous=True)
 
 		# keep the homedir path, to backup it if requested.
 		homedir = user.homeDirectory
@@ -2064,3 +2069,14 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			# FIXME: forward long_output, or remove it.
 			return '%s\n' % '\n'.join((user._cli_get()
 							for user in sorted(users, key=attrgetter('uid'))))
+
+	@events.handler_method
+	def user_pre_del(self, *args, **kwargs):
+
+		user   = kwargs.pop('user')
+		groups = [ user.primaryGroup.name ] + [ g.name for g in user.groups ]
+
+		if settings.defaults.admin_group in groups and not kwargs.pop('force', False):
+			raise exceptions.LicornStopException(_(u'Cannot delete Licorn® '
+				u'administrator account {0} without specifying --force on the '
+				u'command line').format(user.login))

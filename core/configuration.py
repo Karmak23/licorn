@@ -1375,25 +1375,34 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).
 			pass
+	def needed_groups(self, minimal=True):
+		""" Return a list of needed groups **names** (as strings), which are
+			essential for Licorn® to operate properly.
+
+			:param minimal: if ``False`` (not the default), this method will
+				return system privileges too.
+		"""
+
+		# NOTE: 'skels', 'webmestres' [and so on] are not here
+		# because they will be added by their respective packages
+		# (plugins ?), and they are not strictly needed for Licorn to
+		# operate properly.
+
+		needed_groups = [ self.users.group, self.acls.group,
+							settings.defaults.admin_group ]
+
+		if not minimal:
+			needed_groups.extend(group.name for group in LMC.privileges
+											if group not in needed_groups)
+
+		return needed_groups
 	def check_system_groups(self, minimal=True, batch=False, auto_answer=None, full_display=True):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
 
 		assert ltrace_func(TRACE_CONFIGURATION)
 
-		needed_groups = [ self.users.group, self.acls.group,
-							settings.defaults.admin_group ]
-
-		if not minimal:
-			needed_groups.extend([ group for group in LMC.privileges.iterkeys()
-				if group not in needed_groups
-					and group not in LMC.groups.names])
-			# 'skels', 'webmestres' [and so on] are not here
-			# because they will be added by their respective packages
-			# (plugins ?), and they are not strictly needed for Licorn to
-			# operate properly.
-
-		for group in needed_groups:
+		for group in self.needed_groups(minimal):
 			logging.progress(_(u'Checking existence of group %s…') %
 									stylize(ST_NAME, group))
 
