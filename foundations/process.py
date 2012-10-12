@@ -212,7 +212,7 @@ def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
 	try:
 		gmembers = getent.group(group).members
 
-	except KeyError:
+	except AttributeError:
 		logging.error(_(u'group %s does not exist and we are not root, '
 			u'aborting. Please manually relaunch this program with root '
 			u'privileges to automatically create this group.') % group)
