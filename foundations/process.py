@@ -323,8 +323,11 @@ def execute(command, input_data='', dry_run=None):
 																close_fds=True)
 			return p.communicate()
 	except (OSError, IOError), e:
-		logging.exception(_(u'{0}: Exception while trying to run {1}.'),
-				(ST_NAME, current_thread().name), (ST_COMMENT, ' '.join(command)))
+		logging.warning2(_(u'{0}: exception "{1}" while trying to '
+								u'process.execute({2}).').format(
+									stylize(ST_NAME, current_thread().name), 
+									stylize(ST_ATTR, e), 
+									stylize(ST_COMMENT, ' '.join(command))))
 		raise
 def execute_remote(ipaddr, command):
 	""" Exectute command on a machine with SSH. """
