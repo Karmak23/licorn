@@ -1,3 +1,8 @@
+
+.project
+.pydevproject
+.settings
+
 tests/data/scenarii
 tests/data/.*_status
 tests/data/.owner
