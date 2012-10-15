@@ -390,7 +390,7 @@
 			clearTimeout(setup_row_timeout)
 			setup_row_timeout = setTimeout( function() {
 				// make rows selectable
-				setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me')
+				setup_table_row_selectable($('#model_'+list_name+'_table tbody'), select_active_class, '.not-me')
 				// setup hover animation
 				setup_hover();
 
