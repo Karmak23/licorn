@@ -389,6 +389,11 @@
 			new_tds = $(new_row).find('td');
 			old_tds = $(old_row).find('td');
 
+			if (old_tds.length == 0) {
+				// returns null if new row (no old row found)
+				return null;
+			}
+
 			for (i=0;i<new_tds.length;i++) {
 				if ($(new_tds[i]).html() != $(old_tds[i]).html()) {
 					return i
@@ -420,7 +425,7 @@
 				// if the cell whose changed is not one of the currently sorted column, sort is useless
 				changed_col = get_changed_col(row, old)
 
-				if (parseInt(changed_col) == parseInt(col)) {
+				if (parseInt(changed_col) == parseInt(col) || changed_col==null) {
 					// get the sort way
 					current_way = $($('.table_column_header').get(parseInt(col))).attr('data-sort-way')
 					if (current_way == null) {
