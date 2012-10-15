@@ -40,14 +40,22 @@ function loading_animation_func(msg) {
 	if (msg == null) {
 		msg == gettext('Collecting data, please wait&hellip;');
 	}
-	$('body').prepend('<div id="loading_information"><span class="push_reconnection_notification">'
-		+ msg + '</span></div>');
-	$("#loading_information").fadeIn('slow');
+
+	if ($('#loading_information').length != 0) return;
+
+
+	table = $('table.sortable')
+	div = $('<div id="loading_information"><span class="push_reconnection_notification">'
+		+ msg + '</span></div>').height(table.height()).width(table.width());
+
+	$('table.sortable').prepend(div);
+	div.show();
 }
 
 function remove_loading_animation() {
-	$('#loading_information').fadeOut('slow', function(){
-		$('body').remove('#loading_information');
+	$('#loading_information').hide(function(){
+		$('#loading_information').remove();
+
 	});
 }
 

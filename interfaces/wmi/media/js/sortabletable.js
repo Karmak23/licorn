@@ -185,25 +185,11 @@ SortableTable.prototype.updateHeaderArrows = function () {
 
 SortableTable.prototype.headerOnclick = function (e) {
 	// find TD element
-	console.log($(e.target))
-	console.log(e.target)
+	var el = e.target || e.srcElement;
+	while (el.tagName != "TD")
+		el = el.parentNode;
 
-	//console.log(e.target.cellIndex)
-	var el = e.target;
-	var _THIS = this
-	//while (el.tagName != "TD")
-		//el = el.parentNode;
-
-	loading_animation_func(gettext('Please wait while sorting list'));
-				
-	tim = setTimeout( function() {
-
-		_THIS.sort(el.cellIndex)
-		remove_loading_animation();
-	}, 500);
-
-	
-	//this.sort(SortableTable.msie ? SortableTable.getCellIndex(el) : el.cellIndex);
+	this.sort(SortableTable.msie ? SortableTable.getCellIndex(el) : el.cellIndex);
 };
 
 // IE returns wrong cellIndex when columns are hidden
@@ -417,7 +403,38 @@ SortableTable.prototype.removeSortType = function (sType) {
 	delete this._sortTypeInfo[sType];
 };
 
-SortableTable.basicCompare = function compare(n1, n2) {
+var reA = /[^a-zA-Z]/g;
+var reN = /[^0-9]/g;
+SortableTable.basicCompare = function compare(a, b) {
+    var aA = a.value.replace(reA, "");
+    var bA = b.value.replace(reA, "");
+    if(aA === bA) {
+        var aN = parseInt(a.value.replace(reN, ""), 10);
+        var bN = parseInt(b.value.replace(reN, ""), 10);
+        return aN === bN ? 0 : aN > bN ? 1 : -1;
+    } else {
+        return aA > bA ? 1 : -1;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	console.log('basic')
 	if (n1.value < n2.value)
 		return -1;
 	if (n2.value < n1.value)

@@ -15,7 +15,7 @@
 	<script language="javascript" type="text/javascript" src="/media/js/my_utils.js"></script>
 
 	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/ug-popover.css" />
-	
+
 
 
 {%- endblock -%}
@@ -37,10 +37,10 @@
 		<span id="table_header_massive_actions" class='span3'>
 			<div class="centered">&nbsp;</div>
 			<div class="centered">
-				
+
 				{%- block massive_actions -%}
 				{%- endblock -%}
-				
+
 			</div>
 		</span>
 
@@ -48,10 +48,10 @@
 		<span id="table_header_filter" class='span2'>
 			<div class="centered">&nbsp;</div>
 			<div class="centered" id='list_filter'>
-				
+
 				{%- block list_filters -%}
 				{%- endblock -%}
-				
+
 			</div>
 		</span>
 
@@ -80,17 +80,17 @@
 	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
 
-			{%- if modal_html -%} 
+			{%- if modal_html -%}
 				// if modal_html is activated, prompt it!
 				$("#modal").modal();
 			{%- endif -%}
 		});
 
-		
-		
+
+
 		function my_setup_table_search() {
-			// setup a timer in order to let the user type several letter 
-			// in the search filed before really search 
+			// setup a timer in order to let the user type several letter
+			// in the search filed before really search
 			var search_timeout;
 			searchbox=$('#list_search')
 
@@ -105,7 +105,7 @@
 
 					// do not search through 'filtered' rows
 					$('.filtered:not(.hidden)').addClass('hidden');
-					
+
 					if (val == '') {
 						$('.not_filtered').css('display', '').removeClass('hidden')
 						$('.filtered').removeClass('hidden')
@@ -113,9 +113,9 @@
 					else {
 						$('.not_filtered:not(:contains('+val+'))').css('display', 'none').addClass('hidden')
 						$('.not_filtered:contains('+val+')').css('display', '').removeClass('hidden')
-						
+
 					}
-					
+
 				}, 500);
 
 			})
@@ -125,7 +125,11 @@
 		var filters = { 'standard' : true, 'system': true, 'restricted': false, 'privileged': true}
 		// sortableTable object
 		var st;
-		
+		// Beyond this number, animations are disabled to lower CPU usage.
+		// This is purely arbitrary, we could maintain them. But wasting
+		// CPU cycles consumes our planet.
+		var max_items_animate = 100;
+
 		function setup_list(list_name) {
 
 			$('.table').attr('id', "model_"+list_name+"_table")
@@ -144,7 +148,7 @@
 
 			// setup doubleclick on each rows
 			setup_table_row_doubleclick($('#model_'+list_name+'_table tbody td'), func_doubleclick_row);
-			
+
 			// setup the sort plugin
 			// PERF ISSUE
 			//setup_table_sorter();
@@ -158,7 +162,7 @@
 
 			st = new SortableTable(document.getElementById("model_"+list_name+"_table"),
 				get_list_column())
-			
+
 			// setup default sort state
 			$('#model_'+list_name+'_table').attr('data-sort-col', 2)
 			$('.table_column_header').each(function(i, header) {
@@ -175,19 +179,38 @@
 				else {
 					new_way = 1;
 				}
-				
+
 				_THIS.attr('data-sort-way', new_way)
 				$('#model_'+list_name+'_table').attr('data-sort-col', _THIS.data('sort-col'))
 
-				loading_animation_func(gettext('Please wait while sorting list'));
-				
-				tim = setTimeout( function() {
+
+
+				animate = $('#model_'+list_name+'_table .licorn_row').length > max_items_animate
+				console.log('SORTING, SHOULD WE ANIMATE ?', animate)
+
+				if (animate) {
+					loading_animation_func(gettext('Please wait while sorting list'));
+
+					tim = setTimeout( function() {
+						st.sort(_THIS.attr('data-sort-col'), new_way)
+						remove_loading_animation();
+					}, 500);
+				}
+				else {
 					st.sort(_THIS.attr('data-sort-col'), new_way)
-					remove_loading_animation();
-				}, 500);
+				}
 
 
-				
+
+
+
+
+
+
+
+
+
+
 			})
 
 
@@ -280,7 +303,7 @@
 			$('.massive_action').click(function() {
 				// get selected items
 				selected_rows = get_selected_rows($('#model_'+list_name+'_table tbody'), select_active_class);
-				
+
 				action_name = $(this).data('name')
 				action_url = $(this).data('url')
 
@@ -351,7 +374,7 @@
 
 		var select_active_class = 'row_selected'
 		var background_color_hover = 'rgb(245, 245, 245)'
-		
+
 		// timer used to prevent massive operation to be ran several times
 		var setup_row_timeout;
 
@@ -362,7 +385,7 @@
 			// apply events
 			setup_table_row_doubleclick($(row), func_doubleclick_row)
 
-			// because this method can be ran several times in a short period, 
+			// because this method can be ran several times in a short period,
 			// TRY to run these massive operations once.
 			clearTimeout(setup_row_timeout)
 			setup_row_timeout = setTimeout( function() {
@@ -370,51 +393,42 @@
 				setup_table_row_selectable($('#model_groups_table tbody'), select_active_class, '.not-me')
 				// setup hover animation
 				setup_hover();
-				
 
-				
-				
-				
+
+
+
+
 				// sort the list
 				// 4356
 				// ff : 640
 				console.log('list_name', list_name)
+
+				// get the sort column
 				col = $('#model_'+list_name+'_table').data('sort-col')
-				
-				loading_animation_func(gettext('Please wait while sorting list'));
-				
-				tim = setTimeout( function() {
-					var sort_START_TIME = new Date().getTime();
+
+				// get the sort way
+				current_way = $($('.table_column_header').get(parseInt(col))).attr('data-sort-way')
+				if (current_way == null) {
+					current_way = 0
+				}
+
+				// should we animate ?
+				animate = $('#model_'+list_name+'_table .licorn_row').length > max_items_animate
+
 					
-					current_way = $($('.table_column_header').get(parseInt(col))).attr('data-sort-way')
-					console.log('current_way', current_way)
-					if (current_way == null) {
-						current_way = 0
-					}
-					console.log('current_way', current_way, col)
+				if (animate) {
+					loading_animation_func(gettext('Please wait while sorting list'));
+
+					tim = setTimeout( function() {
+						st.sort(col, parseInt(current_way))
+						remove_loading_animation();
+					}, 500);
+				}
+				else {
 					st.sort(col, parseInt(current_way))
-					remove_loading_animation();
-					
-					var sort_END_TIME = new Date().getTime();
-					totalSortTime = (sort_END_TIME - sort_START_TIME);
-					console.log("total time to sort list", totalSortTime);
-				}, 500);
+				}
 
 
-
-				// second method
-				// 6796 ; 7500
-				// ff : 1200
-				/*$('#model_groups_table')
-					//
-					.trigger('update')
-					//.trigger("sorton", [[[2,0]]])
-					//.trigger('appendCache')*/
-
-
-
-
-				
 			}, 500);
 
 
@@ -435,7 +449,7 @@
 			//setup_ajaxized_link($(row))
 
 			//$('.licorn_tooltip').tooltip()
-			
+
 		}
 		function get_row_filter(row) {
 			var found;
@@ -445,7 +459,7 @@
 					console.log('filter found ', filter)
 					found = filter
 				}
-			
+
 			})
 			return found
 
@@ -480,7 +494,7 @@
 
 
 
-	
+
 		function bind_hotkeys(list_name) {
 			/* Bind all hotkeys
 
@@ -497,7 +511,7 @@
 					- L : massive reapply skel to groups' members operation on selected row(s)
 					- X : massive export operation on selected row(s)
 					- p : massive toggle permissive operation on selected row(s)
-				
+
 				- ESCAPE : (in order)
 					- if modal visible : hide the modal
 					- if searchbox focused : unfocus it
@@ -521,7 +535,7 @@
 				}
 
 				if (e.which == 27) {    // ESC
-					// on ESC, first hide modal is visible, secondly 
+					// on ESC, first hide modal is visible, secondly
 					// remove search content, thirdly unselect row
 
 					if (modal.is(':visible')) {
@@ -535,22 +549,22 @@
 						e.stopPropagation();
 						e.preventDefault();
 
-					} 
+					}
 					else {
 						$('.row_selected').removeClass('row_selected')
 					}
-					
+
 
 				}
 				if (! searchb.is(':focus') && $('#modal').is(':hidden')) {
-					
+
 					if (e.which == 78) {    // n => new group
 						console.log('toototototototo')
 						$.get('/'+list_name+'/new', function(html) {
 							modal.html(html).modal()
 						})
 					}
-					
+
 				}
 			});
 			$(document).keypress(function(e) {
@@ -566,7 +580,7 @@
 						var previus_row      = null
 						var new_selected_row = null
 
-						// find where to start 
+						// find where to start
 						//console.log('seeking where to start')
 						if ($('.preselected_row').length == 0) {
 
@@ -608,19 +622,19 @@
 								prev_row = preselected_row.prevUntil(':visible').prev().last();
 							}
 							new_selected_row = prev_row;
-							
+
 						}
 
 					}
 					if (e.which == 106 || e.which == 107) {
-						
+
 						if (new_selected_row.length != 0) {
 							if (preselected_row != null) {
 								// unpreselect preselected_row
 								preselected_row.css({'background-color': "none"})
 							}
 							$('.preselected_row').removeClass('preselected_row')
-						
+
 							new_selected_row.addClass('preselected_row').css({'background-color' : background_color_hover})
 
 							// scroll the body to have the selected row at the middle of the screen
@@ -661,7 +675,7 @@
 
 
 				}
-				
+
 				if (! searchb.is(':focus') && $('#modal').is(':hidden')) {
 					if (e.which == 112) {    // p => mass perm
 						$('#massive_permissive').click()
@@ -697,7 +711,7 @@
 				//	e.stopPropagation();
 				//}
 
-			});	
+			});
 
 		}
 	</script>
