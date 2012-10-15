@@ -112,6 +112,20 @@ function setup_sort_items(elements, sort_items, alpha_search) {
 	})
 	//do_sort();
 
+	var reA = /[^a-zA-Z]/g;
+	var reN = /[^0-9]/g;
+	function sort_alphanum(a, b) {
+		var aA = a.replace(reA, "");
+	    var bA = b.replace(reA, "");
+	    if(aA === bA) {
+	        var aN = parseInt(a.toString().replace(reN, ""), 10);
+	        var bN = parseInt(b.toString().replace(reN, ""), 10);
+	        return aN === bN ? 0 : aN > bN ? 1 : -1;
+	    } else {
+	        return aA > bA ? 1 : -1;
+	    }
+	}
+
 	function do_sort(div, sort_item) {
 		console.log("do_sort on ", sort_item)
 		tab = $('#'+div+' '+elements)
@@ -119,26 +133,50 @@ function setup_sort_items(elements, sort_items, alpha_search) {
 		tab.sort(function(a, b) {
 			//console.log($(a).data('rel'), $(b).data('rel'))
 			if (sort_item == 'alpha') {
-				if ($(a).find('.'+alpha_search).text().toLowerCase() < $(b).find('.'+alpha_search).text().toLowerCase()) {
-					return -1
-				}
-				else if ($(a).find('.'+alpha_search).text().toLowerCase() > $(b).find('.'+alpha_search).text().toLowerCase()) {
-					return 1
-				}
-				else {
-					return 0
-				}
+				
+				a = $(a).find('.'+alpha_search).text().toLowerCase()
+				b = $(b).find('.'+alpha_search).text().toLowerCase()
+
+				return sort_alphanum(a, b);
+
+
+
+
+
 			}
 			else if (sort_item == 'relation') {
-				return ($(a).data('rel') - $(b).data('rel'))
+				arel = $(a).data('rel')
+				brel = $(b).data('rel')
+
+				// sort on relationship, and, if equal sort string
+				if (arel == brel) {
+					a = $(a).find('.'+alpha_search).text().toLowerCase()
+					b = $(b).find('.'+alpha_search).text().toLowerCase()
+
+					return sort_alphanum(a, b);
+				}
+				else {
+					if (arel > brel) {
+						return -1
+					}
+					else {
+						return 1
+					}
+
+
+
+					return ($(a).data('rel') - $(b).data('rel'))
+				}
+
+
+
 			}
 		})
 		if (sort_item == 'relation') {
-			$.fn.reverse = [].reverse;
-			tab = tab.reverse();
+			//$.fn.reverse = [].reverse;
+			//tab = tab.reverse();
 		}
-		console.log('sorted', $(tab))
-
+		
 		//$.each(tab, function(i, item) {
 		//	console.log($(item))
 		//})
