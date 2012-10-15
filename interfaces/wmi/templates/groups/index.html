@@ -66,11 +66,11 @@
 {%- endblock -%}
 
 {%- block list_headers -%}
-	<th class='table_column_header centered' width="5%">{{ _('Type') }}</th>
+	<th class='table_column_header centered' width="7%">{{ _('Type') }}</th>
 	<th class='table_column_header centered' width="10%">{{ _('Permissive') }}</th>
 	<th class='table_column_header' width="10%">{{ _('Name') }}</th>
-	<th class='table_column_header centered' width="55%">{{ _('Description') }}</th>
-	<th class='table_column_header centered' width="5%" title="{{ _('Group identifier') }}">{{ _('Gid') }}</th>
+	<th class='table_column_header' width="55%">{{ _('Description') }}</th>
+	<th class='table_column_header centered' width="10%" title="{{ _('Group identifier') }}">{{ _('Gid') }}</th>
 	<th class='table_column_header centered' width="5%">{{ _('Backend') }}</th>
 	<th class='table_column_header centered' width="5%">{{ _('Skel') }}</th>
 {%- endblock -%}
@@ -114,7 +114,7 @@
 		}
 
 		function get_list_column() {
-			return ["String", "String", "String", "String", "Number", "String"]
+			return ["String", "String", "String", "String", "Number", "String", "String"]
 		}
 
 		
