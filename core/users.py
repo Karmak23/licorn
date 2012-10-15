@@ -377,6 +377,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			group.link_gidMember(self)
 
 			LicornEvent('user_primaryGroup_changed', user=self.proxy).emit(priorities.LOW)
+			self._cli_invalidate()
+
 		else:
 			raise exceptions.LicornRuntimeError(_(u'{0}: tried to set {1} '
 				'as {2} primary group, whose GID is not the same '
@@ -1097,9 +1099,23 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			# NOTE: 5 = len(str(65535)) == len(max_uid) == len(max_gid)
 			label_width    = User._cw_login
 			uid_label_rest = 5 - len(str(self.__uidNumber))
-			gid_label_rest = (Group._cw_name + 5
-								- len(self.__primaryGroup().name)
-								- len(str(self.__gidNumber)))
+
+			if self.__primaryGroup:
+				gid_label_rest = (Group._cw_name + 5
+									- len(self.__primaryGroup().name)
+									- len(str(self.__gidNumber)))
+				pri_group      = u'%s%s' % (
+										self.__primaryGroup()._cli_get_small(),
+										u' ' * gid_label_rest)
+			else:
+				gid_label_rest = (Group._cw_name + 6
+									- len(_(u'<NON-EXISTENT>'))
+									- len(str(self.__gidNumber)))
+
+				pri_group      = _(u'{0} {1}{2}').format(
+										stylize(ST_UGID, self.__gidNumber),
+										stylize(ST_BAD, _(u'<NON-EXISTENT>')),
+										u' ' * gid_label_rest)
 
 			accountdata = [ u'{login}: #{uid} &{pri_group} '
 							u'@{backend}	{gecos} {inotified}'.format(
@@ -1109,9 +1125,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 								#id_type=_(u'uid'),
 								uid=stylize(ST_UGID, self.__uidNumber)
 										+ u' ' * uid_label_rest,
-								pri_group=u'%s%s' % (
-										self.__primaryGroup()._cli_get_small(),
-										u' ' * gid_label_rest),
+								pri_group=pri_group,
 								backend=stylize(ST_BACKEND, self.backend.name),
 								gecos=stylize(ST_COMMENT,
 									self.__gecos) if self.__gecos != '' else u'',

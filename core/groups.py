@@ -2509,6 +2509,12 @@ class GroupsController(DictSingleton, CoreFSController):
 									backend=self._prefered_backend
 										if backend is None else backend)
 
+		# Link any pre-existing users to the new group if we were creating
+		# an already-referenced but non-existing group. This happens when
+		# users have a non-existing primary group (see :meth:`__connect_users`
+		# for details.
+		self.__connect_users(groups=[group])
+
 		# calling this *before* backend serialization ensures that:
 		#	- helper groups will be created and serialized *before*
 		#	- and thus, internal double-links are OK before we call the
@@ -2813,13 +2819,16 @@ class GroupsController(DictSingleton, CoreFSController):
 											resps + guests, job_delay=3.0)
 
 		del stds, resps, guests
-	def __connect_users(self, clear_first=False):
+	def __connect_users(self, groups=None, clear_first=False):
 		""" Iterate all users and connect their primary group to them, to speed
 			up future lookups.
 
 			:param clear_first: set to ``True`` only on a backend reload, else
 				not used.
 		"""
+
+		if groups is None:
+			groups = self
 
 		if clear_first:
 			for user in LMC.users:
@@ -2835,7 +2844,7 @@ class GroupsController(DictSingleton, CoreFSController):
 		#  don't serialize groups one by one (typically shadow).
 		to_rewrite = []
 
-		for group in self:
+		for group in groups:
 			to_rewrite.extend(g for g in group._setup_initial_links())
 
 		for group in to_rewrite:
