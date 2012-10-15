@@ -181,7 +181,7 @@ def massive(request, uids, action, *args, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	if action == 'delete':
-		no_archive = bool(kwargs.get('no_archive', False))
+		no_archive = bool(kwargs.get('value', False))
 		for uid in uids.split(','):
 			delete(request, uid=int(uid), no_archive=no_archive)
 

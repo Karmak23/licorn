@@ -333,7 +333,7 @@
 			})
 		}
 
-		function init_massive_select_events(action_name, action_url, gids) {
+		function init_massive_select_events(action_name, action_url, ids) {
 			//console.log("init_massive_select_events", action_name, action_url, gids)
 			$('#apply_massive_action').click(function() {
 				// close the modal
@@ -341,15 +341,24 @@
 
 				// run the action
 				if (action_name == 'export') {
-					$.get(action_url + gids+ '/' + $('#id_export_type').val(), function(data) {
+					$.get(action_url + ids+ '/' + $('#id_export_type').val(), function(data) {
 						file_name = data.file_name
 						iframe = document.getElementById('download_iframe')
 						iframe.src = "/system/download/"+file_name
 
 					}, "json")
 				}
+				else if (action_name == 'delete') {
+					if ($('#delete_no_archive').is(':checked')) {
+						no_archive = "True"
+					}
+					else {
+						no_archive = "" // python : bool('') = False
+					}
+					$.get(action_url + ids+ '/' + no_archive)
+				}
 				else {
-					$.get(action_url + gids)
+					$.get(action_url + ids)
 				}
 
 				// unselect all rows

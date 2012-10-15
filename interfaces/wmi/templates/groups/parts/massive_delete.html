@@ -15,10 +15,10 @@
 	<span>
 		<table>
 			<tr>
-				<td><input type='checkbox' id='delete_group_no_archive'/></td>
+				<td><input type='checkbox' id='delete_no_archive'/></td>
 				<td>&nbsp;</td>
 				<td>
-					<label class="control-label" for="delete_group_no_archive">
+					<label class="control-label" for="delete_no_archive">
 						{{ _("Definitely remove group shared data (no archiving).") }}
 					</label>
 				</td>
@@ -33,7 +33,7 @@
 <script language="javascript" type="text/javascript">
 
 $(document).ready(function() {
-	$('#delete_group_no_archive').checkbox({
+	$('#delete_no_archive').checkbox({
         'on_text': "{{ _('Yes') }}",
         'off_text' : "{{ _('No') }}"
     })
