@@ -418,8 +418,7 @@ def main(request, sort="login", order="asc", select=None, **kwargs):
 	
 	return render(request, 'users/index.html', {
 			'request' : request,
-			'users' : sorted(users, key= lambda x: attrgetter('login')(x).lower()
-			)
+			'users' : pyutils.alphanum_sort(users, key='login')
 		})
 
 
@@ -486,7 +485,7 @@ def get_user_template(request, mode, users):
 			'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
 				'users' : users,
 				'group' : g
-				}) for g in sorted(LMC.groups.select(filters.STANDARD), key= lambda x: attrgetter('name')(x).lower())])
+				}) for g in pyutils.alphanum_sort(LMC.groups.select(filters.STANDARD), key= 'name')])
 		}
 	]
 
@@ -498,7 +497,7 @@ def get_user_template(request, mode, users):
 				'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
 					'users' : users,
 					'group' : g
-					}) for g in sorted(LMC.groups.select(filters.PRIVILEGED), key= lambda x: attrgetter('name')(x).lower()) if not g.is_helper])
+					}) for g in pyutils.alphanum_sort(LMC.groups.select(filters.PRIVILEGED), key='name') if not g.is_helper])
 			}
 		)
 		groups_lists.append(
@@ -507,7 +506,7 @@ def get_user_template(request, mode, users):
 				'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
 					'users' : users,
 					'group' : g
-					}) for g in sorted(LMC.groups.select(filters.SYSTEM), key= lambda x: attrgetter('name')(x).lower()) if not g.is_helper])
+					}) for g in pyutils.alphanum_sort(LMC.groups.select(filters.SYSTEM), key='name') if not g.is_helper])
 			}
 		)
 		
@@ -550,7 +549,7 @@ def get_user_template(request, mode, users):
 
 		return render(request, 'users/index.html', {
 				'request' : request,
-				'users' : sorted(users, key= lambda x: attrgetter('login')(x).lower()), 
+				'users' : pyutils.alphanum_sort(users, key= 'login'), 
 				'modal_html' : render(request, 'users/user.html', _dict) \
 						if mode == 'new' else render_to_string('users/user.html', _dict)
 			})

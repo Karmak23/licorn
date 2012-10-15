@@ -13,6 +13,7 @@ Licorn Foundations - http://dev.licorn.org/documentation/foundations
 
 import re, math, uuid, functools
 from traceback import print_exc
+from operator  import attrgetter
 
 # WARNING: don't import anything from the core here.
 
@@ -531,3 +532,34 @@ def MixIn(TargetClass, MixInClass, name=None):
 
     CombinedClass.__name__ = name
     return CombinedClass
+
+
+# ALPHANUMERIC SORT
+def keynat(string):
+	
+	r = []
+	for c in string:
+		try:
+			c = int(c)
+			try: r[-1] = r[-1] * 10 + c
+			except: r.append(c)
+		except:
+			r.append(c)
+	return r
+
+
+def keynat_cmp(a, b):
+	return cmp(keynat(a), keynat(b))
+
+def alphanum_sort(list_items, key=None, respect_case=False):
+
+	def get_key(key):
+		if respect_case:
+			return key
+		else:
+			return key.lower()
+
+
+	return sorted(list_items,
+		key=lambda x: get_key(attrgetter(key)(x)),
+		cmp=keynat_cmp)

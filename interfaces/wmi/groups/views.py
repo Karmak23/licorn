@@ -23,7 +23,7 @@ from django.http					import HttpResponse, \
 											HttpResponseRedirect
 
 from licorn.foundations           import exceptions, logging, settings
-from licorn.foundations           import hlstr
+from licorn.foundations           import hlstr, pyutils
 from licorn.foundations.constants import filters, relation
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
@@ -318,8 +318,7 @@ def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 
 	return render(request, 'groups/index.html', {
 			'request' : request,
-			'groups' : sorted(groups, key= lambda x: attrgetter('name')(x).lower()
-			)
+			'groups' : pyutils.alphanum_sort(groups, key='name')
 		})
 
 def massive_select_template(request, action_name, gids, *args, **kwargs):
@@ -356,7 +355,7 @@ def get_group_template(request, mode, groups):
 			'list_content' : ''.join([render_to_string('/groups/parts/user_membership.html', {
 				'groups' : groups,
 				'user'  : u
-				}) for u in LMC.users.select(filters.STANDARD)])
+				}) for u in [ pyutils.alphanum_sort(LMC.users.select(filters.STANDARD), key='login')] ])
 		}
 	]
 
@@ -368,7 +367,7 @@ def get_group_template(request, mode, groups):
 				'list_content' : ''.join([render_to_string('/groups/parts/user_membership.html', {
 					'groups' : groups,
 					'user'  : u
-					}) for u in LMC.users.select(filters.SYSTEM)])
+					}) for u in [ pyutils.alphanum_sort(LMC.users.select(filters.SYSTEM), key='login')] ])
 			}
 		)
 		"""users_list.append( ( _('System users') ,  {
