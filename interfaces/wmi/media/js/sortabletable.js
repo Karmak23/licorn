@@ -307,10 +307,18 @@ SortableTable.prototype.getRowValue = function (oRow, sType, nColumn) {
 
 	var s;
 	var c = oRow.cells[nColumn];
-	if (typeof c.innerText != "undefined")
-		s = c.innerText.toLowerCase();
-	else
+	if (typeof c.innerText != "undefined") {
+		// if no text, use HTML (usefull for images)
+		if ($(c).text().trim() == "") {
+			s = $(c).html()
+		} 
+		else {
+			s = c.innerText.toLowerCase();
+		}
+	}
+	else {
 		s = SortableTable.getInnerText(c);
+	}
 	return this.getValueFromString(s, sType);
 };
 
@@ -406,11 +414,11 @@ SortableTable.prototype.removeSortType = function (sType) {
 var reA = /[^a-zA-Z]/g;
 var reN = /[^0-9]/g;
 SortableTable.basicCompare = function compare(a, b) {
-    var aA = a.value.replace(reA, "");
-    var bA = b.value.replace(reA, "");
+    var aA = a.value.toString().replace(reA, "");
+    var bA = b.value.toString().replace(reA, "");
     if(aA === bA) {
-        var aN = parseInt(a.value.replace(reN, ""), 10);
-        var bN = parseInt(b.value.replace(reN, ""), 10);
+        var aN = parseInt(a.value.toString().replace(reN, ""), 10);
+        var bN = parseInt(b.value.toString().replace(reN, ""), 10);
         return aN === bN ? 0 : aN > bN ? 1 : -1;
     } else {
         return aA > bA ? 1 : -1;
