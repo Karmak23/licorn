@@ -415,31 +415,6 @@ SortableTable.basicCompare = function compare(a, b) {
     } else {
         return aA > bA ? 1 : -1;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	console.log('basic')
-	if (n1.value < n2.value)
-		return -1;
-	if (n2.value < n1.value)
-		return 1;
-	return 0;
 };
 
 SortableTable.idFunction = function (x) {
