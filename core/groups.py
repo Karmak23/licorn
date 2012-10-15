@@ -13,7 +13,6 @@ Licorn core: groups - http://docs.licorn.org/core/groups.html
 
 import sys, os, stat, posix1e, re, gc, types, weakref
 
-from traceback  import print_exc
 from contextlib import nested
 from operator   import attrgetter
 
@@ -1358,7 +1357,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 								u'state (was: {1}). Is the FS mounted with ACL '
 								u'option?').format(self.pretty_name, e))
 				return None
-			
+
 			else:
 				raise
 	def __check_mutual_exclusions(self, user, force):
@@ -1534,9 +1533,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 							#		stylize(ST_NAME, group.name),
 							#		stylize(ST_UGID, group.gid)))
 
-						except exceptions.AlreadyExistsException, e:
-							logging.warning(e)
-							print_exc()
+						except exceptions.AlreadyExistsException:
+							pass
 					else:
 						logging.warning(_(u'The system group '
 									u'{0} is required for the group {1} to be '
@@ -2352,8 +2350,8 @@ class GroupsController(DictSingleton, CoreFSController):
 					log = logging.notice
 
 				log(_(u'Created system group {0} '
-					u'(gid={1}).').format(stylize(ST_NAME, name),
-						stylize(ST_UGID, group.gid)))
+						u'(gid={1}).').format(stylize(ST_NAME, name),
+							stylize(ST_UGID, group.gid)))
 
 			if members_to_add:
 				group.add_Users(members_to_add)
@@ -2483,6 +2481,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			if (system and Group.is_system_gid(manual_gid)) or (
 						not system and Group.is_standard_gid(manual_gid)):
 				gid = manual_gid
+
 			else:
 				raise exceptions.BadArgumentError(_(u'GID out of range '
 					u'for the kind of group you specified. System GIDs '
