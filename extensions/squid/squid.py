@@ -405,14 +405,14 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 		# is the first thing to do because everything else (CLIENT and SERVER)
 		# depends on this.
 		#
-		# NOTE: we need this method to be run even if the extension is not 
+		# NOTE: we need this method to be run even if the extension is not
 		# available, to clean the system from eventual old stuff.
 
 		assert ltrace_func(TRACE_SQUID)
 
 		# Keep the enumeration handy.
 		conf = self.defaults
-	
+
 		# Shell environment variables.
 		conf.client_file     = '/etc/environment'
 		conf.client_cmd_http = 'http_proxy'
@@ -443,7 +443,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 			# Shell / environment configuration must not have double-quotes
 			conf.client_cmd_http_value = 'http://%s:%s/' % (conf.host, conf.port)
 			conf.client_cmd_ftp_value  = 'ftp://%s:%s/'  % (conf.host, conf.port)
-	
+
 			# Whereas APT configuration needs double-quotes
 			conf.apt_cmd_http_value = '"http://%s:%s/";' % (conf.host, conf.port)
 			conf.apt_cmd_ftp_value  = '"ftp://%s:%s/";'  % (conf.host, conf.port)
@@ -489,7 +489,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 			yield filename2str, action, partial, conflict, snipplet
 	def check(self, batch=False, auto_answer=None, full_display=True):
 		""" .. todo:: write this description. """
-		
+
 		if not self.available:
 			self.remove_client_configuration(batch, auto_answer)
 			return
@@ -514,19 +514,37 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 										caller=self.name)
 
 		try:
-			self.defaults.port = str(current_configuration.find(
-											directive_name='http_port').value)
+			port_value = current_configuration.find(
+											directive_name='http_port').value
 
 		except ValueError:
 			self.defaults.port = '3128'
+
+		else:
+			not_found = True
+
+			for token in port_value:
+				# We cannot test isinstance(token.type, Token.Literal.Number)
+				# nor any type(Token.Literal.Number), they all are the very same
+				# <class 'pygments.token._TokenType'>, whatever the real content.
+				if token.type == Token.Literal.Number:
+					self.defaults.port = token.value
+					not_found = False
+					break
+
+			if not_found:
+				raise exceptions.BadConfigurationError(_(u'{0}: http_port '
+					u'directive "{1}" is incomplete !').format(
+						self.pretty_name, current_configuration.find(
+								directive_name='http_port')))
 
 		# Update the local system to deal or not with the extension,
 		# regarding related "client" configuration (APT, Shell
 		# environment, etc).
 		#
-		# NOTE: this method will setup the remaining part of our internal 
-		# configuration, which is needed as a base for 
-		# self.__squid_configuration_defaults(). 
+		# NOTE: this method will setup the remaining part of our internal
+		# configuration, which is needed as a base for
+		# self.__squid_configuration_defaults().
 		self.update_client_configuration(batch=batch, auto_answer=auto_answer)
 
 		for (text, action, partial, conflict, snipplet
@@ -540,7 +558,6 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 			# TODO: if batch or logging.ask_for_repair(…)
 			current_configuration.save(batch=batch, auto_answer=auto_answer)
 			self.service(svccmds.RELOAD)
-		
 	def __setup_shell_environment(self, batch=False, auto_answer=None):
 
 		os.environ[self.defaults.client_cmd_http]         = self.defaults.client_cmd_http_value
