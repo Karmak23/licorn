@@ -149,6 +149,12 @@
 			// setup doubleclick on each rows
 			setup_table_row_doubleclick($('#model_'+list_name+'_table tbody td'), func_doubleclick_row);
 
+			// TODO
+			update_number_items(list_name);
+			$('.filter_item').click(function() {
+				update_number_items(list_name)
+			})
+
 			// setup the sort plugin
 			// PERF ISSUE
 			//setup_table_sorter();
@@ -393,7 +399,8 @@
 				setup_table_row_selectable($('#model_'+list_name+'_table tbody'), select_active_class, '.not-me')
 				// setup hover animation
 				setup_hover();
-
+				//TODO
+				update_number_items(list_name);
 
 
 
@@ -478,22 +485,10 @@
 			}
 		}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		function update_number_items(list_name) {
+			console.log('update', $('#model_'+list_name+'_table .licorn_row'))
+			$('#model_'+list_name+'_count').html($('#model_'+list_name+'_table .licorn_row:visible').length)
+		}
 
 		function bind_hotkeys(list_name) {
 			/* Bind all hotkeys
