@@ -384,6 +384,18 @@
 		// timer used to prevent massive operation to be ran several times
 		var setup_row_timeout;
 
+
+		function get_changed_col(new_row, old_row) {
+			new_tds = $(new_row).find('td');
+			old_tds = $(old_row).find('td');
+
+			for (i=0;i<new_tds.length;i++) {
+				if ($(new_tds[i]).html() != $(old_tds[i]).html()) {
+					return i
+				}
+			}
+		}
+
 		function setup_row(list_name, row, old) {
 			// function called when a new row is inserted (not already displayed) into the table.
 			console.log('setup_row', row, old)
@@ -399,43 +411,37 @@
 				setup_table_row_selectable($('#model_'+list_name+'_table tbody'), select_active_class, '.not-me')
 				// setup hover animation
 				setup_hover();
-				//TODO
+				// update the number of list items
 				update_number_items(list_name);
 
-
-
-
-				// sort the list
-				// 4356
-				// ff : 640
-				console.log('list_name', list_name)
-
 				// get the sort column
-				col = $('#model_'+list_name+'_table').data('sort-col')
+				col = $('#model_'+list_name+'_table').attr('data-sort-col')
 
-				// get the sort way
-				current_way = $($('.table_column_header').get(parseInt(col))).attr('data-sort-way')
-				if (current_way == null) {
-					current_way = 0
-				}
+				// if the cell whose changed is not one of the currently sorted column, sort is useless
+				changed_col = get_changed_col(row, old)
 
-				// should we animate ?
-				animate = $('#model_'+list_name+'_table .licorn_row').length > max_items_animate
+				if (parseInt(changed_col) == parseInt(col)) {
+					// get the sort way
+					current_way = $($('.table_column_header').get(parseInt(col))).attr('data-sort-way')
+					if (current_way == null) {
+						current_way = 0
+					}
 
-					
-				if (animate) {
-					loading_animation_func(gettext('Please wait while sorting list'));
+					// should we animate ?
+					animate = $('#model_'+list_name+'_table .licorn_row').length > max_items_animate
 
-					tim = setTimeout( function() {
+					if (animate) {
+						loading_animation_func(gettext('Please wait while sorting list'));
+
+						tim = setTimeout( function() {
+							st.sort(col, parseInt(current_way))
+							remove_loading_animation();
+						}, 500);
+					}
+					else {
 						st.sort(col, parseInt(current_way))
-						remove_loading_animation();
-					}, 500);
+					}
 				}
-				else {
-					st.sort(col, parseInt(current_way))
-				}
-
-
 			}, 500);
 
 
@@ -449,15 +455,8 @@
 			}
 
 			$(row).css('display', '')
-
-
-
-
-			//setup_ajaxized_link($(row))
-
-			//$('.licorn_tooltip').tooltip()
-
 		}
+		
 		function get_row_filter(row) {
 			var found;
 			$.each(filters, function(filter) {
@@ -486,7 +485,6 @@
 		}
 
 		function update_number_items(list_name) {
-			console.log('update', $('#model_'+list_name+'_table .licorn_row'))
 			$('#model_'+list_name+'_count').html($('#model_'+list_name+'_table .licorn_row:visible').length)
 		}
 
