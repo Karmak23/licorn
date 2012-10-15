@@ -554,3 +554,7 @@ def get_user_template(request, mode, users):
 				'modal_html' : render(request, 'users/user.html', _dict) \
 						if mode == 'new' else render_to_string('users/user.html', _dict)
 			})
+
+
+def hotkeys_help(request):
+	return render(request, '/users/parts/hotkeys_help.html')

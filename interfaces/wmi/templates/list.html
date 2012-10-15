@@ -456,7 +456,7 @@
 
 			$(row).css('display', '')
 		}
-		
+
 		function get_row_filter(row) {
 			var found;
 			$.each(filters, function(filter) {
@@ -670,8 +670,14 @@
 				}
 
 				if (! searchb.is(':focus') && $('#modal').is(':hidden')) {
-					if (e.which == 112) {    // p => mass perm
-						$('#massive_permissive').click()
+					if (e.which == 112) {    // p 
+						console.log('list', list_name)
+						if (list_name == 'groups') {
+							$('#massive_permissive').click()
+						}
+						else if (list_name == 'users') {
+							$('#massive_lock').click()
+						}
 					}
 					if (e.which == 120) {    // x => mass export
 						$('#massive_export').click()

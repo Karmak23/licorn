@@ -17,6 +17,7 @@ urlpatterns = patterns('machines.views',
 
     (r'^massive/(?P<action_name>.+)/(?P<mids>.+)/?$', 'massive'),
 
+    (r'^hotkeys_help/?$', 'hotkeys_help'),
 
     # NOT YET READY FOR MACHINES
     #(r'^view/(?P<mid>\d+)/?$', 'view'),

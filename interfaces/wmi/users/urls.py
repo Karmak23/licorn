@@ -44,6 +44,7 @@ urlpatterns = patterns('users.views',
     (r'^massive/(?P<action>\w+)/(?P<uids>[^/]+)/(?P<value>.*)/?$', 'massive'),
     (r'^massive_select_template/(?P<action_name>.+)/(?P<uids>.+)/?$', 'massive_select_template'),
 
+    (r'^hotkeys_help/?$', 'hotkeys_help'),
 
     (r'^import/(?P<confirm>.*)/?$', 'import_view'),
     (r'^upload/?$', 'upload_file'),

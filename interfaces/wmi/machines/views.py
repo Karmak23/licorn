@@ -120,3 +120,7 @@ def instant_edit(request, mid, part, value, *args, **kwargs):
 	if part == 'hostname':
 		machine.hostname = value
 		return HttpResponse(value)
+
+
+def hotkeys_help(request):
+	return render(request, '/machines/parts/hotkeys_help.html')

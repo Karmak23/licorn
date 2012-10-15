@@ -1,0 +1,39 @@
+
+{%- extends 'modal.html' -%}
+
+
+    {%- block title -%}
+      <h3>{{ _('Hotkeys help') }}</h3>
+    {%- endblock -%}
+    {%- block body -%}
+
+      <p>
+          Several hotkeys have been set to simplify your navigation.
+      </p>
+
+      <ul>
+        <li><strong><em>J/K</strong></em>: preselect previus/following row</li>
+        <li><strong><em>S</strong></em>: select/unselect a preselected row</li>
+        <br/>
+        <li><strong><em>ENTER</strong></em>: edit/mass edit selected row(s)</li>
+        <br/>
+        <li><strong><em>TODO</strong></em>: 
+        <br/>
+        <li><strong><em>ESCAPE</strong></em>: (in order)
+          <ul>
+              <li>hide the modal</li>
+              <li>unfocus the search field</li>
+              <li>unselect selected row(s)</li>
+          </ul>
+        </li>
+
+        
+        
+      </ul>
+
+    {%- endblock -%}
+
+
+  {%- block footer -%}
+    <a href="#" class="btn" data-dismiss="modal">Close</a>
+  {%- endblock -%}
