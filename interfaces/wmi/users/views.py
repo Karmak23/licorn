@@ -317,17 +317,6 @@ def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 		except:
 			user = None
 
-
-	if action == 'edit':
-		_mode    = 'edit'
-		title    = _('Edit user {0}').format(user.login)
-		user_id  = user.uidNumber
-
-	else:
-		_mode    = 'new'
-		title    = _('Add new user')
-		user_id  = ''
-
 	# inform the user that the UI will take time to build,
 	# to avoid re-clicks and (perfectly justified) grants.
 	ngroups = len(LMC.groups.keys())
@@ -335,7 +324,7 @@ def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 		# TODO: make the notification sticky and remove it just
 		# before returning the rendered template result.
 		utils.notification(request, _('Building user {0} form, please wait…').format(
-			_('edit') if _mode else _('creation')), 3000 + 5 * ngroups, 'wait_for_rendering')
+			_('edit') if action == 'edit' else _('creation')), 3000 + 5 * ngroups, 'wait_for_rendering')
 
 	return get_user_template(request, _mode, user)
 

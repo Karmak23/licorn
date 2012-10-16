@@ -355,7 +355,7 @@ def get_group_template(request, mode, groups):
 			'list_content' : ''.join([render_to_string('/groups/parts/user_membership.html', {
 				'groups' : groups,
 				'user'  : u
-				}) for u in [ pyutils.alphanum_sort(LMC.users.select(filters.STANDARD), key='login')] ])
+				}) for u in pyutils.alphanum_sort(LMC.users.select(filters.STANDARD), key='login')])
 		}
 	]
 
@@ -367,7 +367,7 @@ def get_group_template(request, mode, groups):
 				'list_content' : ''.join([render_to_string('/groups/parts/user_membership.html', {
 					'groups' : groups,
 					'user'  : u
-					}) for u in [ pyutils.alphanum_sort(LMC.users.select(filters.SYSTEM), key='login')] ])
+					}) for u in pyutils.alphanum_sort(LMC.users.select(filters.SYSTEM), key='login')])
 			}
 		)
 		"""users_list.append( ( _('System users') ,  {

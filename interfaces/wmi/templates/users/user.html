@@ -252,9 +252,11 @@
 				$.post("/users/create/", serialized_form);
 
 				$('#modal').modal('hide')
+
 			};
 
-			$(document).keyup(function(e) {
+			$(document).unbind("keyup.setup_enter_post_form");
+			$(document).bind("keyup.setup_enter_post_form", function(e) {
 				if (e.keyCode == 13) { // enter
 					post_form();
 				}

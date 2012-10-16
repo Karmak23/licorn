@@ -536,7 +536,6 @@ def MixIn(TargetClass, MixInClass, name=None):
 
 # ALPHANUMERIC SORT
 def keynat(string):
-	
 	r = []
 	for c in string:
 		try:
@@ -551,13 +550,13 @@ def keynat(string):
 def keynat_cmp(a, b):
 	return cmp(keynat(a), keynat(b))
 
-def alphanum_sort(list_items, key=None, respect_case=False):
+def alphanum_sort(list_items, key=None, ignore_case=True):
 
 	def get_key(key):
-		if respect_case:
-			return key
-		else:
+		if ignore_case:
 			return key.lower()
+		else:
+			return key
 
 
 	return sorted(list_items,
