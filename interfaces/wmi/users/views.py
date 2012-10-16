@@ -326,7 +326,7 @@ def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 		utils.notification(request, _('Building user {0} form, please wait…').format(
 			_('edit') if action == 'edit' else _('creation')), 3000 + 5 * ngroups, 'wait_for_rendering')
 
-	return get_user_template(request, _mode, user)
+	return get_user_template(request, action, user)
 
 @staff_only
 def upload_file(request, *args, **kwargs):
