@@ -700,10 +700,16 @@
 						$('#massive_skel').click()
 					}
 					if (e.which == 63 && e.shiftKey) {    // ? => help
-							$.get('/'+list_name+'/hotkeys_help', function(html) {
-								modal.html(html).modal();
-							})
-						}
+						$.get('/'+list_name+'/hotkeys_help', function(html) {
+							modal.html(html).modal();
+						})
+					}
+					if (e.which == 117) {    // u => machines.upgrade
+						$('#massive_upgrade').click()
+					}
+					if (e.which == 104) {    // h => machine.shutdown
+						$('#massive_shutdown').click()
+					}
 				}
 
 
