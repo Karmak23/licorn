@@ -86,8 +86,6 @@
 			{%- endif -%}
 		});
 
-
-
 		function my_setup_table_search() {
 			// setup a timer in order to let the user type several letter
 			// in the search filed before really search
@@ -109,15 +107,12 @@
 					if (val == '') {
 						$('.not_filtered').css('display', '').removeClass('hidden')
 						$('.filtered').removeClass('hidden')
-					}
-					else {
+
+					} else {
 						$('.not_filtered:not(:contains('+val+'))').css('display', 'none').addClass('hidden')
 						$('.not_filtered:contains('+val+')').css('display', '').removeClass('hidden')
-
 					}
-
 				}, 500);
-
 			})
 		}
 
@@ -176,50 +171,37 @@
 				$(header).attr('data-sort-way', 0)
 			})
 			$('.table_column_header').click(function() {
+
 				// set new context
-				_THIS = $(this)
-				current_way = _THIS.attr('data-sort-way')
+				_THIS       = $(this);
+				current_way = _THIS.attr('data-sort-way');
+
 				if (current_way == 1) {
 					new_way = 0;
-				}
-				else {
+
+				} else {
 					new_way = 1;
 				}
 
-				_THIS.attr('data-sort-way', new_way)
-				$('#model_'+list_name+'_table').attr('data-sort-col', _THIS.data('sort-col'))
+				_THIS.attr('data-sort-way', new_way);
+				$('#model_'+list_name+'_table').attr('data-sort-col', _THIS.data('sort-col'));
 
-
-
-				animate = $('#model_'+list_name+'_table .licorn_row').length > max_items_animate
-				console.log('SORTING, SHOULD WE ANIMATE ?', animate)
+				animate = $('#model_'+list_name+'_table .licorn_row').length > max_items_animate;
+				//console.log('SORTING, SHOULD WE ANIMATE ?', animate);
 
 				if (animate) {
 					// true, in order to fit table content
 					loading_animation_func(gettext('Please wait while sorting list'), true);
 
 					tim = setTimeout( function() {
-						st.sort(_THIS.attr('data-sort-col'), new_way)
+						st.sort(_THIS.attr('data-sort-col'), new_way);
 						remove_loading_animation();
 					}, 500);
+
+				} else {
+					st.sort(_THIS.attr('data-sort-col'), new_way);
 				}
-				else {
-					st.sort(_THIS.attr('data-sort-col'), new_way)
-				}
-
-
-
-
-
-
-
-
-
-
-
-
 			})
-
 
 			/*table.on("sortStart",function() {
 				$("#wait").show();
@@ -232,8 +214,6 @@
 
 			// setup active sort
 			//$($('.table_column_header').get(2)).addClass('headerSortDown')
-
-
 
 			//massives actions
 			setup_massive_actions(list_name);
@@ -305,7 +285,7 @@
 				item_name = list_name
 			}
 
-			console.log('setup_massive_actions', list_name, item_name)
+			//console.log('setup_massive_actions', list_name, item_name);
 
 			$('.massive_action').click(function() {
 				// get selected items
@@ -325,7 +305,7 @@
 
 					// get the massive selection template
 					url = '/'+list_name+'/massive_select_template/'+action_name+'/'+ids.join(',')
-					console.log(url);
+					//console.log(url);
 					$.get(url, function(modal_html) {
 						$("#modal").html(modal_html).modal()
 						init_massive_select_events(action_name, action_url, ids);
@@ -413,14 +393,15 @@
 
 		function setup_row(list_name, row, old) {
 			// function called when a new row is inserted (not already displayed) into the table.
-			console.log('setup_row', row, old)
+			//console.log('setup_row', row, old);
 
 			// apply events
-			setup_table_row_doubleclick($(row), func_doubleclick_row)
+			setup_table_row_doubleclick($(row), func_doubleclick_row);
 
 			// because this method can be ran several times in a short period,
 			// TRY to run these massive operations once.
-			clearTimeout(setup_row_timeout)
+			clearTimeout(setup_row_timeout);
+
 			setup_row_timeout = setTimeout( function() {
 				// make rows selectable
 				setup_table_row_selectable($('#model_'+list_name+'_table tbody'), select_active_class, '.not-me')
@@ -465,7 +446,7 @@
 				$(row).addClass('not_filtered').show();
 			}
 			else {
-				console.log('row not matching table context')
+				//console.log('row not matching table context');
 				$(row).addClass('filtered')
 			}
 
@@ -475,9 +456,9 @@
 		function get_row_filter(row) {
 			var found;
 			$.each(filters, function(filter) {
-				console.log(filter)
+				//console.log(filter);
 				if ($(row).hasClass('filter_'+filter)) {
-					console.log('filter found ', filter)
+					//console.log('filter found ', filter);
 					found = filter
 				}
 
@@ -534,7 +515,7 @@
 
 
 			$(document).keyup(function(e) {
-				console.log("keyup", e.which )
+				//console.log("keyup", e.which );
 
 				if (e.which == 8 || e.which == 46) {    // SUPPR => mass delete
 					if (! searchb.is(':focus') && modal.is(':hidden')) {
@@ -567,7 +548,7 @@
 				if (! searchb.is(':focus') && $('#modal').is(':hidden')) {
 
 					if (e.which == 78) {    // n => new group
-						console.log('toototototototo')
+						//console.log('toototototototo');
 						$.get('/'+list_name+'/new', function(html) {
 							modal.html(html).modal()
 						})
@@ -577,7 +558,7 @@
 			});
 			$(document).keypress(function(e) {
 
-				console.log('keypress', e.which)
+				//console.log('keypress', e.which);
 
 				/* Rows selection mecanism */
 				if ( !searchb.is(':focus') && modal.is(':hidden')) {
@@ -665,7 +646,7 @@
 				if (e.which == 13) {    // enter
 					if (modal.is(':hidden')) {
 						selected_rows = get_selected_rows($('#model_'+list_name+'_table tbody'), select_active_class);
-						console.log($(selected_rows))
+						//console.log($(selected_rows))
 						if (selected_rows.length == 1) {
 							gid = $(selected_rows).data('id');
 							$.get('/'+list_name+'/edit/'+gid, function(modal_html) {
@@ -685,8 +666,8 @@
 				}
 
 				if (! searchb.is(':focus') && $('#modal').is(':hidden')) {
-					if (e.which == 112) {    // p 
-						console.log('list', list_name)
+					if (e.which == 112) {    // p
+						//console.log('list', list_name)
 						if (list_name == 'groups') {
 							$('#massive_permissive').click()
 						}
