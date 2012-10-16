@@ -68,11 +68,11 @@
 
 <tr class='licorn_row {{ get_group_filter_class(group) }}' data-id="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}'>
 	<!-- type -->
-	<td class='centered' width="8%">
+	<td class='centered'>
 		{{ get_group_type_img(group) }}
 	</td>
 	<!-- permissive -->
-	<td class='centered' width="8%">
+	<td class='centered'>
 		{{ get_group_permissivness_img(group) }}
 	</td>
 	<!-- name -->
@@ -92,19 +92,19 @@
 		{%-endif-%}
 	</td>
 	<!-- description -->
-	<td width="50%">
+	<td>
 		<span>{{ group.description }}</span>
 	</td>
 	<!-- gidNumber -->
-	<td width="8%">
+	<td>
 		<div class="centered">{{ group.gidNumber }}</div>
 	</td>
 	<!-- backend -->
-	<td width="8%" class='centered'>
+	<td class='centered'>
 		{{ get_group_backend_img(group) }}
 	</td>
 	<!-- skel -->
-	<td width="8%" class="centered">
+	<td class="centered">
 		<a href='#' class='licorn_tooltip' title="{{ group.groupSkel }}">{{ group.groupSkel.split('/')[-1] }}</div>
 	</td>
 

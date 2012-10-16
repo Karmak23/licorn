@@ -90,11 +90,11 @@
 
 <tr class='licorn_row {{ get_user_filter_class(user) }}' data-id="{{ user.uidNumber }}" id='users_{{ user.uidNumber }}'>
 	<!-- type -->
-	<td class='centered' width="8%">
+	<td class='centered'>
 		{{ get_user_type_img(user) }}
 	</td>
 	<!-- lock -->
-	<td class='centered' width="8%">
+	<td class='centered'>
 
 		{{ get_user_lock_img(user) }}
 	</td>
@@ -103,19 +103,19 @@
 		<span class="nowrap">{{ user.login }}</span>
 	</td>
 	<!-- gecos -->
-	<td width="50%">
+	<td>
 		<span>{{ user.gecos }}</span>
 	</td>
 	<!-- uidNumber -->
-	<td width="8%">
+	<td>
 		<div class="centered">{{ user.uidNumber }}</div>
 	</td>
 	<!-- backend -->
-	<td width="8%" class='centered'>
+	<td class='centered'>
 		{{ get_user_backend_img(user) }}
 	</td>
 	<!-- Profile -->
-	<td width="8%" class="centered">
+	<td class="centered">
 		<span class="nowrap">{{ get_user_profile(user) }}</span>
 	</td>
 
