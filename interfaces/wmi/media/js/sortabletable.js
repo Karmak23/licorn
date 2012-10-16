@@ -174,11 +174,20 @@ SortableTable.prototype.updateHeaderArrows = function () {
 	var img;
 	for (var i = 0; i < l; i++) {
 		if (cells[i]._sortType != null && cells[i]._sortType != "None") {
-			img = cells[i].lastChild;
+			th = cells[i]
+			$('.descending').removeClass('descending')
+			$('.ascending').removeClass('ascending')
+
+			if (i == this.sortColumn) {
+				_THIS = this
+				_TH = $(th)
+				setTimeout(function() {_TH.addClass(_THIS.descending ? "descending" : "ascending")}, 50)
+			}
+			/*img = cells[i].lastChild;
 			if (i == this.sortColumn)
 				img.className = "sort-arrow " + (this.descending ? "descending" : "ascending");
 			else
-				img.className = "sort-arrow";
+				img.className = "sort-arrow";*/
 		}
 	}
 };

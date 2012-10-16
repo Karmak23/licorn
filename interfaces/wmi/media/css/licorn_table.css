@@ -73,9 +73,9 @@ th.headerSortDown {
 	border: 0;
 	margin-top:10px;
 }
-.sort-arrow.descending {
+.descending {
 	background-image: url('/media/images/sort/desc.gif');
 }
-.sort-arrow.ascending {
+.ascending {
 	background-image: url('/media/images/sort/asc.gif');
 }
