@@ -49,7 +49,7 @@
 
 {%- macro get_user_profile(user) -%}
 	{% if user.is_system %}
-		
+
 	{% elif user.is_standard %}
 		{%- if user.profile -%}
 			{{ user.profile.name }}
@@ -73,7 +73,7 @@
 
 
 {%- macro get_user_lock_img(user) -%}
-	
+
 	{%- if user.locked -%}
 		{%- set message = _('Unlock user account {0}').format(login) -%}
 		{%- set icon    = "locked.png" -%}
@@ -90,36 +90,36 @@
 
 <tr class='licorn_row {{ get_user_filter_class(user) }}' data-id="{{ user.uidNumber }}" id='users_{{ user.uidNumber }}'>
 	<!-- type -->
-	<td class='centered' width="5%">
+	<td class='centered' width="8%">
 		{{ get_user_type_img(user) }}
 	</td>
 	<!-- lock -->
-	<td class='centered' width="10%">
-		
+	<td class='centered' width="8%">
+
 		{{ get_user_lock_img(user) }}
 	</td>
 	<!-- login -->
-	<td width="10%">
-		<span>{{ user.login }}</span>
+	<td width="12%">
+		<span class="nowrap">{{ user.login }}</span>
 	</td>
 	<!-- gecos -->
-	<td width="55%">
+	<td width="50%">
 		<span>{{ user.gecos }}</span>
 	</td>
 	<!-- uidNumber -->
-	<td width="5%">
+	<td width="8%">
 		<div class="centered">{{ user.uidNumber }}</div>
 	</td>
 	<!-- backend -->
-	<td class='centered' width="5%">
+	<td width="8%" class='centered'>
 		{{ get_user_backend_img(user) }}
 	</td>
 	<!-- Profile -->
-	<td width="10%" class="centered">
-		<span>{{ get_user_profile(user) }}</span>
+	<td width="8%" class="centered">
+		<span class="nowrap">{{ get_user_profile(user) }}</span>
 	</td>
-	
-	
+
+
 </tr>
 
 

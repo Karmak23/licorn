@@ -231,6 +231,7 @@ tr a {
 	text-align: center;
 }
 
+/* duplicated in main_template_one_content.css */
 .nowrap {
 	white-space: nowrap;
 }

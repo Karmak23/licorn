@@ -45,7 +45,7 @@
 {%- endmacro -%}
 
 {%- macro get_group_permissivness_img(group) -%}
-	
+
 	{%- if not group.is_system -%}
 
 		{%- if group.is_permissive -%}
@@ -57,26 +57,26 @@
 			{%- set perm_class = "group_not_permissive_action" -%}
 			{%- set perm_img   = "/media/images/24x24/locked.png" -%}
 		{%- endif -%}
-		
+
 		{%- set perm_alt   = "Permissivness image" -%}
 
 		<img src='{{ perm_img }}' class='{{ perm_class }}' alt='{{ perm_alt }}' title='{{ perm_title }}'/>
 	{%- endif -%}
-	
+
 {%- endmacro -%}
 
 
 <tr class='licorn_row {{ get_group_filter_class(group) }}' data-id="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}'>
 	<!-- type -->
-	<td class='centered' width="5%">
+	<td class='centered' width="8%">
 		{{ get_group_type_img(group) }}
 	</td>
 	<!-- permissive -->
-	<td class='centered' width="10%">
+	<td class='centered' width="8%">
 		{{ get_group_permissivness_img(group) }}
 	</td>
 	<!-- name -->
-	<td width="10%">
+	<td width="12%">
 		{%- if group.is_standard -%}
 			<strong>
 		{%- elif group.is_privilege -%}
@@ -92,23 +92,23 @@
 		{%-endif-%}
 	</td>
 	<!-- description -->
-	<td width="55%">
+	<td width="50%">
 		<span>{{ group.description }}</span>
 	</td>
 	<!-- gidNumber -->
-	<td width="5%">
+	<td width="8%">
 		<div class="centered">{{ group.gidNumber }}</div>
 	</td>
 	<!-- backend -->
-	<td class='centered' width="5%">
+	<td width="8%" class='centered'>
 		{{ get_group_backend_img(group) }}
 	</td>
 	<!-- skel -->
-	<td width="10%" class="centered">
+	<td width="8%" class="centered">
 		<a href='#' class='licorn_tooltip' title="{{ group.groupSkel }}">{{ group.groupSkel.split('/')[-1] }}</div>
 	</td>
-	
-	
+
+
 </tr>
 
 

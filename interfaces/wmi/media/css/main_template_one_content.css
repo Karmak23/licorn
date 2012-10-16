@@ -8,7 +8,7 @@ body {
 	font-family: "Bitstream Charter", Georgia, Serif;
 }
 #main_content {
-	
+
 }
 #content {
 	margin-right:2.56%;
@@ -24,5 +24,10 @@ body {
 	vertical-align: middle;
 	text-align: center;
 	z-index:20001;
+}
 
+
+/* duplicated from main.css */
+.nowrap {
+	white-space: nowrap;
 }

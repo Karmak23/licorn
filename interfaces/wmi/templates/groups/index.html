@@ -13,7 +13,7 @@
 {%- endblock -%}
 
 {%- block massive_actions -%}
-	
+
 	<span class="btn-group">
 		<button class="btn massive_action" data-url='/groups/massive/delete/' title="{{ _('Massively delete selected groups.') }}"  data-name='delete' id="massive_delete">
 			<img src="/media/images/14x14/mass_del.png" alt="massive delete icon"/>
@@ -31,12 +31,12 @@
 			<img src="/media/images/14x14/mass_group.png" alt="massive edit groups icon"/>
 		</button>
 	</span>
-	
+
 {%- endblock -%}
 
 {%- block list_filters -%}
 
-	
+
 
 
 	<span class="btn-group" data-toggle="buttons-checkbox">
@@ -66,13 +66,13 @@
 {%- endblock -%}
 
 {%- block list_headers -%}
-	<th class='table_column_header centered' width="7%">{{ _('Type') }}</th>
-	<th class='table_column_header centered' width="10%">{{ _('Permissive') }}</th>
-	<th class='table_column_header' width="10%">{{ _('Name') }}</th>
-	<th class='table_column_header' width="55%">{{ _('Description') }}</th>
-	<th class='table_column_header centered' width="5%" title="{{ _('Group identifier') }}">{{ _('Gid') }}</th>
-	<th class='table_column_header centered' width="10%">{{ _('Backend') }}</th>
-	<th class='table_column_header centered' width="5%">{{ _('Skel') }}</th>
+	<th class='table_column_header centered' width="8%">{{ _('Type') }}</th>
+	<th class='table_column_header centered' width="8%">{{ _('Permissive') }}</th>
+	<th class='table_column_header' width="12%">{{ _('Name') }}</th>
+	<th class='table_column_header' width="50%">{{ _('Description') }}</th>
+	<th class='table_column_header centered' width="8%" title="{{ _('Group identifier') }}">{{ _('Gid') }}</th>
+	<th class='table_column_header centered' width="8%">{{ _('Backend') }}</th>
+	<th class='table_column_header centered' width="8%">{{ _('Skel') }}</th>
 {%- endblock -%}
 
 {%- block list_body -%}
@@ -82,14 +82,14 @@
 
 
 	<script language="javascript" type="text/javascript">
-	
+
 		$(document).ready(function() {
 
 			// setup the list
 			var START_TIME = new Date().getTime();
-			
+
 			setup_list('groups');
-			
+
 			var END_TIME = new Date().getTime();
 			totalTime = (END_TIME - START_TIME);
 			console.log("total time to setup user list", totalTime);
@@ -117,7 +117,7 @@
 			return ["String", "String", "String", "String", "Number", "String", "String"]
 		}
 
-		
+
 
 	</script>
 {%- endblock -%}
