@@ -166,7 +166,7 @@ function setup_table_row_selectable(table_element, active_class, ignore_class) {
 function get_selected_rows(table_element, active_class) {
 	rows = [];
 	$.each(table_element.children(), function(index, row) {
-		if ($(row).hasClass(active_class)) {
+		if ($(row).hasClass(active_class) && $(row).is(':visible')) {
 			rows.push(row);
 		}
 	});
