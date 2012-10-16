@@ -1,30 +1,69 @@
 
 {%- extends 'modal.html' -%}
 
+{%- block title -%}
+	{%- if noop -%}
+		<h3>{{ _('Unapplicable massive action') }}</h3>
 
-    {%- block title -%}
-      <h3>{{ _('Massive action confirmation') }}</h3>
-    {%- endblock -%}
-    {%- block body -%}
-      {%- block confirm_text -%}
-      {%- endblock -%}
-      {%- block groups_list -%}
-        <ul>
-          {%- for g in groups -%}
-            <li> {{ g.name }}</li>
-          {%- endfor -%}
-        </ul>
-      {%- endblock -%}
-      {%- block end_text -%}
+	{%- else -%}
+	  <h3>{{ _('Massive action confirmation') }}</h3>
 
-      {%- endblock -%}
-    {%- endblock -%}
+	{%- endif -%}
 
+{%- endblock -%}
 
-  {%- block footer -%}
-    <a href="#" class="btn" data-dismiss="modal">No, Thanks</a>
-    <a href="#" class="btn btn-primary" id="apply_massive_action">Yes, I want</a>
-  {%- endblock -%}
+{%- block body -%}
+	{%- if noop -%}
+		<p class="alert alert-error">{{ _('This action is not applicable to the group(s) you selected:') }}</p>
+
+		<ul>
+			{%- for g in others -%}
+				<li> {{ g.name }}</li>
+
+			{%- endfor -%}
+		</ul>
+
+	{%- else -%}
+		{%- block confirm_text -%}
+		{%- endblock -%}
+
+		{%- block groups_list -%}
+		<ul>
+			{%- for g in groups -%}
+				<li> {{ g.name }}</li>
+
+			{%- endfor -%}
+		</ul>
+
+		{%- endblock -%}
+
+		{%- block end_text -%}
+		{%- endblock -%}
+
+		{%- if others -%}
+			<div class="grayed_out smaller">
+				<p>{{ _('NOTE: this operation is not applicable to one or more groups; they have been automatically un-selected:') }}</p>
+				<ul>
+					{%- for g in others -%}
+						<li> {{ g.name }}</li>
+
+					{%- endfor -%}
+				</ul>
+			</div>
+		{%- endif -%}
+	{%- endif -%}
+{%- endblock -%}
+
+{%- block footer -%}
+	{%- if noop -%}
+		<a href="#" class="btn" data-dismiss="modal">{{ _('Bummer!') }}</a>
+
+	{%- else -%}
+		<a href="#" class="btn" data-dismiss="modal">{{ _('Cancel') }}</a>
+		<a href="#" class="btn btn-primary" id="apply_massive_action">{{ _('Proceed') }}</a>
+
+	{%- endif -%}
+{%- endblock -%}
 
 
 

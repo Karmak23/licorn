@@ -74,11 +74,10 @@ h4 { font-size: 110%; margin: .3em 0 .1em }
 	float: left;
 }
 
+/* duplicated in main_template_one_content.css */
 .greyed_out, .grayed_out {
 	color: lighten(desaturate(@font_color, 50%), 30%);
 }
-
-
 .bigger {
 	font-size: 120%;
 }
@@ -87,22 +86,20 @@ h4 { font-size: 110%; margin: .3em 0 .1em }
 }
 .smaller {
 	font-size: 80%;
+	line-height: 60%;
 }
-.smallest {
+.smallest, .very_small_font {
 	font-size: 60%;
+	line-height: 60%;
 }
-
-.very_small_font {
-	font-size: 60%;
-}
-
 .waiting {
     cursor: wait;
 }
-
 .cursor-help {
     cursor: help;
 }
+/* end duplication */
+
 
 .item_title {
 	text-align: center;

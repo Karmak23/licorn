@@ -110,7 +110,7 @@ def massive(request, gids, action, value='', *args, **kwargs):
 			destination.close()
 
 		return HttpResponse(json.dumps({ "file_name" : export_filename }))
-	
+
 	elif action == 'skel':
 		# massively mod shell
 		for gid in gids.split(','):
@@ -307,7 +307,7 @@ def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 		If it an "admins", display all groups.
 	"""
 	groups = LMC.groups.select(filters.STANDARD)
-	
+
 	if request.user.is_superuser:
 		for g in LMC.groups.select(filters.SYSTEM):
 			if not g.is_helper:
@@ -322,30 +322,44 @@ def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 		})
 
 def massive_select_template(request, action_name, gids, *args, **kwargs):
+
 	groups = [ LMC.groups.guess_one(g) for g in gids.split(',') ]
 	template = None
 
-	_dict = { 'groups' : groups }
-
-	if action_name == 'delete':
-		_dict.update({
-			"archive_dir" : settings.home_archive_dir, 
-			'admin_group' : settings.defaults.admin_group })
 	if action_name == 'edit':
 		return get_group_template(request, "massiv", groups)
 
+	if action_name in ('permissive', 'skel', ):
+		_dict = {
+			'groups' : [ g for g in groups if g.is_standard ],
+			'others' : [ g for g in groups if not g.is_standard ]
+		 }
+
+	else:
+		_dict = { 'groups' : groups, 'others': None }
+
+	if action_name == 'delete':
+		_dict.update({
+			"archive_dir" : settings.home_archive_dir,
+			'admin_group' : settings.defaults.admin_group })
+
+
+	if _dict.get('others') and not _dict.get('groups'):
+		_dict['noop'] = True
+
+	else:
+		_dict['noop'] = False
+
 	return HttpResponse(
 		render_to_string('groups/parts/massive_{0}.html'.format(action_name),
-			_dict))
-
-
+																		_dict))
 
 def get_group_template(request, mode, groups):
 	print "get_group_template", mode, groups
 
 	if type(groups) != types.ListType:
 		groups = [ groups ]
-	
+
 	_dict = {}
 
 
@@ -401,7 +415,7 @@ def get_group_template(request, mode, groups):
 	else:
 		# render the full page
 		groups = LMC.groups.select(filters.STANDARD)
-	
+
 		if request.user.is_superuser:
 			for g in LMC.groups.select(filters.SYSTEM):
 				if not g.is_helper:
@@ -412,7 +426,7 @@ def get_group_template(request, mode, groups):
 
 		return render(request, 'groups/index.html', {
 				'request' : request,
-				'groups' : sorted(groups, key= lambda x: attrgetter('name')(x).lower()), 
+				'groups' : sorted(groups, key= lambda x: attrgetter('name')(x).lower()),
 				'modal_html' : render(request, 'groups/group.html', _dict) \
 						if mode == 'new' else render_to_string('groups/group.html', _dict)
 			})

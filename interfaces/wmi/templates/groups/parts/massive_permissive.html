@@ -1,9 +1,15 @@
 {%- extends 'groups/massive_select.html' -%}
 
 {%- block title -%}
-      <h3>{{ _('Massive permissivness confirmation') }}</h3>
-    {%- endblock -%}
+	{%- if noop -%}
+		{{ super() }}
+
+	{%- else -%}
+		<h3>{{ _('Massive permissiveness toggle') }}</h3>
+
+	{%- endif -%}
+{%- endblock -%}
 
 {%- block confirm_text -%}
-	<p>{{ _('Do you really want to toggle <em><strong>permissivness</strong></em> on all selected groups ?') }}</p>
+	<p>{{ _('Do you really want to toggle <em><strong>permissiveness</strong></em> on selected groups?') }}</p>
 {%- endblock -%}

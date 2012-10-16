@@ -1,13 +1,18 @@
 {%- extends 'groups/massive_select.html' -%}
 
 {%- block title -%}
-      <h3>{{ _('Massive skeleton confirmation') }}</h3>
-    {%- endblock -%}
+	{%- if noop -%}
+		{{ super() }}
 
-{%- block confirm_text -%}
-	<p>{{ _('Do you really want to groups\' <em><strong>skeleton</strong></em> on all selected groups\' member?') }}</p>
+	{%- else -%}
+		<h3>{{ _('Massive skeleton re-application') }}</h3>
+
+	{%- endif -%}
 {%- endblock -%}
 
+{%- block confirm_text -%}
+	<p>{{ _('Do you really want to groups\' <em><strong>skeleton</strong></em> on selected groups\' member?') }}</p>
+{%- endblock -%}
 
 {%- block end_text -%}
 	<p>	{{ _("This will reset the desktops, icons and menus of all members of the group, according to the content of the skel you choose. This will NOT alter any of the user personnal data, nor the group shared data.") }}
