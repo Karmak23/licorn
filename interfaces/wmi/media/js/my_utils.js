@@ -12,7 +12,7 @@ function password_helpers(content) {
 				content : '',
 			})
 	$.get('/users/generate_pwd/', function(html) {
-			
+
 			generate_pwd.attr("data-content", html);
 		})
 
@@ -69,7 +69,7 @@ function password_helpers(content) {
 
 					pwd_strenght.html('')
 					console.log('no match')
-					
+
 				}
 		}
 		else {
@@ -84,14 +84,14 @@ function password_helpers(content) {
 			generate_pwd.attr("data-content", html);
 		})
 		$('#confirm_generated_password').click(function(event) {
-			content.find('input:password').val($('#generated_password').text()).keyup();
+			content.find('input:password').val($('#generated_password').val()).keyup();
 		})
 
 	});
 }
 
 var tab_sort = { "alpha": true, "relation": false}
-	
+
 function setup_sort_items(elements, sort_items, alpha_search) {
 	console.log('setup_sort_items', elements, sort_items)
 
@@ -106,7 +106,7 @@ function setup_sort_items(elements, sort_items, alpha_search) {
 		}
 	})
 	$(sort_items).click(function(e) {
-		
+
 		do_sort($(this).data('id'), $(this).data('sort'));
 
 	})
@@ -133,7 +133,7 @@ function setup_sort_items(elements, sort_items, alpha_search) {
 		tab.sort(function(a, b) {
 			//console.log($(a).data('rel'), $(b).data('rel'))
 			if (sort_item == 'alpha') {
-				
+
 				a = $(a).find('.'+alpha_search).text().toLowerCase()
 				b = $(b).find('.'+alpha_search).text().toLowerCase()
 
@@ -176,7 +176,7 @@ function setup_sort_items(elements, sort_items, alpha_search) {
 			//$.fn.reverse = [].reverse;
 			//tab = tab.reverse();
 		}
-		
+
 		//$.each(tab, function(i, item) {
 		//	console.log($(item))
 		//})

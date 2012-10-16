@@ -234,9 +234,9 @@ def massive(request, uids, action, *args, **kwargs):
 		for uid in uids.split(','):
 			mod(request, uid=uid, action='groups', value=kwargs.get('value'))
 			# group is : group_id/rel_id
-	
+
 	if action == 'edit':
-		return get_user_template(request, "massiv", 
+		return get_user_template(request, "massiv",
 			[ groups.append(LMC.groups.guess_one(gid)) for gid in uids.split(',')])
 
 	return HttpResponse('MASSIVE DONE.')
@@ -400,11 +400,11 @@ def main(request, sort="login", order="asc", select=None, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	users = LMC.users.select(filters.STANDARD)
-	
+
 	if request.user.is_superuser:
 		for u in LMC.users.select(filters.SYSTEM):
 				users.append(u)
-	
+
 	return render(request, 'users/index.html', {
 			'request' : request,
 			'users' : pyutils.alphanum_sort(users, key='login')
@@ -432,13 +432,8 @@ def check_pwd_strenght(request, pwd, *args, **kwargs):
 
 def generate_pwd(request, *args, **kwargs):
 	return HttpResponse(render_to_string('/users/parts/generate_password.html', {
-		'password' : hlstr.generate_password(),
+		'password' : hlstr.generate_password(maxlen=10),
 		}))
-
-
-
-
-
 
 def massive_select_template(request, action_name, uids, *args, **kwargs):
 	users = [ LMC.users.guess_one(u) for u in uids.split(',') ]
@@ -448,7 +443,7 @@ def massive_select_template(request, action_name, uids, *args, **kwargs):
 
 	if action_name == 'delete':
 		_dict.update({
-			"archive_dir" : settings.home_archive_dir, 
+			"archive_dir" : settings.home_archive_dir,
 			'admin_group' : settings.defaults.admin_group })
 	if action_name == 'edit':
 		return get_user_template(request, "massiv", users)
@@ -457,14 +452,12 @@ def massive_select_template(request, action_name, uids, *args, **kwargs):
 		render_to_string('users/parts/massive_{0}.html'.format(action_name),
 			_dict))
 
-
-
 def get_user_template(request, mode, users):
 	print "get_user_template", mode, users
 
 	if type(users) != types.ListType:
 		users = [ users ]
-	
+
 	_dict = {}
 
 
@@ -498,7 +491,7 @@ def get_user_template(request, mode, users):
 					}) for g in pyutils.alphanum_sort(LMC.groups.select(filters.SYSTEM), key='name') if not g.is_helper])
 			}
 		)
-		
+
 	# we need to sort the form_blocks dict to display headers in order
 	sorted_blocks = OrderedDict({})
 	form_blocks = get_user_form_blocks(request)
@@ -514,7 +507,7 @@ def get_user_template(request, mode, users):
 				'groups_lists' : groups_lists,
 				'form_blocks' : sorted_blocks
 			})
-	
+
 	if mode == 'edit':
 		_dict.update({"user" : users[0] })
 
@@ -527,7 +520,7 @@ def get_user_template(request, mode, users):
 	else:
 		# render the full page
 		groups = LMC.groups.select(filters.STANDARD)
-	
+
 		if request.user.is_superuser:
 			for g in LMC.groups.select(filters.SYSTEM):
 				if not g.is_helper:
@@ -538,7 +531,7 @@ def get_user_template(request, mode, users):
 
 		return render(request, 'users/index.html', {
 				'request' : request,
-				'users' : pyutils.alphanum_sort(users, key= 'login'), 
+				'users' : pyutils.alphanum_sort(users, key= 'login'),
 				'modal_html' : render(request, 'users/user.html', _dict) \
 						if mode == 'new' else render_to_string('users/user.html', _dict)
 			})
