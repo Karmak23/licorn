@@ -1,5 +1,8 @@
 {%- extends 'users/massive_select.html' -%}
 
+{%- block title -%}
+	<h3>{{ _('Massive lock confirmation') }}</h3>
+{%- endblock -%}
 
 {%- block confirm_text -%}
 	<p>{{ _('Do you really want to toggle <em><strong>lock state</strong></em> on all selected users ?') }}</p>

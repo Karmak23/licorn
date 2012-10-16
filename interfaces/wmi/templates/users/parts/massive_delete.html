@@ -3,6 +3,9 @@
 
 {%- extends 'users/massive_select.html' -%}
 
+{%- block title -%}
+      <h3>{{ _('Massive delete confirmation') }}</h3>
+    {%- endblock -%}
 
 {%- block confirm_text -%}
 	<p>{{ _('Do you really want to <em><strong>delete</strong></em> all selected users ?') }}</p>

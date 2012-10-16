@@ -36,26 +36,36 @@ function head_over_to(next_location) {
 	document.location = next_location;
 }
 
-function loading_animation_func(msg) {
-	if (msg == null) {
-		msg == gettext('Collecting data, please wait&hellip;');
+function loading_animation_func(msg, fit_to_table) {
+	msg = msg || gettext('Collecting data, please wait&hellip;');
+
+	if (fit_to_table == null) {
+		fit_to_table = false
 	}
+
+	console.log(msg, fit_to_table)
 
 	if ($('#loading_information').length != 0) return;
 
-
-	table = $('table.sortable')
+	//create the div
 	div = $('<div id="loading_information"><span class="push_reconnection_notification">'
-		+ msg + '</span></div>').height(table.height()).width(table.width());
+		+ msg + '</span></div>')
 
-	$('table.sortable').prepend(div);
+	if (fit_to_table) {
+		table = $('table.sortable')
+		div.height(table.height()).width(table.width());
+		table.prepend(div)
+	}
+	else {
+		div.height('100%').width('100%')
+		$('body').prepend(div)
+	}
 	div.show();
 }
 
 function remove_loading_animation() {
 	$('#loading_information').hide(function(){
 		$('#loading_information').remove();
-
 	});
 }
 

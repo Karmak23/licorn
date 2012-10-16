@@ -195,7 +195,8 @@
 				console.log('SORTING, SHOULD WE ANIMATE ?', animate)
 
 				if (animate) {
-					loading_animation_func(gettext('Please wait while sorting list'));
+					// true, in order to fit table content
+					loading_animation_func(gettext('Please wait while sorting list'), true);
 
 					tim = setTimeout( function() {
 						st.sort(_THIS.attr('data-sort-col'), new_way)
@@ -445,7 +446,7 @@
 					animate = $('#model_'+list_name+'_table .licorn_row').length > max_items_animate
 
 					if (animate) {
-						loading_animation_func(gettext('Please wait while sorting list'));
+						loading_animation_func(gettext('Please wait while sorting list'), true);
 
 						tim = setTimeout( function() {
 							st.sort(col, parseInt(current_way))

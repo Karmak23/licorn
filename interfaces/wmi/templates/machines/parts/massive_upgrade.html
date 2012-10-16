@@ -1,5 +1,8 @@
 {%- extends 'machines/massive_select.html' -%}
 
+{%- block title -%}
+      <h3>{{ _('Massive upgrade confirmation') }}</h3>
+    {%- endblock -%}
 
 {%- block confirm_text -%}
 	<p>{{ _('Do you really want to <em><strong>upgrade</strong></em> all these machines ?') }}</p>
