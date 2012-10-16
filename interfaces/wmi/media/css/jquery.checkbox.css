@@ -1,10 +1,12 @@
-.jquery_checkbox {
+.jquery_checkbox, .jquery_checkbox_wrapper  {
 	display: block;
 	width: 60px;
 	height: 20px;
 	cursor: pointer;
 }
-
+.jquery_checkbox_wrapper  {
+	padding-top: 5px;
+}
 .jquery_checkbox_on {
 	#margin-left: 10px;
 	color: white;
