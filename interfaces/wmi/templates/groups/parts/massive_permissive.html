@@ -1,14 +1,8 @@
-{%- extends 'groups/massive_select.html' -%}
+{%- extends 'groups/massive.html' -%}
 
-{%- block title -%}
-	{%- if noop -%}
-		{{ super() }}
-
-	{%- else -%}
-		<h3>{{ _('Massive permissiveness toggle') }}</h3>
-
-	{%- endif -%}
-{%- endblock -%}
+{%- macro massive_dialog_title() -%}
+	{{ _('Massive permissiveness toggle') }}
+{%- endmacro -%}
 
 {%- block confirm_text -%}
 	<p>{{ _('Do you really want to toggle <em><strong>permissiveness</strong></em> on selected groups?') }}</p>

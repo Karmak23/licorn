@@ -1,14 +1,12 @@
 
+{%- extends 'users/massive.html' -%}
 
-
-{%- extends 'users/massive_select.html' -%}
-
-{%- block title -%}
-      <h3>{{ _('Massive delete confirmation') }}</h3>
-    {%- endblock -%}
+{%- macro massive_dialog_title() -%}
+	{{ _('Massive deletion confirmation') }}
+{%- endmacro -%}
 
 {%- block confirm_text -%}
-	<p>{{ _('Do you really want to <em><strong>delete</strong></em> all selected users ?') }}</p>
+	<p>{{ _('Do you really want to <em><strong>delete</strong></em> selected users?') }}</p>
 {%- endblock -%}
 
 {%- block end_text -%}
@@ -35,9 +33,6 @@
 				</td>
 			</tr>
 		</table>
-
-		
-
 	</span>
 </div>
 

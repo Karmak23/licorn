@@ -1,14 +1,8 @@
-{%- extends 'groups/massive_select.html' -%}
+{%- extends 'groups/massive.html' -%}
 
-{%- block title -%}
-	{%- if noop -%}
-		{{ super() }}
-
-	{%- else -%}
-		<h3>{{ _('Massive skeleton re-application') }}</h3>
-
-	{%- endif -%}
-{%- endblock -%}
+{%- macro massive_dialog_title() -%}
+	{{ _('Massive skeleton re-application') }}
+{%- endmacro -%}
 
 {%- block confirm_text -%}
 	<p>{{ _('Do you really want to groups\' <em><strong>skeleton</strong></em> on selected groups\' member?') }}</p>

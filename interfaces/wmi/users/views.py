@@ -436,21 +436,35 @@ def generate_pwd(request, *args, **kwargs):
 		}))
 
 def massive_select_template(request, action_name, uids, *args, **kwargs):
+
 	users = [ LMC.users.guess_one(u) for u in uids.split(',') ]
-	template = None
 
-	_dict = { 'users' : users }
-
-	if action_name == 'delete':
-		_dict.update({
-			"archive_dir" : settings.home_archive_dir,
-			'admin_group' : settings.defaults.admin_group })
 	if action_name == 'edit':
 		return get_user_template(request, "massiv", users)
 
-	return HttpResponse(
-		render_to_string('users/parts/massive_{0}.html'.format(action_name),
-			_dict))
+	if action_name in ('skel', ):
+		_dict = {
+			'users'  : [ u for u in users if u.is_standard ],
+			'others' : [ u for u in users if not u.is_standard ]
+		 }
+
+	else:
+		_dict = { 'users' : users, 'others': None }
+
+	if action_name == 'delete':
+		_dict.update({
+				'archive_dir' : settings.home_archive_dir,
+				'admin_group' : settings.defaults.admin_group
+			})
+
+	if _dict.get('others') and not _dict.get('users'):
+		_dict['noop'] = True
+
+	else:
+		_dict['noop'] = False
+
+	return HttpResponse(render_to_string('users/parts/massive_{0}.html'.format(
+														action_name), _dict))
 
 def get_user_template(request, mode, users):
 	print "get_user_template", mode, users

@@ -1,8 +1,8 @@
-{%- extends 'groups/massive_select.html' -%}
+{%- extends 'groups/massive.html' -%}
 
-{%- block title -%}
-	<h3>{{ _('Massive export confirmation') }}</h3>
-{%- endblock -%}
+{%- macro massive_dialog_title() -%}
+	{{ _('Massive export confirmation') }}
+{%- endmacro -%}
 
 {%- block confirm_text -%}
 	<p>{{ _('Do you really want to <em><strong>export</strong></em> selected groups ?') }}</p>

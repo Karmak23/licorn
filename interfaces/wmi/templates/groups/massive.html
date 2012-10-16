@@ -1,0 +1,24 @@
+
+{%- extends 'massive-common.html' -%}
+
+{%- macro not_applicable_text() -%}
+	{{ _('This action is not applicable to the group(s) you selected:') }}
+{%- endmacro -%}
+
+{%- macro not_applicable_unselected_text() -%}
+	{{ _('this operation is not applicable to one or more groups; they have been automatically un-selected:') }}
+{%- endmacro -%}
+
+{%- macro not_applicable_list(others) -%}
+	{%- for g in others -%}
+		<li> {{ g.name }}</li>
+	{%- endfor -%}
+{%- endmacro -%}
+
+{%- block data_list -%}
+	{%- block groups_list -%}
+		{%- for g in groups -%}
+			<li> {{ g.name }}</li>
+		{%- endfor -%}
+	{%- endblock -%}
+{%- endblock -%}

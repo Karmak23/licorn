@@ -1,15 +1,15 @@
-{%- extends 'users/massive_select.html' -%}
 
-{%- block title -%}
-	<h3>{{ _('Massive skel confirmation') }}</h3>
-{%- endblock -%}
+{%- extends 'users/massive.html' -%}
+
+{%- macro massive_dialog_title() -%}
+	{{ _('Massive skel re-application') }}
+{%- endmacro -%}
 
 {%- block confirm_text -%}
-	<p>{{ _('Do you really want to reapply users\' <em><strong>skeleton</strong></em> on all selected users?') }}</p>
+	<p>{{ _('Do you really want to reapply a <em><strong>skeleton</strong></em> to selected users?') }}</p>
 {%- endblock -%}
 
-
 {%- block end_text -%}
-	<p>	{{ _("This will reset the desktops, icons and menus of all members of the group, according to the content of the skel you choose. This will NOT alter any of the user personnal data, nor the group shared data.") }}
+	<p>	{{ _("This will reset the desktops, icons and menus of selected user accounts, according to the content of the skel you choose. This will NOT alter any of the user personnal data, nor the group shared data.") }}
 	</p>
 {%- endblock -%}

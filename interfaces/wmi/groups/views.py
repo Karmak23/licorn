@@ -324,7 +324,6 @@ def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 def massive_select_template(request, action_name, gids, *args, **kwargs):
 
 	groups = [ LMC.groups.guess_one(g) for g in gids.split(',') ]
-	template = None
 
 	if action_name == 'edit':
 		return get_group_template(request, "massiv", groups)
@@ -340,9 +339,9 @@ def massive_select_template(request, action_name, gids, *args, **kwargs):
 
 	if action_name == 'delete':
 		_dict.update({
-			"archive_dir" : settings.home_archive_dir,
-			'admin_group' : settings.defaults.admin_group })
-
+				'archive_dir' : settings.home_archive_dir,
+				'admin_group' : settings.defaults.admin_group
+			})
 
 	if _dict.get('others') and not _dict.get('groups'):
 		_dict['noop'] = True

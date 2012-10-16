@@ -1,0 +1,58 @@
+{%- extends 'modal.html' -%}
+
+{%- block title -%}
+	<h3>
+	{%- if noop -%}
+		{{ _('Unapplicable massive action') }}
+
+	{%- else -%}
+		{{ massive_dialog_title() or _('Massive action confirmation') }}</h3>
+
+	{%- endif -%}
+	</h3>
+{%- endblock -%}
+
+{%- block body -%}
+	{%- if noop -%}
+		<p class="alert alert-error">{{ not_applicable_text() }}</p>
+
+		<ul>
+		{{ not_applicable_list(others) }}
+		</ul>
+
+	{%- else -%}
+		{%- block confirm_text -%}{%- endblock -%}
+
+		<ul>
+		{%- block data_list -%}{%- endblock -%}
+		</ul>
+
+		{%- block end_text -%}{%- endblock -%}
+
+		{%- if others -%}
+			<div class="grayed_out smaller">
+				<p>{{_('NOTE:') }} {{ not_applicable_unselected_text() }}</p>
+				<ul>
+				{{ not_applicable_list(others) }}
+				</ul>
+			</div>
+		{%- endif -%}
+	{%- endif -%}
+{%- endblock -%}
+
+{%- block footer -%}
+	{%- if noop -%}
+		<a href="#" class="btn" data-dismiss="modal">{{ _('Bummer!') }}</a>
+
+	{%- else -%}
+		<a href="#" class="btn" data-dismiss="modal">{{ _('Cancel') }}</a>
+		<a href="#" class="btn btn-primary" id="apply_massive_action">{{ _('Proceed') }}</a>
+
+	{%- endif -%}
+{%- endblock -%}
+
+
+
+
+
+
