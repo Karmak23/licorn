@@ -409,6 +409,10 @@ function does_row_match_search(row) {
 function update_number_items(list_name) {
 	$('#model_'+list_name+'_count').html($('#model_'+list_name+'_table .licorn_row:visible').length)
 }
+function update_total_items(list_name, number) {
+	console.log("update_total_items", number)
+	$('#model_'+list_name+'_total').html(number)
+}
 
 function bind_hotkeys(list_name) {
 	/* Bind all hotkeys

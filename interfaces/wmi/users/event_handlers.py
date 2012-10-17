@@ -58,6 +58,8 @@ def user_added_handler(request, event):
 
 	yield update_user_row(user)
 
+	yield utils.format_RPC_JS('update_total_items', 'users', "/"+str(len(LMC.users)))
+
 def user_deleted_handler(request, event):
 
 	login  = event.kwargs['login']
@@ -68,6 +70,8 @@ def user_deleted_handler(request, event):
 						u'the system.').format(login))
 
 	yield update_user_row(None, remove=True, uid=uid)
+
+	yield utils.format_RPC_JS('update_total_items', 'users', "/"+str(len(LMC.users)))
 
 
 def user_gecos_changed_handler(request, event):

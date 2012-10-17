@@ -46,6 +46,8 @@ def group_added_handler(request, event):
 	yield utils.notify(_(u'Group "{0}" added on the system.').format(group.name))
 
 	yield update_group_row(group)
+
+	yield utils.format_RPC_JS('update_total_items', 'groups', "/"+str(len(LMC.groups)))
 def group_deleted_handler(request, event):
 
 	system = event.kwargs['system']
@@ -56,6 +58,8 @@ def group_deleted_handler(request, event):
 
 	yield update_group_row(None, remove=True, gid=gid)
 
+	yield utils.format_RPC_JS('update_total_items', 'groups', "/"+str(len(LMC.groups)))
+
 def group_member_deleted_handler(request, event):
 
 	user  = event.kwargs['user']
@@ -64,7 +68,7 @@ def group_member_deleted_handler(request, event):
 	gid = group.gidNumber if not group.is_helper else group.standard_group.gidNumber
 
 	yield utils.format_RPC_JS(
-		'update_relationship', 
+		'update_relationship',
 		user.uidNumber, gid, 0)
 
 	yield utils.notify(_(u'User "{0}" has no more relationship with '

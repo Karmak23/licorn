@@ -9,7 +9,7 @@
 
 
 {%- block list_title -%}
-	{{ _('Groups') }} (<span id='model_groups_count'></span><span style="font-size:18px;">/{{ groups|length }}</span>)
+	{{ _('Groups') }} (<span id='model_groups_count'></span><span id="model_groups_total" style="font-size:18px;">/{{ groups|length }}</span>)
 {%- endblock -%}
 
 {%- block massive_actions -%}
