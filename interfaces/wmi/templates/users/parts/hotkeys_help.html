@@ -1,44 +1,17 @@
 
-{%- extends 'modal.html' -%}
+{%- extends 'hotkeys.html' -%}
 
-
-    {%- block title -%}
-      <h3>{{ _('Hotkeys help') }}</h3>
-    {%- endblock -%}
-    {%- block body -%}
-
-      <p>
-          Several hotkeys have been set to simplify your navigation.
-      </p>
-
-      <ul>
-        <li><strong><em>J/K</strong></em>: preselect previus/following row</li>
-        <li><strong><em>S</strong></em>: select/unselect a preselected row</li>
-        <br/>
-        <li><strong><em>N</strong></em>: add a new group</li>
-        <br/>
-        <li><strong><em>ENTER</strong></em>: edit/mass edit selected row(s)</li>
-        <br/>
-        <li><strong><em>SUPPR/DELETE</strong></em>: massive delete operation on selected row(s)</li>
-        <li><strong><em>L</strong></em>: massive delete operation on selected row(s)</li>
-        <li><strong><em>X</strong></em>: massive export operation on selected row(s)</li>
-        <li><strong><em>P</strong></em>: massive toggle lock operation on selected row(s)</li>
-        <br/>
-        <li><strong><em>ESCAPE</strong></em>: (in order)
-          <ul>
-              <li>hide the modal</li>
-              <li>unfocus the search field</li>
-              <li>unselect selected row(s)</li>
-          </ul>
-        </li>
-
-        
-        
-      </ul>
-
+    {%- block help_title -%}
+      {{ _('User accounts management help') }}
     {%- endblock -%}
 
-
-  {%- block footer -%}
-    <a href="#" class="btn" data-dismiss="modal">Close</a>
-  {%- endblock -%}
+	{%- block help_specific -%}
+		<h4>{{ _('User accounts specific operations:') }}</h4>
+		<ul>
+			<li><strong>{{ _('N') }}</strong>{{ _(': create a new account,') }}</li>
+			<li><strong>{{ _('Backspace') }} {{ _('or') }} {{ _('Delete') }}</strong>{{ _(': delete selected account(s),') }}</li>
+			<li><strong>{{ _('L') }}</strong>{{ _(': reapply a skeleton on selected account(s),') }}</li>
+			<li><strong>{{ _('X') }}</strong>{{ _(': export selected account(s) (CSV or XML format),') }}</li>
+			<li><strong>{{ _('P') }}</strong>{{ _(': toggle locked state of selected account(s).') }}</li>
+		</ul>
+    {%- endblock -%}

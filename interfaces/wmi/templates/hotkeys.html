@@ -1,0 +1,43 @@
+{%- extends 'modal.html' -%}
+
+	{%- block title -%}
+		<h3>
+			{%- block help_title -%}{{ _('Hotkeys help') }}{%- endblock -%}
+		</h3>
+	{%- endblock -%}
+
+    {%- block body -%}
+
+		{%- block help_prepend -%}
+		{%- endblock -%}
+
+		{%- block help_specific -%}
+		{%- endblock -%}
+
+		<p>&nbsp;</p>
+
+		{%- block help_global -%}
+			<h4>{{ _('These hotkeys are always available in all list-enabled pages:') }}</h4>
+			<ul>
+				<li><strong>{{ _('J') }}</strong> {{ _('and') }} <strong>{{ _('K') }}</strong>{{ _(': move to previous / next row,') }}</li>
+				<li><strong>{{ _('S') }}</strong>{{ _(': select or unselect the current pre-selected row.') }}</li>
+				<li><strong>{{ _('Enter') }}</strong>{{ _(': edit or open selected row(s).') }}</li>
+				<li><strong>ESC</strong>{{ _(': (in this priority order)') }}
+				  <ul>
+					  <li>{{ _('hide the modal dialog (if it is open),') }}</li>
+					  <li>{{ _('clear the search field (if not empty) and reset the filtered rows,') }}</li>
+					  <li>{{ _('clears the current row(s) selection (if any are selected).') }}</li>
+				  </ul>
+				</li>
+			</ul>
+		{%- endblock -%}
+
+		{%- block help_append -%}
+		{%- endblock -%}
+
+    {%- endblock -%}
+
+
+	{%- block footer -%}
+		<a href="#" class="btn" data-dismiss="modal">Close</a>
+	{%- endblock -%}

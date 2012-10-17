@@ -1,40 +1,14 @@
 
-{%- extends 'modal.html' -%}
+{%- extends 'hotkeys.html' -%}
 
-
-    {%- block title -%}
-      <h3>{{ _('Hotkeys help') }}</h3>
-    {%- endblock -%}
-    {%- block body -%}
-
-      <p>
-          Several hotkeys have been set to simplify your navigation.
-      </p>
-
-      <ul>
-        <li><strong><em>J/K</strong></em>: preselect previus/following row</li>
-        <li><strong><em>S</strong></em>: select/unselect a preselected row</li>
-        <br/>
-        <li><strong><em>ENTER</strong></em>: edit/mass edit selected row(s)</li>
-        <br/>
-        <li><strong><em>U</strong></em>: massive upgrade operation on selected row(s)</li>
-        <li><strong><em>H</strong></em>: massive shutdown operation on selected row(s)</li>
-        <br/>
-        <li><strong><em>ESCAPE</strong></em>: (in order)
-          <ul>
-              <li>hide the modal</li>
-              <li>unfocus the search field</li>
-              <li>unselect selected row(s)</li>
-          </ul>
-        </li>
-
-        
-        
-      </ul>
-
+    {%- block help_title -%}
+      {{ _('Machines management help') }}
     {%- endblock -%}
 
-
-  {%- block footer -%}
-    <a href="#" class="btn" data-dismiss="modal">Close</a>
-  {%- endblock -%}
+	{%- block help_specific -%}
+		<h4>{{ _('Machine specific operations:') }}</h4>
+		<ul>
+			<li><strong>{{ _('U') }}</strong>{{ _(': upgrade selected machine(s), if applicable,') }}</li>
+			<li><strong>{{ _('H') }}</strong>{{ _(': shutdown selected machine(s), if applicable.') }}</li>
+		</ul>
+    {%- endblock -%}
