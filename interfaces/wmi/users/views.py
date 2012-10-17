@@ -45,56 +45,6 @@ from licorn.interfaces.wmi.libs.decorators import staff_only, check_users
 
 from forms import UserForm, SkelInput, ImportForm, get_user_form_blocks
 
-@staff_only
-def message(request, part, uid=None, *args, **kwargs):
-
-	assert ltrace_func(TRACE_DJANGO)
-
-	if uid != None:
-		user = LMC.users.by_uid(uid)
-
-	if part == 'delete':
-		html = render_to_string('users/delete_message.html', {
-			'user_login'  : user.login,
-			'archive_dir' : settings.home_archive_dir,
-			'admin_group' : settings.defaults.admin_group,
-			})
-
-	elif part == 'lock':
-		is_member_remote = False
-		remote_group = ''
-		# TODO !
-		#print utils.select('extensions', all=True)
-
-		#if 'openssh' in LMC.extensions.keys() and user.login in LMC.groups.by_name(
-		#	name=LMC.extensions.openssh.group).members:
-		#		is_member_remote = True
-		#		remote_group = LMC.extensions.openssh.group
-
-		html = render_to_string('users/lock_message.html', {
-			'user_login'       : user.login,
-			'is_member_remote' : is_member_remote,
-			'gnu_acr'          : w.acr('GNU'),
-			'ssh_acr'          : w.acr('SSH'),
-			'rsa_acr'          : w.acr('RSA'),
-			'dsa_acr'          : w.acr('DSA'),
-			'remote_group'     : remote_group})
-
-	elif part == 'skel':
-		html = render_to_string('users/skel_message.html', {
-				'complete_template' : True,
-				'user_login'        : user.login,
-				'skel_input'        : SkelInput(class_name='skel_to_apply')
-			})
-
-	elif part == 'massive_skel':
-		html = render_to_string('users/skel_message.html', {
-				'complete_template' : False,
-				'skel_input'        : SkelInput(class_name='skel_to_apply')
-			})
-
-	return HttpResponse(html)
-
 # NOTE: mod() is not protected by @staff_only because standard users
 # need to be able to modify their personnal attributes (except groups).
 @login_required
