@@ -462,9 +462,6 @@ def get_user_template(request, mode, users):
 	for k in sorted(form_blocks.iterkeys()):
 		sorted_blocks.update({ k: form_blocks[k]})
 
-
-	print "BLOCKSSS", sorted_blocks
-
 	_dict.update({
 				'mode'    	  : mode,
 				'form'        : UserForm(mode, users[0]),
@@ -475,23 +472,17 @@ def get_user_template(request, mode, users):
 	if mode == 'edit':
 		_dict.update({"user" : users[0] })
 
-	#print "rendering group.html", _dict
-
 	if request.is_ajax():
 
 		return render(request, 'users/user.html', _dict)
 
 	else:
 		# render the full page
-		groups = LMC.groups.select(filters.STANDARD)
+		users = LMC.users.select(filters.STANDARD)
 
 		if request.user.is_superuser:
-			for g in LMC.groups.select(filters.SYSTEM):
-				if not g.is_helper:
-					groups.append(g)
-		else:
-			for g in LMC.groups.select(filters.PRIVILEGED):
-				groups.append(g)
+			for u in LMC.users.select(filters.SYSTEM):
+					users.append(u)
 
 		return render(request, 'users/index.html', {
 				'request' : request,

@@ -6,8 +6,6 @@ from licorn.foundations import hlstr
 urlpatterns = patterns('users.views',
     (r'^/?$', 'main'),
 
-    (r'^.*message/(?P<part>.+)/(?P<uid>\d+)?/?$', 'message'),
-
     (r'^new/?$', 'user', { 'action': 'new' }),
 
     (r'^edit/(?P<uid>\d+)/?$', 'user',  { 'action': 'edit' }),

@@ -383,11 +383,6 @@ def get_group_template(request, mode, groups):
 					}) for u in pyutils.alphanum_sort(LMC.users.select(filters.SYSTEM), key='login')])
 			}
 		)
-		"""users_list.append( ( _('System users') ,  {
-			'groups' : groups,
-			'name'  : 'system',
-			'users' : utils.select('users', default_selection=filters.SYSTEM)
-		}))"""
 
 	# we need to sort the form_blocks dict to display headers in order
 	sorted_blocks = OrderedDict({})
@@ -405,10 +400,7 @@ def get_group_template(request, mode, groups):
 	if mode == 'edit':
 		_dict.update({"group" : groups[0] })
 
-	#print "rendering group.html", _dict
-
 	if request.is_ajax():
-
 		return render(request, 'groups/group.html', _dict)
 
 	else:
@@ -425,7 +417,7 @@ def get_group_template(request, mode, groups):
 
 		return render(request, 'groups/index.html', {
 				'request' : request,
-				'groups' : sorted(groups, key= lambda x: attrgetter('name')(x).lower()),
+				'groups' : pyutils.alphanum_sort(groups, key='name'),
 				'modal_html' : render(request, 'groups/group.html', _dict) \
 						if mode == 'new' else render_to_string('groups/group.html', _dict)
 			})
