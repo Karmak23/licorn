@@ -84,7 +84,6 @@ function password_helpers(content) {
 	});
 }
 
-
 var reA = /[^a-zA-Z]/g;
 var reN = /[^0-9]/g;
 
@@ -175,7 +174,7 @@ function my_setup_table_search(searchbox) {
 	// in the search field before making search happens
 	var search_timeout;
 	searchbox.keyup(function() {
-
+	
 		// clear the timer
 		clearTimeout(search_timeout)
 		search_timeout = setTimeout( function() {
@@ -271,6 +270,7 @@ function setup_table_filter(div, items, filters) {
 			filters[$(this).data('filter')] = true;
 		}
 		do_filter();
+		$('#list_search').keyup()
 	})
 
 	do_filter();
@@ -440,9 +440,8 @@ function bind_hotkeys(list_name) {
 	*/
 
 	// cache selectors used
-	searchb = $('#list_search');
-	modal = $('#modal')
-
+	var searchb = $('#list_search');
+	var modal = $('#modal')
 
 	$(document).keyup(function(e) {
 		
