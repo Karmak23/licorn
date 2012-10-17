@@ -3,7 +3,7 @@
 
 {%- from 'widgets/common.html' import menu_item -%}
 
-<div id="banner" data-spy="affix" class="span2">
+<div id="banner" class="span2" style="position:fixed;">
 	<div id="header">
 		<div id="logo_wrapper">
 			<a id="logo" href="/"
@@ -228,8 +228,8 @@
 	{{ version_html() }}
 </div><!-- banner -->
 <script type="text/javascript">
-	$(document).ready(function() {
-		$('#logo_img').hide().delay(500).fadeIn('slow');
-	});
+	//$(document).ready(function() {
+	//	$('#logo_img').hide().delay(500).fadeIn('slow');
+	//});
 </script>
 
