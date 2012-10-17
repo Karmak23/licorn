@@ -51,16 +51,16 @@
 	{%- endfor -%}
 
 	<script language="javascript" type="text/javascript">
-	
+
 		$(document).ready(function() {
 
 			// setup the list
 			var START_TIME = new Date().getTime();
-			
+
 			setup_list('machines');
 
 			setup_upgrade_facilities()
-			
+
 			var END_TIME = new Date().getTime();
 			totalTime = (END_TIME - START_TIME);
 			console.log("total time to setup machines list", totalTime);
@@ -83,10 +83,13 @@
 				})
 			}
 		}
-		
+
 		function get_list_column() {
 			return ["String", "String", "String", "String", "String"]
 		}
+
+		// filters used to filter the table
+		var filters = { 'standard' : true, 'system': true, 'restricted': false}
 
 		function setup_upgrade_facilities(selector) {
 			if (selector == null) {
