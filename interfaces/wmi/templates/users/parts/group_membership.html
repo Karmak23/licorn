@@ -60,7 +60,7 @@
 {% set button_types = { "0": 'default', "1":'primary', "2":'success', "3":'danger', "4":'warning' } %}
 {% set current_rel = get_group_membership(users, group)|trim %}
 
-<span class="btn btn-{{ button_types[current_rel] }} trigger_popover" data-rel="{{current_rel}}" data-id={{group.gidNumber}} id="btn_{{group.gidNumber}}">
+<span class="btn btn-{{ button_types[current_rel] }} trigger_popover" data-rel="{{current_rel}}" data-id={{group.gidNumber}} id="btn_{{group.gidNumber}}" data-type="group">
 	<span class='group_name'>{{ group.name }}</span> <span class='rel_img'>{{ get_image_relationship[current_rel]}}</span>
 
 

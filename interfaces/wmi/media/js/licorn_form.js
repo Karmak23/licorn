@@ -59,12 +59,11 @@ function update_relationship(user_id, group_id, rel_id) {
 
 	// find the popover
 	btn = $('#btn_'+user_id)
-	if (btn.length == 0) {
+	if (btn.data('type') != 'user' || btn.length == 0) {
 		console.log('not')
 		btn = $('#btn_'+group_id)
-		
 	}
-	
+
 	// update the current click_item
 	console.log("btn", btn)
 	btn.attr('data-rel', rel_id)
