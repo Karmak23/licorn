@@ -1699,13 +1699,33 @@ def backup_file(filename):
 	"""
 	backup_name = filename + backup_ext
 
-	open(backup_name, 'wb').write(open(filename, 'rb').read())
+	try:
+		current_data = open(filename, 'rb').read()
 
-	clone_stat(filename, backup_name)
+	except (IOError, OSError), e:
+		if e.errno != errno.ENOENT:
+			raise
 
-	logging.progress(_(u'Backed up {orig} as {backup}.').format(
-			orig=stylize(ST_PATH, filename),
-			backup=stylize(ST_COMMENT, backup_name)))
+		# We will create an empty backup
+		touch(backup_name)
+
+		# As there is no original file, we cannot clone
+		# its permissions. Thus we assign sane defaults.
+		os.chown(backup_name, 0, 0)
+		os.chmod(backup_name, 0644)
+		logging.warning2(_(u'{funcname}: {orig} was missing, created an empty '
+							u'{backup}.').format(
+							funcname=stylize(ST_NAME, 'fsapi.backup_file()'),
+							orig=stylize(ST_PATH, filename),
+							backup=stylize(ST_COMMENT, backup_name)))
+
+	else:
+		open(backup_name, 'wb').write(current_data)
+		clone_stat(filename, backup_name)
+
+		logging.progress(_(u'Backed up {orig} as {backup}.').format(
+							orig=stylize(ST_PATH, filename),
+							backup=stylize(ST_COMMENT, backup_name)))
 def is_backup_file(filename):
 	"""Return true if file is a backup file (~,.bak,…)."""
 	if filename[-1] == '~':
@@ -1990,6 +2010,9 @@ def blkid(partition=None, *args, **kwargs):
 
 		:param partition: a string, containing something like ``sda1`` or
 			``/dev/sda1``.
+
+		.. note:: the return value of this function is cached half a day. You
+			can call it with ``cache_force_expire=True`` to get a fresh value.
 	"""
 	result = process.execute([ 'blkid' ])[1].split('\n')
 	blkids = []

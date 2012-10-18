@@ -12,7 +12,7 @@ Extensions can "extend" :ref:`CoreController`s
 
 """
 
-import time
+import os, time
 from threading import Timer
 from licorn.foundations.threads import RLock
 
@@ -86,6 +86,10 @@ class LicornExtension(CoreModule):
 				manager=LMC.extensions,
 				controllers_compat=controllers_compat
 			)
+
+		# Where are our data file (configuration snipplets) stored?
+		self.paths.data_dir = os.path.join(LMC.configuration.share_data_dir,
+												'extensions', name, 'data')
 	def load(self, server_modules, batch=False, auto_answer=None):
 		""" TODO.
 

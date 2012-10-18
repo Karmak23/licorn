@@ -1316,20 +1316,17 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(opts.uid, LMC.users.by_uid)
 				])
 
-		guess = LMC.groups.guess_one
+		for g in self.select(LMC.groups, opts.groups_to_add.split(','),
+								opts, default_selection=None):
+			try:
+				g.add_Users(users_to_add, force=opts.force)
 
-		for g in opts.groups_to_add.split(','):
-			if g != '':
-				try:
-					g = guess(g)
-					g.add_Users(users_to_add, force=opts.force)
-
-				except exceptions.LicornException, e:
-					logging.warning(_(u'Unable to add user(s) {0} '
-						'in group {1} (was: {2}).').format(
-						', '.join((stylize(ST_LOGIN, user.login)
-							for user in users_to_add)),
-						stylize(ST_NAME, g.name), str(e)), to_local=False)
+			except exceptions.LicornException, e:
+				logging.warning(_(u'Unable to add user(s) {0} '
+					'in group {1} (was: {2}).').format(
+					', '.join((stylize(ST_LOGIN, user.login)
+						for user in users_to_add)),
+					stylize(ST_NAME, g.name), str(e)), to_local=False)
 
 		gc.collect()
 		assert ltrace(TRACE_ADD, '< add_user_in_group().')
@@ -1558,7 +1555,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			delay_until_second=task_delay_until_second,
 			args=task_args, kwargs=task_kwargs,
 			defer_resolution=task_defer_resolution)
-
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
 
@@ -1724,17 +1720,17 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		by_name = LMC.groups.by_name
 
-		for g in sorted(opts.groups_to_del.split(',')):
-			if g != '':
-				try:
-					g = by_name(g)
-					g.del_Users(users_to_del, batch=opts.batch)
-				except exceptions.DoesntExistException, e:
-					logging.warning(_(u'Unable to remove user(s) {0} '
-						'from group {1} (was: {2}).').format(
-						', '.join((stylize(ST_LOGIN, u.login)
-							for u in users_to_del)),
-						stylize(ST_NAME, g), str(e)), to_local=False)
+		for g in self.select(LMC.groups, opts.groups_to_del.split(','),
+								opts, default_selection=None):
+			try:
+				g.del_Users(users_to_del, batch=opts.batch)
+
+			except exceptions.DoesntExistException, e:
+				logging.warning(_(u'Unable to remove user(s) {0} '
+					'from group {1} (was: {2}).').format(
+					', '.join((stylize(ST_LOGIN, u.login)
+						for u in users_to_del)),
+					stylize(ST_NAME, g), str(e)), to_local=False)
 
 		gc.collect()
 		assert ltrace(TRACE_DEL, '< del_users_from_group()')

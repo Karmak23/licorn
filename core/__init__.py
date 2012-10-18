@@ -50,15 +50,20 @@ def start_message_thread():
 	msgth.start()
 
 def stop_message_thread():
+	""" Try to cancel the message timer. If that fails, it has already
+		displayed the "please wait" message; in that case, display a new
+		message indicating that we are going on.
+
+		.. note:: we don't delete the msgth, it's outside the scope of this
+			current function. This would lead to #936. """
 	global msgth
+
 	try:
 		# don't display the waiting message if not already done.
 		msgth.cancel()
 
 	except:
 		logging.notice(_(u'OK. We\'re running now!'))
-
-	del msgth
 
 class LicornMasterController(MixedDictObject):
 	""" The master container of all Licorn® system objects. It handles

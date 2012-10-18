@@ -13,12 +13,11 @@ Licorn core: groups - http://docs.licorn.org/core/groups.html
 
 import sys, os, stat, posix1e, re, gc, types, weakref
 
-from traceback  import print_exc
 from contextlib import nested
 from operator   import attrgetter
 
 from licorn.foundations           import logging, exceptions
-from licorn.foundations           import fsapi, pyutils, hlstr
+from licorn.foundations           import fsapi, pyutils, hlstr, events
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
@@ -1351,8 +1350,16 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					# the directory creation to assign the wanted
 					# permissive state.
 					return permissive
+			elif e.errno == 0:
+				# a very special case. Should probably be investigated more,
+				# but I don't even know how and where to do it.
+				logging.exception(_(u'group {0}: unable to resolve permissive '
+								u'state (was: {1}). Is the FS mounted with ACL '
+								u'option?').format(self.pretty_name, e))
+				return None
+
 			else:
-				raise e
+				raise
 	def __check_mutual_exclusions(self, user, force):
 		""" Verify a given user is not a member of two or more groups, from
 			the tuple (group, resp_group, guest_group).
@@ -1526,9 +1533,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 							#		stylize(ST_NAME, group.name),
 							#		stylize(ST_UGID, group.gid)))
 
-						except exceptions.AlreadyExistsException, e:
-							logging.warning(e)
-							print_exc()
+						except exceptions.AlreadyExistsException:
+							pass
 					else:
 						logging.warning(_(u'The system group '
 									u'{0} is required for the group {1} to be '
@@ -2371,8 +2377,8 @@ class GroupsController(DictSingleton, CoreFSController):
 					log = logging.notice
 
 				log(_(u'Created system group {0} '
-					u'(gid={1}).').format(stylize(ST_NAME, name),
-						stylize(ST_UGID, group.gid)))
+						u'(gid={1}).').format(stylize(ST_NAME, name),
+							stylize(ST_UGID, group.gid)))
 
 			if members_to_add:
 				group.add_Users(members_to_add)
@@ -2502,6 +2508,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			if (system and Group.is_system_gid(manual_gid)) or (
 						not system and Group.is_standard_gid(manual_gid)):
 				gid = manual_gid
+
 			else:
 				raise exceptions.BadArgumentError(_(u'GID out of range '
 					u'for the kind of group you specified. System GIDs '
@@ -2527,6 +2534,12 @@ class GroupsController(DictSingleton, CoreFSController):
 									inotified=inotified,
 									backend=self._prefered_backend
 										if backend is None else backend)
+
+		# Link any pre-existing users to the new group if we were creating
+		# an already-referenced but non-existing group. This happens when
+		# users have a non-existing primary group (see :meth:`__connect_users`
+		# for details.
+		self.__connect_users(groups=[group])
 
 		# calling this *before* backend serialization ensures that:
 		#	- helper groups will be created and serialized *before*
@@ -2580,18 +2593,13 @@ class GroupsController(DictSingleton, CoreFSController):
 					u'the --del-users argument. WARNING: this is '
 					u'usually a bad idea; use with caution.'))
 
-			if del_users:
-				for user in prim_memb:
-					LMC.users.del_User(user, no_archive, batch)
-
 			if group.is_system:
-
 				if group.is_helper and group.standard_group is not None:
 					raise exceptions.BadArgumentError(_(u'Cannot delete a '
 						u'helper group. Please delete the standard associated '
 						u'group %s instead, and this group will be deleted in '
 						u'the same time.') % stylize(ST_NAME,
-						group.standard_group.name))
+							group.standard_group.name))
 
 				elif group.is_system_restricted and not force:
 					raise exceptions.BadArgumentError(_(u'Cannot delete '
@@ -2599,6 +2607,19 @@ class GroupsController(DictSingleton, CoreFSController):
 						u'argument, this is too dangerous.') %
 							stylize(ST_NAME, group.name))
 
+			try:
+				LicornEvent('group_pre_del', group=group.proxy, force=force).emit(synchronous=True)
+
+			except exceptions.LicornStopException, e:
+				logging.warning(_(u'{0}: {1} deletion prevented: {2}.').format(
+									self.pretty_name, group.pretty_name, e))
+				return
+
+			if del_users:
+				for user in prim_memb:
+					LMC.users.del_User(user, no_archive, batch)
+
+			if group.is_system:
 				# wipe the group from the privileges if present there.
 				if group.is_privilege:
 					LMC.privileges.delete((group, ))
@@ -2609,7 +2630,7 @@ class GroupsController(DictSingleton, CoreFSController):
 					profile.del_Groups([ group ])
 
 				LicornEvent('group_deleted', name=group.name, gid=group.gid,
-											system=True).emit()
+														system=True).emit()
 
 				# NOTE: no need to wipe cross-references in auxilliary members,
 				# this is done in the Group.__del__ method.
@@ -2705,8 +2726,6 @@ class GroupsController(DictSingleton, CoreFSController):
 			logging.warning2(_(u'{0}: group {1} already not referenced in '
 				u'controller!').format(stylize(ST_NAME, self.name),
 					stylize(ST_NAME, name)))
-
-		LicornEvent('group_pre_del', group=group.proxy).emit(synchronous=True)
 
 		# NOTE: the backend deletion must be done *after* having deleted
 		# the object from the controller. See above WARNING.
@@ -2826,13 +2845,16 @@ class GroupsController(DictSingleton, CoreFSController):
 											resps + guests, job_delay=3.0)
 
 		del stds, resps, guests
-	def __connect_users(self, clear_first=False):
+	def __connect_users(self, groups=None, clear_first=False):
 		""" Iterate all users and connect their primary group to them, to speed
 			up future lookups.
 
 			:param clear_first: set to ``True`` only on a backend reload, else
 				not used.
 		"""
+
+		if groups is None:
+			groups = self
 
 		if clear_first:
 			for user in LMC.users:
@@ -2848,7 +2870,7 @@ class GroupsController(DictSingleton, CoreFSController):
 		#  don't serialize groups one by one (typically shadow).
 		to_rewrite = []
 
-		for group in self:
+		for group in groups:
 			to_rewrite.extend(g for g in group._setup_initial_links())
 
 		for group in to_rewrite:
@@ -2916,3 +2938,13 @@ class GroupsController(DictSingleton, CoreFSController):
 				return u'%s\n' % u'\n'.join((group._cli_get()
 								for group in sorted(groups, key=attrgetter('gid'))
 									if not group.is_helper))
+
+	@events.handler_method
+	def group_pre_del(self, *args, **kwargs):
+
+		group_name = kwargs.pop('group').name
+
+		if group_name in LMC.configuration.needed_groups() and not kwargs.pop('force', False):
+			raise exceptions.LicornStopException(_(u'Cannot delete essential '
+				u'Licorn® system group {0} without specifying --force on the '
+				u'command line').format(group_name))
