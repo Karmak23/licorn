@@ -32,14 +32,12 @@
 	<td data-sort="{{ machine.hostname }}">
 		<span class='machine_hostname_changed_handler' id='{{ machine.wid }}' data-mid="{{ machine.mid }}">{{ machine.hostname }}<span>
 
-		{%- if machine.hostname != machine.mid -%}
-			&nbsp; ( {{ machine.mid }} )
-		{%- endif -%}
-
-
 		<span id="machine_status" class='no_double_click'>
 			{{ updates_status(machine) }}
 		</span>
+	</td>
+	<td class='centered'>
+		{{ machine.mid }}
 	</td>
 	<td class='centered'>
 		{{ get_machine_backend_img(machine) }}
