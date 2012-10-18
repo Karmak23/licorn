@@ -2,6 +2,7 @@
     Distributed under the terms of the GNU GPL version 2. -#}
 
 {%- from 'widgets/common.html' import textinput -%}
+{%- from 'shares/widgets.html' import disconnected, unreachable -%}
 
 </style>
 	<div style="font-size:120%;
@@ -10,10 +11,10 @@
 
 	{%- if user.accepts_shares -%}
 		{%- if not myext.connected -%}
-			{%- include 'shares/parts/disconnected.html' with context -%}
+			{{ disconnected(request, myext) }}
 
 		{%- elif not myext.reachable -%}
-			{%- include 'shares/parts/unreachable.html' with context -%}
+			{{ unreachable(request, myext) }}
 
 		{%- endif -%}
 

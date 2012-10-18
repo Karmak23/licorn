@@ -6,18 +6,22 @@ Copyright (C) 2005-2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, fcntl, struct, socket, platform, re, netifaces
-import icmp, ip, time, select
+import sys, os, fcntl, struct, socket, select, platform, re, netifaces
+import icmp, ip, time
 
 from ping      import PingSocket
+from threading import current_thread, Event
 
 # other foundations imports.
-import logging, process, exceptions
+import logging, process, exceptions, styles, pyutils
 from threads   import RLock
 from styles    import *
 from ltrace	   import *
 from ltraces   import *
 from constants import distros
+
+# circumvent the `import *` local namespace duplication limitation.
+stylize = styles.stylize
 
 def netmask2prefix(netmask):
 	return (reduce(lambda x,y: x+y,
@@ -72,10 +76,20 @@ def interfaces(full=False):
 					continue
 			ifaces.append(iface)
 		return ifaces
-def find_server_Linux():
-	""" return the hostname / IP of our DHCP server. """
+def find_server_Linux(favorite, group):
+	""" Return the hostname (or IP, in some conditions) of our Licorn® server.
+		These are tried in turn:
 
-	from licorn.core import LMC
+		- ``LICORN_SERVER`` environment variable (always takes precedence, with
+		  a message; this variable should be used for debug / development purposes only;
+		- `zeroconf` lookup; this the "standard" way of discovery our server.
+		- LAN dhcp server on distros where it is supported (currently Ubuntu and Debian).
+
+		:param favorite: UUID of our optional favorite server, as a string
+			formated like `LMC.configuration.system_uuid` (no dashes).
+		:param group: an LXC cpuset. This is an undocumented feature. please do
+			not use outside of debugging / testing environments.
+	"""
 
 	env_server = os.getenv('LICORN_SERVER', None)
 
@@ -84,7 +98,23 @@ def find_server_Linux():
 			u'server; unset {1} if you prefer automatic detection.').format(
 				stylize(ST_IMPORTANT, env_server),
 				stylize(ST_NAME, 'LICORN_SERVER')))
-		return env_server
+
+		if ':' in env_server:
+			return env_server.split(':')
+
+		return env_server, None
+
+	return find_zeroconf_server_Linux(favorite, group)
+
+	"""
+	# NOTE: the next try is not used anymore but kept for reference in parsing
+	# dhclient command line arguments. It will fail on clients because
+	# `LMC.configuration` is not yet loaded: `find_server` is called in
+	# `foundations._settings` setup, to be able to lookup the server
+	# configuration. The distro data is in the local configuration, which is
+	# not accessible yet at the moment the settings are setup.
+
+	from licorn.core import LMC
 
 	if LMC.configuration.distro in (distros.LICORN, distros.UBUNTU,
 													distros.DEBIAN):
@@ -104,6 +134,136 @@ def find_server_Linux():
 		return None
 	else:
 		raise NotImplementedError(_(u'find_server() not implemented yet for your distro!'))
+	"""
+def find_zeroconf_server_Linux(favorite, group):
+	""" This code has been gently borrowed from
+		http://code.google.com/p/pybonjour/ and adapted for Licorn®.
+	"""
+
+	import pybonjour
+
+	# we use lists to be able to modify them simply
+	# from sub-defs without the "global" mess.
+	waited   = []
+	resolved = []
+	found    = Event()
+	timeout  = 3
+	caller   = stylize(ST_NAME, current_thread().name)
+
+	def resolve_callback(sdRef, flags, interfaceIndex, errorCode, fullname,
+												hosttarget, port, txtRecord):
+
+		if errorCode == pybonjour.kDNSServiceErr_NoError:
+			logging.progress(_(u'{0}: successfully found a Licorn® server via '
+								u'Bonjour at address {1}.').format(
+									stylize(ST_NAME, current_thread().name),
+									stylize(ST_URL, 'pyro://{0}:{1}/'.format(
+										hosttarget[:-1]
+											if hosttarget.endswith('.')
+											else hosttarget, port))))
+
+			txtRecord = pybonjour.TXTRecord.parse(txtRecord)
+
+			# Store host with uuid / group, to help find our eventual favorite.
+			resolved.append((txtRecord['uuid'], txtRecord['group'], hosttarget, port))
+
+			if favorite and txtRecord['uuid'] == favorite:
+				found.set()
+
+			else:
+				# We already have one server in the resolved list.
+				# If we have waited long enough, go with it and take
+				# the best we can.
+				if len(waited) > 12:
+					found.set()
+	def browse_callback(sdRef, flags, interfaceIndex, errorCode, serviceName,
+														regtype, replyDomain):
+		if errorCode != pybonjour.kDNSServiceErr_NoError:
+			return
+
+		caller = stylize(ST_NAME, current_thread().name)
+
+		if not (flags & pybonjour.kDNSServiceFlagsAdd):
+			logging.warning(_(u'{0}: service {1} removed!').format(caller,
+																serviceName))
+			return
+
+		logging.progress(_(u'{0}: service {1} added; now resolving…').format(
+														caller, serviceName))
+
+		resolve_sdRef = pybonjour.DNSServiceResolve(0,
+													interfaceIndex,
+													serviceName,
+													regtype,
+													replyDomain,
+													resolve_callback)
+
+		try:
+			current_wait = 0
+			while current_wait < 5:
+				waited.append(1)
+				current_wait += 1
+
+				ready = select.select([resolve_sdRef], [], [], timeout)
+
+				if resolve_sdRef in ready[0]:
+					pybonjour.DNSServiceProcessResult(resolve_sdRef)
+
+		finally:
+			resolve_sdRef.close()
+
+	# NOTE: the regtype is initially defined in daemon/main.py in the
+	# LicornDaemon.__register_bonjour_pyro() method.
+	browse_sdRef = pybonjour.DNSServiceBrowse(regtype = '_licorn_pyro._tcp',
+											  callBack = browse_callback)
+
+	try:
+		retry_not_displayed = True
+
+		while not found.is_set():
+			ready = select.select([browse_sdRef], [], [], timeout)
+
+			if browse_sdRef in ready[0]:
+				pybonjour.DNSServiceProcessResult(browse_sdRef)
+
+			if favorite and retry_not_displayed:
+				logging.warning(_(u'{0}: Resolving our favorite server via '
+					u'Bonjour. Please wait, this can take a while…').format(
+																	caller))
+				retry_not_displayed = False
+
+	finally:
+		browse_sdRef.close()
+
+	if favorite:
+		# If we have a favorite, we always look for it, and loop while not found.
+		for uuid, hgroup, host, port in resolved:
+			if uuid == favorite:
+				return socket.gethostbyname(host), port
+
+	else:
+		# If we don't have any favorite yet, we try to return a server from
+		# the "group". If no server is found in the looked up group, the first
+		# server found is returned.
+		# As the "group" feature is used only for debugging/testing, developers
+		# should have already taken care of starting the test server instance
+		# before the client ;-)
+		for uuid, hgroup, host, port in resolved:
+			if hgroup == group:
+				return socket.gethostbyname(host), port
+
+		uuid, hgroup, host, port = resolved[0]
+
+		logging.warning(_(u'{0}: could not find any server in my group, '
+							u'returning the first found {1} (group {2}).').format(
+								caller,
+								stylize(ST_URL, 'pyro://{0}:{1}/'.format(
+									host[:-1]
+										if host.endswith('.')
+										else host, port)),
+								stylize(ST_ATTR, hgroup)))
+
+		return socket.gethostbyname(host), port
 def find_first_local_ip_address_Linux():
 	""" try to find the main external IP address of the current machine (first
 		found is THE one). Return None if we can't find any.

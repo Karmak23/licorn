@@ -268,29 +268,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 	# ========================================= CLI "GET" interactive functions
 
-	def get_daemon_status(self, opts=None, args=None, cli_output=True):
-		""" This method is called from CLI tools. """
-
-		try:
-			if cli_output:
-				self.setup_listener_gettext()
-				remote_output(LMC.licornd.dump_status(opts.long_output,
-								opts.precision), clear_terminal=opts.monitor_clear)
-			else:
-				return LMC.licornd.dump_status(as_string=False)
-		except Exception:
-			# When the daemon is restarting, the CommandListener thread
-			# shutdowns the Pyro daemon, and its reference attribute is
-			# deleted, producing an AttributeError, forwarded to the
-			# client-side caller. We catch any other 'Exception' to avoid
-			# borking the client side.
-			#
-			# We just avoid forwarding it, this nothing to care about. As
-			# the current method is called many times in a 'while 1' loop
-			# on the client side, only one iteration of the loop will not
-			# produce any output, which will get totally un-noticed and
-			# is harmless.
-			logging.exception(_('Harmless Exception encountered in RWI.get_daemon_status()'))
 	def get_volumes(self, opts, args):
 
 		self.setup_listener_gettext()
@@ -322,7 +299,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					default_selection = self.__default_users_selection(opts, for_get=True),
 					all=opts.all)
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.users.to_script(selected=users_to_get,
+										script_format=opts.to_script,
+										script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.users.to_XML(selected=users_to_get,
 										long_output=opts.long_output)
 		else:
@@ -352,7 +334,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				default_selection=self.__default_groups_selection(opts),
 				all=opts.all)
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.groups.to_script(selected=groups_to_get,
+										script_format=opts.to_script,
+										script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.groups.to_XML(selected=groups_to_get,
 										long_output=opts.long_output)
 		else:
@@ -378,8 +365,14 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				],
 				default_selection=filters.ALL)
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.profiles.to_script(selected=profiles_to_get,
+										script_format=opts.to_script,
+										script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.profiles.to_XML(profiles_to_get)
+
 		else:
 			data = LMC.profiles._cli_get(profiles_to_get)
 
@@ -396,6 +389,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.xml:
 			data = LMC.keywords.ExportXML()
+
 		else:
 			data = LMC.keywords.Export()
 
@@ -410,8 +404,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace(TRACE_GET, '> get_privileges(%s,%s)' % (opts, args))
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.privileges.to_script(script_format=opts.to_script,
+											script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.privileges.ExportXML()
+
 		else:
 			data = LMC.privileges.ExportCLI()
 
@@ -466,13 +465,19 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.mid is not None:
 			try:
 				machines_to_get = LMC.machines.select("mid=" + unicode(opts.mid))
+
 			except KeyError:
 				logging.error("No matching machine found.", to_local=False)
 				return
 		else:
 			machines_to_get = LMC.machines.select(selection, return_ids=True)
 
-		if opts.xml:
+		if opts.to_script:
+			data = LMC.machines.to_script(selected=machines_to_get,
+											script_format=opts.to_script,
+											script_separator=opts.script_sep)
+
+		elif opts.xml:
 			data = LMC.machines.ExportXML(selected=machines_to_get,
 											long_output=opts.long_output)
 		else:
@@ -502,15 +507,22 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.all:
 			selection = filters.ALL
+
 		if opts.extinction:
 			selection = filters.EXTINCTION_TASK
+
 		else:
 			# Running, finished
 			pass
 
 		tasks_to_get = LMC.tasks.select(selection)
 
-		data = LMC.tasks._cli_get(selected=tasks_to_get,
+		if opts.to_script:
+			data = LMC.tasks.to_script(selected=tasks_to_get,
+											script_format=opts.to_script,
+											script_separator=opts.script_sep)
+		else:
+			data = LMC.tasks._cli_get(selected=tasks_to_get,
 										long_output=opts.long_output)
 
 		if data and data != '\n':
@@ -531,48 +543,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			remote_output(LMC.configuration.Export())
 
 		assert ltrace(TRACE_GET, '< get_configuration()')
-	def get_events_list(self, opts, args):
-		""" Output the list of internal events. """
-
-		self.setup_listener_gettext()
-
-		# we need to merge, because some events have only
-		# handlers, and others have only callbacks.
-		events_names = set(events.events_handlers.keys()
-							+ events.events_callbacks.keys())
-		max_name_len = max(len(x) for x in events_names)
-
-		if opts.verbose >= verbose.INFO:
-			remote_output(_(u'{0} distinct event(s), {1} handler(s) '
-					u'and {2} callback(s)').format(len(events_names),
-					sum(len(x) for x in events.events_handlers.itervalues()),
-					sum(len(x) for x in events.events_callbacks.itervalues())
-					) + u'\n')
-			for event_name in events_names:
-				handlers  = events.events_handlers.get(event_name, ())
-				callbacks = events.events_callbacks.get(event_name, ())
-
-				remote_output(_(u'Event: {0}\n\tHandlers:{1}{2}\n'
-						u'\tCallbacks:{3}{4}\n').format(
-					stylize(ST_NAME, event_name),
-					u'\n\t\t' if len(handlers) else u'',
-					u'\n\t\t'.join(_(u'{0} in module {1}').format(
-						stylize(ST_NAME, h.__name__),
-						stylize(ST_COMMENT, h.__module__)) for h
-							in handlers),
-					u'\n\t\t' if len(callbacks) else u'',
-					u'\n\t\t'.join(_(u'{0} in module {1}').format(
-						stylize(ST_NAME, c.__name__),
-						stylize(ST_COMMENT, c.__module__)) for c
-							in callbacks),
-				))
-		else:
-			for event_name in events_names:
-				remote_output(_(u'{0}: {1} handler(s), {2} callback(s).\n').format(
-							stylize(ST_NAME, event_name.rjust(max_name_len)),
-							len(events.events_handlers.get(event_name, ())),
-							len(events.events_callbacks.get(event_name, ())),
-						))
 
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
@@ -809,7 +779,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					]
 
 			# GECOS *always* takes precedence on first/last names. This is
-			# arbitrary but documented at 
+			# arbitrary but documented at
 			# http://docs.licorn.org/cli/add.en.html#massive-accounts-imports-from-files
 			if opts.gecos_col is not None:
 				columns_.append(('gecos', opts.gecos_col))
@@ -835,7 +805,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							# aggressive to achieve this.
 
 							# depending on the encoding, sometimes we cannot
-							# convert unicode into unicode, so check if it is 
+							# convert unicode into unicode, so check if it is
 							# already unicode.
 
 							if type(line[number]) == types.UnicodeType:

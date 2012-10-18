@@ -340,6 +340,11 @@ class WmiEventApplication(ObjectSingleton):
 		else:
 			content = [ data ]
 
+		# Don't send PUSH events more than every half-second. Eventually wait
+		# for more events to populate the user queue, to send them at once.
+		# This will make the JS side much happier and feel less doggy slow.
+		time.sleep(0.5)
+
 		# once we unblock, try to read as many items as possible, to avoid
 		# many consequent small request from the client.
 		while 1:
@@ -348,6 +353,9 @@ class WmiEventApplication(ObjectSingleton):
 
 			except Empty:
 				break
+
+		displayed_notifications = 0
+		skipped_notifications   = 0
 
 		tojson = []
 
@@ -363,7 +371,16 @@ class WmiEventApplication(ObjectSingleton):
 												stylize(ST_NAME, handler.__name__))
 
 							for json_output in handler(request, data):
-								tojson.append(json_output)
+
+								if displayed_notifications > 2 \
+									and json_output['method'] == 'show_message_through_notification':
+									skipped_notifications += 1
+
+								else:
+									if json_output['method'] == 'show_message_through_notification':
+										displayed_notifications += 1
+
+									tojson.append(json_output)
 
 					except:
 						logging.exception(_(u'Unexpected exception in Event '
@@ -384,6 +401,11 @@ class WmiEventApplication(ObjectSingleton):
 													request.META['REMOTE_ADDR'])
 
 				tojson.append(data)
+
+		if skipped_notifications:
+			tojson.append(utils.notify(_(u'… And {0} other notification(s), '
+								u'skipped for your visual comfort.').format(
+									skipped_notifications)))
 
 		result = json.dumps({ 'data': tojson })
 

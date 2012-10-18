@@ -30,6 +30,7 @@ from licorn.foundations.constants import filters, backend_actions, \
 
 from licorn.core                import LMC
 from licorn.core.classes        import CoreFSController, CoreStoredObject, CoreFSUnitObject
+from licorn.contrib             import getent
 #from licorn.core.users          import User
 
 class Group(CoreStoredObject, CoreFSUnitObject):
@@ -698,6 +699,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		"""
 
+		assert ltrace_func(TRACE_GROUPS)
+
 		# collect our primary members.
 
 		if not self.__pickled:
@@ -740,27 +743,46 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 										stylize(ST_LOGIN, member)))
 
 			else:
-				if user.weakref in self.__members:
-					rewrite = True
-					logging.warning(_(u'group {0}: removed duplicate '
-									u'relationship for member {1}.').format(
-										stylize(ST_NAME, self.__name),
-										stylize(ST_LOGIN, member)))
+				try:
+					if user.weakref in self.__members:
+						rewrite = True
+						logging.warning(_(u'group {0}: removed duplicate '
+										u'relationship for member {1}.').format(
+											stylize(ST_NAME, self.__name),
+											stylize(ST_LOGIN, member)))
 
-				elif user.weakref in self.__gidMembers:
-					rewrite = True
-					logging.warning(_(u'group {0}: removed primary member {1} '
-									u'from auxilliary members list.').format(
-										stylize(ST_NAME, self.__name),
-										stylize(ST_LOGIN, member)))
+					elif user.weakref in self.__gidMembers:
+						rewrite = True
+						logging.warning(_(u'group {0}: removed primary member {1} '
+										u'from auxilliary members list.').format(
+											stylize(ST_NAME, self.__name),
+											stylize(ST_LOGIN, member)))
 
-				else:
-					# this is an automated load procedure, not an administrative
-					# command. Don't display any notice nor information.
+					else:
+						# this is an automated load procedure, not an administrative
+						# command. Don't display any notice nor information.
 
-					# don't sort the groups, this will be done one time for all
-					# in the controller method.
-					user.link_Group(self)
+						# don't sort the groups, this will be done one time for all
+						# in the controller method.
+						user.link_Group(self)
+
+				except AttributeError:
+					# This problem should not occur in production environments,
+					# but I've seen it on a developper machine, with my account
+					# in shadow backend, 432 users in LDAP and 2 groups in LDAP.
+					# Making me member of one LDAP group makes my account be
+					# __del__() at daemon reboot, and all weakrefs point to
+					# nowhere. Re-importing everything makes the whole thing
+					# work like a charm, but to be able to re-import we need to
+					# be able to empty the LDAP users, which is impossible
+					# without catching this exception to continue loading.
+					#
+					# NOTE: there is the same in users.py at line 61.
+					if settings.experimental.enabled:
+						logging.warning(_(u'{0}: non-existing weakref link for '
+									u'member {1}!').format(self.name, member))
+					else:
+						raise
 
 		if rewrite:
 			yield self
@@ -1969,9 +1991,8 @@ class GroupsController(DictSingleton, CoreFSController):
 			# the needed information by another mean.
 			#
 			# FIXME: verify this is still needed.
-			import grp
-			users_gid = grp.getgrnam(
-						LMC.configuration.users.group).gr_gid
+			users_gid = getent.group(LMC.configuration.users.group).gid
+
 		try:
 
 			for line in posix1e.ACL(file=groups_home):
@@ -2161,6 +2182,17 @@ class GroupsController(DictSingleton, CoreFSController):
 				data += str(group)
 
 			return data
+	def to_script(self, selected=None, script_format=None, script_separator=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				groups = self
+			else:
+				groups = selected
+
+		return script_separator.join(script_format.format(group=group, g=group, self=group)
+														for group in groups)
 	def to_XML(self, selected=None, long_output=False):
 		""" Export the groups list to XML. """
 

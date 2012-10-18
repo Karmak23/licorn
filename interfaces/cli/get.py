@@ -15,18 +15,29 @@ import sys, os, Pyro.errors, time
 from threading import Thread
 from licorn.foundations.threads import RLock
 
-from licorn.foundations    import logging
-from licorn.interfaces.cli import LicornCliApplication, CliInteractor
-from licorn.core           import version, LMC
+from licorn.foundations           import settings, options, logging
+from licorn.foundations.constants import roles
+from licorn.interfaces.cli        import LicornCliApplication, CliInteractor
+from licorn.core                  import LMC
+
+def __get_master_object(opts):
+	if settings.role != roles.SERVER:
+		# On CLIENTS, rwi is remote, system is local. See core.LMC.connect()
+		return LMC.rwi if opts.remote else LMC.system
+
+	else:
+		return LMC.rwi
+
 
 def get_events(opts, args, listener):
 
-	if opts.monitor:
+	master_object = __get_master_object(opts)
 
+	if opts.monitor:
 		if opts.facilities is None:
 			opts.facilities = 'std'
 
-		monitor_id     = LMC.rwi.register_monitor(opts.facilities)
+		monitor_id     = master_object.register_monitor(opts.facilities)
 		cli_interactor = CliInteractor(listener)
 
 		try:
@@ -40,17 +51,19 @@ def get_events(opts, args, listener):
 				raise
 		finally:
 			try:
-				LMC.rwi.unregister_monitor(monitor_id)
+				master_object.unregister_monitor(monitor_id)
 
 			except Pyro.errors.ConnectionClosedError:
 				# the connection has been closed by the server side.
 				pass
 
 	else:
-		LMC.rwi.get_events_list(opts, args)
+		master_object.get_events_list(opts, args)
 def get_events_reconnect(opts, args, listener):
-	LMC.rwi.register_monitor(opts.facilities)
+	__get_master_object(opts).register_monitor(opts.facilities)
 def get_status(opts, args, listener):
+
+	master_object = __get_master_object(opts)
 
 	if opts.monitor:
 		def get_status_thread(opts, args, opts_lock, stop_event, quit_func):
@@ -66,7 +79,7 @@ def get_status(opts, args, listener):
 			while not stop_event.is_set():
 				with opts_lock:
 					try:
-						LMC.rwi.get_daemon_status(opts, args)
+						master_object.get_daemon_status(opts, args)
 
 					except Pyro.errors.ConnectionClosedError:
 						# wait a little before exiting, in case the daemon
@@ -120,12 +133,15 @@ def get_status(opts, args, listener):
 	else:
 		# we don't clear the screen for only one output.
 		opts.clear_terminal = False
+
 		try:
-			LMC.rwi.get_daemon_status(opts, args)
+			master_object.get_daemon_status(opts, args)
 
 		except:
 			logging.exception(_(u'Could not obtain daemon status'))
 def get_inside(opts, args, listener):
+
+	master_object = __get_master_object(opts)
 
 	import code
 
@@ -144,13 +160,13 @@ def get_inside(opts, args, listener):
 					return '	'
 				return None
 
-			return LMC.rwi.console_complete(phrase, state)
+			return master_object.console_complete(phrase, state)
 		def runsource(self, source, filename=None, symbol="single"):
 
 			if filename is None:
 				filename = "<licorn_remote_console>"
 
-			more, output = LMC.rwi.console_runsource(source, filename)
+			more, output = master_object.console_runsource(source, filename)
 
 			if output:
 				self.write(output)
@@ -181,23 +197,26 @@ def get_inside(opts, args, listener):
 	except ImportError:
 		history_file = None
 
+	succeeded = False
+
 	try:
 		try:
 			is_tty = sys.stdin.isatty()
 
-			LMC.rwi.console_start(is_tty=is_tty)
+			master_object.console_start(is_tty=is_tty)
 
 			if is_tty:
 				sys.ps1 = u'licornd> '
-				banner  =_(u'Licorn® {0}, Python {1} on {2}').format(
-								version,
-								sys.version.replace('\n', ''),
-								sys.platform)
+				banner  =_(u'Licorn® {0} version {2} role {1}, Python {3} on {4}').format(
+										*master_object.console_informations())
 
 			else:
 				sys.ps1 = u''
 				banner  = u''
+
 			console.interact(banner=banner)
+
+			succeeded = True
 
 		except:
 			logging.exception('Error running the remote console!')
@@ -214,10 +233,14 @@ def get_inside(opts, args, listener):
 				logging.exception(_(u'unable to write history file!'))
 
 		try:
-			LMC.rwi.console_stop()
+			master_object.console_stop()
 
 		except Pyro.errors.ConnectionClosedError:
 			pass
+
+		except:
+			if succeeded:
+				raise
 
 def get_main():
 

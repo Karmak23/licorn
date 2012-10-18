@@ -3,6 +3,11 @@ echo "START common script"
 
 rem =========================================================== Common features
 
+rem Unlock the computer from previous lockdown. This is done in the common
+rem features until #912 is resolved properly.
+regedit /s \\%servname%\netlogon\templates\registry\reset-mini.reg >nul
+
+
 rem Activate the profile mappings if you want them.
 rem regedit /s \\%servname%\netlogon\templates\registry\mapping_start_menu.reg >nul
 rem regedit /s \\%servname%\netlogon\templates\registry\mapping_programs.reg >nul

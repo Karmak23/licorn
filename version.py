@@ -19,4 +19,4 @@ while using the GIT flow tools on a new "release":
 :license: GNU GPL version 2
 """
 
-version = '1.5.4-dev+BStable'
+version = '1.6-dev:WMI3'

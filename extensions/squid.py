@@ -172,7 +172,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 			conf_dict['host'] = '127.0.0.1'
 
 		else:
-			conf_dict['host'] = LMC.configuration.server_main_address
+			conf_dict['host'] = settings.server_main_address
 
 		conf_dict['client_cmd_value_http'] = 'http://%s:%s/' % (
 			conf_dict['host'], conf_dict['port'])
@@ -349,7 +349,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 				apt_file.backup_and_save(batch=batch, auto_answer=auto_answer)
 
 		else:
-			self.remove_configuration()
+			self.remove_configuration(batch=True)
 
 		assert ltrace(globals()['TRACE_' + self.name.upper()], '< update_client()' )
 	def check(self, batch=False, auto_answer=None):

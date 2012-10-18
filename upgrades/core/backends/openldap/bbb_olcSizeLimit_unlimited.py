@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from licorn.foundations           import logging
+from licorn.foundations           import logging, settings
 from licorn.foundations           import ldaputils, events
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
+from licorn.foundations.constants import roles
 
 from licorn.core import LMC
 
@@ -19,6 +20,11 @@ else:
 
 	@events.callback_function
 	def backend_openldap_check_finished(*args, **kwargs):
+
+		if settings.role != roles.SERVER:
+			# Only servers will check / upgrade their local slapd installation.
+			# On other roles, they have no local `slapd`, thus nothing to upgrade.
+			return
 
 		backend = LMC.backends.openldap
 

@@ -1,10 +1,6 @@
 {#- Copyright 2011 META IT, Olivier Cortès <oc@meta-it.fr>, Robin Lucbernet<rl@meta-it.fr>
     Distributed under the terms of the GNU GPL version 2. -#}
 
-
-
-
-
 {%- extends 'modal.html' -%}
 
     {%- block title -%}
@@ -41,10 +37,6 @@
 	<form class="form-horizontal" id='user_form'>
 
 		{% csrf_token %}
-		
-
-
-
 
 	<ul class="nav nav-tabs" id="myTab">
 		{% for block in form_blocks %}
@@ -153,35 +145,6 @@
 		setup_sort_items('.trigger_popover', $('.sort_item'), "group_name");
 
 		password_helpers($('#ageneral'))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 		// init the popover
 		$('.trigger_popover').each(function() {

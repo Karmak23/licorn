@@ -67,6 +67,8 @@ base_packages  = ('pyro', 'python-pylibacl', 'python-ldap', 'python-xattr',
 				'python-sqlite', 'python-cracklib', 'python-pip',
 				'python-dmidecode', 'python-libxml2', 'python-dateutil',
 				'python-utmp', 'nmap', 'screen',
+				# needed for pybonjour to compile / run
+				'libavahi-compat-libdnssd1',
 				# LXC-environment forgotten packages
 				'psmisc')
 
@@ -83,6 +85,9 @@ build_packages  = ('build-essential', 'python-all-dev', 'debhelper',
 # NOTE: python-sphinx is not installed, because it's notstrictly
 # required (only for doc building), and on "older" distros it will
 # pull in a non-wanted old version of Jinja2 < 2.6.
+#
+# NOTE: other packages are manually installed in `install_all_packages()`.
+# Look there if you need to add PIP python modules to the installation.
 
 def err(*args):
 	""" just print something on stderr. """
@@ -176,6 +181,9 @@ def install_all_packages():
 		from apt_pkg import version_compare
 		import apt_pkg
 		apt_pkg.init()
+
+		# There is no Ubuntu version i'm aware of that has a package for pybonjour.
+		pip_install(('pybonjour', ))
 
 		if (distro == 'Ubuntu' and version_compare(rel_ver, '8.04') == 0
 			) or (distro == 'Debian' and version_compare(rel_ver, '6.0') < 1):
