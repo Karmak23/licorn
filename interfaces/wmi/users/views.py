@@ -182,32 +182,10 @@ def massive(request, uids, action, *args, **kwargs):
 			mod(request, uid=uid, action='groups', value=kwargs.get('value'))
 			# group is : group_id/rel_id
 
-<<<<<<< HEAD
 	if action == 'edit':
 		return get_user_template(request, "massiv",
 			[ groups.append(LMC.groups.guess_one(gid)) for gid in uids.split(',')])
-=======
-		_dict = {
-					'uids'                  : uids,
-					'users'                 : [ LMC.users.guess_one(u) for \
-														u in uids.split(',')],
-					'_mode'                 : "massiv",
-					'form'                  : UserForm("massiv", None),
-					'groups_lists'          : groups_list,
-					'title'                 : _("Massive edit")
-				}
 
-		if request.is_ajax():
-			return render(request, 'users/user.html', _dict)
-
-		else:
-			_dict.update({
-					'users_list'            : utils.select('users', default_selection=filters.STANDARD),
-					'system_users_list'     : utils.select('users', default_selection=filters.SYSTEM)
-				})
-
-			return render(request, 'users/user_template.html', _dict)
->>>>>>> develop
 
 	return HttpResponse('MASSIVE DONE.')
 
