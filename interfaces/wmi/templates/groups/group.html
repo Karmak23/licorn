@@ -78,23 +78,31 @@
 	{%- for list in users_lists -%}
 		<div class="tab-pane" id="{{ list.list_name }}">
 			<div>
-				{% if mode != 'new' %}
-					<div style="text-align:right;margin-bottom:20px;">
-						{{ _('Sort by:') }}
-						<span class="btn-group" data-toggle="buttons-radio">
-							<button type="button" id='sort_alpha' class="btn sort_item" data-sort="alpha" data-id="{{ list.list_name }}">
-								{{ _("User name") }}
-							</button>
-							<button type="button" id='sort_relation' class="btn sort_item" data-sort="relation" data-id="{{ list.list_name }}">
-								{{ _("Relationship") }}
-							</button>
-							
-						
+					<div class="row-fluid" style="margin-bottom:20px;">
 
-						</span>
+						<div class="span8">
+							
+								{{ _('More information on <a href="http://docs.licorn.org/groups/permissions" target=_blank>Groups permissions</a>')}}
+							
+						</div>
+
+						{% if mode != 'new' %}
+							<div class="span4">
+								<span class="btn-group" data-toggle="buttons-radio">
+									<button type="button" id='sort_alpha' class="btn btn-mini sort_item" data-sort="alpha" data-id="{{ list.list_name }}" title="{{ _('Sort list by user login') }}">
+										{{ _("User login") }}
+									</button>
+									<button type="button" id='sort_relation' class="btn btn-mini sort_item" data-sort="relation" data-id="{{ list.list_name }}" title="{{ _('Sort list by relationship') }}">
+										{{ _("Relationship") }}
+									</button>
+
+								</span>
+							</div>
+						
+						{% endif %}
 					</div>
-				{% endif %}
 				{{list.list_content}}
+				
 			</div>
     	</div>
 	{%- endfor -%}
