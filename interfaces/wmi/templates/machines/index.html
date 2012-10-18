@@ -21,6 +21,7 @@
 {%- endblock -%}
 
 {%- block list_filters -%}
+	<!-- 
 	<span class="btn-group" data-toggle="buttons-checkbox">
 		<button id='filter_server' class="btn filter_item" data-filter='server'>
 			<i class="icon-map-marker" title="{{ _('Servers') }}"></i>
@@ -35,6 +36,7 @@
 			<i class="icon-map-marker" title="{{ _('Other') }}"></i>
 		</button>
 	</span>
+	-->
 {%- endblock -%}
 
 {%- block list_headers -%}
@@ -89,7 +91,7 @@
 		}
 
 		// filters used to filter the table
-		var filters = { 'standard' : true, 'system': true, 'restricted': false}
+		var filters = { 'other' : true }
 
 		function setup_upgrade_facilities(selector) {
 			if (selector == null) {
