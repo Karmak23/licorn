@@ -924,9 +924,11 @@ def check_perms(dir_info, file_type=None, is_root_dir=False, check_symlinks=Fals
 
 		if __raise_or_return(stylize(ST_PATH, path), batch, auto_answer):
 			return
-	# taken from /usr/lib/python2.7/test/test_support.py, to try to avoid #902.
 
-	path = path.encode(sys.getfilesystemencoding() or 'ascii')
+	# Taken from /usr/lib/python2.7/test/test_support.py, to try to avoid #902.
+	# Please don't use 'ascii' as fallback, this is a very bad choice on any
+	# modern system, where all users files are encoded as utf-8 (#952).
+	path = path.encode(sys.getfilesystemencoding() or 'utf-8')
 
 	pretty_path = stylize(ST_PATH, path)
 
