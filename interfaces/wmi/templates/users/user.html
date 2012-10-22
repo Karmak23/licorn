@@ -131,12 +131,21 @@
 
   {%- endblock -%}
   {%- block footer -%}
-  	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
-    {% if mode == "new" %}
-    <a href="#" class="btn btn-primary" id="save_user_button">{{ _('Add user') }}</a>
-
-    {%endif%}
-
+  <div class="row-fluid">
+  	{% if mode == "new" %}
+	  	<div class="span7">
+	    	<input type='checkbox' id='keep_modal_open' style="float:left;">
+	    	<label for='keep_modal_open'>{{ _('Keep the modal open and  remember groups relationships.') }}</label>
+	    </div>
+	    <div class="span5">
+	    	<!--<button type="button" id='clear_form' class="btn">{{ _("Clear form") }}</button>-->
+	    	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+	    	<a href="#" class="btn btn-primary" id="save_user_button">{{ _('Add user') }}</a>
+	    </div>
+    {% else %}
+        <a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+	{%endif%}
+  </div>
 
     <style>
     	.my_popover{
@@ -179,7 +188,8 @@
 				{% elif mode == 'new' %}
 					{# no instant apply, but give a visual feedback #}
 					$('#popover_'+$(this).data('id')+' .instant_click').click(function() {
-						update_relationship($(this).data('id'), null, $(this).data('relid'))
+						console.log('click')
+						update_relationship(null,$(this).data('id'), $(this).data('relid'))
 					});
 				{% endif -%}
 			});
@@ -221,7 +231,13 @@
 				//console.log(serialized_form)
 				$.post("/users/create/", serialized_form);
 
-				$('#modal').modal('hide')
+				if ($('#keep_modal_open').is(':checked')) {
+					$('#id_login').val('');
+					$('#id_gecos').val('');
+				}
+				else {
+					$('#modal').modal('hide')
+				}
 
 			};
 
@@ -233,8 +249,8 @@
 			});
 
 			// click save button
-			$('#save_user_button').click( function() {
-				$('#save_user_button').unbind('click');
+			$('#save_user_button').unbind("click.save_user_button");
+			$('#save_user_button').bind("click.save_user_button", function(e) {
 				post_form();
 			});
 			

@@ -34,7 +34,7 @@
 	    {% endfor %}
 	{% endif %}
 
-	<form class="form-horizontal" id='user_form'>
+	<form class="form-horizontal" id='licorn_form'>
 
 		{% csrf_token %}
 
@@ -118,11 +118,23 @@
 
   {%- endblock -%}
   {%- block footer -%}
-  	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
-    {% if mode == "new" %}
-    <a href="#" class="btn btn-primary" id="save_group_button">{{ _('Add group') }}</a>
-    {%endif%}
+  <span class="row-fluid">
 
+  	{% if mode == "new" %}
+	  	<div class="span7">
+	    	<input type='checkbox' id='keep_modal_open' style="float:left;">
+	    	<label for='keep_modal_open'>{{ _('Keep the modal open and  remember users relationships.') }}</label>
+	    </div>
+	    <div class="span5">
+	    	<!--<button type="button" id='clear_form' class="btn">{{ _("Clear form") }}</button>-->
+	    	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+	    	<a href="#" class="btn btn-primary" id="save_group_button">{{ _('Add group') }}</a>
+	    </div>
+    {% else %}
+        <a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+	{%endif%}
+  </span>
+  	
 
     <style>
     	.my_popover{
@@ -162,7 +174,7 @@
 				{% elif mode == 'new' %}
 					{# no instant apply, but give a visual feedback #}
 					$('#popover_'+$(this).data('id')+' .instant_click').click(function() {
-						update_relationship(null, $(this).data('id'), $(this).data('relid'))
+						update_relationship($(this).data('id'), null,  $(this).data('relid'))
 					});
 				{% endif -%}
 			});
@@ -177,8 +189,7 @@
 		{%- if mode == 'new' -%}
 			
 			function post_form() {
-				console.log(typeof($('#user_form').serialize()))
-				var serialized_form = $('#user_form').serialize()
+				var serialized_form = $('#licorn_form').serialize()
 
 				//console.log(serialized_form)
 
@@ -204,7 +215,13 @@
 				//console.log(serialized_form)
 				$.post("/groups/create/", serialized_form);
 
-				$('#modal').modal('hide')
+				if ($('#keep_modal_open').is(':checked')) {
+					$('#id_name').val('');
+					$('#id_description').val('');
+				}
+				else {
+					$('#modal').modal('hide')
+				}
 			};
 
 			$(document).unbind("keyup.setup_enter_post_form");
