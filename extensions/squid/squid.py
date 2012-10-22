@@ -513,12 +513,15 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 												else self.paths.squid3_conf,
 										caller=self.name)
 
+		# We will try to extract the current HTTP port from the on-disk
+		# configuration in case the sysadmin changed it. The fallback is
+		# our internal default.
 		try:
 			port_value = current_configuration.find(
 											directive_name='http_port').value
 
 		except ValueError:
-			self.defaults.port = '3128'
+			self.defaults.port = SQUID_DEFAULT_HTTP_PORT
 
 		else:
 			not_found = True
