@@ -329,9 +329,6 @@ function setup_massive_actions(list_name) {
 function init_massive_select_events(action_name, action_url, ids) {
 	
 	$('#apply_massive_action').click(function() {
-		// close the modal
-		$("#machine_modal").modal('hide');
-
 		// run the action
 		if (action_name == 'export') {
 			$.get(action_url + ids+ '/' + $('#id_export_type').val(), function(data) {
@@ -349,6 +346,15 @@ function init_massive_select_events(action_name, action_url, ids) {
 			}
 
 			$.get(action_url + ids+ '/' + no_archive)
+		}
+		else if (action_name == 'upgrade') {
+			if ($('#software_upgrade').is(':checked')) {
+				software_upgrades = "True";
+
+			} else {
+				software_upgrades = ""; // python : bool('') = False
+			}
+			$.get(action_url + ids+ '/' + software_upgrades)
 		}
 		else {
 			$.get(action_url + ids);

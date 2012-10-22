@@ -164,10 +164,9 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 	def software_updates(self, *args, **kwargs):
 		return apt.apt_do_check()[0]
 	@workers.background_service(priorities.NORMAL)
-	def do_upgrade(self, machine=None, *args, **kwargs):
+	def do_upgrade(self, machine=None, software_upgrades=False, *args, **kwargs):
 		""" This method will launch the upgrade procedure in a background
 			service thread. """
-
 		if not self.updates_available():
 			return
 
@@ -179,7 +178,7 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 			LicornEvent('software_upgrades_started', host=machine).emit()
 
 		# no need to try/except, apt_do_upgrade() does it already.
-		apt.apt_do_upgrade()
+		apt.apt_do_upgrade(software_upgrades=software_upgrades)
 
 		with self.lock:
 			self.__status -= host_status.UPGRADING

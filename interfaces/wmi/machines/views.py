@@ -82,10 +82,10 @@ def edit(request, mid, *args, **kwargs):
 
 	return HttpResponse()
 
-def upgrade(request, mid, *args, **kwargs):
+def upgrade(request, mid, software_upgrades, *args, **kwargs):
 	""" upgrade one machine defined by its mid """
 	try:
-		LMC.machines.guess_one(mid).do_upgrade(raise_exception=True)
+		LMC.machines.guess_one(mid).do_upgrade(raise_exception=True, software_upgrades=software_upgrades)
 	except exceptions.LicornWebCommandException, e:
 		wmi_event_app.queue(request).put(utils.notify(str(e)))
 
@@ -106,10 +106,11 @@ def massive_select_template(request, action_name, mids, *args, **kwargs):
 				'machines' : [ LMC.machines.guess_one(m) for m in mids.split(',') ],
 		}))
 
-def massive(request, action_name, mids, *args, **kwargs):
+def massive(request, action_name, mids, value, *args, **kwargs):
 	for mid in mids.split(','):
 		if action_name == 'upgrade':
-			upgrade(request, mid)
+			software_upgrades = bool(value)
+			upgrade(request, mid, software_upgrades)
 		elif action_name == 'shutdown':
 			shutdown(request, mid)
 	return HttpResponse('OK')
