@@ -13,13 +13,13 @@ Licorn core: system - http://docs.licorn.org/core/system.html
 
 """
 
-import os, pwd, Pyro.core
+import os, Pyro.core
 
 from threading import current_thread
 from licorn.foundations.threads import RLock
 
 from licorn.foundations           import logging, settings
-from licorn.foundations           import process, apt, events, hlstr
+from licorn.foundations           import process, network, apt, events, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
@@ -32,6 +32,7 @@ from licorn.foundations.constants import host_status, host_types, distros, \
 
 from licorn.core                import LMC
 from licorn.daemon              import client
+from licorn.contrib             import getent
 
 class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.ObjBase):
 	""" This class implement a local system controller. It is meant to be used
@@ -39,11 +40,11 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 		informations (status, uptime, load, etc) to the caller.
 
 		.. note:: all extensions attached to this controller must implement
-			a :meth:`system_load` method, which will be called by the
-			:meth:`reload` method. This is to make extensions load their
+			a :meth:`system_load` method, which will be called by the :meth:`reload`
+			method. This is to make extensions load their
 			**data**, which is different than loading their *configuration*,
-			which must have been done at
-			:meth:`~licorn.core.classes.CoreModule.initialize` time.
+			which must have been done at :meth:`~licorn.core.classes.CoreModule.initialize`
+			time.
 		"""
 	init_ok = False
 	@property
@@ -190,10 +191,12 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 		""" Called from remote `licornd` to validate incoming Pyro connections. """
 
 		uid, pid = process.find_network_client_infos(
-			settings.pyro.port, client_socket, local=False)
+							settings.pyro.port, client_socket, local=False)
 
 		try:
-			login = pwd.getpwuid(uid).pw_name
+			# `getent` will do more than `pwd` because it will look in
+			# all NSS modules, not just the local `/etc/passwd` file.
+			login = getent.passwd(uid).name
 
 		except KeyError:
 			login = None
@@ -332,6 +335,13 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 			# 		- waits the delay
 			#		- and sends the 'need_restart' event.
 			pass
+	def server(self, *a, **kw):
+		if settings.role == roles.CLIENT:
+			return settings.server_main_address, settings.server_main_port
+
+		return network.find_first_local_ip_address(), settings.pyro.port
+	def system_uuid(self, *a, **kw):
+		return LMC.configuration.system_uuid
 	def get_extensions(self, client_only=False):
 		if client_only:
 			return [ key for key in LMC.extensions.keys()

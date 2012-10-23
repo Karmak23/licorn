@@ -14,8 +14,10 @@ Documentation des extensions
 	caldavd.fr
 	squid.fr
 	samba3.fr
-	postfix.fr
-	nullmailer.fr
+
+.. comment
+ postfix.fr
+ nullmailer.fr
 
 Documentation encore non-traduite :
 

@@ -114,7 +114,7 @@ def common_filter_group(app, parser, tool, mode):
 				help=_(u'Monitor a given number of count. Default: %s.') %
 					stylize(ST_DEFAULT, _(u'infinite')))
 
-			filtergroup.add_option('-t', '--time', '--monitor-time',
+			filtergroup.add_option('-d', '--duration', '--monitor-duration',
 				action="store", type="int", dest="monitor_time", default=None,
 				help=_(u'Monitor during a time period, in seconds. Default: %s.') %
 					stylize(ST_DEFAULT, _(u'infinite')))
@@ -467,13 +467,31 @@ def __get_output_group(app, parser, mode):
 				'subset in a usefull way to be included in PHP code (i.e. '
 				'$VAR="value", use it with eval(`…`)).'))
 	else:
+		outputgroup.add_option("-t", "--script", "--to-script", "--script-output",
+			action="store", type="string", dest="to_script", default='',
+			help=_(u'Output data to script (no colors, no verbose). All '
+				u'attributes are usable for any core object, eg. {user.login}, '
+				u'{user.homeDirectory} and al. for users, {group.name}, '
+				u'{group.gidNumber} and al. for groups and the like for other '
+				u'core objects. For convenience and compacity reasons, aliases '
+				u'are available: "u" for "user", "g" for "group", "m" for '
+				u'"machine". "self" is always available too. Default: %s.') %
+				stylize(ST_DEFAULT, _(u"'' (the empty string)")))
+
+		outputgroup.add_option("-s", "--separator", "--script-separator",
+			action="store", type="string", dest="script_sep", default='\n',
+			help=_(u'Script entry separator. Default: %s, can be a space, a '
+				u'comma, another complex string. Whatever you want. It is up '
+				u'to you to be sure the separator will not be found in any '
+				u'of the entries data.') % stylize(ST_DEFAULT, _(u"'\n' (new line)")))
+
 		outputgroup.add_option("-x", "--xml", "--xml-output",
 			action="store_true", dest="xml", default=False,
 			help=_(u'Output data as XML (no colors, no verbose). '
 				'Default: %s, output for CLI, human-readable.') %
 				stylize(ST_DEFAULT, _(u"NO XML")))
 
-		outputgroup.add_option('-d', "--dump",
+		outputgroup.add_option("--dump",
 			action="store_true", dest="dump", default=False,
 			help=_(u'Dump nearly RAW data on stdout. Used for debugging '
 				'internal data structures. WARNING: dump output can easily '
@@ -546,7 +564,6 @@ def get_inside_parse_arguments(app):
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
-
 
 	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
 	# no behaviour / filter change here

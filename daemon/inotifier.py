@@ -29,7 +29,7 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 	"""
 	def __init__(self, licornd, no_boot_check=False):
 
-		LicornBasicThread.__init__(self, 'INotifier', licornd)
+		LicornBasicThread.__init__(self, tname='INotifier', licornd=licornd)
 		pyinotify.Notifier.__init__(self, pyinotify.WatchManager())
 
 		# Create a new pipe used for thread termination

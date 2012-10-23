@@ -45,6 +45,7 @@ TRACE_PYUTILS       = _ltrace_level(0x0000000000000000000001000, 'pyutils')
 TRACE_EVENT         = _ltrace_level(0x0000000000000000000002000, 'events')
 TRACE_EVENTS        = _ltrace_level(0x0000000000000000000002000, 'events')
 TRACE_CACHE         = _ltrace_level(0x0000000000000000000004000, 'cache')
+TRACE_CONFIG        = _ltrace_level(0x0000000000000000000008000, 'config')
 
 # ======================================================================== core
 TRACE_CORE          = _ltrace_level(0x00000000000000000ffff0000, 'core')

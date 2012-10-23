@@ -116,6 +116,8 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 
 			self.available = True
 
+			self.has_xdg = process.executable_exists_in_path('xdg-user-dirs-update')
+
 		else:
 			logging.info(_(u'{0}: extension disabled because {1} '
 							u' nor ({2} and {3}) not found.').format(
@@ -126,9 +128,8 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			self.available = False
 
 		return self.available
-	def check(self, batch=False, auto_answer=None, force=False):
-		""" Currently, this method does nothing: this extension is so simple
-			that we don't do anything needing a check in it. """
+	def check(self, batch=False, minimal=True, auto_answer=None, force=False):
+
 		assert ltrace_func(TRACE_SAMBA3)
 
 		descriptions = {
@@ -176,14 +177,16 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 											self.pretty_name,
 											stylize(ST_NAME, group)))
 
-		self.__check_paths(batch=batch, auto_answer=auto_answer, force=force)
-		self.__check_responsibles(batch=batch, auto_answer=auto_answer, force=force)
-		self.__check_group_mappings(batch=batch, auto_answer=auto_answer, force=force)
+		self.__check_base_paths(batch=batch, auto_answer=auto_answer, force=force)
+
+		if not minimal:
+			self.__check_users_profiles_paths(batch=batch, auto_answer=auto_answer, force=force)
+			self.__check_responsibles(batch=batch, auto_answer=auto_answer, force=force)
+			self.__check_group_mappings(batch=batch, auto_answer=auto_answer, force=force)
 
 		# TODO:
 		#	- check smb.conf
 		#	- check groups (conf contents and inclusions)
-		#	- check users
 
 		return True
 	def __build_default_paths(self):
@@ -230,7 +233,7 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 
 		for group in LMC.groups.select(filters.RESPONSIBLE):
 			allresps.add_Users(group.members)
-	def __check_paths(self, batch=False, auto_answer=None, force=False):
+	def __check_base_paths(self, batch=False, auto_answer=None, force=False):
 
 		acls_conf      = LMC.configuration.acls
 		users_group    = LMC.configuration.users.group
@@ -257,30 +260,26 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 						root_dir_acl=True,
 						root_dir_perm = '{0},{1},{2},{3}{4}'.format(
 							acls_conf.acl_base,
+
 							# Licorn® admins have full access, always.
 							acls_conf.acl_admins_rw,
+
 							# Windows / Samba admins have full access
 							# too, to modify and customize scripts.
 							acls_conf.acl_admins_rw.replace(
 									settings.defaults.admin_group,
 									self.groups.admins),
+
 							# Users have limited or no access, given the share.
 							('g:%s:%s,' % (users_group, users_access))
 								if users_access else '',
+
 							# There is always an ACL mask.
 							acls_conf.acl_mask)))
 
-		# The user profile 'rwx' permissions will be eventually restricted
-		# by Samba itself with the fake_perms module. But without fake_perms
-		# (which is the default), users need write access to their profile
-		# for Windows to load and update it.
-
-		for user in LMC.users.select(filters.STD):
-			dir_info      = user.check_rules._default.copy()
-			dir_info.name = user.login + '_windows_profile'
-			dir_info.path = os.path.join(self.paths.profiles_current_dir, user.login)
-
-			dirs_to_verify.append(dir_info)
+		self.__check_generic_dirs(dirs_to_verify, batch=batch,
+									auto_answer=auto_answer)
+	def __check_generic_dirs(self, dirs_to_verify, batch=False, auto_answer=None, force=False):
 
 		try:
 			for uyp in fsapi.check_full(dirs_to_verify, batch=batch,
@@ -373,6 +372,29 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			simple samba3 extension. """
 		assert ltrace_func(TRACE_SAMBA3)
 		return self.available
+	def __check_users_profiles_paths(self, batch=False, auto_answer=None, force=False):
+		# The user profile 'rwx' permissions will be eventually restricted
+		# by Samba itself with the fake_perms module. But without fake_perms
+		# (which is the default), users need write access to their profile
+		# for Windows to load and update it.
+
+		dirs_to_verify = []
+
+		for user in LMC.users.select(filters.STD):
+			dirs_to_verify.extend(self.__user_profiles(user))
+
+		self.__check_generic_dirs(dirs_to_verify, batch=batch,
+										auto_answer=auto_answer)
+	@events.callback_method
+	@only_if_enabled
+	def licornd_cruising(self, *args, **kwargs):
+		""" Run some extended checks when the Licorn® daemon is up and running. """
+
+		# Delaying these checks here allows the daemon to answer CLI and
+		# other external calls faster. This elegantly solves #889.
+		self.__check_responsibles(batch=True)
+		self.__check_group_mappings(batch=True)
+		self.__check_users_profiles_paths(batch=True)
 	@events.handler_method
 	@only_if_enabled
 	def user_post_add(self, *args, **kwargs):
@@ -404,24 +426,33 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 									self.pretty_name, (ST_LOGIN, user.login))
 			all_ok = False
 
-		dir_info      = user.check_rules._default.copy()
-		dir_info.name = user.login + '_windows_profile'
-		dir_info.path = os.path.join(self.paths.profiles_current_dir, user.login)
-
 		try:
-			for uyp in fsapi.check_full([ dir_info ], batch=True):
+			for uyp in fsapi.check_full(self.__user_profiles(user), batch=True):
 				pass
 
-			logging.notice(_(u'{0}: created {1}\'s Windows® profile (empty) '
-									u'in {2}.').format(self.pretty_name,
-										stylize(ST_LOGIN, user.login),
-										stylize(ST_PATH, dir_info.path)))
+			logging.notice(_(u'{0}: created {1}\'s Windows® (empty) '
+								u'profiles.').format(self.pretty_name,
+									stylize(ST_LOGIN, user.login)))
 
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).
 			pass
 
 		return all_ok
+	def __user_profiles(self, user):
+		""" TODO: when this extension offers more functionnality, move this
+			method in a Samba3User mixin class, that we will add to core.User.__bases__
+			like we do in the SimpleSharingExtension. """
+
+		dir_info1      = user.check_rules._default.copy()
+		dir_info1.name = user.login + '_windows_profile'
+		dir_info1.path = os.path.join(self.paths.profiles_current_dir, user.login)
+
+		dir_info2      = user.check_rules._default.copy()
+		dir_info2.name = user.login + '_windows_profile_V2'
+		dir_info2.path = os.path.join(self.paths.profiles_current_dir, user.login + '.V2')
+
+		return (dir_info1, dir_info2, )
 	@events.handler_method
 	@only_if_enabled
 	def group_post_add(self, *args, **kwargs):
@@ -508,21 +539,24 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 								c, (ST_LOGIN, user.login))
 			all_ok = False
 
-		profile_dir = os.path.join(self.paths.profiles_current_dir, user.login)
-
-		try:
-			os.rmdir(profile_dir)
-
-		except (OSError, IOError):
-			# Directory was not empty ?
+		for profile_dir in (
+			os.path.join(self.paths.profiles_current_dir, user.login),
+			os.path.join(self.paths.profiles_current_dir, user.login + '.V2'),
+			):
 			try:
-				fsapi.archive_directory(profile_dir,
-								orig_name='%s_windows_profile' % (user.login))
+				os.rmdir(profile_dir)
 
-			except (IOError, OSError), e:
-				# Nah, it was probably something else
-				if e.errno != errno.ENOENT:
-					raise
+			except (OSError, IOError):
+				# Directory was not empty ?
+				try:
+					fsapi.archive_directory(profile_dir,
+									orig_name='windows_profile_%s' % (
+										os.path.basename(profile_dir), ))
+
+				except (IOError, OSError), e:
+					# Nah, it was probably something else
+					if e.errno != errno.ENOENT:
+						raise
 
 		return all_ok
 	@events.handler_method
@@ -591,10 +625,39 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 	@events.handler_method
 	@only_if_enabled
 	def user_logged_in(self, event, *args, **kwargs):
+		""" Run :program:`xdg-user-dirs-update` if installed, then build a
+			netlogon script synchronously, to prepare the user's Windows®
+			session.
+
+			.. note:: the current :program:`xdg-user-dirs-update`
+				implementation is very basic: it will only run this command,
+				without checking if the system ``$LANG`` variable or :file:`$HOME/.config/user-dirs.*`
+				changed from last run. This will potentially leave `old`
+				XDG directories in place.
+
+			.. todo:: harden this event handler against arguments forgery.
+				Currently an attacker could eventually do harm by sending
+				crafted events from the command line. This would require
+				gaining ``@admins`` membership first, though.
+		"""
 
 		assert ltrace_func(TRACE_SAMBA3)
 
 		if event.kwargs.get('event_source', None) == 'samba3-netlogon':
+
+			login = event.kwargs.get('user_login')
+
+			if self.has_xdg:
+				try:
+					# We assume the system has 'su'. Shouldn't we?
+					os.system('su - {0} -c xdg-user-dirs-update'.format(login))
+
+				except (IOError, OSError):
+					logging.exception(_(u'{0}: exception while running {1} for '
+						u'user {2}').format(self.pretty_name,
+							stylize(ST_COMMENT, 'xdg-user-dirs-update'),
+							stylize(ST_NAME, login)))
+
 			netlogon.netlogon(*event.args, **event.kwargs)
 
 __all__ = ('Samba3Extension', )

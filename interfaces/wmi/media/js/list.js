@@ -117,6 +117,68 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 		delete_dialog.show();
 	});
 
+	$('#'+list_name+'_massive_edit').click(function() {
+		users=[]
+		$('#'+list_name+'_list').find(".row").each(function() {
+			if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+				if (list_name == "users") {
+					common_name = '.'+list_name+'_login'
+				}
+				else if (list_name == "groups") {
+					common_name = '.'+list_name+'_name'
+				}
+				users.push($(this).find(common_name).text());
+			}
+		});
+
+		users_selected_html = '<ul>'
+		$.each(users, function(k, g) {
+			users_selected_html += '<li>'+g+'</li>';
+		});
+		users_selected_html += '</ul>';
+		mass_lock_dialog_title = gettext("Massive '.'"+list_name+" lock toggle");
+
+		if (users_selected_html == '<ul></ul>') {
+			if (list_name == "users") {
+				name = "user"
+			}
+			else if (list_name == "groups") {
+				name = "group"
+			}
+			
+			show_message_through_notification(gettext("Please select at least one "+name+"."));
+		}
+		else {
+
+			uids=[]
+			$('#'+list_name+'_list').find(".row").each(function() {
+				if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+					if (list_name == "users") {
+						common_id = '.'+list_name+'_uidNumber'
+					}
+					else if (list_name == "groups") {
+						common_id = '.'+list_name+'_gidNumber'
+					}
+					uids.push($(this).find(common_id).text());
+				}
+			});
+			// show the mass edit view in the sub-content
+			$.get('/'+list_name+'/massive/edit/' + $.URLEncode(uids.join(',')), function(html) {
+				reload_div('#sub_content', html);
+				lock_sub_content();
+				for(i=0;i<uids.length;i++) {
+					if (i==0) {
+						select_row(list_name, uids[i])
+					}
+					else {
+						select_row(list_name, uids[i], false)
+					}
+				}
+			});
+		}
+	});
+
+
 	$('#'+list_name+'_massive_export').click(function() {
 		items=[]
 		$('#'+list_name+'_list').find(".row").each(function() {
@@ -181,8 +243,14 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 	$('#'+list_name+'_massive_skel').click(function() {
 		users=[]
 		$('#'+list_name+'_list').find(".row").each(function() {
-			if ($(this).find('.users_checkbox').is(':checked') == true) {
-				users.push($(this).find('.users_login').text());
+			if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+				if (list_name == 'users') {
+					common_name = "users_login"
+				}
+				else {
+					common_name = "groups_name"
+				}
+				users.push($(this).find('.'+common_name).text());
 			}
 		});
 
@@ -194,29 +262,92 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 		skel_dialog_title = gettext("Massive skeleton reapplying");
 
 		if (users_selected_html == '<ul></ul>') {
-			skel_dialog_content =  gettext("Please select at least one user account.");
-			skel_dialog = new dialog(skel_dialog_title,	skel_dialog_content);
-			skel_dialog.show();
+			if (list_name == 'users') {
+				item_name = "user"
+			}
+			else {
+				item_name = "group"
+			}
+			show_message_through_notification(gettext("Please select at least one "+item_name+"."));
+
 		}
 		else {
-			skel_dialog_content = gettext("Are you sure you want to reapply their skeleton to these user account(s):");
+			if (list_name == 'users') {
+				skel_dialog_content = gettext("Are you sure you want to reapply their skeleton to these user account(s):");
+			}
+			else {
+				skel_dialog_content = gettext("Are you sure you want to reapply their skeleton to members of following group(s):");
+			}
 			skel_dialog_content += users_selected_html;
-			$.get('/users/message/massive_skel/', function(html) {
+			msg_url = '/'+list_name+'/message/massive_skel/'
+			$.get(msg_url, function(html) {
 				skel_dialog_content += html;
 				skel_dialog = new dialog(skel_dialog_title,	skel_dialog_content,
 					true, function() {
 						users=[]
-						$('#users_list').find(".row").each(function() {
-							if ($(this).find('.users_checkbox').is(':checked') == true) {
-								users.push($(this).find('.users_uidNumber').text());
+						$('#'+list_name+'_list').find(".row").each(function() {
+							if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+								if (list_name == 'users') {
+									common_identifier = "users_uidNumber"
+								}
+								else {
+									common_identifier = "groups_gidNumber"
+								}
+								users.push($(this).find('.'+common_identifier).text());
 							}
 						});
-						skel = $("#id_skel_to_apply").attr('value').toString();
-						page_url = "/users/massive/skel/" + $.URLEncode(users.join(',')) + '/' + $.URLEncode(skel)
+						if (list_name == 'users') {
+							skel = $("#id_skel_to_apply").attr('value').toString();
+							page_url = "/"+list_name+"/massive/skel/" + $.URLEncode(users.join(',')) + '/' + $.URLEncode(skel)
+						}
+						else {
+							page_url = "/"+list_name+"/massive/apply_skel/" + $.URLEncode(users.join(','))
+						}
+						//console.log(page_url)
 						$.get(page_url);
 					});
 				skel_dialog.show();
 			});
+		}
+	});
+
+	$('#'+list_name+'_massive_lock').click(function() {
+		users=[]
+		$('#'+list_name+'_list').find(".row").each(function() {
+			if ($(this).find('.users_checkbox').is(':checked') == true) {
+				users.push($(this).find('.users_login').text());
+			}
+		});
+
+		users_selected_html = '<ul>'
+		$.each(users, function(k, g) {
+			users_selected_html += '<li>'+g+'</li>';
+		});
+		users_selected_html += '</ul>';
+		mass_lock_dialog_title = gettext("Massive users lock toggle");
+
+		if (users_selected_html == '<ul></ul>') {
+			mass_lock_dialog_content =  gettext("Please select at least one user.");
+			mass_lock_dialog = new dialog(mass_lock_dialog_title, mass_lock_dialog_content);
+			mass_lock_dialog.show();
+		}
+		else {
+			mass_lock_dialog_content = gettext("Are you sure you want to toggle lock of selected user(s):");
+			mass_lock_dialog_content += users_selected_html;
+
+			mass_lock_dialog = new dialog(mass_lock_dialog_title, mass_lock_dialog_content,
+				true, function() {
+					users=[]
+					$('#'+list_name+'_list').find(".row").each(function() {
+						if ($(this).find('.users_checkbox').is(':checked') == true) {
+								users.push($(this).find('.users_uidNumber').text());
+						}
+					});
+					page_url = "/users/massive/lock/" + $.URLEncode(users.join(','));
+					$.get(page_url);
+				});
+			mass_lock_dialog.show();
+
 		}
 	});
 
@@ -532,8 +663,13 @@ function my_sort(list_name, sort_way, sort_item) {
 	return items;
 }
 
-function select_row(list_name, id) {
-	unselect_row();
+function select_row(list_name, id, unselect_previus_row) {
+	if (unselect_previus_row == null) {
+		unselect_previus_row = true;
+	}
+	if (unselect_previus_row) {
+		unselect_row();
+	}
 	div = $('#'+list_name+'_list').find('.row').filter("#"+id);
 	div.addClass('item_selected');
 	div.children().addClass('bkg_selected');
@@ -671,6 +807,6 @@ function update_relationship(name, user_id, group_id, rel_id) {
 	//console.log(2);
 
 	div.find('.item_title')
-		.removeClass('no_membership_bkg guest_bkg member_bkg resp_bkg')
+		.removeClass('no_membership_bkg guest_bkg member_bkg resp_bkg incomplete_bkg')
 		.addClass(new_rel+'_bkg');
 }

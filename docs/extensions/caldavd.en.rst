@@ -1,4 +1,4 @@
-.. _extensions.caldavd:
+.. _extensions.caldavd.en:
 
 =================
 Caldavd extension

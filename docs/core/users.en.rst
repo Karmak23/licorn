@@ -1,4 +1,4 @@
-.. _core.users:
+.. _core.users.en:
 
 ==========
 Core.users

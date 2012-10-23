@@ -52,7 +52,7 @@ class Profile(CoreStoredObject):
 			if both are given, ``groupName`` is ignored.
 		:param groupName: optional :class:`str`, used to find the ``group``.
 			Used in loading phase, by the backends. **Ignored if ``group`` if
-			also present.
+			also present**.
 
 		:param profileShell: The profile shell, as :class:`str`, assigned to
 			new users created from this profile.
@@ -1044,6 +1044,17 @@ class ProfilesController(DictSingleton, CoreController):
 </profiledb>
 ''' % ('\n'.join(profile.to_XML()
 		for profile in sorted(profiles, key=attrgetter('name'))))
+	def to_script(self, selected=None, script_format=None, script_separator=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				profiles = self
+			else:
+				profiles = selected
+
+		return script_separator.join(script_format.format(profile=profile,
+							p=profile, self=profile) for profile in profiles)
 	# LOCKS: not locked besides this point, because we consider locking is done
 	# in calling methods.
 	def guess_one(self, value):

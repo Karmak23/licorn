@@ -9,7 +9,7 @@ Backends manager
 
 The backends manager holds all the backends instance. It loads and unloads them, enables and disables them.
 
-All in all, the backends manager inherits from the :class:`~licorn.core.classes.ModulesManager`, and shares a lot with :class:`~licorn.extensions.ExtensionsManager` (see :ref:`core.modules` for more details).
+All in all, the backends manager inherits from the :class:`~licorn.core.classes.ModulesManager`, and shares a lot with :class:`~licorn.extensions.ExtensionsManager` (see :ref:`core.modules.en` for more details).
 
 .. _core.backends.manager.class.en:
 
@@ -27,9 +27,10 @@ These are the real backends implementation. They all inherit from one or more of
 .. toctree::
 	:maxdepth: 2
 
-	backends/shadow.en
-	backends/openldap.en
-	backends/dnsmasq.en
+	shadow.en
+	openldap.en
+	openldap.design.en
+	dnsmasq.en
 
 .. _core.backends.abstract.en:
 

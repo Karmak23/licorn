@@ -17,7 +17,7 @@
 #search_bar_nav {
 	float: left;
 	height: 30px;
-	width: 34%;
+	width: 44%;
 	text-align: right;
 }
 
@@ -51,12 +51,14 @@
 	-moz-border-radius: 5px;
 	border-radius: 5px;
 }
-
+.massive_icons {
+	cursor: pointer;
+}
 /* ================================================================== LIST */
 
 .list_title {
 	float: left;
-	width: 33%;
+	width: 23%;
 	color: #4c0b21;
 	font-size: 120%;
 	font-weight: bolder;

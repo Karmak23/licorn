@@ -24,16 +24,26 @@ pip_packages.setdefault(distros.UNKNOWN, 'PIP')
 def check_and_install_pip():
 	if not os.path.exists('/usr/bin/pip'):
 		packaging.install_packages(pip_packages)
-def check_pip_perms(batch=False, auto_answer=None, full_display=True):
+def check_pip_perms(batch=False, auto_answer=None, full_display=True,
+												distro=None, distros=None):
 	""" Fix a PIP bug we don't notice if we are root. But normal developpers
 		could face it.
 
 		We've spotted this bug only on Ubuntu. But we didn't test other
 		distros. If you see it, just add more conditions in this 'if'.
 
+		:param distro: thecurrent distro name. You should **never** use this
+			parameter, and just let it be ``None`` all the time. It's meant
+			to be used only from `contrib/dev_install.py`, where
+			LMC.configuration is not ready.
+		:param distros: same advise here.
 	"""
 
-	if LMC.configuration.distro in (distros.UBUNTU, distros.DEBIAN):
+	if distro is None:
+		distro  = LMC.configuration.distro
+		distros = (distros.UBUNTU, distros.DEBIAN)
+
+	if distro in distros:
 		for python_path in glob.glob('/usr/local/lib/python*/dist-packages'):
 			logging.progress(_(u'Fixing permissions in {0}, this may take '
 							u'a while…').format(stylize(ST_PATH, python_path)))

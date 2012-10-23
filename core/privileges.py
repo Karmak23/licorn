@@ -113,12 +113,12 @@ class PrivilegesWhiteList(Singleton, LockedController):
 		self.conf_hint = L_inotifier_watch_conf(self.conf_file, self)
 
 	def reload(self, *args, **kwargs):
-		""" Reload internal data. the event, *args and **kwargs catch the eventual
+		""" Reload internal data. the event, ``*args`` and ``**kwargs`` catch the eventual
 			inotify events.
 
-			:param *args: receive an eventual pathname from an inotifier event.
-			:param **kwargs: same thing (neither of them are used in any other
-				case)
+			:param args: receive an eventual pathname from an inotifier event.
+			:param kwargs: same thing (neither of them are used in any other
+				case).
 		"""
 
 		with self.lock:
@@ -250,6 +250,17 @@ class PrivilegesWhiteList(Singleton, LockedController):
 	def guess_one(self, priv):
 		if priv in self:
 			return priv
+	def to_script(self, selected=None, script_format=None, script_separator=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				privileges = self
+			else:
+				privileges = selected
+
+		return script_separator.join(script_format.format(privilege=privilege,
+					p=privilege, self=privilege) for privilege in privileges)
 	def ExportCLI(self):
 		""" present the privileges whitelist on command-line: one by line. """
 		with self.lock:

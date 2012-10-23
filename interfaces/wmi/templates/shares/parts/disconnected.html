@@ -1,11 +1,3 @@
-<p class="alert alert-error">&nbsp;<br />
-	{%- if request.user.is_staff -%}
+{%- from 'shares/widgets.html' import disconnected -%}
 
-		{{ _('Disconnected from <strong><a href="http://my.licorn.org/" target="_blank">My Licorn&reg;</a></strong> service. If the problem does not come from your internet connection, <a href="http://docs.licorn.org/extensions/mylicorn.en.html#extensions-mylicorn-disconnected-en">more information is available</a>.') }}
-
-	{%- else -%}
-
-		{{ _('Short URLs cannot be obtained for technical reason. If the problem does not come from a failing internet connection <a href="http://docs.licorn.org/extensions/mylicorn.en.html#extensions-mylicorn-disconnected-en" target="_blank">technical information is available</a>, but it is probably easier to contact your system manager or support provider.') }}
-
-{%- endif -%}
-</p>
+{{ disconnected(request, extension) }}

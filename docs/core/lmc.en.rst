@@ -20,11 +20,11 @@ The ``LMC`` holds and controls system objects controllers,  and enables or disab
 
 	.. attribute:: users
 
-		`LMC`'s internal instance of class :class:`UsersController`. More details in :ref:`core.users`.
+		`LMC`'s internal instance of class :class:`UsersController`. More details in :ref:`core.users.en`.
 
 	.. attribute:: groups
 
-		`LMC`'s internal instance of class :class:`GroupsController`. More details in :ref:`core.groups`.
+		`LMC`'s internal instance of class :class:`GroupsController`. More details in :ref:`core.groups.en`.
 
 	.. attribute:: locks
 
@@ -98,7 +98,7 @@ Client-role methods
 
 
 Remote-side (no particular role) methods
------------------------------
+----------------------------------------
 
 .. class:: LicornMasterController
 

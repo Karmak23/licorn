@@ -73,7 +73,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		except AttributeError:
 			pass
 		else:
-			logging.warning(_(u'{0} shadow backend (this is important, '
+			logging.warning(_(u'{0} shadow backend. This is important, '
 				u'please do not try to set {1} in {2}!').format(
 						stylize(ST_IMPORTANT, _(u'RE-enabled')),
 						stylize(ST_COMMENT, u'backends.shadow.enabled=False'),
@@ -503,11 +503,11 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		logging.progress(_(u'{0}: saved groups data to disk.').format(self.pretty_name))
 
 		assert ltrace_func(TRACE_SHADOW, True)
-	def compute_password(self, password, salt=None):
+	def compute_password(self, password, salt=None, ascii=False):
 
 		assert ltrace_func(TRACE_SHADOW)
 
-		#return '$6$' + hashlib.sha512(password).hexdigest()
+		# In the shadow backend there is no difference between 'ascii' and not.
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt()
 												if salt is None else salt)
 	def _inotifier_install_watches(self, inotifier):

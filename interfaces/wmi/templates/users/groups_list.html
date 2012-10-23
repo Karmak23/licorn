@@ -6,13 +6,37 @@
 		<div class="no_item_text">
 			<center>There is no {{ groups_list.name }} group yet on the system</center>
 		</div>
-
 		{%- else -%}
-			{%- set relationships = [ 'no_membership', 'guest', 'member', 'resp' ] -%}
+			{%- set relationships = [ 'no_membership', 'guest', 'member', 'resp', 'incomplete' ] -%}
 			{%- for item in groups_list.groups -%}
 
 				{%- if groups_list.user != None -%}
 					{%- set rel = groups_list.user.get_relationship(item.gidNumber) -%}
+					{%- set instant_apply_class = 'instant_apply_click' -%}
+				{%- elif _mode == "massiv" -%}
+					{# if all uids have the same relationship with the group, show it, else no relationship#}
+					
+					{# http://stackoverflow.com/questions/4870346/can-a-jinja-variables-scope-extend-beyond-in-an-inner-block #}
+
+					{%- set rel_ref = [] -%}
+					{%- set same_rel = [] -%}
+					{% for u in users %}
+						{% if rel_ref == [] %}
+							{%- do rel_ref.append(u.get_relationship(item.gidNumber)) -%}
+						{% else %}
+							{% if rel_ref[0] != u.get_relationship(item.gidNumber) %}
+								{%- do same_rel.append(0) -%}
+							{% endif %}
+						{% endif %}
+					{% endfor %}
+
+					
+					{% if same_rel == [] %}
+						{%- set rel = rel_ref[0] -%}
+					{% else %}
+						{%- set rel = 4 -%}
+					{% endif %}
+
 					{%- set instant_apply_class = 'instant_apply_click' -%}
 				{%- else -%}
 					{%- set rel = 0 -%}

@@ -7,7 +7,7 @@ Licorn Daemon CommandListener, implemented with Pyro (Python Remote Objects)
 :license: GNU GPL version 2.
 """
 
-import signal, os, time, new, pwd
+import signal, os, time, new
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
 from threading import Thread, Timer, current_thread
@@ -60,9 +60,9 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	#: in Ubuntu (don't know why they don't just use the plain 127.0.0.1).
 	local_interfaces = [ '127.0.0.1', '127.0.1.1' ]
 
-	#: :attr:`pyro_port` will be filled by :term:`pyro.port` value
-	#: before the thread starts. See :ref:`configuration` object for details
-	#: about port numbers.
+	#: :attr:`pyro_port` will be filled by :ref:`pyro.port <settings.pyro.port.en>`
+	#: value before the thread starts. See :ref:`configuration <configuration.en>`
+	# object for details about port numbers.
 	pyro_port = None
 
 	#: The main server IP address. Can be overidden by the environment variable
@@ -87,9 +87,6 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 
 	def __init__(self, role):
 		Pyro.protocol.DefaultConnValidator.__init__(self)
-
-		#: A local copy of :ref:`settings.role`, to avoid importing LMC here.
-		self.role = role
 	def acceptHost(self, daemon, connection):
 		""" Basic check of the connection. See :class:`LicornPyroValidator` for
 			details. """
@@ -121,7 +118,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 
 				return accept, reason
 		else:
-			if self.role == roles.SERVER:
+			if settings.role == roles.SERVER:
 				# connect to the client's Pyro daemon and make sure the request
 				# originates from a valid user.
 				#
@@ -198,31 +195,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					return 0, Pyro.constants.DENIED_HOSTBLOCKED
 	def acceptUid(self, daemon, client_uid, client_login, client_addr, client_socket):
 		try:
-			# NOTE: measured with LICORN_TRACE=timings, using pwd.getpwuid()
-			# is **at best** as quick as users.uid_to_login(), but generally
-			# slower. Thus we use our internals.
-			#client_login = pwd.getpwuid(client_uid).pw_name
-
-			if settings.role == roles.CLIENT:
-
-				if client_addr.startswith('127.'):
-					logging.warning(_(u'Please implement client.server.bounce '
-						u'auth. Accepted for now (localhost, uid {0}).').format(
-							stylize(ST_UGID, client_uid)))
-
-					t = self.setup_licorn_thread('<unknown>', client_uid,
-												client_addr, client_socket)
-
-					return 1, 0
-				else:
-					logging.warning(_(u'Senseless connection tentative from {0}, '
-						u'uid {2}.').format(
-							stylize(ST_ADDRESS, '%s:%s' % (client_addr, client_socket)),
-							stylize(ST_UGID, client_uid)))
-
-					return 0, Pyro.constants.DENIED_SECURITY
-			else:
-				local_login = LMC.users.uid_to_login(client_uid)
+			local_login = LMC.users.uid_to_login(client_uid)
 
 		except (exceptions.DoesntExistException, KeyError), e:
 			logging.warning(_(u'Connection tentative from {0}: '
@@ -279,8 +252,8 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				return 1, 0
 			else:
 				logging.warning(_(u'Connection tentative from {0}:{1}, '
-					u'user {2}({3}).').format(client_addr, client_socket,
-						client_login, client_uid))
+						u'user {2}({3}).').format(client_addr, client_socket,
+							client_login, client_uid))
 
 				return 0, Pyro.constants.DENIED_SECURITY
 
@@ -415,7 +388,7 @@ class CommandListener(LicornBasicThread):
 			return
 
 		Pyro.core.initServer()
-		Pyro.config.PYRO_PORT=settings.pyro.port
+		Pyro.config.PYRO_PORT = settings.pyro.port
 
 		count = 0
 
@@ -444,7 +417,7 @@ class CommandListener(LicornBasicThread):
 			network.local_ip_addresses())
 
 		if settings.role == roles.CLIENT:
-			LicornPyroValidator.server = LMC.configuration.server_main_address
+			LicornPyroValidator.server = settings.server_main_address
 
 		self.pyro_daemon.setNewConnectionValidator(
 			LicornPyroValidator(settings.role))
@@ -468,11 +441,9 @@ class CommandListener(LicornBasicThread):
 		# with each other.
 		#
 		# FIXME: server exporting system is not very secure...
-		self.uris['system'] = self.pyro_daemon.connect(
-			LMC.system, 'system')
+		self.uris['system'] = self.pyro_daemon.connect(LMC.system, 'system')
 
-		self.uris['msgproc'] = self.pyro_daemon.connect(
-					LMC.msgproc, 'msgproc')
+		self.uris['msgproc'] = self.pyro_daemon.connect(LMC.msgproc, 'msgproc')
 
 		logging.info(_(u'{0}: {1} to answer requests at {2}.').format(
 								self.name, stylize(ST_OK, _(u'ready')),

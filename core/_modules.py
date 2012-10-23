@@ -32,7 +32,7 @@ class ModulesManager(LockedController):
 	""" The basics of a module manager. Backends and extensions are just
 		particular cases of this class.
 
-		.. note:: TODO: implement module_sym_path auto-detection, for the day
+		.. todo:: implement module_sym_path auto-detection, for the day
 			we will use it. For now we don't care about it.
 
 		.. versionadded:: 1.3
@@ -88,7 +88,7 @@ class ModulesManager(LockedController):
 			If we are on a client, activate module only if module is enable
 			on the server.
 
-			.. note:: TODO: implement module dependancies resolution. this is
+			.. todo:: implement module dependancies resolution. this is
 				needed for the upcoming rdiff-backup/volumes extensions
 				couple (at least).
 		"""
@@ -232,7 +232,7 @@ class ModulesManager(LockedController):
 			# Is module already loaded ?
 
 			if module_name in self.iterkeys():
-				module = self[module]
+				module = self[module_name]
 
 				if module.enabled:
 					# module already loaded locally. Enventually sync with the
@@ -261,11 +261,14 @@ class ModulesManager(LockedController):
 				# the module instanciation, at last!
 				module = module_class()
 
+				if settings.role != roles.SERVER and module.server_only:
+					continue
+
 				assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
 					self.module_type, stylize(ST_NAME, module_name)))
 
 				LicornEvent('%s_%s_loads' % (self.module_type, module_name)
-									).emit(synchronous=True)
+													).emit(synchronous=True)
 
 				try:
 					module.load(server_modules=server_side_modules)
@@ -275,7 +278,7 @@ class ModulesManager(LockedController):
 					events.collect(module)
 
 					LicornEvent('%s_%s_loaded' % (self.module_type, module_name)
-										).emit(synchronous=True)
+														).emit(synchronous=True)
 
 				except Exception:
 					# an uncatched exception occured, the module is buggy or
@@ -343,6 +346,8 @@ class ModulesManager(LockedController):
 										stylize(ST_NAME, module_name),
 										stylize(ST_PATH,
 											settings.main_config_file)))
+
+					disable_dependants(module_name)
 
 		assert ltrace(self._trace_name, '< load(%s)' % changed)
 		return changed
@@ -484,6 +489,7 @@ class ModulesManager(LockedController):
 			# the only way to make sure they can be fully usable before
 			# enabling them.
 			for module in self:
+
 				#assert ltrace(self._trace_name, '  check(%s)' % module.name)
 				try:
 					module.check(batch=batch, auto_answer=auto_answer)
@@ -566,18 +572,17 @@ class CoreModule(CoreUnitObject, NamedObject):
 		* controllers_compat: a list of controller names which will get data
 		  (methods or contents) from the current module.
 
-		.. note:: [**work in progress**] if :attr:`self.controllers_compat`
+		.. note:: **work in progress** if :attr:`self.controllers_compat`
 			contains ``system`` (name
 			of :class:`~licorn.core.system.SystemController` global instance),
 			the current class must implement the special :meth:`system_load`
-			method. This method will be called *after* module load and *after*
-			:class:`~licorn.core.system.SystemController` instanciation, to
-			reconnect the module data to its controller.
+			method. This method will be called *after* module load and *after* :class:`~licorn.core.system.SystemController`
+			instanciation, to reconnect the module data to its controller.
 
-			This is mainly because extensions are loaded after the
-			:class:`~licorn.core.system.SystemController` instanciation in
-			``LMC``, and we currently can't do it differently, ``system`` needs
-			to be up very early in the inter-daemon connection process.
+			This is mainly because extensions are loaded after the :class:`~licorn.core.system.SystemController`
+			instanciation in ``LMC``, and we currently can't do it differently,
+			``system`` needs to be up very early in the inter-daemon connection
+			process.
 
 		.. versionadded:: 1.2
 
@@ -639,10 +644,31 @@ class CoreModule(CoreUnitObject, NamedObject):
 		#: replicated / configured on CLIENTS).
 		self.server_only = False
 	def event(self, event_name):
+		""" Get the current state of a module event, and return ``True`` if
+			the event is **set**, else ``False``.
+
+			This method is meant to be used from remote network clients, where
+			getting the whole extension via Pyro would not transmit threads,
+			locks and other sort of special attributes. As the method exists
+			on the remote side, Pyro will execute it correctly via RPC and the
+			remote code will be able to test the :class:`~threading.Event`.
+		"""
 		assert ltrace_locks(self.events[event_name])
 		return self.events[event_name].is_set()
-	def lock(self, lock_name):
-		the_lock = self.locks[lock_name]
+	def lock(self, lock_name=None):
+		""" Get the current state of a module lock, and return ``True``
+			if the lock is currently acquired, else ``False``.
+
+			:param lock_name: a string specifying which lock to test. If
+				ommited, the global module lock will be tested.
+
+			This method is meant to be used from remote network clients, where
+			getting the whole extension via Pyro would not transmit threads,
+			locks and other sort of special attributes. As the method exists
+			on the remote side, Pyro will execute it correctly via RPC and the
+			remote code will be able to test the :class:`~threading.RLock`.
+		"""
+		the_lock = self.locks[lock_name] if lock_name else self.locks._global
 		if the_lock.acquire(blocking=False):
 			the_lock.release()
 			return False
@@ -755,11 +781,10 @@ class CoreModule(CoreUnitObject, NamedObject):
 			* if installed, change :attr:`self.available` value to ``True`` and
 			  return it, too.
 
-			.. note:: For more specific details, see classes
-				:class:`~licorn.extensions.LicornExtension` and derivatives, and
-				:class:`~licorn.core.backends.CoreBackend` and derivatives,
-				because there are other things to take in consideration when
-				implementing *end-of-road* modules.
+			.. note:: For more specific details, see classes :class:`~licorn.extensions.LicornExtension`
+				and derivatives, and :class:`~licorn.core.backends.CoreBackend`
+				and derivatives, because there are other things to take in
+				consideration when implementing *end-of-road* modules.
 
 		"""
 

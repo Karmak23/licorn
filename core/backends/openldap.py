@@ -208,7 +208,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		if settings.role == roles.CLIENT:
 			waited = 0.1
-			while LMC.configuration.server_main_address is None:
+			while settings.server_main_address is None:
 				#
 				time.sleep(0.1)
 				waited += 0.1
@@ -218,7 +218,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 					raise exceptions.LicornRuntimeException(
 						'No server detected, bailing out…' )
 
-			self.uri = 'ldap://' + LMC.configuration.server_main_address
+			self.uri = 'ldap://' + settings.server_main_address
 			assert ltrace(TRACE_OPENLDAP, '| find_licorn_ldap_server() -> %s' % self.uri)
 
 		# else, keep the default ldapi:/// (local socket) URI.
@@ -255,15 +255,17 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		""" Do whatever is needed on the underlying system for the LDAP backend
 		to be fully operational (this is really a "force_enable" method).
 		This includes:
-			- verify everything is installed
-			- setup PAM-LDAP system files (the system must follow the licorn
-				configuration and vice-versa)
-			- setup slapd
-			- setup nsswitch.conf
 
-		-> raise an exception at any level if anything goes wrong.
-		-> return True if succeed (this is probably useless due to to previous
-		point).
+		- verify everything is installed
+		- setup PAM-LDAP system files (the system must follow the licorn
+			configuration and vice-versa)
+		- setup slapd
+		- setup nsswitch.conf
+
+		This methode will raise an exception at any level if anything goes wrong.
+		It returns ``True`` if it succeeds to enable the backend in the system
+		configuration.
+
 		"""
 
 		assert ltrace_func(TRACE_OPENLDAP)
@@ -321,13 +323,20 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		assert ltrace_func(TRACE_OPENLDAP)
 
-		logging.progress(_(u'{0}: checking backend configuration…').format(self.pretty_name))
+		logging.progress(_(u'{0}: checking backend configuration…').format(
+															self.pretty_name))
 
 		# we always check system files, whatever.
 		self.check_system_files(batch, auto_answer)
 
-		if not self.available or settings.role == roles.CLIENT:
-			logging.warning2(_(u'{0:s}: backend not available, not checking.'))
+		if not self.available:
+			logging.warning2(_(u'{0}: backend not available, not '
+								u'checking.').format(self.pretty_name))
+			return
+
+		if settings.role == roles.CLIENT:
+			logging.warning2(_(u'{0}: not checking OpenLDAP server in CLIENT '
+								u'role.').format(self.pretty_name))
 			return
 
 		if process.whoami() != 'root' and not self.bind_as_admin:
@@ -1094,6 +1103,18 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			logging.progress(_(u'{0}: deleted group {1} from the '
 								u'directory.').format(self.pretty_name,
 									stylize(ST_NAME, group.name)))
-	def compute_password(self, password, salt=None):
+	def compute_password(self, password, salt=None, ascii=False):
+		""" The OpenLDAP backend makes a difference between `ascii` and non-ascii
+			computed passwords, because the backend stores them as binary
+			(mandatory for console/X logins to work), whereas some extensions
+			need it as ascii (ex. :ref:`simplesharing <extensions.simplesharing.en>`)
+			because their storage is incompatible with binary digests.
+		"""
+
 		assert ltrace_func(TRACE_OPENLDAP)
-		return hashlib.sha1(password).digest()
+
+		if ascii:
+			return hashlib.sha1(password).hexdigest()
+
+		else:
+			return hashlib.sha1(password).digest()

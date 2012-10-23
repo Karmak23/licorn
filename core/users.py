@@ -16,7 +16,7 @@ from operator   import attrgetter
 from traceback  import print_exc
 
 from licorn.foundations           import logging, exceptions, hlstr, settings
-from licorn.foundations           import pyutils, fsapi, process
+from licorn.foundations           import pyutils, fsapi, process, events
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
@@ -53,8 +53,17 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 	@staticmethod
 	def _cli_invalidate_all():
-		for user in User.by_login.itervalues():
-			user()._cli_invalidate()
+		for login, user in User.by_login.iteritems():
+			try:
+				user()._cli_invalidate()
+
+			except AttributeError:
+				# NOTE: for details, see groups.py, line 770.
+				if settings.experimental.enabled:
+					logging.warning(_(u'{0}: is `None` in class `core.User`, skipped.').format(login))
+
+				else:
+					raise
 	@staticmethod
 	def _cli_compute_label_width():
 
@@ -308,6 +317,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			# avoid useless exception on the WMI remote side.
 			return
 
+		#logging.exception(_(u'{0}: __del__() called!!'), self.__login)
+
 		assert ltrace(TRACE_GC, '| User %s.__del__()' % self.__login)
 
 		self.__primaryGroup().unlink_gidMember(self)
@@ -366,6 +377,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			group.link_gidMember(self)
 
 			LicornEvent('user_primaryGroup_changed', user=self.proxy).emit(priorities.LOW)
+			self._cli_invalidate()
+
 		else:
 			raise exceptions.LicornRuntimeError(_(u'{0}: tried to set {1} '
 				'as {2} primary group, whose GID is not the same '
@@ -855,7 +868,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			self._checking.clear()
 
-			LicornEvent('user_skel_applyed', user=self.proxy).emit(priorities.LOW)
+			LicornEvent('user_skel_applyed', user=self.proxy, skel=skel).emit(priorities.LOW)
 
 			logging.notice(_(u'Applyed skel {0} for user {1}').format(
 										skel, stylize(ST_LOGIN, self.__login)))
@@ -1034,8 +1047,6 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			if os.path.exists(self.__homeDirectory):
 
-				checked = set()
-
 				for event in fsapi.check_dirs_and_contents_perms_and_acls_new(
 						[ fsapi.FsapiObject(name='%s_home' % self.__login,
 									path = self.__homeDirectory,
@@ -1050,9 +1061,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 						],
 						batch=batch, auto_answer=auto_answer,
 						full_display=full_display):
-					checked.add(event)
-
-				del checked
+					pass
 
 			self._checking.clear()
 
@@ -1090,9 +1099,23 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			# NOTE: 5 = len(str(65535)) == len(max_uid) == len(max_gid)
 			label_width    = User._cw_login
 			uid_label_rest = 5 - len(str(self.__uidNumber))
-			gid_label_rest = (Group._cw_name + 5
-								- len(self.__primaryGroup().name)
-								- len(str(self.__gidNumber)))
+
+			if self.__primaryGroup:
+				gid_label_rest = (Group._cw_name + 5
+									- len(self.__primaryGroup().name)
+									- len(str(self.__gidNumber)))
+				pri_group      = u'%s%s' % (
+										self.__primaryGroup()._cli_get_small(),
+										u' ' * gid_label_rest)
+			else:
+				gid_label_rest = (Group._cw_name + 6
+									- len(_(u'<NON-EXISTENT>'))
+									- len(str(self.__gidNumber)))
+
+				pri_group      = _(u'{0} {1}{2}').format(
+										stylize(ST_UGID, self.__gidNumber),
+										stylize(ST_BAD, _(u'<NON-EXISTENT>')),
+										u' ' * gid_label_rest)
 
 			accountdata = [ u'{login}: #{uid} &{pri_group} '
 							u'@{backend}	{gecos} {inotified}'.format(
@@ -1102,9 +1125,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 								#id_type=_(u'uid'),
 								uid=stylize(ST_UGID, self.__uidNumber)
 										+ u' ' * uid_label_rest,
-								pri_group=u'%s%s' % (
-										self.__primaryGroup()._cli_get_small(),
-										u' ' * gid_label_rest),
+								pri_group=pri_group,
 								backend=stylize(ST_BACKEND, self.backend.name),
 								gecos=stylize(ST_COMMENT,
 									self.__gecos) if self.__gecos != '' else u'',
@@ -1146,11 +1167,14 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		minimum : login;uid;prigroup;gecos;memberships;backend """
 
 		groups = []
+
 		for g in self.groups:
 			if g.is_responsible:
 				groups.append(LMC.configuration.groups.resp_prefix + g.name)
+
 			elif g.is_guest:
 				groups.append(LMC.configuration.groups.guest_prefix + g.name)
+
 			else:
 				groups.append(g.name)
 
@@ -1331,13 +1355,8 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				for backend in self.backends:
 					backend.save_Users(self)
 	def select(self, filter_string):
-		""" Filter user accounts on different criteria.
-		Criteria are:
-			- 'system users': show only «system» users (root, bin, daemon,
-				apache…), not normal user account.
-			- 'normal users': keep only «normal» users, which includes Licorn
-				administrators
-			- more to come…
+		""" Filter user accounts on different criteria. ``filter_string`` can in
+			fact be a filter constant (see :py:mod:`foundations.constants`).
 		"""
 
 		with self.lock:
@@ -1797,13 +1816,18 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				'argument, this is too dangerous.') %
 					stylize(ST_NAME, user.login))
 
-		# Delete user from his groups
-		# '[:]' to fix #14, see
+		try:
+			LicornEvent('user_pre_del', user=user.proxy, force=force).emit(synchronous=True)
+
+		except exceptions.LicornStopException, e:
+			logging.warning(_(u'{0}: {1} deletion prevented: {2}.').format(
+										self.pretty_name, user.pretty_name, e))
+			return
+
+		# Delete user from his groups. We use '[:]' to fix #14, see
 		# http://docs.python.org/tut/node6.html#SECTION006200000000000000000
 		for group in user.groups[:]:
 			group.del_Users([ user ], batch=True, emit_event=False)
-
-		LicornEvent('user_pre_del', user=user.proxy).emit(synchronous=True)
 
 		# keep the homedir path, to backup it if requested.
 		homedir = user.homeDirectory
@@ -1928,26 +1952,29 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				uids = self.users.keys()
 			else:
 				uids = selected
+
 			uids.sort()
 
-			assert ltrace(TRACE_USERS, '| ExportCSV(%s)' % uids)
+		assert ltrace(TRACE_USERS, '| ExportCSV(%s)' % uids)
 
-			def build_csv_output_licorn(uid):
-				return ';'.join(
-					[
-						self[uid].gecos,
-						self[uid].login,
-						str(self[uid].gidNumber),
-						','.join([ g.name for g in self[uid].groups]),
-						self[uid].backend.name,
-						self[uid].profile.name if self[uid].profile is not \
-															None else str(None)
-					]
-					)
+		# TODO: get a user locally from self[uid] and avoid all these lookups.
 
-			data = '\n'.join(map(build_csv_output_licorn, uids)) +'\n'
+		def build_csv_output_licorn(uid):
+			return ';'.join(
+				[
+					self[uid].gecos,
+					self[uid].login,
+					str(self[uid].gidNumber),
+					','.join([ g.name for g in self[uid].groups]),
+					self[uid].backend.name,
+					self[uid].profile.name if self[uid].profile is not \
+														None else str(None)
+				]
+				)
 
-			return data
+		data = '\n'.join(map(build_csv_output_licorn, uids)) +'\n'
+
+		return data
 	def to_XML(self, selected=None, long_output=False):
 		""" Export the user accounts list to XML. """
 
@@ -1959,7 +1986,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			assert ltrace(TRACE_USERS, '| to_XML(%r)' % users)
 
-			return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+		return ('<?xml version="1.0" encoding="UTF-8"?>\n'
 					'<users-list>\n'
 					'%s\n'
 					'</users-list>\n') % '\n'.join(
@@ -1975,7 +2002,18 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			assert ltrace(TRACE_USERS, '| to_JSON(%r)' % users)
 
-			return '[ %s ]' % ','.join(user.to_JSON() for user in users)
+		return '[ %s ]' % ','.join(user.to_JSON() for user in users)
+	def to_script(self, selected=None, script_format=None, script_separator=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				users = self
+			else:
+				users = selected
+
+		return script_separator.join(script_format.format(user=user, u=user, self=user)
+															for user in users)
 	def chk_Users(self, users_to_check=[], minimal=True, batch=False,
 														auto_answer=None):
 		"""Check user accounts and account data consistency."""
@@ -2045,3 +2083,14 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			# FIXME: forward long_output, or remove it.
 			return '%s\n' % '\n'.join((user._cli_get()
 							for user in sorted(users, key=attrgetter('uid'))))
+
+	@events.handler_method
+	def user_pre_del(self, *args, **kwargs):
+
+		user   = kwargs.pop('user')
+		groups = [ user.primaryGroup.name ] + [ g.name for g in user.groups ]
+
+		if settings.defaults.admin_group in groups and not kwargs.pop('force', False):
+			raise exceptions.LicornStopException(_(u'Cannot delete Licorn® '
+				u'administrator account {0} without specifying --force on the '
+				u'command line').format(user.login))

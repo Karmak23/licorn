@@ -1,4 +1,3 @@
-
 .. _daemon.en:
 
 .. highlight:: bash

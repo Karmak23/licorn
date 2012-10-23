@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-08-28 17:38+0200\n"
-"PO-Revision-Date: 2012-06-18 09:59+0200\n"
+"POT-Creation-Date: 2012-10-18 09:58+0200\n"
+"PO-Revision-Date: 2012-10-19 16:07+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -18,23 +18,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
-#: media/js/gettext.js:5 media/js/utils.js:161
+#: media/js/gettext.js:5 media/js/gettext.min.js:1 media/js/utils.js:164
+#: media/js/utils.min.js:11
 msgid "Confirm"
 msgstr "Confirmer"
 
-#: media/js/gettext.js:6 media/js/utils.js:168
+#: media/js/gettext.js:6 media/js/gettext.min.js:1 media/js/utils.js:171
+#: media/js/utils.min.js:11
 msgid "Cancel"
 msgstr "Annuler"
 
-#: media/js/gettext.js:7 media/js/utils.js:171
+#: media/js/gettext.js:7 media/js/gettext.min.js:1 media/js/utils.js:174
+#: media/js/utils.min.js:11
 msgid "Close"
 msgstr "Fermer"
 
 #: media/js/groups.js:26 media/js/groups.js.c:149 media/js/groups.js.c:153
+#: media/js/groups.min.js:1
 msgid "Make group <strong>%1</strong> not permissive?"
 msgstr "Rendre le groupe <strong>%1</strong> non permissif&nbsp;?"
 
-#: media/js/groups.js:27
+#: media/js/groups.js:27 media/js/groups.min.js:1
 msgid ""
 "This will lock shared files to their owner, disallowing modifications by "
 "other members. This is perfectly safe, and generally used on groups with a "
@@ -51,12 +55,11 @@ msgstr ""
 "longue à observer sur les gros partages, car elle dépend du volume de "
 "données partagées (environ 10 secondes par Gigaoctet).</div>"
 
-#: media/js/groups.js:31 media/js/groups.js.c:158
+#: media/js/groups.js:31 media/js/groups.js.c:158 media/js/groups.min.js:1
 msgid "Make group <strong>%1</strong> permissive?"
 msgstr "Rendre le groupe <strong>%1</strong> permissif&nbsp;?"
 
-#: media/js/groups.js:32
-#, fuzzy
+#: media/js/groups.js:32 media/js/groups.min.js:1
 msgid ""
 "This will permit wider access to files and folders in the group shared "
 "directory, allowing any <strong>member of the group</strong> to modify or "
@@ -70,7 +73,7 @@ msgid ""
 "of all current files (duration is therefore depending on the data volume, "
 "about 10 second for 1Gb).</div>"
 msgstr ""
-"Ceci définit un accès plus larges aux documents du répertoire partagé "
+"Ceci permet un accès plus larges aux documents du répertoire partagé "
 "<em>pour ses membres</em>, leur permettant de modifier ou effacer n'importe "
 "quel document, quelque soit son propriétaire.<br /><br /><strong>Si les "
 "membres du groupes sont déjà habitués à travailler en commun sur certains "
@@ -82,92 +85,126 @@ msgstr ""
 "partages, car elle dépend du volume de données partagées (environ 10 "
 "secondes par Gigaoctet).</div>"
 
-#: media/js/groups.js:45 media/js/users.js:55
+#: media/js/groups.js:45 media/js/groups.min.js:1 media/js/users.js:55
+#: media/js/users.min.js:1
 msgid "Removal confirmation"
 msgstr "Confirmation de suppression"
 
-#: media/js/groups.js:67 media/js/users.js:81
+#: media/js/groups.js:67 media/js/groups.min.js:1 media/js/users.js:81
+#: media/js/users.min.js:1
 msgid "Skeleton reapplying confirmation"
 msgstr "Confirmation de ré-application de skelette"
 
-#: media/js/list.js:80
+#: media/js/list.js:80 media/js/list.min.js:1
 msgid "Massive removal"
 msgstr "Suppression massive"
 
-#: media/js/list.js:83 media/js/list.js.c:136
+#: media/js/list.js:83 media/js/list.js.c:198 media/js/list.min.js:1
 msgid "Please select at least one account."
 msgstr "Sélectionnez au moins un compte."
 
-#: media/js/list.js:87
+#: media/js/list.js:87 media/js/list.min.js:1
 msgid "Are you sure you want to remove these account(s):"
 msgstr "Récapitulatif des comptes à supprimer :"
 
-#: media/js/list.js:89
+#: media/js/list.js:89 media/js/list.min.js:1
 msgid "Definitely remove account data (no archiving)"
 msgstr "Supprimer définitivement les données (pas d'archivage)"
 
-#: media/js/list.js:133
+#: media/js/list.js:139
+#, fuzzy
+msgid "Massive '.'"
+msgstr "Export Massif"
+
+#: media/js/list.js:149 media/js/list.js.c:271
+msgid "Please select at least one "
+msgstr "Merci de sélectionner au moins un "
+
+#: media/js/list.js:195 media/js/list.min.js:1
 msgid "Massive export"
 msgstr "Export Massif"
 
-#: media/js/list.js:140
+#: media/js/list.js:202 media/js/list.min.js:1
 msgid "Are you sure you want to export these account(s):"
 msgstr "Récapitulatif des comptes à exporter :"
 
-#: media/js/list.js:143
+#: media/js/list.js:205 media/js/list.min.js:1
 msgid "Please choose the export format : "
 msgstr "Choisissez le format d'export :"
 
-#: media/js/list.js:194
+#: media/js/list.js:262 media/js/list.min.js:1
 msgid "Massive skeleton reapplying"
 msgstr "Ré-application massive d'un skelette"
 
-#: media/js/list.js:197
-msgid "Please select at least one user account."
-msgstr "Merci de sélectionner au moins un compte utilisateur."
-
-#: media/js/list.js:202
+#: media/js/list.js:276 media/js/list.min.js:1
 msgid ""
 "Are you sure you want to reapply their skeleton to these user account(s):"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir ré-appliquer leur skelette initial aux compte(s) "
 "utilisateur(s) suivant(s)&nbsp;:"
 
-#: media/js/list.js:236
+#: media/js/list.js:279
+msgid ""
+"Are you sure you want to reapply their skeleton to members of following group"
+"(s):"
+msgstr ""
+"Êtes-vous sûr(e) de vouloir ré-appliquer leur skelette initial au(x) membre"
+"(s) du(des) groupe(s) suivant(s)&nbsp;:"
+
+#: media/js/list.js:327
+msgid "Massive users lock toggle"
+msgstr "Basculer le verrouillage des comptes"
+
+#: media/js/list.js:330
+msgid "Please select at least one user."
+msgstr "Merci de sélectionner au moins un compte utilisateur."
+
+#: media/js/list.js:335
+msgid "Are you sure you want to toggle lock of selected user(s):"
+msgstr ""
+"Êtes-vous sûr(e) de vouloir basculer le verrouillage du(des) compte(s) "
+"suivant(s)&nbsp;:"
+
+#: media/js/list.js:367 media/js/list.min.js:1
 msgid "Massive group premissiveness"
 msgstr "Basculement massif de permissivité"
 
-#: media/js/list.js:239
+#: media/js/list.js:370 media/js/list.min.js:1
 msgid "Please select at least one group."
 msgstr "Merci de sélectionner au moins un groupe."
 
-#: media/js/list.js:244
+#: media/js/list.js:375 media/js/list.min.js:1
 msgid "Are you sure you want to toggle permissiveness of group(s):"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir basculer la permissivité du(des) groupe(s) "
 "suivant(s)&nbsp;:"
 
-#: media/js/machines.js:20
+#: media/js/list.min.js:1
+msgid "Please select at least one user account."
+msgstr "Merci de sélectionner au moins un compte utilisateur."
+
+#: media/js/machines.js:20 media/js/machines.min.js:1
 msgid "Unlock user %1"
 msgstr "Déverrouiller le compte %1"
 
-#: media/js/machines.js:23
+#: media/js/machines.js:23 media/js/machines.min.js:1
 msgid "Unlock account "
 msgstr "Déverrouiller le compte"
 
-#: media/js/machines.js:27
+#: media/js/machines.js:27 media/js/machines.min.js:1
 msgid "Lock user %1"
 msgstr "Verrouiller le compte %1"
 
 #: media/js/machines.js:30 media/js/machines.js.c:33 media/js/machines.js:36
+#: media/js/machines.min.js:1
 msgid "Lock account "
 msgstr "Verrouiller le compte"
 
-#: media/js/main.js:272
+#: media/js/main.js:273 media/js/main.min.js:1
 msgid "Random password generator"
 msgstr "Générateur de mot de passe aléatoire"
 
-#: media/js/main.js:273
+#: media/js/main.js:274 media/js/main.min.js:1
 msgid ""
 "<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</"
 "strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</"
@@ -177,49 +214,49 @@ msgstr ""
 "strong>&nbsp;&raquo;. Si vous êtes d'accord pour l'utiliser, cliquez "
 "simplement sur le bouton <code>Confirmer</code>, et retenez ce mot de passe."
 
-#: media/js/menu.js:68
+#: media/js/menu.js:92 media/js/menu.min.js:1
 msgid "Sure?"
 msgstr "Confirmer ?"
 
-#: media/js/menu.js:76
+#: media/js/menu.js:100 media/js/menu.min.js:1
 msgid "Yes"
 msgstr "Oui"
 
-#: media/js/menu.js:77
+#: media/js/menu.js:101 media/js/menu.min.js:1
 msgid "No"
 msgstr "Non"
 
-#: media/js/push.js:48
+#: media/js/push.js:55 media/js/push.min.js:1
 msgid "Push connection back online, rock'n roll!"
 msgstr "Flux d'informations de nouveau opérationnel, Rock'n Roll !"
 
-#: media/js/push.js:73
+#: media/js/push.js:80 media/js/push.min.js:1
 msgid "Push connection lost. Retrying in 5 seconds."
 msgstr ""
 "Connexion au flux d'information perdue. Nouvelle tentative de connexion dans "
 "5 secondes."
 
-#: media/js/push.js:84
+#: media/js/push.js:91 media/js/push.min.js:1
 msgid "Push connection lost. Retrying in 3 seconds."
 msgstr ""
 "Connexion au flux d'information perdue. Tentative de reconnexion dans 3 "
 "secondes."
 
-#: media/js/users.js:31
+#: media/js/users.js:31 media/js/users.min.js:1
 msgid "Unlock confirmation"
 msgstr "Confirmation de déverrouillage"
 
-#: media/js/users.js:32
+#: media/js/users.js:32 media/js/users.min.js:1
 msgid "Do you really want to unlock user account <strong>%1</strong>?"
 msgstr ""
 "Voulez-vous vraiment déverrouiller le compte utilisateur <strong>%1</"
 "strong>&nbsp;?"
 
-#: media/js/users.js:41
+#: media/js/users.js:41 media/js/users.min.js:1
 msgid "Lock confirmation"
 msgstr "Confirmation de verrouillage"
 
-#: media/js/users.js:83
+#: media/js/users.js:83 media/js/users.min.js:1
 msgid ""
 "Are you sure you want to reapply skeleton to user account <strong>%1</"
 "strong>?"
@@ -227,15 +264,15 @@ msgstr ""
 "Êtes-vous sûr(e) de vouloir ré-appliquer le skelette système sur le compte "
 "<strong>%1</strong>&nbsp;?"
 
-#: media/js/users.js:165
+#: media/js/users.js:165 media/js/users.min.js:1
 msgid "Unlock user account"
 msgstr "Déverrouiller le compte utilisateur"
 
-#: media/js/users.js:172 media/js/users.js.c:178
+#: media/js/users.js:172 media/js/users.js.c:178 media/js/users.min.js:1
 msgid "Lock user account"
 msgstr "Verrouiller le compte utilisateur"
 
-#: media/js/utils.js:38
+#: media/js/utils.js:41 media/js/utils.min.js:11
 msgid "Collecting data, please wait&hellip;"
 msgstr "Rassemblement des données, merci de patienter&hellip;"
 

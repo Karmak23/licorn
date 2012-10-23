@@ -1,5 +1,5 @@
 
-.. _extensions.volumes.dev:
+.. _extensions.volumes.dev.en:
 
 =========================================
 Volumes extension developer documentation

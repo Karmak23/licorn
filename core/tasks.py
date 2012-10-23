@@ -141,7 +141,6 @@ from licorn.core.classes          import CoreController, CoreStoredObject, \
 										SelectableController
 
 from licorn.daemon.threads        import LicornJobThread
-from licorn.interfaces.wmi.app    import wmi_event_app
 
 from licorn.foundations.events    import LicornEvent
 
@@ -1153,7 +1152,17 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 						filtered_tasks.append(t)
 
 			return filtered_tasks
+	def to_script(self, selected=None, script_format=None, script_separator=None):
+		""" Export the user accounts list to XML. """
 
+		with self.lock:
+			if selected is None:
+				tasks = self
+			else:
+				tasks = selected
+
+		return script_separator.join(script_format.format(task=task, t=task,
+												self=task) for task in tasks)
 	def _cli_get(self, selected=None, long_output=False, no_colors=False):
 		""" Export the tasks list to human readable form. """
 

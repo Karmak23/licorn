@@ -11,7 +11,14 @@ Licensed under the terms of the GNU GPL version 2.
 
 from optparse import OptionGroup
 
-from styles import *
+# other Licorn® foundations imports
+from _settings import settings
+import styles
+from styles    import *
+from constants import roles
+
+# Circumvent the blahblah… (see fsapi for comment).
+stylize = styles.stylize
 
 def build_version_string(app, version):
 	"""return a string ready to be displayed, containing app_name,
@@ -24,13 +31,21 @@ def build_version_string(app, version):
 			stylize(ST_URL, "http://dev.licorn.org/")
 			)
 		)
-def common_behaviour_group(app, parser, mode='any'):
+def common_behaviour_group(app, parser, mode=None):
 	""" This group is common to all Licorn System Tools."""
 	behaviorgroup = OptionGroup(parser, stylize(ST_OPTION,
-		"Behavior options"),
-		"Modify decisions / output of program.")
+								"Behavior options"),
+								"Modify decisions / output of program.")
 
-	if mode != "get":
+	if mode == "get":
+		if settings.role != roles.SERVER:
+			behaviorgroup.add_option("-r", "--remote",
+				action="store_true", dest="remote", default=False,
+				help=u"Connect to the remote server daemon instead. "
+					u"Default: %s (connect locally)." %
+						stylize(ST_DEFAULT, u"False"))
+
+	else:
 		if mode == "check":
 			behaviorgroup.add_option("-e", "--extended",
 				action="store_false", dest="minimal", default = True,
