@@ -82,38 +82,45 @@ def _nmap_os_details(key, what):
 	if 'fingerprint' in key:
 		return host_os.FINGERPRINT_UNRESOLVED
 
-	elif 'apple' in what.lower():
+	what = what.lower()
+
+	if 'apple' in what:
 		return host_os.APPLE
-	elif 'linux' in what.lower():
+
+	elif 'linux' in what:
 		return host_os.LINUX
-	elif 'windows' in what.lower():
+	elif 'windows' in what:
+
 		return host_os.WINDOWS
+
 	else:
 		raise KeyError
-
 def _nmap_device_type(what):
 
-	if 'router' in what.lower():
-		print "ROUTERRRRR FOUND"
+	what = what.lower()
+
+	if 'router' in what:
 		return host_types.ROUTER
 
-	elif 'media' in what.lower():
+	elif 'media' in what:
 		return host_types.MEDIA
 
-	elif 'general purpose' in what.lower():
+	elif 'general purpose' in what:
 		return host_types.UNKNOWN
 
 	else:
 		raise KeyError
 def _nmap_ether_database(address, words):
 
-	if words == 'Freebox SA':
+	words = words.lower()
+
+	if 'freebox sa' in words:
 		return host_types.FREEBOX
 
-	elif words == 'VMware':
+	elif 'vmware' in words:
 		return host_types.VMWARE
 
-	elif words == 'Apple':
+	elif 'apple' in words:
 		return host_types.APPLE
 
 	address = address.upper()
