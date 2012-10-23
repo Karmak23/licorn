@@ -103,13 +103,13 @@ def check_info_is_in_dict(what, _dict, _startswith=False):
 		for key, value in _dict.iteritems():
 			if what.startswith(key): 
 				return value
-
 	else:
 		for key, value in _dict.iteritems():
 			if key in what.lower(): 
 				return value
 
 	raise KeyError
+
 def test_nmap_installed():
 
 	if os.path.exists('/usr/bin/nmap'):
