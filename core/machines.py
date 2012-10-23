@@ -350,9 +350,7 @@ class Machine(CoreStoredObject, SharedResource):
 							self.system_type = _nmap_device_type(value)
 
 					elif key == 'Running':
-						#	if not self.system_type & _nmap_os_running(value):
-						#		self.system_type |= _nmap_os_running(value)
-						pass
+						self.os_details = _nmap_os_details(key, value)
 
 					elif key == 'OS details':
 						self.os_details = _nmap_os_details(key, value)
