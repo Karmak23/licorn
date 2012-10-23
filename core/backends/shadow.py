@@ -73,7 +73,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		except AttributeError:
 			pass
 		else:
-			logging.warning(_(u'{0} shadow backend (this is important, '
+			logging.warning(_(u'{0} shadow backend. This is important, '
 				u'please do not try to set {1} in {2}!').format(
 						stylize(ST_IMPORTANT, _(u'RE-enabled')),
 						stylize(ST_COMMENT, u'backends.shadow.enabled=False'),

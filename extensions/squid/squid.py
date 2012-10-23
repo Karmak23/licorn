@@ -513,12 +513,15 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 												else self.paths.squid3_conf,
 										caller=self.name)
 
+		# We will try to extract the current HTTP port from the on-disk
+		# configuration in case the sysadmin changed it. The fallback is
+		# our internal default.
 		try:
 			port_value = current_configuration.find(
 											directive_name='http_port').value
 
 		except ValueError:
-			self.defaults.port = '3128'
+			self.defaults.port = SQUID_DEFAULT_HTTP_PORT
 
 		else:
 			not_found = True
@@ -624,19 +627,33 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 			# set params in apt conf
 			apt_file = ConfigFile(self.defaults.apt_conf,
 									separator=' ', caller=self.name)
-			apt_need_rewrite = False
 
-			if not apt_file.has(key=self.defaults.apt_cmd_http):
-				apt_need_rewrite = True
-				apt_file.add(key=self.defaults.apt_cmd_http,
-					value=self.defaults.apt_cmd_http_value)
+			apt_needs_rewrite = False
 
-			if not apt_file.has(key=self.defaults.apt_cmd_ftp):
-				apt_need_rewrite = True
-				apt_file.add(key=self.defaults.apt_cmd_ftp,
-					value=self.defaults.apt_cmd_ftp_value)
+			for key, value in (
+					(self.defaults.apt_cmd_http,
+									self.defaults.apt_cmd_http_value),
+					(self.defaults.apt_cmd_ftp,
+										self.defaults.apt_cmd_ftp_value)
+				):
 
-			if apt_need_rewrite:
+				if not apt_file.has(key=key, value=value):
+					try:
+						# In case we already have a different port value
+						apt_file.remove(key=key)
+
+					except KeyError:
+						# We did have nothing, in fact.
+						pass
+
+				# This is a test again, but the current ConfigFile API
+				# requires us to do it that way. We can't yield directives
+				# to modify them in place.
+				if not apt_file.has(key=key):
+					apt_needs_rewrite = True
+					apt_file.add(key=key, value=value)
+
+			if apt_needs_rewrite:
 				apt_file.backup_and_save(batch=batch, auto_answer=auto_answer)
 	def __unset_shell_environment(self, batch=False, auto_answer=None):
 

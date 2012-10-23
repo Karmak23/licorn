@@ -48,6 +48,12 @@ licorn_python_path = os.path.dirname(os.path.dirname(
 # These are paths on wich everything fail. Don't know why.
 special_invalid_paths = ('.gvfs', )
 
+# These will be filled by setup_users_groups() (see there for details)
+# They are internal to the module, and should not be manipulated ouside.
+# As such they are not exported.
+users  = None
+groups = None
+
 # ============================================================== FS API Classes
 
 class FsapiObject(Enumeration):
@@ -331,7 +337,6 @@ class ACLRule(Enumeration):
 		raise exceptions.PathDoesntExistException(
 							_(u'Ignoring unexisting entry "%s".') %
 								stylize(ST_PATH, directory))
-
 	def check(self):
 		""" general check function """
 
@@ -569,6 +574,74 @@ class ACLRule(Enumeration):
 
 # ============================================================ FS API functions
 
+def setup_users_groups():
+
+	global users, groups
+
+	try:
+		# Best bet is that we are in licornd, with full LMC support.
+		# This will speed things up a lot.
+		users  = LMC.users
+		groups = LMC.groups
+
+	except AttributeError:
+		# We are either in a local contrib script, or the `devinstall` one.
+		# Fallback to getent, which is slower but will allow running `fsapi`
+		# functions from any python code.
+		#
+		# And encapsulate ``getent`` in small LMC API-compatible objects.
+		#
+		# WARNING: these classes must be extended whenever ``fsapi`` needs
+		# to use more LMC.*.* methods.
+
+		from licorn.contrib import getent
+
+		class getent_wrapper(object):
+			def __init__(self, getent_func, attr_id, attr_name):
+				self.getfunc   = getent_func
+				self.attr_id   = attr_id
+				self.attr_name = attr_name
+			def __iter__(self):
+				return self
+			def next(self):
+				attr = self.attr_id
+				for objekt in self.getfunc():
+					yield getattr(objekt, attr)
+			def __getitem__(self, key):
+				return self.getfunc(key)
+			def guess_one(self, thing, strong=None):
+				""" :param:`strong` is ignored, getent has no weakref support. """
+
+				guess = self.getfunc(thing)
+
+				if guess is None:
+					raise KeyError('No object by that name / ID: {0}'.format(thing))
+
+				else:
+					return guess
+		class fake_users(getent_wrapper):
+			def __init__(self):
+				getent_wrapper.__init__(self, getent.passwd, 'uid', 'login')
+			def uid_to_login(self, uid):
+				try:
+					return self[uid].name
+
+				except KeyError:
+					raise exceptions.DoesntExistException(_(u'UID %s does not exist') % uid)
+		class fake_groups(getent_wrapper):
+			def __init__(self):
+				getent_wrapper.__init__(self, getent.group, 'gid', 'name')
+			def gid_to_name(self, gid):
+				try:
+					return self[gid].name
+
+				except KeyError:
+					raise exceptions.DoesntExistException(
+						_(u"GID %s doesn't exist") % gid)
+
+		users  = fake_users()
+		groups = fake_groups()
+
 def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 	followlinks=False, followmounts=True, yield_type=False):
 	""" Mimic the GNU find behaviour in python. returns an iterator. """
@@ -664,13 +737,15 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 										auto_answer=None, full_display=True):
 	""" General function to check file/directory. """
 
-	assert ltrace_func(TRACE_FSAPI)
+	# This will either use LMC, or fake getent encapsulation,
+	# given the context (inside licornd or not).
+	setup_users_groups()
 
-	conf_acls = LMC.configuration.acls
-	conf_dflt = settings.defaults
+	assert ltrace_func(TRACE_FSAPI)
 
 	def check_one_dir_and_acl(dir_info, batch=batch, auto_answer=auto_answer,
 													full_display=full_display):
+
 		path = dir_info['path']
 
 		# Does the file/dir exist ?
@@ -722,8 +797,8 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 				logging.progress(_(u'Checking file %s…') % stylize(ST_PATH, path))
 
 			for event in check_perms(file_type=S_IFREG, dir_info=dir_info,
-						batch=batch, auto_answer=auto_answer,
-						full_display=full_display):
+									batch=batch, auto_answer=auto_answer,
+									full_display=full_display):
 				yield event
 
 		# if it is a dir
@@ -740,10 +815,10 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 				dir_info_root = dir_info.copy()
 				dir_info_root.root_dir_acl  = True
 				dir_info_root.root_dir_perm = "%s,g:%s:rwx,%s" % (
-										conf_acls.acl_base,
-										conf_dflt.admin_group,
-										conf_acls.acl_mask)
-				dir_info_root.gid = conf_acls.gid
+										LMC.configuration.acls.acl_base,
+										settings.defaults.admin_group,
+										LMC.configuration.acls.acl_mask)
+				dir_info_root.gid = LMC.configuration.acls.gid
 
 				# now that the "root dir" has its special treatment,
 				# prepare dir_info for the rest (its contents)
@@ -759,8 +834,9 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 
 			# deal with root dir
 			for event in check_perms(is_root_dir=True, file_type=S_IFDIR,
-							dir_info=dir_info_root, batch=batch,
-							auto_answer=auto_answer, full_display=full_display):
+									dir_info=dir_info_root, batch=batch,
+									auto_answer=auto_answer,
+									full_display=full_display):
 				yield event
 
 			if dir_info.files_perm != None or dir_info.dirs_perm != None:
@@ -783,8 +859,8 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 					itype = (S_IFREG, )
 
 				for entry, etype in minifind(path, itype=itype,
-									exclude=exclude_list, mindepth=1,
-									yield_type=True):
+											exclude=exclude_list, mindepth=1,
+											yield_type=True):
 
 						dir_info.path = entry
 						for event in check_perms(file_type=etype,
@@ -924,9 +1000,11 @@ def check_perms(dir_info, file_type=None, is_root_dir=False, check_symlinks=Fals
 
 		if __raise_or_return(stylize(ST_PATH, path), batch, auto_answer):
 			return
-	# taken from /usr/lib/python2.7/test/test_support.py, to try to avoid #902.
 
-	path = path.encode(sys.getfilesystemencoding() or 'ascii')
+	# Taken from /usr/lib/python2.7/test/test_support.py, to try to avoid #902.
+	# Please don't use 'ascii' as fallback, this is a very bad choice on any
+	# modern system, where all users files are encoded as utf-8 (#952).
+	path = path.encode(sys.getfilesystemencoding() or 'utf-8')
 
 	pretty_path = stylize(ST_PATH, path)
 
@@ -1318,9 +1396,6 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 														full_display=True):
 	""" function that check the uid and gid of a file or a dir. """
 
-	users  = LMC.users
-	groups = LMC.groups
-
 	pretty_path = stylize(ST_PATH, path)
 
 	if full_display:
@@ -1383,10 +1458,10 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 						u'Correct it?').format(
 							pretty_path,
 							stylize(ST_BAD, users[pathstat.st_uid].login
-								if pathstat.st_uid in users.iterkeys()
+								if pathstat.st_uid in users
 								else str(pathstat.st_uid)),
 							stylize(ST_BAD, groups[pathstat.st_gid].name
-								if pathstat.st_uid in groups.iterkeys()
+								if pathstat.st_uid in groups
 								else str(pathstat.st_gid)),
 							stylize(ST_UGID, desired_login),
 							stylize(ST_UGID, desired_group),
@@ -1418,11 +1493,11 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 			logging.warning2(_(u'Invalid owership for {0}: '
 						u'currently {1}:{2} but should be {3}:{4}.').format(
 					pretty_path,
-					stylize(ST_BAD, LMC.users[pathstat.st_uid].login
-						if pathstat.st_uid in LMC.users.iterkeys()
+					stylize(ST_BAD, users[pathstat.st_uid].login
+						if pathstat.st_uid in users
 						else str(pathstat.st_uid)),
-					stylize(ST_BAD, LMC.groups[pathstat.st_gid].name
-						if pathstat.st_uid in LMC.groups.iterkeys()
+					stylize(ST_BAD, groups[pathstat.st_gid].name
+						if pathstat.st_uid in groups
 						else str(pathstat.st_gid)),
 					stylize(ST_UGID, desired_login),
 					stylize(ST_UGID, desired_group),

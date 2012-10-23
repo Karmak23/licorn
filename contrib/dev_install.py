@@ -166,6 +166,24 @@ def write_if_not_present(thefile, what_to_write, match_re):
 			makedirs(dirname)
 			with open(thefile, 'ab') as f:
 				f.write(what_to_write)
+def check_pip_perms():
+	""" Try to avoid the second part of #925.
+		We enclose the call in a try/except block because in some situations
+		the call will fail for legitimate reasons.
+
+		Eg. on first brand fresh devinstall the first call will fail because
+		symlinks don't exist yet. But this first call in :func:`install_all_packages`
+		must exist in case the developer runs ``make devinstall_packages`` on
+		an already installed system.
+	"""
+
+	try:
+		from licorn.upgrades.common import check_pip_perms as cpperms
+		cpperms(batch=True, distro=distro, distros=('Ubuntu', 'Debian'))
+
+	except:
+		raise
+
 def install_all_packages():
 	if distro in ('Ubuntu', 'Debian'):
 		err('Downloading and installing packages, please wait…')
@@ -197,6 +215,8 @@ def install_all_packages():
 
 		else:
 			err('Your Ubuntu/Debian distro is not supported. Please consider upgrading.')
+
+		check_pip_perms()
 
 	else:
 		if '--packages-installed' not in sys.argv:
@@ -300,6 +320,8 @@ def make_symlinks():
 		):
 		unlink(dst)
 		symlink(src, dst)
+
+	check_pip_perms()
 
 	write_if_not_present('/etc/sudoers', '\n\n# Licorn® devinstall - do not remove this comment please\nDefaults	env_keep = "DISPLAY LTRACE LICORN_SERVER LICORN_DEBUG"\n%admins	ALL = (ALL:ALL) NOPASSWD: ALL\n', r'Defaults.*LTRACE')
 def first_licornd_run():
