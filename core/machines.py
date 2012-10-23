@@ -76,6 +76,47 @@ def myself_or_system_forward(func):
 
 	return wrap
 
+
+def _nmap_os_details(key, what):
+
+	if 'fingerprint' in key:
+		return host_os.FINGERPRINT_UNRESOLVED
+
+	elif 'apple' in what.lower():
+		return host_os.APPLE
+	elif 'linux' in what.lower():
+		return host_os.LINUX
+	elif 'windows' in what.lower():
+		return host_os.WINDOWS
+	else:
+		raise KeyError
+
+def _nmap_device_type(what):
+	if 'router' in what.lower():
+		print "ROUTERRRRR FOUND"
+		return host_types.ROUTER
+	elif 'media' in what.lower():
+		return host_types.MEDIA
+	elif 'general purpose' in what.lower():
+		return host_types.UNKNOWN
+	else:
+		raise KeyError
+def _nmap_ether_database(address, words):
+
+	if words == 'Freebox SA':
+		return host_types.FREEBOX
+	elif words == 'VMware':
+		return host_types.VMWARE,
+	elif words == 'Apple':
+		return host_types.APPLE,
+
+	elif '6C:2E' in address:
+		return host_types.LIVEBOX
+	elif '08:00:27' in address:
+		return host_types.VIRTUALBOX
+	else:
+		raise KeyError
+
 class Machine(CoreStoredObject, SharedResource):
 
 	# for SelectableController
@@ -156,18 +197,19 @@ class Machine(CoreStoredObject, SharedResource):
 		# this just annoys me, don't do anything with it.
 		'general purpose': 0x0
 		}
-	_nmap_os_running = {
+	"""_nmap_os_running = {
 		'Apple Mac OS X 10.5.X': host_types.APPLE,
 		'Linux 2.6.X':           host_types.LNX_GEN,
-		}
-	_nmap_os_details = {
+		}"""
+	
+	"""_nmap_os_details = {
 		'HP Photosmart printer': host_types.MULTIFUNC,
-		}
-	_nmap_os_ether = {
+		}"""
+	"""_nmap_os_ether = {
 		'Freebox SA': host_types.FREEBOX,
 		'VMware':     host_types.VMWARE,
 		'Apple':      host_types.APPLE,
-		}
+		}"""
 
 	_lpickle_ = {
 		'drop__' : False,
@@ -202,6 +244,8 @@ class Machine(CoreStoredObject, SharedResource):
 		# OS and OS level, arch, mixed in one integer.
 		self.system_type = system_type
 
+		self.os_details = host_os.UNKNOWN
+
 		# scanned by nmap if present, converted to various
 		# features offered by the machine in our various interfaces.
 		self.open_ports = deque()
@@ -216,6 +260,7 @@ class Machine(CoreStoredObject, SharedResource):
 		# a shortcut to avoid testing everytime
 		# if the current object is local or not.
 		self.myself = myself
+
 
 		for machine in self.linked_machines:
 			machine.master_machine = self
@@ -280,15 +325,20 @@ class Machine(CoreStoredObject, SharedResource):
 		logging.info(_(u'{0}: Linked {1} to {2}.').format(
 								caller, stylize(ST_UGID, licorn_object.ip),
 								stylize(ST_UGID, self.ip)))
+	
 	def guess_os(self):
 		""" Use NMAP for OS fingerprinting and better service detection. """
 
 		caller = current_thread().name
+		
+		# cache the machine state to know if something changed.
+		machine_os = self.os_details
+		machine_type = self.system_type
+
 
 		if Machine._nmap_installed:
 			for line in process.execute(
 					Machine._nmap_cmd_gos_base + [self.mid])[0].splitlines():
-
 				try:
 					key, value = line.split(': ', 1)
 				except ValueError:
@@ -296,22 +346,23 @@ class Machine(CoreStoredObject, SharedResource):
 
 				try:
 					if key == 'Device type':
-						self.system_type |= Machine._nmap_os_devices[value]
+						if self.system_type is host_types.UNKNOWN:
+							self.system_type = _nmap_device_type(value)
 
 					elif key == 'Running':
-						if not self.system_type & Machine._nmap_os_running[value]:
-							self.system_type |= Machine._nmap_os_running[value]
+						#	if not self.system_type & _nmap_os_running(value):
+						#		self.system_type |= _nmap_os_running(value)
+						pass
 
 					elif key == 'OS details':
-						if not self.system_type & Machine._nmap_os_details[value]:
-							self.system_type |= Machine._nmap_os_details[value]
+						self.os_details = _nmap_os_details(key, value)
 
 					elif key == 'MAC Address':
-						# See if we got something from the words in parentheses
-						self.system_type |= Machine._nmap_os_ether[
-												value.rsplit('(', 1)[1][:-1]]
+
+						self.system_type = _nmap_ether_database(value.split(' ')[0], value.rsplit('(', 1)[1][:-1])
+						
 					elif key in ('Not shown', 'Warning', 'Network Distance',
-							'Nmap done', 'Note'):
+							'Nmap done', 'Note', 'OS'):
 						continue
 					else:
 						logging.warning2(_(u'{0}: guess_os({1}) → unknown '
@@ -326,6 +377,11 @@ class Machine(CoreStoredObject, SharedResource):
 						u'if you what type of device it is.').format(
 							caller, self.mid, key, value))
 					continue
+
+
+			if self.system_type != machine_type or self.os_details != machine_os:
+				LicornEvent('machine_changed', host=self).emit()
+
 		else:
 			assert ltrace(TRACE_MACHINES, '| %s: guess_os(%s) → nmap '
 				'not installed, can\'t guess OS.' % (caller, self.mid))
@@ -338,15 +394,28 @@ class Machine(CoreStoredObject, SharedResource):
 		old_status = self.status
 		UP_status = [ host_status.ONLINE, host_status.PINGS, host_status.ACTIVE ]
 
+		def and_more_func():
+			# resolve machine name
+			workers.network_enqueue(priorities.LOW, self.resolve)
+			
+			# scan ports
+			workers.network_enqueue(priorities.NORMAL, self.scan_ports)
+
+			# arping
+			workers.network_enqueue(priorities.LOW, self.arping)
+
+			# guess possibles information
+			workers.network_enqueue(priorities.NORMAL, self.guess_os)
+
+
 		with self.lock:
 
 			if self.myself:
 				self.status = host_status.ACTIVE
 
 				if and_more:
-					workers.network_enqueue(priorities.NORMAL, self.scan_ports)
-					workers.network_enqueue(priorities.LOW, self.arping)
-					workers.network_enqueue(priorities.LOW, self.resolve)
+					and_more_func()
+
 				assert ltrace(TRACE_MACHINES, '| %s: ping(%s) → %s' % (
 									caller, self.mid, host_status[self.status]))
 
@@ -377,9 +446,7 @@ class Machine(CoreStoredObject, SharedResource):
 									else 'host_online', host=self).emit()
 
 				if and_more:
-					workers.network_enqueue(priorities.NORMAL, self.scan_ports)
-					workers.network_enqueue(priorities.LOW, self.arping)
-					workers.network_enqueue(priorities.LOW, self.resolve)
+					and_more_func()
 
 				self.has_already_been_online = True
 			# close the socket (no more needed), else we could get
@@ -427,7 +494,7 @@ class Machine(CoreStoredObject, SharedResource):
 			if self.myself:
 				workers.network_enqueue(priorities.NORMAL, self.update_informations)
 				return
-
+			
 			for line in process.execute(
 					Machine._nmap_cmd_scan_base + [ self.mid ])[0].splitlines():
 
@@ -481,14 +548,14 @@ class Machine(CoreStoredObject, SharedResource):
 				remotesys.noop()
 
 			except Pyro.errors.ProtocolError, e:
-				workers.network_enqueue(priorities.LOW, self.guess_os)
+				#workers.network_enqueue(priorities.LOW, self.guess_os)
 				assert ltrace(TRACE_MACHINES, '  %s: cannot pyroize %s '
 								'(was: %s)' % (caller, self.mid, e))
 
 			except Pyro.errors.PyroError, e:
 				remotesys.release()
 				del remotesys
-				workers.network_enqueue(priorities.LOW, self.guess_os)
+				#workers.network_enqueue(priorities.LOW, self.guess_os)
 				assert ltrace(TRACE_MACHINES, '%s: pyro error %s on %s.' % (
 						caller, e, self.mid))
 

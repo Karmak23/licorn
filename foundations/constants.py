@@ -109,11 +109,23 @@ host_status.LOADED         =  0x00001000
 host_status.OP_IN_PROGRESS =  0xffff0000
 host_status.UPGRADING      =  0x00010000
 
+host_os = EnumDict('host_os')
+host_os.ALL                    =  0xffffffffffffffff
+host_os.NONE                   =  0x0000000000000000
+host_os.LINUX                  =  0x000000000000ffff
+host_os.WINDOWS                =  0x00000000ffff0000
+host_os.APPLE                  =  0x0000ffff00000000
+host_os.UNKNOWN                =  0xffff000000000000
+host_os.FINGERPRINT_UNRESOLVED =  0x0001000000000000
+
+
+
 # FIXME: merge this with distros (don't duplicate)
 host_types = EnumDict('host_types')
 host_types.ALL        =  0xffffffffffffffff
 host_types.NONE       =  0x0000000000000000
 host_types.UNKNOWN    =  host_types.NONE
+
 host_types.LINUX      =  0x000000000000ffff
 host_types.LICORN     =  0x0000000000000001
 host_types.ALT_CLIENT =  0x0000000000000002
@@ -122,10 +134,12 @@ host_types.META_SRV   =  0x0000000000000004
 host_types.UBUNTU     =  0x0000000000000010
 host_types.DEBIAN     =  0x0000000000000020
 host_types.LNX_GEN    =  0x0000000000000040
+
 host_types.WINDOWS    =  0x00000000ffff0000
 host_types.WIN_NT     =  0x0000000000010000
 host_types.WIN_7      =  0x0000000000020000
 host_types.WIN_OLD    =  0x0000000000040000
+
 host_types.APPLE      =  0x0000ffff00000000
 host_types.IMAC       =  0x0000000100000000
 host_types.MACBOOK    =  0x0000000200000000
@@ -137,6 +151,7 @@ host_types.XSERVE     =  0x0000004000000000
 host_types.MACMINI    =  0x0000008000000000
 host_types.TIMECAPS   =  0x0000010000000000
 host_types.AIRPORT    =  0x0000020000000000
+
 host_types.DEVICES    =  0xffff000000000000
 host_types.ROUTER     =  0x0001000000000000
 host_types.FIREWALL   =  0x0002000000000000
@@ -148,6 +163,10 @@ host_types.APPLIANCE  =  0x0040000000000000
 host_types.NAS        =  0x0080000000000000
 host_types.APPLIANCE  =  0x0100000000000000
 host_types.FREEBOX    =  0x0200000000000000
+host_types.LIVEBOX    =  0x0400000000000000
+host_types.MEDIA      =  0x0800000000000000
+host_types.VIRTUALBOX =  0x1000000000000000
+
 # room for new ones, here
 host_types.VMWARE     =  0x4000000000000000
 host_types.NET_OTHER  =  0x8000000000000000

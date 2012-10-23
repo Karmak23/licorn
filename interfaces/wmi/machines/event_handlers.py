@@ -99,3 +99,8 @@ def software_upgrades_finished_handler(request, event, reinit=False):
 															machine.hostname))
 
 	yield update_machine_instance(machine)
+
+def machine_changed_handler(request, event, reinit=False):
+	machine = event.kwargs['host']
+	
+	yield update_machine_instance(machine)

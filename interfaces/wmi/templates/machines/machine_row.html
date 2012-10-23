@@ -42,9 +42,9 @@
 	<td class='centered'>
 		{{ get_machine_backend_img(machine) }}
 	</td>
-	<td class='centered' data-sort='{{ machine.system_type }}'>
-		<img src="/media/images/16x16/{{ get_host_os_html(machine.system_type)[0] }}"
-						alt="{{ get_host_os_html(machine.system_type)[1] }}" title="{{ get_host_os_html(machine.system_type)[1] }}" width="16" height="16" />
+	<td class='centered'>
+		<img src="/media/images/16x16/{{ get_host_os_html(machine.os_details)[0] }}"
+						alt="{{ get_host_os_html(machine.os_details)[1] }}" title="{{ get_host_os_html(machine.os_details)[1] }}" width="16" height="16" />
 	</td>
 </tr>
 
