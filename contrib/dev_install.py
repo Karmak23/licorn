@@ -67,6 +67,8 @@ base_packages  = ('pyro', 'python-pylibacl', 'python-ldap', 'python-xattr',
 				'python-sqlite', 'python-cracklib', 'python-pip',
 				'python-dmidecode', 'python-libxml2', 'python-dateutil',
 				'python-utmp', 'nmap', 'screen',
+				# needed for pybonjour to compile / run
+				'libavahi-compat-libdnssd1',
 				# LXC-environment forgotten packages
 				'psmisc')
 
@@ -83,6 +85,9 @@ build_packages  = ('build-essential', 'python-all-dev', 'debhelper',
 # NOTE: python-sphinx is not installed, because it's notstrictly
 # required (only for doc building), and on "older" distros it will
 # pull in a non-wanted old version of Jinja2 < 2.6.
+#
+# NOTE: other packages are manually installed in `install_all_packages()`.
+# Look there if you need to add PIP python modules to the installation.
 
 def err(*args):
 	""" just print something on stderr. """
@@ -161,6 +166,24 @@ def write_if_not_present(thefile, what_to_write, match_re):
 			makedirs(dirname)
 			with open(thefile, 'ab') as f:
 				f.write(what_to_write)
+def check_pip_perms():
+	""" Try to avoid the second part of #925.
+		We enclose the call in a try/except block because in some situations
+		the call will fail for legitimate reasons.
+
+		Eg. on first brand fresh devinstall the first call will fail because
+		symlinks don't exist yet. But this first call in :func:`install_all_packages`
+		must exist in case the developer runs ``make devinstall_packages`` on
+		an already installed system.
+	"""
+
+	try:
+		from licorn.upgrades.common import check_pip_perms as cpperms
+		cpperms(batch=True, distro=distro, distros=('Ubuntu', 'Debian'))
+
+	except:
+		raise
+
 def install_all_packages():
 	if distro in ('Ubuntu', 'Debian'):
 		err('Downloading and installing packages, please wait…')
@@ -171,36 +194,30 @@ def install_all_packages():
 		apt_install(dev_packages)
 		apt_install(build_packages)
 
-		# Now that we are sure that python-apt is installed, we can compare
-		# release versions in a reliable way.
+		# There is no Ubuntu version i'm aware of that has a package for pybonjour.
+		pip_install(('pybonjour', ))
+
 		from apt_pkg import version_compare
 		import apt_pkg
 		apt_pkg.init()
 
-		if (distro == 'Ubuntu' and version_compare(rel_ver, '8.04') == 0
-			) or (distro == 'Debian' and version_compare(rel_ver, '6.0') < 1):
-			pip_install(('pyudev', ))
-			unlink('/usr/lib/python2.5/site-packages/licorn')
-			symlink(devel_dir, '/usr/lib/python2.5/site-packages/licorn')
-
-		elif (distro == 'Ubuntu' and (
+		if (distro == 'Ubuntu' and (
 					version_compare(rel_ver, '10.04') == 0
 					or version_compare(rel_ver, '10.10') == 0)
 				) or (distro == 'Debian' and (
 					version_compare(rel_ver, '6.0') >= 0
 					and version_compare(rel_ver, '7.0') < 0)):
 			pip_install(('pyudev', ))
-			unlink('/usr/lib/python2.6/dist-packages/licorn')
-			symlink(devel_dir, '/usr/lib/python2.6/dist-packages/licorn')
 
 		elif (distro == 'Ubuntu' and version_compare(rel_ver, '11.04') >= 0
 			) or (distro == 'Debian' and version_compare(rel_ver, '7.0') >=0):
 			apt_install(('python-pyudev', ))
-			unlink('/usr/lib/python2.7/dist-packages/licorn')
-			symlink(devel_dir, '/usr/lib/python2.7/dist-packages/licorn')
 
 		else:
-			err('Your Ubuntu/Debian distro is not supported anymore. Please consider upgrading.')
+			err('Your Ubuntu/Debian distro is not supported. Please consider upgrading.')
+
+		check_pip_perms()
+
 	else:
 		if '--packages-installed' not in sys.argv:
 			err('Your distro is not officially supported. Please install the '
@@ -232,6 +249,35 @@ def user_post_installation():
 	sys.exit(0)
 def make_symlinks():
 	err('Symlinking everything from {0}, please wait…'.format(devel_dir))
+
+	# Now that we are sure that python-apt is installed, we can compare
+	# release versions in a reliable way.
+	from apt_pkg import version_compare
+	import apt_pkg
+	apt_pkg.init()
+
+	if (distro == 'Ubuntu' and version_compare(rel_ver, '8.04') == 0
+		) or (distro == 'Debian' and version_compare(rel_ver, '6.0') < 1):
+		pip_install(('pyudev', ))
+		unlink('/usr/lib/python2.5/site-packages/licorn')
+		symlink(devel_dir, '/usr/lib/python2.5/site-packages/licorn')
+
+	elif (distro == 'Ubuntu' and (
+				version_compare(rel_ver, '10.04') == 0
+				or version_compare(rel_ver, '10.10') == 0)
+			) or (distro == 'Debian' and (
+				version_compare(rel_ver, '6.0') >= 0
+				and version_compare(rel_ver, '7.0') < 0)):
+		unlink('/usr/lib/python2.6/dist-packages/licorn')
+		symlink(devel_dir, '/usr/lib/python2.6/dist-packages/licorn')
+
+	elif (distro == 'Ubuntu' and version_compare(rel_ver, '11.04') >= 0
+			) or (distro == 'Debian' and version_compare(rel_ver, '7.0') >=0):
+		unlink('/usr/lib/python2.7/dist-packages/licorn')
+		symlink(devel_dir, '/usr/lib/python2.7/dist-packages/licorn')
+
+	else:
+		err('Your Ubuntu/Debian distro is not supported. Please consider upgrading.')
 
 	for executable in ('add', 'mod', 'del', 'chk', 'get'):
 		unlink('/usr/bin/{0}'.format(executable))
@@ -266,11 +312,16 @@ def make_symlinks():
 			('{0}/core/backends/schemas'.format(devel_dir),
 			'{0}/schemas'.format(share_dir)),
 
+			('{0}/extensions'.format(devel_dir),
+			'{0}/extensions'.format(share_dir)),
+
 			('{0}/locale/fr.mo'.format(devel_dir),
 			'/usr/share/locale/fr/LC_MESSAGES/licorn.mo'),
 		):
 		unlink(dst)
 		symlink(src, dst)
+
+	check_pip_perms()
 
 	write_if_not_present('/etc/sudoers', '\n\n# Licorn® devinstall - do not remove this comment please\nDefaults	env_keep = "DISPLAY LTRACE LICORN_SERVER LICORN_DEBUG"\n%admins	ALL = (ALL:ALL) NOPASSWD: ALL\n', r'Defaults.*LTRACE')
 def first_licornd_run():

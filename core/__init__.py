@@ -50,15 +50,20 @@ def start_message_thread():
 	msgth.start()
 
 def stop_message_thread():
+	""" Try to cancel the message timer. If that fails, it has already
+		displayed the "please wait" message; in that case, display a new
+		message indicating that we are going on.
+
+		.. note:: we don't delete the msgth, it's outside the scope of this
+			current function. This would lead to #936. """
 	global msgth
+
 	try:
 		# don't display the waiting message if not already done.
 		msgth.cancel()
 
 	except:
 		logging.notice(_(u'OK. We\'re running now!'))
-
-	del msgth
 
 class LicornMasterController(MixedDictObject):
 	""" The master container of all Licorn® system objects. It handles
@@ -207,8 +212,10 @@ class LicornMasterController(MixedDictObject):
 
 		self._ServerLMC = ServerLMC
 
-		logging.info(_(u'Server backends: {0}').format(
-						ServerLMC.system.get_backends(client_only=True)))
+		logging.info(_(u'Server backends: {0}.').format(
+						', '.join(stylize(ST_NAME, x)
+							for x in ServerLMC.system.get_backends(
+												client_only=True))))
 
 		self.backends.load(
 				server_side_modules=ServerLMC.system.get_backends(
@@ -247,25 +254,24 @@ class LicornMasterController(MixedDictObject):
 			# sort of things).
 			self.backends.check(batch=True)
 
-			if settings.role == roles.SERVER:
-				# load common core objects.
-				from users  import UsersController
-				from groups import GroupsController
-				from tasks    import TasksController
+			# load common core objects.
+			from users  import UsersController
+			from groups import GroupsController
+			from tasks  import TasksController
 
-				self.tasks = TasksController()
-				self.users  = UsersController()
-				self.groups = GroupsController()
+			self.tasks  = TasksController()
+			self.users  = UsersController()
+			self.groups = GroupsController()
 
-				# groups will load users as a dependancy.
-				self.groups.load()
+			# groups will load users as a dependancy.
+			self.groups.load()
 
 			# We create it in first pass, because :class:`CommandListener` needs it.
 			from licorn.foundations.messaging import MessageProcessor
 
 			self.msgproc = MessageProcessor(
-				ip_address=network.find_first_local_ip_address() \
-					if settings.role == roles.CLIENT \
+				ip_address=network.find_first_local_ip_address()
+					if settings.role == roles.CLIENT
 					else None)
 
 			# NOTE: we DO NOT collect events on message processor, because it
@@ -292,6 +298,8 @@ class LicornMasterController(MixedDictObject):
 				self.groups   = LMC.groups
 
 		LicornMasterController._init_first_pass = True
+
+		LicornEvent('lmc_initialized').emit(priorities.HIGH)
 	def __init_common(self):
 		""" Common phase of LMC.init between CLIENT and SERVER. Init the
 			extensions after the controllers, and add extensions data to
@@ -300,9 +308,15 @@ class LicornMasterController(MixedDictObject):
 
 		from licorn.extensions import ExtensionsManager
 		self.extensions = ExtensionsManager()
-		self.extensions.load(
-			self._ServerLMC.system.get_extensions(client_only=True) \
-				if self._ServerLMC else None)
+
+		if self._ServerLMC:
+			logging.info(_(u'Server extensions: {0}.').format(
+						', '.join(stylize(ST_NAME, x)
+							for x in self._ServerLMC.system.get_extensions(
+												client_only=True))))
+
+		self.extensions.load(self._ServerLMC.system.get_extensions(
+							client_only=True) if self._ServerLMC else None)
 
 		# extensions must have a clean configuration before continuing.
 		self.extensions.check(batch=True)
@@ -330,14 +344,14 @@ class LicornMasterController(MixedDictObject):
 		from profiles import ProfilesController
 		from keywords import KeywordsController
 		from machines import MachinesController
-		
+
 		self.profiles = ProfilesController()
 		self.profiles.load()
 		self.machines = MachinesController()
 		self.machines.load()
 		self.keywords = KeywordsController()
 		self.keywords.load()
-		
+
 	def terminate(self):
 
 		if self._ServerLMC:
@@ -379,6 +393,7 @@ class LicornMasterController(MixedDictObject):
 				...
 
 		"""
+
 		assert ltrace_func(TRACE_CORE, level=99)
 
 		# we need to protect the whole method, in case 2 threads try to
@@ -391,84 +406,69 @@ class LicornMasterController(MixedDictObject):
 				# connected master object.
 				return self.rwi
 
+			# The “real” LMC, local, in CLIENT and SERVER.
+			# It always connect to the local "system" object.
+			sys_pyroloc = 'PYROLOC://127.0.0.1:{0}'.format(settings.pyro.port)
+
 			if settings.role == roles.SERVER:
-				pyroloc = 'PYROLOC://127.0.0.1:%s' % (settings.pyro.port)
+				# SERVER CLI connects everything locally, thus RWI.
+				rwi_pyroloc = sys_pyroloc
+
 			else:
-				logging.progress(_(u'trying to connect to server %s.') %
-													settings.server_main_address)
-				pyroloc = 'PYROLOC://%s:%s' % (settings.server_main_address,
-												settings.pyro.port)
+				# CLIENT daemon and CLIENT CLI connect to remote SERVER's RWI.
+				# It will be auto-resolved later in the method.
+				rwi_pyroloc = None
 
 				if not self._master:
-					# remove current values of controllers, they are pointing to LMC.
+					# In CLIENTs, there can be an helper LMC (the “ServerLMC”),
+					# Which connects remotely too, to access SERVER attributes
+					# easily from the CLIENT.
+					sys_pyroloc = 'PYROLOC://{0}:{1}'.format(
+												settings.server_main_address,
+												settings.server_main_port)
+					# remove current values of controllers, they are
+					# pointing to local LMC, which is useless in client
+					# mode (everything is on the server).
 					self.configuration = None
-					self.backends = None
-					self.extension = None
-					self.users = None
-					self.groups = None
-					self.system = None
-					self.msgproc = None
+					self.backends      = None
+					self.extension     = None
+					self.users         = None
+					self.groups        = None
+					self.system        = None
+					self.msgproc       = None
 
-			# the opposite is already used to define pyro.port
+			# The opposite is already used to define pyro.port
 			#Pyro.config.PYRO_PORT=settings.pyro.port
 
 			start_time      = time.time()
 			second_try      = False
 			already_delayed = False
 
+			# This will eventually display the "daemon is busy"
+			# message, if we can't connect fast enough.
+			start_message_thread()
+
+			#print '>> SYSTEM', sys_pyroloc, 'LMC', self.name, self._master
+			self.system = Pyro.core.getAttrProxyForURI(sys_pyroloc + '/system')
+
+			# Set a timeout for establishing the connection.
+			# On a loaded daemon which is in the process of
+			# setting up inotifier watches, this can be long.
+			self.system._setTimeout(timeout)
+
 			while True:
-				# This while seems infinite but is not.
+				# This while is not really infinite:
 				#   - on first succeeding connection, it will break.
-				#   - on pyro exception (can't connect), the daemon will be forked
-				#	  and signals will be setup, to wait for the daemon to come up:
-				#     if the daemon comes up, the loop restarts and should break
-				#	  because connection succeeds.
+				#   - on pyro exception (can't connect), the local daemon will
+				#		be forked and signals will be setup, to wait for the
+				#		daemon to come up: if the daemon comes up, the loop
+				#		restarts and should break because connection succeeds.
+
 				try:
-					start_message_thread()
-
-					# a server daemon offers 'LMC.rwi' + `LMC.system`
-					self.rwi = Pyro.core.getAttrProxyForURI("%s/rwi" % pyroloc)
-
-					# Set a timeout for establishing the connection.
-					# On a loaded daemon which is in the process of setting up
-					# inotifier watches, this can be long.
-					self.rwi._setTimeout(timeout)
-
-					# be sure the connection can be established; without this
-					# call, Pyro is lazy and doens't check someone really
+					# Be sure the connection can be established; without this
+					# call, Pyro is lazy and doesn't check a process really
 					# listens at the other end.
-					self.rwi.noop()
-
-					# Cancel the status display as soon as `noop()` returns.
-					stop_message_thread()
-
-					# re-set an infinite timeout for normal operations, because
-					# CLI methods can last a very long time (thinking about
-					# `CHK`), while nothing is transmitted via the Pyro tunnel
-					# all output goes via another thread / tunnel, and the
-					# operation caller has just to wait that the called method
-					# returns.
-					self.rwi._setTimeout(0)
-
-					assert ltrace(TRACE_CORE,
-						'  connect(): RWI object connected (Remote is SERVER).')
-					break
-
-				except AttributeError:
-					# a client daemon only offers "LMC.system", for remote-control.
-					# This is used from `get {inside,events,status}` commands
-					# with `export LICORN_SERVER=...` to inspect client daemons.
-
-					self.system = Pyro.core.getAttrProxyForURI(
-															"%s/system" % pyroloc)
-					self.system._setTimeout(timeout)
 					self.system.noop()
-
-					stop_message_thread()
-
-					assert ltrace(TRACE_CORE,
-						'  connect(): system object connected (Remote is CLIENT).')
-					break
 
 				except Pyro.errors.ProtocolError, e:
 
@@ -482,69 +482,95 @@ class LicornMasterController(MixedDictObject):
 						sys.exit(911)
 
 					if second_try:
-						if settings.role == roles.SERVER:
-							logging.error(_(u'Cannot connect to the daemon, '
-								u'but it has been successfully launched. I '
-								u' suspect you are in trouble (was: %s)') %
-									e, 199)
-						else:
-							logging.warning(_(u'Cannot reach our daemon at %s, '
-								u'retrying in 5 seconds. Check your network '
-								u'connection, cable, DNS and firewall. Perhaps '
-								u' the Licorn® server is simply down.') %
-									stylize(ST_ADDRESS, u'pyro://%s:%s' % (
-										settings.server_main_address,
-										settings.pyro.port)))
-							time.sleep(5.0)
-							continue
+						logging.error(_(u'Cannot connect to the daemon, '
+							u'but it has been successfully launched. I '
+							u' suspect you are in trouble (was: %s)') % e, 199)
 
-					if settings.role == roles.SERVER:
+					if delayed_daemon_start and not already_delayed:
+						# We will retry connecting without launching the daemon.
+						already_delayed = True
+						time.sleep(15.0)
+						continue
 
-						if delayed_daemon_start and not already_delayed:
-							already_delayed = True
-							time.sleep(5.0)
-							continue
+					# The daemon will fork in the background and the call
+					# will return nearly immediately.
+					process.fork_licorn_daemon(pid_to_wake=os.getpid())
 
-						# The daemon will fork in the background and the call
-						# will return nearly immediately.
-						process.fork_licorn_daemon(pid_to_wake=os.getpid())
+					# Wait to receive SIGUSR1 from the daemon when it's
+					# ready. On loaded system with lots of groups, this
+					# can take a while (I observed ~12min for 45K watches
+					# on my Core i3 2,6Ghz + 8Gb + 4Tb RAID0 system), but
+					# it will never take more than `first_connect_timeout`
+					# seconds because of the daemon's multithreaded
+					# nature. Thus we setup a signal to wake us
+					# inconditionnaly after the timeout and report an
+					# error if the daemon hasn't waked us in this time.
+					signal.signal(signal.SIGALRM, connect_error)
+					signal.alarm(timeout)
 
-						# Wait to receive SIGUSR1 from the daemon when it's
-						# ready. On loaded system with lots of groups, this
-						# can take a while (I observed ~12min for 45K watches
-						# on my Core i3 2,6Ghz + 8Gb + 4Tb RAID0 system), but
-						# it will never take more than `first_connect_timeout`
-						# seconds because of the daemon's multithreaded
-						# nature. Thus we setup a signal to wake us
-						# inconditionnaly after the timeout and report an
-						# error if the daemon hasn't waked us in this time.
-						signal.signal(signal.SIGALRM, connect_error)
-						signal.alarm(timeout)
+					# Cancel the alarm if USR1 received.
+					signal.signal(signal.SIGUSR1, lambda x,y: signal.alarm(0))
 
-						# Cancel the alarm if USR1 received.
-						signal.signal(signal.SIGUSR1, lambda x,y: signal.alarm(0))
+					logging.notice(_(u'Waiting up to {0} seconds for '
+									u'daemon to come up… Please hold '
+									u'on.').format(timeout))
 
-						logging.notice(_(u'Waiting up to {0} seconds for '
-										u'daemon to come up… Please hold '
-										u'on.').format(timeout))
+					# ALARM or USR1 will break the pause()
+					signal.pause()
 
-						# ALARM or USR1 will break the pause()
-						signal.pause()
 					second_try=True
 
+				# Cancel the status display as soon as `noop()` returns.
+				stop_message_thread()
+
+				# re-set an infinite timeout for normal operations, because
+				# CLI methods can last a very long time (thinking about
+				# `CHK`), while nothing is transmitted via the Pyro tunnel
+				# all output goes via another thread / tunnel, and the
+				# operation caller has just to wait that the called method
+				# returns.
+				self.system._setTimeout(0)
+
+				assert ltrace(TRACE_CORE, '  connect(): local SYSTEM object connected.')
+				break
+
+
+			if rwi_pyroloc is None:
+				if self._master:
+					host, port = self.system.server()
+
+				else:
+					host, port = LMC.system.server()
+
+				logging.progress(_(u'Connecting to remote server {0}.').format(
+									stylize(ST_URL, 'pyro://{0}:{1}/'.format(
+										host, port))))
+
+				rwi_pyroloc = 'PYROLOC://{0}:{1}'.format(host, port)
+
+			#print '>>    RWI', rwi_pyroloc, 'LMC', self.name, self._master
+			self.rwi = Pyro.core.getAttrProxyForURI(rwi_pyroloc + '/rwi')
+
+			if settings.role != roles.CLIENT:
+				self.rwi._setTimeout(timeout)
+
+				try:
+					self.rwi.noop()
+
+				except Pyro.errors.ProtocolError, e:
+					logging.warning(_(u'Remote server daemon is down. MANY '
+										u'operations will not be available.'))
+					self.rwi = None
+
+				self.rwi._setTimeout(0)
+
 			assert ltrace(TRACE_TIMINGS, '@LMC.connect(): %.4fs' % (
-				time.time() - start_time))
+													time.time() - start_time))
 			del start_time
 
 			assert ltrace(TRACE_CORE, '< connect()')
 
-			try:
-				return self.rwi
-
-			except AttributeError:
-				# the remote daemon has only the `system` attribute, it's a CLIENT.
-				return self.system
-
+			return self.rwi
 	def release(self, force=False):
 		""" Release all Pyro proxys. """
 

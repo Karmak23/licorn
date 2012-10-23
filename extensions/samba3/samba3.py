@@ -116,6 +116,8 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 
 			self.available = True
 
+			self.has_xdg = process.executable_exists_in_path('xdg-user-dirs-update')
+
 		else:
 			logging.info(_(u'{0}: extension disabled because {1} '
 							u' nor ({2} and {3}) not found.').format(
@@ -623,10 +625,39 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 	@events.handler_method
 	@only_if_enabled
 	def user_logged_in(self, event, *args, **kwargs):
+		""" Run :program:`xdg-user-dirs-update` if installed, then build a
+			netlogon script synchronously, to prepare the user's Windows®
+			session.
+
+			.. note:: the current :program:`xdg-user-dirs-update`
+				implementation is very basic: it will only run this command,
+				without checking if the system ``$LANG`` variable or :file:`$HOME/.config/user-dirs.*`
+				changed from last run. This will potentially leave `old`
+				XDG directories in place.
+
+			.. todo:: harden this event handler against arguments forgery.
+				Currently an attacker could eventually do harm by sending
+				crafted events from the command line. This would require
+				gaining ``@admins`` membership first, though.
+		"""
 
 		assert ltrace_func(TRACE_SAMBA3)
 
 		if event.kwargs.get('event_source', None) == 'samba3-netlogon':
+
+			login = event.kwargs.get('user_login')
+
+			if self.has_xdg:
+				try:
+					# We assume the system has 'su'. Shouldn't we?
+					os.system('su - {0} -c xdg-user-dirs-update'.format(login))
+
+				except (IOError, OSError):
+					logging.exception(_(u'{0}: exception while running {1} for '
+						u'user {2}').format(self.pretty_name,
+							stylize(ST_COMMENT, 'xdg-user-dirs-update'),
+							stylize(ST_NAME, login)))
+
 			netlogon.netlogon(*event.args, **event.kwargs)
 
 __all__ = ('Samba3Extension', )

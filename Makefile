@@ -49,31 +49,42 @@ uninstall:
 	# CONF_DIR "$(CONF_DIR)" has been left in place in case
 	# you had custom configuration. Delete it if you wish.
 
+# These are split to be able to run them separately.
+devinstall_symlinks:
+	@sudo python contrib/dev_install.py --make-symlinks DEVEL_DIR=$(shell python -m foundations/bootstrap)
+
+devinstall_packages:
+	@sudo python contrib/dev_install.py --install-all-packages
+
+devinstall_userpost:
+	@python contrib/dev_install.py --user-post-installation
+
+devinstall_main:
+	@sudo python contrib/dev_install.py
+
 # In developer install, the first 'make lang' will fail because Django
 # is not yet installed. But this will go far enough to compile the PO
 # files for the daemon to start, and then install the other required packages
-# for the second call to 'make lang' to succeed.
-devinstall_packages:
+# for the "post" call to 'make lang' to succeed completely.
+devinstall_pre:
 	#
 	# REMINDER: this process involves SUDO,
 	#	you should be able to invoke it to continue.
 	#
 	@make lang >/dev/null 2>&1 || true
-	@sudo python contrib/dev_install.py --install-all-packages
 
-
-# we must call a pre_devinstall target, else the $(shell) will fail unless
-# packages are already installed. This is a `make` behaviour workaround, to
-# circumvent the $(shell) beiing called before running all the commands.
-devinstall: devinstall_packages perms
-	@sudo python contrib/dev_install.py --make-symlinks DEVEL_DIR=$(shell python -m foundations/bootstrap)
-	@sudo python contrib/dev_install.py
-	@python contrib/dev_install.py --user-post-installation
+devinstall_post:
 	@make lang  >/dev/null 2>&1
 	#
 	# You should logout from your session and log back in to
 	# benefit from your new groups. After that you can play :-)
 	#
+
+
+# we must call a pre_devinstall target, else the $(shell) will fail unless
+# packages are already installed. This is a `make` behaviour workaround, to
+# circumvent the $(shell) beiing called before running all the commands.
+devinstall: devinstall_pre devinstall_packages devinstall_symlinks devinstall_main devinstall_userpost devinstall_post perms
 
 devuninstall: uninstall
 

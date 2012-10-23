@@ -13,6 +13,8 @@ from types     import *
 from threading import current_thread
 
 # licorn foundations imports
+#
+# NOTE: don't import "settings" or "_settings", it will cycle.
 import exceptions, logging, styles
 from styles  import *
 from ltrace  import *
@@ -27,15 +29,23 @@ __all__ = ('daemonize', 'write_pid_file', 'use_log_file', 'set_name',
 	'get_process_cmdline', 'already_running', 'syscmd', 'execute',
 	'execute_remote', 'whoami', 'refork_as_root_or_die', 'fork_licorn_daemon',
 	'get_traceback', 'find_network_client_infos', 'pidof', 'pid_for_socket',
-	'thread_basic_info', 'executable_exists_in_path', )
+	'thread_basic_info', 'find_executable', 'executable_exists_in_path',
+	'default_path', 'cgroup', )
 
-cgroup = None
+default_path = '/bin:/usr/bin:/usr/local/bin:/opt/bin:/opt/local/bin'
+cgroup_host  = False
 
 with open('/etc/mtab') as mtab:
 	for mline in mtab.readlines():
 		if '/sys/fs/cgroup' in mline:
-			cgroup = open('/proc/%s/cpuset' % os.getpid()).read().strip()
+			crgroup_host = True
 			break
+
+try:
+	cgroup = open('/proc/%s/cpuset' % os.getpid()).read().strip()
+
+except:
+	cgroup = None
 
 # daemon and process functions
 def daemonize(log_file=None, close_all=False, process_name=None):
@@ -204,7 +214,7 @@ def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
 	try:
 		gmembers = getent.group(group).members
 
-	except KeyError:
+	except AttributeError:
 		logging.error(_(u'group %s does not exist and we are not root, '
 			u'aborting. Please manually relaunch this program with root '
 			u'privileges to automatically create this group.') % group)
@@ -315,8 +325,11 @@ def execute(command, input_data='', dry_run=None):
 																close_fds=True)
 			return p.communicate()
 	except (OSError, IOError), e:
-		logging.exception(_(u'{0}: Exception while trying to run {1}.'),
-				(ST_NAME, current_thread().name), (ST_COMMENT, ' '.join(command)))
+		logging.warning2(_(u'{0}: exception "{1}" while trying to '
+								u'process.execute({2}).').format(
+									stylize(ST_NAME, current_thread().name),
+									stylize(ST_ATTR, e),
+									stylize(ST_COMMENT, ' '.join(command))))
 		raise
 def execute_remote(ipaddr, command):
 	""" Exectute command on a machine with SSH. """
@@ -526,6 +539,15 @@ def thread_basic_info(thread, as_string=False):
 				daemon=thread.daemon,
 				ident=thread.ident
 			)
+def find_executable(binary):
+	""" Return the path of a binary on the local system, or ``None`` if
+		not found in the :envvar:`PATH`. """
+
+	for syspath in os.environ.get('PATH', default_path).split(':'):
+		if os.path.exists(os.path.join(syspath, binary)):
+			return os.path.join(syspath, binary)
+
+	return None
 def executable_exists_in_path(filename, raise_message=None):
 	""" Check if a given exectable is found in $PATH and:
 
@@ -534,7 +556,7 @@ def executable_exists_in_path(filename, raise_message=None):
 		* else return ``True`` or ``False``, depending on the found result.
 	"""
 
-	for pathname in os.environ['PATH'].split(':'):
+	for pathname in os.environ.get('PATH', default_path).split(':'):
 		if os.path.exists(os.path.join(pathname, filename)):
 			return True
 

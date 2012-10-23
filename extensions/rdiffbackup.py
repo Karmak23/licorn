@@ -276,26 +276,6 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 								'rdiff-backup-globs.local.conf'))
 
 		return filename
-	def _find_binary(self, binary):
-		""" Return the path of a binary on the local system, or ``None`` if
-			not found in the :envvar:`PATH`. """
-
-		assert ltrace_func(TRACE_RDIFFBACKUP)
-
-		default_path = '/bin:/usr/bin:/usr/local/bin:/opt/bin:/opt/local/bin'
-
-		binary = '/' + binary
-
-		for syspath in os.getenv('PATH', default_path).split(':'):
-			if os.path.exists(syspath + binary):
-
-				assert ltrace(self._trace_name, '| _find_binary(%s) → %s' % (
-						binary[1:], syspath + binary))
-
-				return syspath + binary
-
-		assert ltrace(self._trace_name, '| _find_binary(%s) → None' % binary[1:])
-		return None
 	def initialize(self):
 		""" Return True if :command:`rdiff-backup` is installed on the local
 			system.
@@ -304,9 +284,9 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		assert ltrace_func(self._trace_name)
 
 		# these ones will be filled later.
-		self.paths.binary           = self._find_binary('rdiff-backup')
-		self.paths.nice_bin         = self._find_binary('nice')
-		self.paths.ionice_bin       = self._find_binary('ionice')
+		self.paths.binary           = process.find_executable('rdiff-backup')
+		self.paths.nice_bin         = process.find_executable('nice')
+		self.paths.ionice_bin       = process.find_executable('ionice')
 
 		if self.paths.binary:
 			self.available = True
@@ -324,8 +304,8 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 				self.commands.ionice = []
 
 		else:
-			logging.warning2('%s: not available because rdiff-binary not '
-												'found in $PATH.' % self.name)
+			logging.warning2(_(u'{0}: not available because rdiff-backup '
+					u'binary not found in $PATH.').format(self.pretty_name))
 
 		assert ltrace(self._trace_name, '< initialize(%s)' % self.available)
 		return self.available

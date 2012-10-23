@@ -195,26 +195,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					return 0, Pyro.constants.DENIED_HOSTBLOCKED
 	def acceptUid(self, daemon, client_uid, client_login, client_addr, client_socket):
 		try:
-			if settings.role == roles.CLIENT:
-
-				if client_addr.startswith('127.'):
-					logging.warning(_(u'Please implement client.server.bounce '
-						u'auth. Accepted for now (localhost, uid {0}).').format(
-							stylize(ST_UGID, client_uid)))
-
-					t = self.setup_licorn_thread('<unknown>', client_uid,
-												client_addr, client_socket)
-
-					return 1, 0
-				else:
-					logging.warning(_(u'Senseless connection tentative from {0}, '
-						u'uid {2}.').format(
-							stylize(ST_ADDRESS, '%s:%s' % (client_addr, client_socket)),
-							stylize(ST_UGID, client_uid)))
-
-					return 0, Pyro.constants.DENIED_SECURITY
-			else:
-				local_login = LMC.users.uid_to_login(client_uid)
+			local_login = LMC.users.uid_to_login(client_uid)
 
 		except (exceptions.DoesntExistException, KeyError), e:
 			logging.warning(_(u'Connection tentative from {0}: '
@@ -436,7 +417,7 @@ class CommandListener(LicornBasicThread):
 			network.local_ip_addresses())
 
 		if settings.role == roles.CLIENT:
-			LicornPyroValidator.server = LMC.configuration.server_main_address
+			LicornPyroValidator.server = settings.server_main_address
 
 		self.pyro_daemon.setNewConnectionValidator(
 			LicornPyroValidator(settings.role))
@@ -460,11 +441,9 @@ class CommandListener(LicornBasicThread):
 		# with each other.
 		#
 		# FIXME: server exporting system is not very secure...
-		self.uris['system'] = self.pyro_daemon.connect(
-			LMC.system, 'system')
+		self.uris['system'] = self.pyro_daemon.connect(LMC.system, 'system')
 
-		self.uris['msgproc'] = self.pyro_daemon.connect(
-					LMC.msgproc, 'msgproc')
+		self.uris['msgproc'] = self.pyro_daemon.connect(LMC.msgproc, 'msgproc')
 
 		logging.info(_(u'{0}: {1} to answer requests at {2}.').format(
 								self.name, stylize(ST_OK, _(u'ready')),

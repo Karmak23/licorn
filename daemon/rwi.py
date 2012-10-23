@@ -268,29 +268,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 	# ========================================= CLI "GET" interactive functions
 
-	def get_daemon_status(self, opts=None, args=None, cli_output=True):
-		""" This method is called from CLI tools. """
-
-		try:
-			if cli_output:
-				self.setup_listener_gettext()
-				remote_output(LMC.licornd.dump_status(opts.long_output,
-								opts.precision), clear_terminal=opts.monitor_clear)
-			else:
-				return LMC.licornd.dump_status(as_string=False)
-		except Exception:
-			# When the daemon is restarting, the CommandListener thread
-			# shutdowns the Pyro daemon, and its reference attribute is
-			# deleted, producing an AttributeError, forwarded to the
-			# client-side caller. We catch any other 'Exception' to avoid
-			# borking the client side.
-			#
-			# We just avoid forwarding it, this nothing to care about. As
-			# the current method is called many times in a 'while 1' loop
-			# on the client side, only one iteration of the loop will not
-			# produce any output, which will get totally un-noticed and
-			# is harmless.
-			logging.exception(_('Harmless Exception encountered in RWI.get_daemon_status()'))
 	def get_volumes(self, opts, args):
 
 		self.setup_listener_gettext()
@@ -566,48 +543,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			remote_output(LMC.configuration.Export())
 
 		assert ltrace(TRACE_GET, '< get_configuration()')
-	def get_events_list(self, opts, args):
-		""" Output the list of internal events. """
-
-		self.setup_listener_gettext()
-
-		# we need to merge, because some events have only
-		# handlers, and others have only callbacks.
-		events_names = set(events.events_handlers.keys()
-							+ events.events_callbacks.keys())
-		max_name_len = max(len(x) for x in events_names)
-
-		if opts.verbose >= verbose.INFO:
-			remote_output(_(u'{0} distinct event(s), {1} handler(s) '
-					u'and {2} callback(s)').format(len(events_names),
-					sum(len(x) for x in events.events_handlers.itervalues()),
-					sum(len(x) for x in events.events_callbacks.itervalues())
-					) + u'\n')
-			for event_name in events_names:
-				handlers  = events.events_handlers.get(event_name, ())
-				callbacks = events.events_callbacks.get(event_name, ())
-
-				remote_output(_(u'Event: {0}\n\tHandlers:{1}{2}\n'
-						u'\tCallbacks:{3}{4}\n').format(
-					stylize(ST_NAME, event_name),
-					u'\n\t\t' if len(handlers) else u'',
-					u'\n\t\t'.join(_(u'{0} in module {1}').format(
-						stylize(ST_NAME, h.__name__),
-						stylize(ST_COMMENT, h.__module__)) for h
-							in handlers),
-					u'\n\t\t' if len(callbacks) else u'',
-					u'\n\t\t'.join(_(u'{0} in module {1}').format(
-						stylize(ST_NAME, c.__name__),
-						stylize(ST_COMMENT, c.__module__)) for c
-							in callbacks),
-				))
-		else:
-			for event_name in events_names:
-				remote_output(_(u'{0}: {1} handler(s), {2} callback(s).\n').format(
-							stylize(ST_NAME, event_name.rjust(max_name_len)),
-							len(events.events_handlers.get(event_name, ())),
-							len(events.events_callbacks.get(event_name, ())),
-						))
 
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
@@ -1381,20 +1316,17 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(opts.uid, LMC.users.by_uid)
 				])
 
-		guess = LMC.groups.guess_one
+		for g in self.select(LMC.groups, opts.groups_to_add.split(','),
+								opts, default_selection=None):
+			try:
+				g.add_Users(users_to_add, force=opts.force)
 
-		for g in opts.groups_to_add.split(','):
-			if g != '':
-				try:
-					g = guess(g)
-					g.add_Users(users_to_add, force=opts.force)
-
-				except exceptions.LicornException, e:
-					logging.warning(_(u'Unable to add user(s) {0} '
-						'in group {1} (was: {2}).').format(
-						', '.join((stylize(ST_LOGIN, user.login)
-							for user in users_to_add)),
-						stylize(ST_NAME, g.name), str(e)), to_local=False)
+			except exceptions.LicornException, e:
+				logging.warning(_(u'Unable to add user(s) {0} '
+					'in group {1} (was: {2}).').format(
+					', '.join((stylize(ST_LOGIN, user.login)
+						for user in users_to_add)),
+					stylize(ST_NAME, g.name), str(e)), to_local=False)
 
 		gc.collect()
 		assert ltrace(TRACE_ADD, '< add_user_in_group().')
@@ -1623,7 +1555,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			delay_until_second=task_delay_until_second,
 			args=task_args, kwargs=task_kwargs,
 			defer_resolution=task_defer_resolution)
-
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
 
@@ -1789,17 +1720,17 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		by_name = LMC.groups.by_name
 
-		for g in sorted(opts.groups_to_del.split(',')):
-			if g != '':
-				try:
-					g = by_name(g)
-					g.del_Users(users_to_del, batch=opts.batch)
-				except exceptions.DoesntExistException, e:
-					logging.warning(_(u'Unable to remove user(s) {0} '
-						'from group {1} (was: {2}).').format(
-						', '.join((stylize(ST_LOGIN, u.login)
-							for u in users_to_del)),
-						stylize(ST_NAME, g), str(e)), to_local=False)
+		for g in self.select(LMC.groups, opts.groups_to_del.split(','),
+								opts, default_selection=None):
+			try:
+				g.del_Users(users_to_del, batch=opts.batch)
+
+			except exceptions.DoesntExistException, e:
+				logging.warning(_(u'Unable to remove user(s) {0} '
+					'from group {1} (was: {2}).').format(
+					', '.join((stylize(ST_LOGIN, u.login)
+						for u in users_to_del)),
+					stylize(ST_NAME, g), str(e)), to_local=False)
 
 		gc.collect()
 		assert ltrace(TRACE_DEL, '< del_users_from_group()')

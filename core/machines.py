@@ -243,6 +243,9 @@ class Machine(CoreStoredObject, SharedResource):
 		Machine.by_hostname[hostname] = self
 
 	name = hostname
+	@property
+	@myself_or_system_forward
+	def system_uuid(self, *a, **kw): pass
 	def add_link(self, licorn_object):
 		""" TODO. """
 

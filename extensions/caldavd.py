@@ -48,7 +48,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		)
 
 		# nothing to do on the client side.
-		self.server_only  = True
+		self.server_only = True
 
 		# users and groups can get calendars.
 		self.controllers_compat = ['users', 'groups']

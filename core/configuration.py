@@ -569,13 +569,13 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		import stat
 
-		for skel_path in ("%s/skels" % \
+		for skel_path in ("%s/skels" %
 			settings.defaults.home_base_path, "/usr/share/skels"):
 
 			if os.path.exists(skel_path):
 				try:
-					# depth is 2 because we have 'factory' and 'local' 
-					# folders. They include package maintainer profile and 
+					# depth is 2 because we have 'factory' and 'local'
+					# folders. They include package maintainer profile and
 					# admin custom profile.
 					for new_skel in fsapi.minifind(path=skel_path,
 						itype=(stat.S_IFDIR,), mindepth=2, maxdepth=2):
@@ -1195,8 +1195,16 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			raise exceptions.LicornRuntimeError(_(u'Cannot modify '
 				u'/etc/hostname, verify the file is still clean:\n\t%s)') % e)
 
+	@events.handler_method
+	def settings_file_written(self, *a, **kw):
+		""" An event triggered when settings file is written, forwarded here to
+			make `configuration` check the file permissions. This would be too
+			complicated for settings to check it on its side, needing to import
+			too much `core` objects in `foundations`. """
+		self.check_system_dirs(batch=True)
+
 	### CHECKS ###
-	def check(self, minimal=True, batch=False, auto_answer=None):
+	def check(self, minimal=True, batch=False, auto_answer=None, full_display=True):
 		""" Check all components of system configuration and repair
 		if asked for.
 
@@ -1207,16 +1215,37 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		assert ltrace(TRACE_CONFIGURATION, '> check()')
 
-		self.check_system_groups(minimal=minimal, batch=batch,
-								auto_answer=auto_answer)
+		self.check_system_dirs(minimal=minimal, batch=batch,
+							auto_answer=auto_answer, full_display=full_display)
 
 		self.check_base_dirs(minimal=minimal, batch=batch,
-								auto_answer=auto_answer)
+							auto_answer=auto_answer, full_display=full_display)
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
 		assert ltrace(TRACE_CONFIGURATION, '< check()')
-	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None):
+	def check_system_dirs(self, minimal=True, batch=False, auto_answer=None, full_display=True):
+		""" Check settings directories. """
+
+		# We need this for ACLs to apply correctly.
+		self.check_system_groups(minimal=minimal, batch=batch,
+							auto_answer=auto_answer, full_display=full_display)
+
+		for directory in (settings.config_dir, settings.cache_dir, settings.data_dir):
+
+			for uyp in fsapi.check_dirs_and_contents_perms_and_acls_new([
+								fsapi.FsapiObject(name='sys_dir_check',
+									path=directory, uid=0, gid=LMC.groups.by_name(
+										settings.defaults.admin_group).gidNumber,
+									root_dir_perm=0750,
+									dirs_perm=0750, files_perm=0640)
+							], batch=batch, auto_answer=auto_answer,
+							full_display=full_display):
+				# TODO: we could count modified entries and display a nice
+				# information message. Not that useful where we are, and
+				# full_display is already `True`.
+				pass
+	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None, full_display=True):
 		"""Check and eventually repair default needed dirs."""
 
 		assert ltrace_func(TRACE_CONFIGURATION)
@@ -1296,7 +1325,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				# message kind of explicit and clear, to let administrator know
 				# he/she should mount the partition with 'acl' option.
 				raise exceptions.LicornRuntimeError(_(u'Filesystem must be '
-					u'mounted with "acl" option:\n\t%s') % e)
+									u'mounted with "acl" option:\n\t%s') % e)
 			else:
 				raise
 		except TypeError:
@@ -1307,7 +1336,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		assert ltrace(TRACE_CONFIGURATION, '< check_base_dirs()')
 	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
-		auto_answer=None, full_display=True):
+										auto_answer=None, full_display=True):
 		""" Check only the archive dir, and eventually even only one of its
 			subdir. """
 
@@ -1347,25 +1376,40 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).
 			pass
-	def check_system_groups(self, minimal=True, batch=False, auto_answer=None):
+	def needed_groups(self, minimal=True):
+		""" Return a list of needed groups **names** (as strings), which are
+			essential for Licorn® to operate properly.
+
+			:param minimal: if ``False`` (not the default), this method will
+				return system privileges too.
+		"""
+
+		# NOTE: 'skels', 'webmestres' [and so on] are not here
+		# because they will be added by their respective packages
+		# (plugins ?), and they are not strictly needed for Licorn to
+		# operate properly.
+
+		needed_groups = [ self.users.group, self.acls.group,
+							settings.defaults.admin_group ]
+		
+		# We need to check 'privileges', because this method can be called very
+		# early in the daemon boot process (even in `upgrades`), at a moment
+		# where not everything is ready in the LMC.
+		if not minimal:
+			try:
+				needed_groups.extend(group.name for group in LMC.privileges
+											if group not in needed_groups)
+			except:
+				pass
+
+		return needed_groups
+	def check_system_groups(self, minimal=True, batch=False, auto_answer=None, full_display=True):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
 
 		assert ltrace_func(TRACE_CONFIGURATION)
 
-		needed_groups = [ self.users.group, self.acls.group,
-							settings.defaults.admin_group ]
-
-		if not minimal:
-			needed_groups.extend([ group for group in LMC.privileges.iterkeys()
-				if group not in needed_groups
-					and group not in LMC.groups.names])
-			# 'skels', 'webmestres' [and so on] are not here
-			# because they will be added by their respective packages
-			# (plugins ?), and they are not strictly needed for Licorn to
-			# operate properly.
-
-		for group in needed_groups:
+		for group in self.needed_groups(minimal):
 			logging.progress(_(u'Checking existence of group %s…') %
 									stylize(ST_NAME, group))
 
@@ -1414,7 +1458,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.users.gid = groups.by_name(self.users.group).gidNumber
 
 		self.check_base_dirs(batch=True)
-	def CheckHostname(self, batch = False, auto_answer = None):
+	def CheckHostname(self, batch=False, auto_answer=None):
 		""" Check hostname consistency (by DNS/reverse resolution),
 			and check /etc/hosts against flakynesses."""
 

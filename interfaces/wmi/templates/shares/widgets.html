@@ -1,80 +1,32 @@
 
-{%- macro backup_informations(volume, last_backup_time, next_backup_time) -%}
-	{%- set guid = volume.guid.replace('-', '_') -%}
+{%- macro disconnected(request, myext) -%}
+	<p class="alert alert-error">&nbsp;<br />
+		{%- if request.user.is_staff -%}
+			{%- set res = myext.result -%}
 
-	{%- if last_backup_time > 0 -%}
-			{{ _('Last backup age on this volume:') }}
-			{{ countdown(now() - last_backup_time,
-								limit=9999999999.0) }}
-
-	{%- else -%}
-		{{ _('No backup has occured yet.') }}
-
-	{%- endif -%}
-			<br />
-	{{ _('Next backup attempt will occur in {0}.').format(
-
-			self._countdown(self.time_before_next_automatic_backup(
-					as_string=False)))
-	}}
-
-{%- endmacro -%}
-
-{%- macro eject_status(volume, is_backup, small=False) -%}
-	{%- if volume.locked() -%}
-
-		{%- set img_alt   = _('Operation in progress icon') -%}
-		{%- set help_text = _('Cannot eject, operation '
-									'in progress on this volume.').format(
-										volume.mount_point) -%}
-
-		{%- if small -%}
-			<span class="micro_indicator micro_impossible" title="{{ help_text }}">
-				<img src="/media/images/22x22/media-record.png" alt="{{ img_alt }}" style="margin-top: -3px;" />
-			</span>
+			{{ _('Disconnected from <strong><a href="http://my.licorn.org/"
+			target="_blank">My Licorn&reg;</a></strong> service. If the problem does not
+			come from your internet connection, <a
+			href="http://docs.licorn.org/extensions/mylicorn.en.html#extensions-mylicorn-disconnected-en">documentation is available</a>.<br /><br />Service error:  <strong>code {0}</strong> (<em>{1}</em>).').format(res.code, res.mesg) }}
 
 		{%- else -%}
-			<span class="small_indicator impossible">
-				<img src="/media/images/22x22/media-record.png" alt="{{ img_alt }}"
-					style="margin-top: -3px;" />&nbsp;{{
-						_('Cannot eject, {operation} in progress').format(
-									operation=_('backup')
-										if is_backup
-										else _('statistics or cleaning')) }}
-			</span>
 
-		{%- endif -%}
-
-	{%- else -%}
-
-		{%- if volume.mount_point -%}
-
-			{%- set eject_uri = '/backups/eject/' + volume.device.rsplit('/', 1)[1] -%}
-			{%- set img_alt =  _('Eject device icon') -%}
-			{%- set help_text = _('Click to eject volume '
-								'{0}').format(volume.mount_point) -%}
-
-			{%- if small -%}
-
-				<span class="micro_indicator micro_possible" title="{{ help_text }}">
-					<a href="{{ eject_uri }}" title="{{ help_text }}">
-						<img src="/media/images/22x22/eject.png" alt="{{ img_alt }}" />
-					</a>
-				</span>
-
-			{%- else -%}
-				<span class="small_indicator possible">
-					<a href="{{eject_uri}}" title="{{ help_text }}" class="ajax-backup-link">
-						<img src="/media/images/22x22/eject.png"
-							alt="{{ img_alt }}" />&nbsp;{{ _('Eject the volume') }}
-					</a>
-				</span>
-
-			{%- endif -%}
-
-		{%- endif -%}
+			{{ _('Short URLs cannot be obtained for technical reason. If the problem does not come from a failing internet connection <a href="http://docs.licorn.org/extensions/mylicorn.en.html#extensions-mylicorn-disconnected-en" target="_blank">technical information is available</a>, but it is probably easier to contact your system manager or support provider.') }}
 
 	{%- endif -%}
-
+	</p>
 {%- endmacro -%}
 
+{%- macro unreachable(request, myext) -%}
+	<p class="alert alert-warning">
+		{%- if request.user.is_staff -%}
+
+			{{ _('Your server is currently <a href="http://docs.licorn.org/extensions/mylicorn.en.html#extensions-mylicorn-unreachable-en" target="_blank">unreachable from the internet</a>. <em>No share will be accessible to your partners</em>. You should configure your firewall to forward port <strong>{0}</strong> to this machine <strong>{1}</strong>, or contact your support provider if you need any help or more information.').format(request.META['SERVER_PORT'], server_address(request)) }}
+
+		{%- else -%}
+
+			{{ _('This server is currently unreachable from the internet. <em>No share will be accessible to your partners</em>. Please contact your system manager or support provider to take the appropriate action.') }}
+
+		{%- endif -%}
+	</p>
+{%- endmacro -%}

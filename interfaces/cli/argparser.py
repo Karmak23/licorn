@@ -565,7 +565,6 @@ def get_inside_parse_arguments(app):
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
 
-
 	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
 	# no behaviour / filter change here
 	#parser.add_option_group(common_filter_group(app, parser, 'get', 'inside'))

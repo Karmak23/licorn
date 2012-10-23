@@ -12,16 +12,15 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import time, __builtin__
-from threading   import Thread, current_thread
+from threading   import Thread
 from Queue       import Queue
 
-from licorn.foundations           import logging, exceptions, options
+from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process, pyutils
 from licorn.foundations.threads   import RLock, Event
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import verbose, priorities
 
 class BaseLicornThread(Thread):
 	""" A simple class of thread which records its own instances, and whose
@@ -720,8 +719,23 @@ class GenericQueueWorkerThread(AbstractTimerThread):
 							jobbing=self.jobbing.is_set(),
 							**process.thread_basic_info(self))
 	def __format_job(self):
+
+		try:
+			job_name = self.job.__name__
+
+		except AttributeError:
+			# Pyro's `core._RemoteMethod` class has no __name__
+			# retro-compatibility attribute. We must fake to
+			# find the real name, but at least with Python, we can.
+			try:
+				job_name = getattr(self.job, '_RemoteMethod__name')
+
+			except:
+				# In case it wasn't a Pyro method, use a sane fallback.
+				job_name = str(self.job)
+
 		return stylize(ST_ON, '%s(%s%s%s)' % (
-							self.job.__name__,
+							job_name,
 							', '.join([str(j) for j in self.job_args])
 								if self.job_args else '',
 							', ' if self.job_args and self.job_kwargs else '',

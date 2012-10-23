@@ -22,7 +22,7 @@ from ltrace    import *
 from ltraces   import *
 from constants import verbose, interactions
 from ttyutils  import interactive_ask_for_repair
-from base      import ObjectSingleton
+from base      import DictSingleton
 from messaging import LicornMessage, MessageProcessor
 
 # circumvent the `import *` local namespace duplication limitation.
@@ -38,20 +38,9 @@ stylize = styles.stylize
 #			and call logging.error() when appropriate.
 #
 
-class LicornWarningsDB(ObjectSingleton):
-	""" a singleton dict, to hold all warnings already displayed. """
-
-	warnings = None
-
-	def __init__(self):
-		if LicornWarningsDB.warnings is None:
-			LicornWarningsDB.warnings = {}
-	def __getitem__(self, item):
-		return LicornWarningsDB.warnings[item]
-	def __setitem__(self, item, value):
-		LicornWarningsDB.warnings[item] = value
-	def keys(self):
-		return LicornWarningsDB.warnings.keys()
+class LicornWarningsDB(DictSingleton):
+	""" This is just a dict, but a singleton across the interpreter. """
+	pass
 
 __warningsdb = LicornWarningsDB()
 

@@ -8,7 +8,8 @@ Licorn upgrades: a facility to ease internal updates - http://docs.licorn.org/up
 :license: GNU GPL version 2
 """
 
-import sys, os
+import sys, os, errno
+
 from licorn.foundations           import styles, logging, options
 from licorn.foundations.styles    import *
 from licorn.foundations.constants import verbose
@@ -30,8 +31,19 @@ upgrades_root = '/usr/share/licorn/upgrades'
 # (resolved) path.
 if not os.path.exists(upgrades_root):
 	from licorn.foundations import fsapi
-	os.symlink(os.path.join(fsapi.licorn_python_path, 'upgrades'),
-				upgrades_root)
+	try:
+		os.symlink(os.path.join(fsapi.licorn_python_path, 'upgrades'),
+													upgrades_root)
+
+	except (IOError, OSError), e:
+		if e.errno == errno.EEXIST:
+			# This is a dangling symlink: os.path.exists() has returned
+			# ``False``, but in fact it's already there pointing to nowhere.
+			os.unlink(upgrades_root)
+			os.symlink(os.path.join(fsapi.licorn_python_path, 'upgrades'),
+													upgrades_root)
+		else:
+			raise
 
 logging.progress(_(u'Looking for upgrade modules in {0}…').format(
 											stylize(ST_PATH, upgrades_root)))

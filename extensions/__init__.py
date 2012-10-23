@@ -12,7 +12,7 @@ Extensions can "extend" :ref:`CoreController`s
 
 """
 
-import time
+import os, time
 from threading import Timer
 from licorn.foundations.threads import RLock
 
@@ -86,6 +86,10 @@ class LicornExtension(CoreModule):
 				manager=LMC.extensions,
 				controllers_compat=controllers_compat
 			)
+
+		# Where are our data file (configuration snipplets) stored?
+		self.paths.data_dir = os.path.join(LMC.configuration.share_data_dir,
+												'extensions', name, 'data')
 	def load(self, server_modules, batch=False, auto_answer=None):
 		""" TODO.
 
@@ -98,10 +102,14 @@ class LicornExtension(CoreModule):
 			if self.initialize():
 				self.enabled = self.is_enabled()
 		else:
-			# TODO: (better comment)
-			# on client, enabled status is dependant on the server extension.
+			# On client daemons, enabled status is dependant on the server
+			# extension:
+			# - first, we check if the server has the extension enabled
+			# - second, we try to enable the extension locally (the
+			#	`is_enabled()` method usually *do* things to enable the
+			#	extension, it *needs* to be called).
 			if self.initialize():
-				self.enabled = self.name in server_modules
+				self.enabled = self.name in server_modules and self.is_enabled()
 class ServiceExtension(LicornExtension):
 	""" ServiceExtension implements service-related comfort-methods and
 		automates calling the :obj:`LMC.system`
