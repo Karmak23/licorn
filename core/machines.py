@@ -55,7 +55,7 @@ def myself_or_system_forward(func):
 		if self.myself:
 			kw['machine'] = self
 			return getattr(LMC.system, func.__name__)(*a, **kw)
-		
+
 
 		if self.system:
 			try:
@@ -92,30 +92,52 @@ def _nmap_os_details(key, what):
 		raise KeyError
 
 def _nmap_device_type(what):
+
 	if 'router' in what.lower():
 		print "ROUTERRRRR FOUND"
 		return host_types.ROUTER
+
 	elif 'media' in what.lower():
 		return host_types.MEDIA
+
 	elif 'general purpose' in what.lower():
 		return host_types.UNKNOWN
+
 	else:
 		raise KeyError
 def _nmap_ether_database(address, words):
 
 	if words == 'Freebox SA':
 		return host_types.FREEBOX
-	elif words == 'VMware':
-		return host_types.VMWARE,
-	elif words == 'Apple':
-		return host_types.APPLE,
 
-	elif '6C:2E' in address:
+	elif words == 'VMware':
+		return host_types.VMWARE
+
+	elif words == 'Apple':
+		return host_types.APPLE
+
+	address = address.upper()
+
+	if address.startswith('6C:2E'):
 		return host_types.LIVEBOX
-	elif '08:00:27' in address:
+
+	#						VirtualBox						Xensource / LXC
+	elif address.startswith('08:00:27') or address.startswith('00:16:3E'):
 		return host_types.VIRTUALBOX
+
 	else:
 		raise KeyError
+
+def test_nmap_installed():
+
+	if os.path.exists('/usr/bin/nmap'):
+		return True
+
+	logging.warning(_(u'{0}: {1} is not installed. Detailled OS information '
+						u'will not available.').format(
+							stylize(ST_NAME, 'machines'),
+							stylize(ST_PATH, 'nmap')))
+	return False
 
 class Machine(CoreStoredObject, SharedResource):
 
@@ -139,7 +161,7 @@ class Machine(CoreStoredObject, SharedResource):
 	_nmap_cmd_base      = [ 'nmap', '-v', '-n', '-T5', '-sP', '-oG', '-' ]
 	_nmap_cmd_scan_base = [ 'nmap', '-v', '-n', '-T5', '-p0-65535', '-oG', '-' ]
 	_nmap_cmd_gos_base  = [ 'nmap', '-n', '-O' ]
-	_nmap_installed     = os.path.exists('/usr/bin/nmap')
+	_nmap_installed     = test_nmap_installed()
 
 	# translation table between nmap common values and our internal ones
 	# examples:
@@ -201,7 +223,7 @@ class Machine(CoreStoredObject, SharedResource):
 		'Apple Mac OS X 10.5.X': host_types.APPLE,
 		'Linux 2.6.X':           host_types.LNX_GEN,
 		}"""
-	
+
 	"""_nmap_os_details = {
 		'HP Photosmart printer': host_types.MULTIFUNC,
 		}"""
@@ -325,12 +347,12 @@ class Machine(CoreStoredObject, SharedResource):
 		logging.info(_(u'{0}: Linked {1} to {2}.').format(
 								caller, stylize(ST_UGID, licorn_object.ip),
 								stylize(ST_UGID, self.ip)))
-	
+
 	def guess_os(self):
 		""" Use NMAP for OS fingerprinting and better service detection. """
 
 		caller = current_thread().name
-		
+
 		# cache the machine state to know if something changed.
 		machine_os = self.os_details
 		machine_type = self.system_type
@@ -360,7 +382,7 @@ class Machine(CoreStoredObject, SharedResource):
 					elif key == 'MAC Address':
 
 						self.system_type = _nmap_ether_database(value.split(' ')[0], value.rsplit('(', 1)[1][:-1])
-						
+
 					elif key in ('Not shown', 'Warning', 'Network Distance',
 							'Nmap done', 'Note', 'OS'):
 						continue
@@ -397,7 +419,7 @@ class Machine(CoreStoredObject, SharedResource):
 		def and_more_func():
 			# resolve machine name
 			workers.network_enqueue(priorities.LOW, self.resolve)
-			
+
 			# scan ports
 			workers.network_enqueue(priorities.NORMAL, self.scan_ports)
 
@@ -494,7 +516,7 @@ class Machine(CoreStoredObject, SharedResource):
 			if self.myself:
 				workers.network_enqueue(priorities.NORMAL, self.update_informations)
 				return
-			
+
 			for line in process.execute(
 					Machine._nmap_cmd_scan_base + [ self.mid ])[0].splitlines():
 
