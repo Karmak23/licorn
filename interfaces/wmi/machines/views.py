@@ -30,9 +30,8 @@ def main(request, sort="login", order="asc", select=None, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	machines_list = LMC.machines.select(host_status.ONLINE)
-	#machines_list.append()
-	print LMC.machines.select(host_status.PYRO_SHUTDOWN)
+	machines_list = pyutils.alphanum_sort(LMC.machines.select(host_status.ONLINE), key="hostname")
+
 	return render(request, 'machines/index.html', {
 			'machines'        : machines_list,
 			'host_status'     : host_status,

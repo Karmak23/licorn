@@ -5,6 +5,9 @@ from django.utils.translation     import ugettext as _
 from licorn.foundations.constants import host_status, host_types
 from licorn.interfaces.wmi.libs   import utils
 
+
+from licorn.core                  import LMC
+
 import wmi_data
 
 def update_machine_instance(machine):
@@ -30,7 +33,9 @@ def host_online_handler(request, event, reinit=False):
 	yield utils.notify(_(u'New machine "{0}" found online.').format(machine.mid))
 
 	yield update_machine_instance(machine)
-	
+
+	yield utils.format_RPC_JS('update_total_items', 'machines', "/"+str(len(LMC.machines.select(host_status.ONLINE))))
+
 def host_back_online_handler(request, event, reinit=False):
 
 	# `render_to_string()` needs the host_types and host_status
@@ -39,7 +44,7 @@ def host_back_online_handler(request, event, reinit=False):
 	yield utils.notify(_(u'Machine "{0}" is back online.').format(machine.hostname))
 
 	yield update_machine_instance(machine)
-	
+
 def host_offline_handler(request, event, reinit=False):
 
 	# `render_to_string()` needs the host_types and host_status
@@ -50,7 +55,6 @@ def host_offline_handler(request, event, reinit=False):
 	yield utils.notify(_(u'Machine "{0}" is now offline.').format(machine.hostname))
 
 	yield update_machine_instance(machine)
-	
 
 def licorn_host_online_handler(request, event, reinit=False):
 	# render to string need to give host_types and host_status
@@ -102,5 +106,5 @@ def software_upgrades_finished_handler(request, event, reinit=False):
 
 def machine_changed_handler(request, event, reinit=False):
 	machine = event.kwargs['host']
-	
+
 	yield update_machine_instance(machine)
