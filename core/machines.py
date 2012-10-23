@@ -77,57 +77,39 @@ def myself_or_system_forward(func):
 	return wrap
 
 
-def _nmap_os_details(key, what):
+_nmap_os_details = {
+	"apple"  : host_os.APPLE,
+	"linux"  : host_os.LINUX,
+	"windows": host_os.WINDOWS,
+}
+_nmap_device_type = {
+	'router'         : host_types.ROUTER,
+	'media'          : host_types.MEDIA,
+	'general purpose': host_types.UNKNOWN,
+}
+_nmap_ether_vendor_database = {
+	'freebox' : host_types.FREEBOX,
+	'vmware'  : host_types.VMWARE,
+	'apple'   : host_types.APPLE,
+}
+_nmap_ether_address_database = {
+	'6C:2E'    : host_types.FREEBOX,
+	'08:00:27' : host_types.VIRTUALBOX,
+	'00:16:3E' : host_types.VIRTUALBOX,
+}
 
-	if 'fingerprint' in key:
-		return host_os.FINGERPRINT_UNRESOLVED
-
-	elif 'apple' in what.lower():
-		return host_os.APPLE
-	elif 'linux' in what.lower():
-		return host_os.LINUX
-	elif 'windows' in what.lower():
-		return host_os.WINDOWS
-	else:
-		raise KeyError
-
-def _nmap_device_type(what):
-
-	if 'router' in what.lower():
-		print "ROUTERRRRR FOUND"
-		return host_types.ROUTER
-
-	elif 'media' in what.lower():
-		return host_types.MEDIA
-
-	elif 'general purpose' in what.lower():
-		return host_types.UNKNOWN
-
-	else:
-		raise KeyError
-def _nmap_ether_database(address, words):
-
-	if words == 'Freebox SA':
-		return host_types.FREEBOX
-
-	elif words == 'VMware':
-		return host_types.VMWARE
-
-	elif words == 'Apple':
-		return host_types.APPLE
-
-	address = address.upper()
-
-	if address.startswith('6C:2E'):
-		return host_types.LIVEBOX
-
-	#						VirtualBox						Xensource / LXC
-	elif address.startswith('08:00:27') or address.startswith('00:16:3E'):
-		return host_types.VIRTUALBOX
+def check_info_is_in_dict(what, _dict, _startswith=False):
+	if _startswith:
+		for key, value in _dict.iteritems():
+			if what.startswith(key): 
+				return value
 
 	else:
-		raise KeyError
+		for key, value in _dict.iteritems():
+			if key in what.lower(): 
+				return value
 
+	raise KeyError
 def test_nmap_installed():
 
 	if os.path.exists('/usr/bin/nmap'):
@@ -369,18 +351,22 @@ class Machine(CoreStoredObject, SharedResource):
 				try:
 					if key == 'Device type':
 						if self.system_type is host_types.UNKNOWN:
-							self.system_type = _nmap_device_type(value)
+							self.system_type = check_info_is_in_dict(value, _nmap_device_type)
 
 					elif key == 'Running':
-						self.os_details = _nmap_os_details(key, value)
+						self.os_details = check_info_is_in_dict(value, _nmap_os_details)
 
 					elif key == 'OS details':
-						self.os_details = _nmap_os_details(key, value)
+						self.os_details = check_info_is_in_dict(value, _nmap_os_details)
 
 					elif key == 'MAC Address':
-
-						self.system_type = _nmap_ether_database(value.split(' ')[0], value.rsplit('(', 1)[1][:-1])
-
+						try:
+							# try vendor name
+							self.system_type = check_info_is_in_dict(value.rsplit('(', 1)[1][:-1], _nmap_ether_vendor_database)
+						except KeyError:
+							# try to map mac address
+							self.system_type = check_info_is_in_dict(value.split(' ')[0], _nmap_ether_address_database, _startswith=True)
+						
 					elif key in ('Not shown', 'Warning', 'Network Distance',
 							'Nmap done', 'Note', 'OS'):
 						continue
