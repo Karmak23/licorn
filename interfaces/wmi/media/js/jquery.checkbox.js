@@ -22,8 +22,9 @@
       var jquery_checkbox = $('<span class="jquery_checkbox"><span class="jquery_checkbox_text"></span></span>')
       checkbox_wrapper.append(jquery_checkbox)
 
-
-    	$(checkbox).css({position: 'absolute', zIndex: -1, visibility: 'hidden'}).after(checkbox_wrapper)
+      // fixe the original checkbox and move it under our images.
+      // do not hide it, else we will not be abble to focus it on keyboard navigation
+    	$(checkbox).css({position: 'fixed', zIndex: -1, "margin-top":"10px", "margin-left":"10px", /*visibility: 'hidden'*/}).after(checkbox_wrapper)
 
     	jquery_checkbox.click(function(event) {
           $(checkbox).trigger('click')
@@ -48,6 +49,12 @@
 						.html(settings.off_text)
     		}
     	}).change()
+
+      $(checkbox).on('focusin', function() {
+        jquery_checkbox.css('border', '2px solid grey')
+      }).on('focusout', function() {
+        jquery_checkbox.css('border', '0')
+      })
     });
   };
 })( jQuery );
