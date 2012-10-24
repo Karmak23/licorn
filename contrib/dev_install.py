@@ -177,13 +177,14 @@ def check_pip_perms():
 		an already installed system.
 	"""
 
+	make_symlinks(only_base_link=True)
+
 	try:
 		from licorn.upgrades.common import check_pip_perms as cpperms
 		cpperms(batch=True, distro=distro, distros=('Ubuntu', 'Debian'))
 
 	except:
 		raise
-
 def install_all_packages():
 	if distro in ('Ubuntu', 'Debian'):
 		err('Downloading and installing packages, please wait…')
@@ -247,7 +248,7 @@ def user_post_installation():
 		err('For a more comfortable experience, you should add `/usr/sbin` to your PATH.')
 
 	sys.exit(0)
-def make_symlinks():
+def make_symlinks(only_base_link=False):
 	err('Symlinking everything from {0}, please wait…'.format(devel_dir))
 
 	# Now that we are sure that python-apt is installed, we can compare
@@ -278,6 +279,9 @@ def make_symlinks():
 
 	else:
 		err('Your Ubuntu/Debian distro is not supported. Please consider upgrading.')
+
+	if only_base_link:
+		return
 
 	for executable in ('add', 'mod', 'del', 'chk', 'get'):
 		unlink('/usr/bin/{0}'.format(executable))
