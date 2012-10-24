@@ -21,6 +21,11 @@ class GroupForm(forms.Form):
 					'class':'instant',
 					'data-instant-url': '/groups/mod/{0}/{1}/'.format(group.gid, action_name)
 				})
+			if action_name == 'description':
+				widget_attrs.update({
+					"autofocus" : 'autofocus'
+				})
+				
 			return widget_attrs
 
 		if _mode == 'massiv':

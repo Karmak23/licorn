@@ -20,6 +20,10 @@ class UserForm(forms.Form):
 					'class':'instant',
 					'data-instant-url': '/users/mod/{0}/{1}/'.format(user.uid, action_name)
 				})
+			if action_name == 'gecos':
+				widget_attrs.update({
+					"autofocus" : 'autofocus'
+				})
 			return widget_attrs
 
 

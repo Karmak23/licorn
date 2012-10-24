@@ -24,7 +24,7 @@
 
       // fixe the original checkbox and move it under our images.
       // do not hide it, else we will not be abble to focus it on keyboard navigation
-    	$(checkbox).css({position: 'fixed', zIndex: -1, "margin-top":"10px", "margin-left":"10px", /*visibility: 'hidden'*/}).after(checkbox_wrapper)
+    	$(checkbox).css({position: 'fixed', zIndex: -1, "margin-top":"7px", "margin-left":"10px", /*visibility: 'hidden'*/}).after(checkbox_wrapper)
 
     	jquery_checkbox.click(function(event) {
           $(checkbox).trigger('click')
