@@ -25,7 +25,7 @@ def check_and_install_pip():
 	if not os.path.exists('/usr/bin/pip'):
 		packaging.install_packages(pip_packages)
 def check_pip_perms(batch=False, auto_answer=None, full_display=True,
-												distro=None, distros=None):
+											distro=None, distributions=None):
 	""" Fix a PIP bug we don't notice if we are root. But normal developpers
 		could face it.
 
@@ -40,10 +40,10 @@ def check_pip_perms(batch=False, auto_answer=None, full_display=True,
 	"""
 
 	if distro is None:
-		distro  = LMC.configuration.distro
-		distros = (distros.UBUNTU, distros.DEBIAN)
+		distro        = LMC.configuration.distro
+		distributions = (distros.UBUNTU, distros.DEBIAN)
 
-	if distro in distros:
+	if distro in distributions:
 		for python_path in glob.glob('/usr/local/lib/python*/dist-packages'):
 			logging.progress(_(u'Fixing permissions in {0}, this may take '
 							u'a while…').format(stylize(ST_PATH, python_path)))
