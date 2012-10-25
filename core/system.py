@@ -77,6 +77,33 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 				self.load_system_extensions()
 			else:
 				self.extensions = None
+	def forward_event(self, event):
+		""" Receive a forwarded event from another Licorn® host on the LAN. """
+
+		if settings.role == roles.SERVER:
+			sender = LMC.machines[event.sender]
+
+			if sender.system_type & host_types.META_SRV:
+				logging.warning2(_(u'Received unhandle-able event {0} '
+									u'forwarded from {1}.').format(
+										event.name, event.sender))
+
+			else:
+				logging.progress(_(u'Received event {0} forwarded from {1}, '
+									u're-injecting in our own queue.').format(
+										event.name, event.sender))
+
+				# We generate a new event internally, to specify
+				# that it has been forwarded and that it's not the
+				# original one.
+				# This allow us to emit() it cleanly, instead of
+				# re-emiting an already emited event, which seems
+				# quite dirty to me.
+				LicornEvent(_clone_from_=event, _forwarded_=True).emit()
+
+		else:
+			logging.warning(_(u'Received unauthorized event {0} forwarded '
+							u'from {1}.').format(event.name, event.sender))
 	def load_system_extensions(self):
 		""" special case for SystemController. """
 		assert ltrace(TRACE_SYSTEM, '| load_system_extension()')
@@ -167,15 +194,18 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 	def do_upgrade(self, machine=None, software_upgrades=False, *args, **kwargs):
 		""" This method will launch the upgrade procedure in a background
 			service thread. """
+
 		if not self.updates_available():
+			# Eventually, if we want detailled status in the UI?
+			#LicornEvent('software_upgrades_not_needed').emit(forward_to_server=True,
+			#											forward_to_peers=True)
 			return
 
 		with self.lock:
 			self.__status |= host_status.UPGRADING
 
-			machine.status = host_status.UPGRADING
-
-			LicornEvent('software_upgrades_started', host=machine).emit()
+			LicornEvent('software_upgrades_started').emit(forward_to_server=True,
+														forward_to_peers=True)
 
 		# no need to try/except, apt_do_upgrade() does it already.
 		apt.apt_do_upgrade(software_upgrades=software_upgrades)
@@ -183,9 +213,8 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 		with self.lock:
 			self.__status -= host_status.UPGRADING
 
-			machine.status = self.__status
-
-			LicornEvent('software_upgrades_finished', host=machine).emit()
+			LicornEvent('software_upgrades_finished').emit(forward_to_server=True,
+														forward_to_peers=True)
 
 		# reset the status, anyway
 		apt.apt_do_check(cache_force_expire=True)
@@ -241,7 +270,9 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 
 			self.__status = host_status.SHUTTING_DOWN
 
-			LicornEvent('shutdown_started', reboot=reboot).emit(priorities.HIGH)
+			LicornEvent('shutdown_started', reboot=reboot).emit(priorities.HIGH,
+														forward_to_server=True,
+														forward_to_peers=True)
 
 			if warn_users:
 				import tempfile
@@ -310,7 +341,9 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 			os.execvp('shutdown', command)
 
 		else:
-			LicornEvent('shutdown_cancelled').emit(priorities.HIGH)
+			LicornEvent('shutdown_cancelled').emit(priorities.HIGH,
+													forward_to_server=True,
+													forward_to_peers=True)
 			return True
 	@events.handler_method
 	def shutdown_cancelled(self, *args, **kwargs):

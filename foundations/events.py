@@ -36,6 +36,8 @@ events_collectors = []
 looper_thread     = None
 loop_lock         = RLock()
 
+EVENT_FORWARD_NAME = '_event_forwarded_'
+
 class RoundRobinEventLooper(LicornBasicThread):
 	""" Process internal events and run callbacks associated to them,
 		synchronously or not. See :meth:`run_action_method` for
@@ -65,7 +67,8 @@ class RoundRobinEventLooper(LicornBasicThread):
 
 		for collector in events_collectors[:]:
 			try:
-				logging.monitor(TRACE_EVENTS, TRACELEVEL_2, _('Event push to collector: {0} > {1}'), event.name, collector)
+				logging.monitor(TRACE_EVENTS, TRACELEVEL_2, _('Event push to '
+								'collector: {0} > {1}'), event.name, collector)
 				collector.process_event(event)
 
 			except:
@@ -155,15 +158,20 @@ class RoundRobinEventLooper(LicornBasicThread):
 
 		assert ltrace_func(TRACE_EVENTS)
 
-		if events_collectors != []:
-			workers.service_enqueue(priorities.HIGH,
-								self.push_event_to_collectors_thread, event)
+		if event._needs_forward and not event._forwarded:
+			# Emit this special event that will be processed by the daemon to
+			# forward the original event to peers or server if we are a CLIENT.
+			LicornEvent(EVENT_FORWARD_NAME, forwarded_event=event).emit()
 
 		logging.monitor(TRACE_EVENTS, TRACELEVEL_1, _('Processing event {0}'),
 														(ST_NAME, event.name))
 
 		self.run_methods(event, events_handlers, _('event handler'), synchronous)
 		self.run_methods(event, events_callbacks, _('event callback'), synchronous)
+
+		if events_collectors != []:
+			workers.service_enqueue(priorities.HIGH,
+								self.push_event_to_collectors_thread, event)
 class LicornEvent(NamedObject):
 	""" Licorn® event object class.
 
@@ -181,19 +189,69 @@ class LicornEvent(NamedObject):
 			has been converted to a more generic and more feature full
 			`licorn.foundations.events` module.
 	"""
-	def __init__(self, _event_name, *args, **kwargs):
+	def __init__(self, *args, **kwargs):
 
-		super(LicornEvent, self).__init__(name=_event_name)
+		clone_from      = kwargs.pop('_clone_from_', None)
+		self._forwarded = kwargs.pop('_forwarded_', False)
 
-		self.args        = args
-		self.kwargs      = kwargs
+		if clone_from:
+			super(LicornEvent, self).__init__(name=clone_from.name)
+			self.args   = clone_from.args
+			self.kwargs = clone_from.kwargs
 
-	def emit(self, priority=None, delay=None, synchronous=False):
+			try:
+				self.sender = clone_from.sender
+
+			except AttributeError:
+				# No sender on the origin. Strange,
+				# in this clone situation, but harmless.
+				pass
+
+		else:
+			# Remove the name from args before storing them in self.args.
+			super(LicornEvent, self).__init__(name=args[0])
+			self.args   = args[1:]
+			self.kwargs = kwargs
+
+		# Don't forward the special forward event, this would loop.
+		if self.name == EVENT_FORWARD_NAME:
+			self._needs_forward = False
+
+		else:
+			self._needs_forward = True
+	def emit(self, priority=None, delay=None, synchronous=False,
+							forward_to_server=False, forward_to_peers=False):
+		""" At some time in the future, ``forward_to_*`` should be set to ``True``.
+
+			:param forward_to_server: set it to ``True`` if you want a Licorn®
+				//client// to forward its internal events to its refering
+				server. Currently, the default value is ``False``.
+
+			:param forward_to_peers: set it to ``True`` when you want a Licorn®
+				//server// to forward its internal events to other //servers//
+				on the LAN (cluster nodes or other standalone servers).
+				Currently, the default value is ``False``.
+
+			.. todo:: There is currently no way for a server to forward its
+				events to the clients it manages. This feature is on the way
+				with the implementation of a new ``forward_to_clients``
+				parameter. This will permit clients to react to their server's
+				``need_restart`` event, among other things.
+
+			.. versionchanged:: added the :param:`forward_to_server`
+				and :param:`forward_to_peers` parameters in the 1.7 milestone,
+				in order to create the bare needed architecture to implement
+				#750.
+		"""
+
+		if self._needs_forward and not self._forwarded:
+			self._forward_to_server = forward_to_server
+			self._forward_to_peers  = forward_to_peers
 
 		if delay:
 			if synchronous:
 				raise exceptions.LicornRuntimeError(_(u'A synchronous event '
-						u'cannot be delayed! (on %s)').format(self.name))
+							u'cannot be delayed! (on %s)').format(self.name))
 
 			t = Timer(delay, events_queue.put, args=((priority
 												or priorities.NORMAL, self), ))

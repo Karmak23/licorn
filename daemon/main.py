@@ -28,7 +28,7 @@ import os, sys, signal, select, socket, resource, pybonjour, gc, __builtin__
 from threading  import current_thread, Thread, active_count
 
 from licorn.foundations           import options, settings, logging, ttyutils
-from licorn.foundations           import gettext, process, pyutils, events
+from licorn.foundations           import gettext, process, pyutils, events, network
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -40,7 +40,6 @@ from licorn.foundations.workers   import workers
 
 from licorn.core                  import LMC, version
 
-#from licorn.daemon                import client
 from licorn.daemon.base           import LicornDaemonInteractor, \
 											LicornBaseDaemon, \
 											LicornThreads
@@ -250,7 +249,6 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 												licornd=self)
 			self.__threads.CommandListener.start()
 
-
 			from licorn.daemon import client
 			client.ServerLMC.connect()
 
@@ -273,6 +271,46 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				settings.set('favorite_server', client.ServerLMC.system.system_uuid())
 
 			self.collect_and_start_threads()
+
+	@events.handler_method
+	def _event_forwarded_(self, event, *args, **kwargs):
+		""" Special event handler for forwarded messages between Licorn® hosts.
+
+			.. todo:: externalize the client import
+
+			.. TODO:: handle synchronous events, delayed tasks, etc.
+		"""
+
+		# We pop the forwarded event, to be sure the current method is
+		# the only one that will forward the event. We don't want any
+		# other player (an extension, whatever), to play with forwarding
+		# while this feature is experimental.
+		original_event        = event.kwargs.pop('forwarded_event')
+		original_event.sender = network.find_first_local_ip_address()
+
+		if settings.role == roles.CLIENT and original_event._forward_to_server:
+
+			from licorn.daemon import client
+
+			try:
+				remote_server = client.ServerLMC.system
+
+			except AttributeError:
+				# LMC.system is not yet ready. Happens at daemon start.
+				logging.exception(_(u'exception while forwarding event {0} to our '
+								u'server {1}'), (ST_NAME, original_event.name),
+									(ST_ADDR, settings.server_main_address))
+
+			else:
+				logging.info(_(u'Forwarding event {0} to our server {1}.').format(
+								stylize(ST_NAME, original_event.name),
+								stylize(ST_NAME, settings.server_main_address)))
+				remote_server.forward_event(original_event)
+
+		elif settings.role != roles.CLIENT and original_event._forward_to_peers:
+			logging.progress(_(u'Forwarding event {0} to peers is not '
+								u'implemented.').format(original_event.name))
+			pass
 
 	def collect_and_start_threads(self, collect_only=False, full_display=True):
 		""" Collect and start extensions and backend threads; record them
