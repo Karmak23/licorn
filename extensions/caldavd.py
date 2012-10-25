@@ -10,7 +10,8 @@ Licorn extensions: caldavd - http://docs.licorn.org/extensions/caldavd.html
 
 """
 
-import os, uuid
+
+import os, uuid, functools
 from traceback import print_exc
 import xml.etree.ElementTree as ET
 
@@ -165,39 +166,56 @@ class XML2Dict(object):
         return self._make_dict(EL.tag, self._parse_node(EL), EL.attrib)
 
 def my_Configdict2xmlEtree(_dict):
-	"""returns xml"""
-	root = ET.Element('dict')
+	""" Map a dict object into xml """
 
+	# create the XML dict element
+	xml_dict = ET.Element('dict')
 
 	for k,v in _dict.iteritems():
-		#print k, v
+
+		# create the key element, and append it to the dict
 		elem = ET.Element('key')
 		elem.text = k
+		xml_dict.append(elem)
+		
 
-		root.append(elem)
-		#print type(v)
+		# create the value element depending on type(value)
 		if type(v) == types.StringType:
 			elem_value = ET.Element('string')
 			elem_value.text = v
+		
 		if type(v) == types.BooleanType:
 			if v:
 				elem_value = ET.Element('true')
 			else:
 				elem_value = ET.Element('false')
+		
 		if type(v) == types.IntType:
 			elem_value = ET.Element('integer')
 			elem_value.text = str(v)
+		
 		if type(v) == types.NoneType:
 			elem_value = ET.Element('string')
 
 		if isinstance(v, ConfigDict) or type(v) == types.DictType:
 			elem_value = my_Configdict2xmlEtree(v)
 
-		root.append(elem_value)
+		xml_dict.append(elem_value)
 
-	return root
+	return xml_dict
 
+def only_if_backend_openldap_is_not_enabled(func):
+	""" Event decorator. Run the method only if the 'openldap' backend 
+		is not enabled.
+	"""
 
+	@functools.wraps(func)
+	def decorated(self, *args, **kwargs):
+
+		if not LMC.backends.guess_one('openldap').enabled:
+			return func(self, *args, **kwargs)
+
+	return decorated
 
 
 
@@ -207,6 +225,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	""" Handles Apple Calendar Server configuration and service.
 
 		.. versionadded:: 1.2.4
+		.. versionmodified:: 1.7. Rework the extensions to use 
+			calendarserver version 3.2
 
 	"""
 	def __init__(self):
@@ -316,9 +336,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				'xmlFile': '/etc/caldavd/accounts.xml'
 			}
 		}
-		
-
-
 	def initialize(self):
 		""" Set :attr:`self.available` to ``True`` if calendarserver service
 			is installed and all of its data files load properly.
@@ -353,28 +370,28 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		return self.available
 	def switch_directoryService(self, key):
-		""" TODO """
-
-
-
+		""" Modify the calendarserver configuration the use the correct backend  """
 
 		# load calendarserver config file
-		config_xml = my_Configdict2xmlEtree(self.default_config.ldap_directory if key=='ldap' else self.default_config.xml_directory)
+		if key.lower() == 'ldap':
+			directoryservice_dict = self.default_config.ldap_directory
+		elif key.lower() == 'xml':
+			directoryservice_dict = self.default_config.xml_directory
 
-		# Relaod the whole xml file in order to modify the correct "DirectoryService" part.
-		
+		directoryservice_xml = my_Configdict2xmlEtree(directoryservice_dict)
+
+		# Reload the whole xml file in order to set correctly the "DirectoryService" part.
 		xml_parsed = ET.parse(self.paths.configuration)
 
+		# TODO: comment it
 		count_ref = None
-
 		for count, i in enumerate(xml_parsed.iter()):
 			if i.text == 'DirectoryService':
 				count_ref = int(count)
 
-		xml_parsed.getroot()[0][count_ref - 1] = config_xml
+		xml_parsed.getroot()[0][count_ref - 1] = directoryservice_xml
 
 		xml_parsed.write(self.paths.configuration)
-
 	def check(self, batch=False, auto_answer=None):
 		""" Check eveything needed for the caldavd extension and service.
 			First check ``chmod`` on caldavd files (because they
@@ -391,12 +408,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		assert ltrace_func(TRACE_CALDAVD)
 
-		for filename in self.paths:
-			if (os.path.exists(filename) and filename != self.paths.main_dir):
-				os.chmod(filename, 0640)
 
-
-		
 
 		
 
@@ -405,6 +417,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		ldap_backend   = LMC.backends.guess_one('openldap')
 
 		CALDAV_LDAP_BACKEND = "twistedcaldav.directory.ldapdirectory.LdapDirectoryService"
+		GENERIC_PWD = "calendar_user"
 
 		caldav_backend = caldav_config.DirectoryService.type
 		need_reload = False
@@ -429,30 +442,45 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			self.service(svccmds.RELOAD)
 
 		# after reload check existing users/groups
+
 		if not ldap_backend.enabled:
 			# check if already existing STD users have a calendar.
 			for user in LMC.users.select(filters.STANDARD):
 				if not self.check_if_element_has_calendar('users', user.login):
-					print "ADD USER"
-					#self.post_add_user(....)
+					self.user_post_add(user=user, password=GENERIC_PWD)
+
+
+
 			for group in LMC.groups.select(filters.STANDARD):
 				if not self.check_if_element_has_calendar('groups', group.name) and \
 					not self.check_if_element_has_calendar('groups', 'rsp-'+group.name) and \
 					not self.check_if_element_has_calendar('groups', 'gst-'+group.name) and \
-					not self.check_if_element_has_calendar('resources', group.name):
-						print "ADD GROUP"
-						#self.post_add_group(....)
+					not self.check_if_element_has_calendar('resources', 'resource_'+group.name):
+						
+						self.group_post_add(group=group.responsible_group)
+						self.group_post_add(group=group.guest_group)
+						self.group_post_add(group=group)
+
+						for u in group.members:
+							self.group_post_add_user(group=group, user=u)
+
+						for u in group.responsible_group.members:
+							self.group_post_add_user(group=group.responsible_group, user=u)
+
+						for u in group.guest_group.members:
+							self.group_post_add_user(group=group.guest_group, user=u)
+		
+
 
 		# if ldap backend check if group resource exists
 
 		# and don't forget to remove (or at least warn about) superfluous entries.
-		logging.info(_(u'**Please implement caldavd extension check for '
-			'pre-existing users and groups.**'))
+		#logging.info(_(u'**Please implement caldavd extension check for '
+		#	'pre-existing users and groups.**'))
 
-	def check_if_element_has_calendar(self, type, element):
-		""" ask calendarserver """
-		print ">> check if calendar ",element, principalForPrincipalID('{0}:{1}'.format(type, element))
-		if principalForPrincipalID('{0}:{1}'.format(type, element)) is None:
+	def check_if_element_has_calendar(self, _type, element):
+		print ">> check if calendar ",element, _type, principalForPrincipalID('{0}:{1}'.format(_type, element))
+		if principalForPrincipalID('{0}:{1}'.format(_type, element)) is None:
 			return False
 		else:
 			return True
@@ -460,10 +488,11 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 
 	def setup_calendarserver_environement(self):
+		""" setup calendarserver environment with its own internal mecanism """
+
 		loadConfig(None)
 		caldav_config.directory = getDirectory()
 		setupMemcached(caldav_config)
-
 	def __parse_files(self):
 		""" Create locks and load all caldavd data files. """
 
@@ -612,8 +641,18 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		"""
 		assert ltrace_func(TRACE_CALDAVD)
 
+		print ">> __write_elements_and_reload"
+
 		self.__write_accounts()
 		self.__write_resources()
+
+
+		for filename in self.paths:
+			if (os.path.exists(filename) and filename != self.paths.main_dir):
+				os.chmod(filename, 0640)
+				os.chown(filename, LMC.users.guess_one('caldavd').uidNumber,
+					LMC.groups.guess_one('caldavd').gidNumber)
+
 
 		# fu...ing caldavd service which doesn't understand reload.
 		# we put this in a service thread to avoid the long wait.
@@ -774,19 +813,23 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				stylize(ST_LOGIN, login), stylize(ST_NAME, name),
 				stylize(ST_PATH, self.paths.accounts)))
 		return False
+	
 	@events.handler_method
 	@only_if_enabled
+	@only_if_backend_openldap_is_not_enabled
 	def user_pre_add(self, *args, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()
 		return True
+	
 	@events.handler_method
 	@only_if_enabled
+	@only_if_backend_openldap_is_not_enabled
 	def user_post_add(self, *args, **kwargs):
 		""" Create a caldavd user account and the associated calendar resource,
 			then write the configuration and release the associated lock.
 		"""
-
+		print "==> user post add in CalDAV"
 		assert ltrace_func(TRACE_CALDAVD)
 
 		user     = kwargs.pop('user')
@@ -831,14 +874,17 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	
 	@events.handler_method
 	@only_if_enabled
+	@only_if_backend_openldap_is_not_enabled
 	def user_pre_change_password(self, *args, **kwargs):
 		""" """
 		assert ltrace_func(TRACE_CALDAVD)
 
 		# TODO: return self.locks.accounts.acquire()
 		return True
+	
 	@events.handler_method
 	@only_if_enabled
+	@only_if_backend_openldap_is_not_enabled
 	def user_post_change_password(self, *args, **kwargs):
 		""" Update the user's password in caldavd accounts file. """
 
@@ -863,8 +909,10 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			logging.warning(_(u'{0}: {1}').format(stylize(ST_NAME, self.name), e))
 			print_exc()
 			return False
+	
 	@events.handler_method
 	@only_if_enabled
+	@only_if_backend_openldap_is_not_enabled
 	def user_pre_del(self, *args, **kwargs):
 		""" delete a user and its resource in the caldavd accounts file, then
 			reload the service. """
@@ -879,16 +927,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		try:
 			#TODO: self.locks.accounts.acquire()
-			if (
-					self.del_account(acttype='resource', uid=user.login)
-				and
-					self.del_account(acttype='group',
-						uid='.org.%s.%s%s' % (self.name,
-										LMC.configuration.groups.guest_prefix,
-										user.login))
-				and
-					self.del_account(acttype='user', uid=user.login)
-					):
+			if self.del_account(acttype='user', uid=user.login):
 
 				self.__write_elements_and_reload()
 				#logging.progress('%s: deleted user and resource in %s.' % (
@@ -900,12 +939,14 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			logging.warning(_(u'{0}: {1}').format(stylize(ST_NAME, self.name), e))
 			print_exc()
 			return False
+	
 	@events.handler_method
 	@only_if_enabled
 	def group_pre_add(self, *args, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()
 		return True
+
 	@events.handler_method
 	@only_if_enabled
 	def group_post_add(self, *args, **kwargs):
@@ -922,37 +963,27 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		resource_uuid = str(uuid.uuid1())
 		try:
-			if ( ldap_backend.active or 
+			if not LMC.backends.guess_one('openldap').enabled: 
 				self.add_group(uid=group.name, guid=str(uuid.uuid1()),
 								name=group.description)
-				and
-				(
-					(
-					group.is_standard
-					and
-					self.add_resource(uid="resource_"+group.name, guid=resource_uuid,
-										name=group.description,
-										type='groups',
-										# we've got to construct the guest group
-										# name, because the guest group doesn't
-										# exist yet (it is created *after* the
-										# standard group.
-										gst_uid=group.guest_group.name)
-					)
-				)):
-				"""
-					 or (
-					group.is_guest
-					and
-					self.add_resource(uid=group.name,
-										guid=str(uuid.uuid1()),
-										name=group.description, type='groups')
-					)
-				"""
+
+
+			if group.is_standard:
+		
+				self.add_resource(uid="resource_"+group.name, guid=resource_uuid,
+									name=group.description,
+									type='groups',
+									# we've got to construct the guest group
+									# name, because the guest group doesn't
+									# exist yet (it is created *after* the
+									# standard group.
+									gst_uid=group.guest_group.name)
+
 				self.__write_elements_and_reload()
 
 				# deal with proxies
 				
+				self.setup_calendarserver_environement()
 				
 				# the standard group ressource is the principal
 				#principal = config.directory.recordWithShortName("resources", "resource_"+group.sortName)
@@ -975,6 +1006,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			logging.warning(_(u'{0}: {1}').format(stylize(ST_NAME, self.name), e))
 			print_exc()
 			return False
+	
 	@events.handler_method
 	@only_if_enabled
 	def group_pre_del(self, *args, **kwargs):
@@ -990,13 +1022,11 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		try:
 			#TODO: self.locks.accounts.acquire()
-			if (
-				self.del_account(acttype='resource', uid=group.name)
-				and
+			self.del_account(acttype='resource', uid=group.name)
+			if not LMC.backends.guess_one('openldap').enabled:
 				self.del_account(acttype='group', uid=group.name)
-				):
 
-				self.__write_elements_and_reload()
+			self.__write_elements_and_reload()
 				#logging.progress('%s: deleted group and resource in %s.' % (
 				#	self.name, self.paths.accounts))
 
@@ -1007,12 +1037,15 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 							stylize(ST_NAME, self.name), e))
 			print_exc()
 			return False
+
 	@events.handler_method
 	@only_if_enabled
+	@only_if_backend_openldap_is_not_enabled
 	def group_pre_add_user(self, *args, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()
 		return True
+
 	@events.handler_method
 	@only_if_enabled
 	def group_post_add_user(self, *args, **kwargs):
@@ -1028,21 +1061,30 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		if user.is_system or not (group.is_standard or group.is_guest):
 			return True
 
-		try:
-			#TODO: self.locks.accounts.acquire()
-			if self.add_member(name=group.name, login=user.login):
-				self.__write_elements_and_reload()
-				#logging.progress('%s: added user %s in group %s in %s.' % (
-				#	self.name, login, name, self.paths.accounts))
 
-			return True
-		except Exception, e:
-			logging.warning(_(u'{0}: {1}').format(
-							stylize(ST_NAME, self.name), e))
-			print_exc()
-			return False
+		if LMC.backends.guess_one('openldap').enabled:
+
+			self.service(svccmds.RESTART)
+
+		else:
+
+			try:
+				#TODO: self.locks.accounts.acquire()
+				if self.add_member(name=group.name, login=user.login):
+					self.__write_elements_and_reload()
+					#logging.progress('%s: added user %s in group %s in %s.' % (
+					#	self.name, login, name, self.paths.accounts))
+
+				return True
+			except Exception, e:
+				logging.warning(_(u'{0}: {1}').format(
+								stylize(ST_NAME, self.name), e))
+				print_exc()
+				return False
+
 	@events.handler_method
 	@only_if_enabled
+	@only_if_backend_openldap_is_not_enabled
 	def group_pre_del_user(self, *args, **kwargs):
 		""" delete a user from the members element of a group in the caldavd
 			accounts file, then reload the service. """
@@ -1058,21 +1100,20 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 
 		#call manage_principals
-		"""try:
+		try:
 			#TODO: self.locks.accounts.acquire()
 			if self.del_member(name=group.name, login=user.login):
 				self.__write_elements_and_reload()
-				#logging.progress('%s: removed user %s from group %s in %s.' % (
-				#	self.name, login, name, self.paths.accounts))
 
 			return True
 		except Exception, e:
 			logging.warning(_(u'{0}: {1}').format(
 							stylize(ST_NAME, self.name), e))
 			print_exc()
-			return False"""
+			return False
 	@events.handler_method
 	@only_if_enabled
+	@only_if_backend_openldap_is_not_enabled
 	def group_post_del_user(self, *args, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()
