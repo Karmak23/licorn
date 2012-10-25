@@ -101,11 +101,11 @@ _nmap_ether_address_database = {
 def check_info_is_in_dict(what, _dict, _startswith=False):
 	if _startswith:
 		for key, value in _dict.iteritems():
-			if what.startswith(key): 
+			if what.startswith(key):
 				return value
 	else:
 		for key, value in _dict.iteritems():
-			if key in what.lower(): 
+			if key in what.lower():
 				return value
 
 	raise KeyError
@@ -366,7 +366,7 @@ class Machine(CoreStoredObject, SharedResource):
 						except KeyError:
 							# try to map mac address
 							self.system_type = check_info_is_in_dict(value.split(' ')[0], _nmap_ether_address_database, _startswith=True)
-						
+
 					elif key in ('Not shown', 'Warning', 'Network Distance',
 							'Nmap done', 'Note', 'OS'):
 						continue
@@ -787,7 +787,6 @@ class Machine(CoreStoredObject, SharedResource):
 	@myself_or_system_forward
 	def shutdown(self, warn_users=True, *args, **kwargs): pass
 
-
 	@not_myself
 	@system_connected
 	def restart(self, condition=None):
@@ -871,7 +870,6 @@ class MachinesController(DictSingleton, CoreController):
 		super(MachinesController, self).__init__(name='machines')
 
 		MachinesController.init_ok = True
-		events.collect(self)
 	def add_machine(self, mid, hostname=None, ether=None, backend=None,
 		system_type=host_types.UNKNOWN, system=None, status=host_status.UNKNOWN,
 		myself=False):
@@ -1149,6 +1147,19 @@ class MachinesController(DictSingleton, CoreController):
 				count += 1
 
 		return count
+
+	@events.handler_method
+	def software_upgrades_started(self, event, *a, **kw):
+
+		# don't need to test settings.role, only the SERVER has a MachineController.
+		if event._forwarded:
+			self[event.sender].status |= host_status.UPGRADING
+	@events.handler_method
+	def software_upgrades_finished(self, event, *a, **kw):
+
+		# don't need to test settings.role, only the SERVER has a MachineController.
+		if event._forwarded:
+			self[event.sender].status -= host_status.UPGRADING
 
 		#
 		# WARNING: don't service_wait() here, the thread would join its own
