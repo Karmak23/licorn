@@ -93,10 +93,6 @@ If your daemon is not locally connected to you console, you can invoke the top-l
 	# open and interact with the daemon.
 	get status --monitor
 
-	# a remote daemon?
-	export LICORN_SERVER=192.168.0.10
-	get sta -m
-
 These keyboard short commands are available:
 
 .. glossary::
@@ -155,9 +151,6 @@ If your daemon is not locally connected to your console, you can invoke the inte
 	# the long story
 	get inside
 
-	# a remote daemon?
-	export LICORN_SERVER=192.168.0.10
-	get inside
 
 Other daemon's arguments
 ========================
