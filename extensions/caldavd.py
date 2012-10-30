@@ -31,7 +31,7 @@ from licorn.core.classes          import only_if_enabled
 from licorn.extensions import ServiceExtension
 
 
-from calendarserver.tools.principals   import action_addProxy, addProxy, principalForPrincipalID
+from calendarserver.tools.principals   import action_addProxy, action_removeProxy,  addProxy, principalForPrincipalID
 from calendarserver.tools.util         import getDirectory, loadConfig, setupMemcached
 from twistedcaldav.config              import config as caldav_config
 from twistedcaldav.config              import ConfigDict
@@ -48,122 +48,10 @@ from twistedcaldav.directory.directory import DirectoryService
 from xml.dom.minidom import Document
 import copy, types
 
-class dict2xml(object):
-    doc     = Document()
 
-    def __init__(self, structure):
-        if len(structure) == 1:
-            rootName    = str(structure.keys()[0])
-            self.root   = self.doc.createElement(rootName)
-
-            self.doc.appendChild(self.root)
-            self.build(self.root, structure[rootName])
-
-    def build(self, father, structure):
-        if type(structure) == dict:
-            for k in structure:
-                tag = self.doc.createElement(k)
-                father.appendChild(tag)
-                self.build(tag, structure[k])
-        
-        elif type(structure) == list:
-            grandFather = father.parentNode
-            tagName     = father.tagName
-            grandFather.removeChild(father)
-            for l in structure:
-                tag = self.doc.createElement(tagName)
-                self.build(tag, l)
-                grandFather.appendChild(tag)
-            
-        else:
-            data    = str(structure)
-            tag     = self.doc.createTextNode(data)
-            father.appendChild(tag)
-    
-    def display(self):
-        print self.doc.toprettyxml(indent="  ")
-
-    """example = {'sibbling':{'couple':{'mother':'mom','father':'dad','children':[{'child':'foo'},
-                                                          {'child':'bar'}]}}}
-    xml = dict2xml(example)
-    xml.display()"""
-
-class XML2Dict(object):
-
-    def __init__(self, coding='UTF-8'):
-        self._coding = coding
-
-    def _parse_node(self, node):
-        tree = {}
-
-        #Save childrens
-        for child in node.getchildren():
-            print child
-            print child.text
-            ctag = child.tag
-            cattr = child.attrib
-            ctext = child.text.strip().encode(self._coding) if child.text is not None else ''
-            print ctext
-            ctree = self._parse_node(child)
-
-            if not ctree:
-                cdict = self._make_dict(ctag, ctext, cattr)
-            else:
-                cdict = self._make_dict(ctag, ctree, cattr)
-
-            if ctag not in tree: # First time found
-                tree.update(cdict)
-                continue
-
-            atag = '@' + ctag
-            atree = tree[ctag]
-            if not isinstance(atree, list):
-                if not isinstance(atree, dict):
-                    atree = {}
-
-                if atag in tree:
-                    atree['#'+ctag] = tree[atag]
-                    del tree[atag]
-
-                tree[ctag] = [atree] # Multi entries, change to list
-
-            if cattr:
-                ctree['#'+ctag] = cattr
-
-            tree[ctag].append(ctree)
-
-        return  tree
-
-    def _make_dict(self, tag, value, attr=None):
-        '''Generate a new dict with tag and value
-        
-        If attr is not None then convert tag name to @tag
-        and convert tuple list to dict
-        '''
-        ret = {tag: value}
-
-        # Save attributes as @tag value
-        if attr:
-            atag = '@' + tag
-
-            aattr = {}
-            for k, v in attr.items():
-                aattr[k] = v
-
-            ret[atag] = aattr
-
-            del atag
-            del aattr
-
-        return ret
-
-    def parse(self, xml):
-        '''Parse xml string to python dict
-        
-        '''
-        EL = ET.fromstring(xml)
-
-        return self._make_dict(EL.tag, self._parse_node(EL), EL.attrib)
+# Directory service constants
+XML_BACKEND  = "twistedcaldav.directory.xmlfile.XMLDirectoryService"
+LDAP_BACKEND = "twistedcaldav.directory.ldapdirectory.LdapDirectoryService"
 
 def my_Configdict2xmlEtree(_dict):
 	""" Map a dict object into xml """
@@ -177,23 +65,23 @@ def my_Configdict2xmlEtree(_dict):
 		elem = ET.Element('key')
 		elem.text = k
 		xml_dict.append(elem)
-		
+
 
 		# create the value element depending on type(value)
 		if type(v) == types.StringType:
 			elem_value = ET.Element('string')
 			elem_value.text = v
-		
+
 		if type(v) == types.BooleanType:
 			if v:
 				elem_value = ET.Element('true')
 			else:
 				elem_value = ET.Element('false')
-		
+
 		if type(v) == types.IntType:
 			elem_value = ET.Element('integer')
 			elem_value.text = str(v)
-		
+
 		if type(v) == types.NoneType:
 			elem_value = ET.Element('string')
 
@@ -205,7 +93,7 @@ def my_Configdict2xmlEtree(_dict):
 	return xml_dict
 
 def only_if_backend_openldap_is_not_enabled(func):
-	""" Event decorator. Run the method only if the 'openldap' backend 
+	""" Event decorator. Run the method only if the 'openldap' backend
 		is not enabled.
 	"""
 
@@ -224,9 +112,14 @@ def only_if_backend_openldap_is_not_enabled(func):
 class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	""" Handles Apple Calendar Server configuration and service.
 
+
+
 		.. versionadded:: 1.2.4
-		.. versionmodified:: 1.7. Rework the extensions to use 
-			calendarserver version 3.2
+		.. versionmodified:: 1.7. Rework the extensions to work
+			with calendarserver 3.2
+
+
+
 
 	"""
 	def __init__(self):
@@ -262,12 +155,12 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		# create default directoryservice config for ldap and xml backends
 		self.default_config = LicornConfigObject()
-		self.default_config.ldap_directory = { 
-			
-			'type': 'twistedcaldav.directory.ldapdirectory.LdapDirectoryService', 
+		self.default_config.ldap_directory = {
+
+			'type': 'twistedcaldav.directory.ldapdirectory.LdapDirectoryService',
 
 			'params': {
-				'tls': False, 
+				'tls': False,
 				'restrictToGroup': '',
 				'resourceSchema': {
 					'autoScheduleEnabledValue': 'yes',
@@ -275,67 +168,68 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					'readOnlyProxyAttr': '',
 					'proxyAttr': '',
 					'autoScheduleAttr': ''
-				}, 
-				'restrictEnabledRecords': False, 
+				},
+				'restrictEnabledRecords': False,
 				'groupSchema': {
-					'memberIdAttr': '', 
-					'nestedGroupsAttr': '', 
+					'memberIdAttr': '',
+					'nestedGroupsAttr': '',
 					'membersAttr': 'memberUid'
-				}, 
-				'uri': 'ldap:///', 
-				'tlsRequireCert': 'never', 
+				},
+				'uri': 'ldap:///',
+				'tlsRequireCert': 'never',
 				'rdnSchema': {
 					'users': {
-						'emailSuffix': '', 
-						'attr': 'uid', 
-						'calendarEnabledAttr': '', 
+						'emailSuffix': '',
+						'attr': 'uid',
+						'calendarEnabledAttr': '',
 						'mapping': {
-							'recordName': 'cn', 
-							'lastName': 'sn', 
-							'fullName': 'gecos', 
-							'emailAddresses': 'mail', 
+							'recordName': 'cn',
+							'lastName': 'sn',
+							'fullName': 'gecos',
+							'emailAddresses': 'mail',
 							'firstName': 'givenName'
-						}, 
-						'filter': '', 
-						'calendarEnabledValue': 'yes', 
-						'loginEnabledAttr': '', 
-						'rdn': 'ou=People', 
+						},
+						'filter': '',
+						'calendarEnabledValue': 'yes',
+						'loginEnabledAttr': '',
+						'rdn': 'ou=People',
 						'loginEnabledValue': 'yes'
-					}, 
-					'guidAttr': 'entryUUID', 
-					
-					'base': 'dc=meta-it,dc=local', 
+					},
+					'guidAttr': 'entryUUID',
+
+					'base': 'dc=meta-it,dc=local',
 					'groups': {
-						'emailSuffix': '', 
-						'filter': '', 
-						'rdn': 'ou=Groups', 
-						'attr': 'cn', 
+						'emailSuffix': '',
+						'filter': '',
+						'rdn': 'ou=Groups',
+						'attr': 'cn',
 						'mapping': {
-							'recordName': 'cn', 
-							'lastName': 'sn', 
-							'fullName': 'cn', 
-							'emailAddresses': 'mail', 
+							'recordName': 'cn',
+							'lastName': 'sn',
+							'fullName': 'cn',
+							'emailAddresses': 'mail',
 							'firstName': 'givenName'
 						}
-					}, 
-					
+					},
+
 				},
-				'tlsCACertDir': '', 
-				'cacheTimeout': 30, 
+				'tlsCACertDir': '',
+				'cacheTimeout': 30,
 				'credentials': {
-					'dn': 'cn=admin,dc=meta-it,dc=local', 
-					'password': 'metasecret' 
-				}, 
+					'dn': 'cn=admin,dc=meta-it,dc=local',
+					'password': 'metasecret'
+				},
 				'tlsCACertFile': '',
 				'authMethod': 'PAM'
 			}
 		}
-		self.default_config.xml_directory = { 
-			'type': 'twistedcaldav.directory.xmlfile.XMLDirectoryService', 
+		self.default_config.xml_directory = {
+			'type': 'twistedcaldav.directory.xmlfile.XMLDirectoryService',
 			'params': {
 				'xmlFile': '/etc/caldavd/accounts.xml'
 			}
 		}
+
 	def initialize(self):
 		""" Set :attr:`self.available` to ``True`` if calendarserver service
 			is installed and all of its data files load properly.
@@ -395,43 +289,39 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	def check(self, batch=False, auto_answer=None):
 		""" Check eveything needed for the caldavd extension and service.
 			First check ``chmod`` on caldavd files (because they
-			contain user passwords in clear-text). 
+			contain user passwords in clear-text).
 
 			Secondly, match the caldav backend to the licorn backend.
 
-			If backend 'openldap' is activated on Licorn side, only users and 
+			If backend 'openldap' is activated on Licorn side, only users and
 				groups from licorn ldap backend will be used into calendarserver
-			
+
 			If backend 'openldap' not activated, use default 'shadow' backend.
 
 		"""
 
 		assert ltrace_func(TRACE_CALDAVD)
 
-
-
-		
-
 		# check licorn backends
 		shadow_backend = LMC.backends.guess_one('shadow')
 		ldap_backend   = LMC.backends.guess_one('openldap')
 
-		CALDAV_LDAP_BACKEND = "twistedcaldav.directory.ldapdirectory.LdapDirectoryService"
 		GENERIC_PWD = "calendar_user"
 
-		caldav_backend = caldav_config.DirectoryService.type
+		self.calendarserver_backend = caldav_config.DirectoryService.type
+
 		need_reload = False
 
 		# if current licorn backend is LDAP and caldav backend is not LDAP,
 		# change caldav backend to LDAP
 		if ldap_backend.enabled:
-			if caldav_backend != CALDAV_LDAP_BACKEND:
+			if self.calendarserver_backend != LDAP_BACKEND:
 				need_reload = True
 				self.switch_directoryService('ldap')
 
 		# elif current licorn backend is SHADOW, change caldav backend to SHADOW
 		elif shadow_backend.enabled:
-			if caldav_backend == CALDAV_LDAP_BACKEND:
+			if self.calendarserver_backend == LDAP_BACKEND:
 				need_reload = True
 				self.switch_directoryService('xml')
 
@@ -456,7 +346,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					not self.check_if_element_has_calendar('groups', 'rsp-'+group.name) and \
 					not self.check_if_element_has_calendar('groups', 'gst-'+group.name) and \
 					not self.check_if_element_has_calendar('resources', 'resource_'+group.name):
-						
+
 						self.group_post_add(group=group.responsible_group)
 						self.group_post_add(group=group.guest_group)
 						self.group_post_add(group=group)
@@ -469,7 +359,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 						for u in group.guest_group.members:
 							self.group_post_add_user(group=group.guest_group, user=u)
-		
+
 
 
 		# if ldap backend check if group resource exists
@@ -493,6 +383,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		loadConfig(None)
 		caldav_config.directory = getDirectory()
 		setupMemcached(caldav_config)
+
 	def __parse_files(self):
 		""" Create locks and load all caldavd data files. """
 
@@ -634,7 +525,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		writers.xml_write_from_tree(self.data.resources, self.paths.resources, mode=0640)
 		# TODO: self.locks.accounts.release()
 		return True
-	
+
 	def __write_elements_and_reload(self):
 		""" Write the accounts file and reload the caldavd service.	A reload
 			is needed, else caldavd doesn't see new user accounts and resources.
@@ -682,7 +573,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		else:
 			# users, groups
 			xml_elem = ET.SubElement(self.data.accounts.getroot(), acttype)
-		
+
 		xml_elem.text = '\n	'
 		xml_elem.tail = '\n'
 
@@ -813,27 +704,29 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				stylize(ST_LOGIN, login), stylize(ST_NAME, name),
 				stylize(ST_PATH, self.paths.accounts)))
 		return False
-	
+
 	@events.handler_method
 	@only_if_enabled
-	@only_if_backend_openldap_is_not_enabled
 	def user_pre_add(self, *args, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()
 		return True
-	
+
 	@events.handler_method
 	@only_if_enabled
 	@only_if_backend_openldap_is_not_enabled
 	def user_post_add(self, *args, **kwargs):
-		""" Create a caldavd user account and the associated calendar resource,
-			then write the configuration and release the associated lock.
-		"""
-		print "==> user post add in CalDAV"
+		""" Create a caldavd user account """
+
 		assert ltrace_func(TRACE_CALDAVD)
 
 		user     = kwargs.pop('user')
 		password = kwargs.pop('password')
+
+		"""logging.progress(_(u'{0}: creating calendar for {1}: '
+			'{2}').format(stylize(ST_NAME, self.name),
+						stylize(ST_PATH, "user"),
+						stylize(ST_OK, user.login)))"""
 
 		# we don't deal with system accounts, they don't get calendar for free.
 		if user.is_system:
@@ -847,21 +740,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 									LMC.configuration.groups.guest_prefix,
 									user.login)"""
 
-			if (
-					self.add_user(uid=user.login,
-									guid=str(uuid.uuid1()),
-									password=password,
-									name=user.gecos)):
-				"""and
-					self.add_group(uid=gst_uid,
-									guid=str(uuid.uuid1()),
-									name=_(u'R/O holder for user %s.')
-										% user.login)
-				and
-					self.add_resource(uid=user.login,
-									guid=str(uuid.uuid1()),
-									name=user.gecos, type='users',
-									gst_uid=gst_uid)"""
+			if self.add_user(uid=user.login, guid=str(uuid.uuid1()),
+									password=password, name=user.gecos):
 
 				self.__write_elements_and_reload()
 
@@ -871,17 +751,16 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			logging.warning(_(u'{0}: {1}').format(stylize(ST_NAME, self.name), e))
 			print_exc()
 			return False
-	
+
 	@events.handler_method
 	@only_if_enabled
-	@only_if_backend_openldap_is_not_enabled
 	def user_pre_change_password(self, *args, **kwargs):
 		""" """
 		assert ltrace_func(TRACE_CALDAVD)
 
 		# TODO: return self.locks.accounts.acquire()
 		return True
-	
+
 	@events.handler_method
 	@only_if_enabled
 	@only_if_backend_openldap_is_not_enabled
@@ -909,10 +788,9 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			logging.warning(_(u'{0}: {1}').format(stylize(ST_NAME, self.name), e))
 			print_exc()
 			return False
-	
+
 	@events.handler_method
 	@only_if_enabled
-	@only_if_backend_openldap_is_not_enabled
 	def user_pre_del(self, *args, **kwargs):
 		""" delete a user and its resource in the caldavd accounts file, then
 			reload the service. """
@@ -920,18 +798,39 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		assert ltrace_func(TRACE_CALDAVD)
 
 		user = kwargs.pop('user')
-
+		print "PRE DELLLLLL"
 		# we don't deal with system accounts, they don't get calendar for free.
 		if user.is_system:
 			return True
 
 		try:
-			#TODO: self.locks.accounts.acquire()
-			if self.del_account(acttype='user', uid=user.login):
 
-				self.__write_elements_and_reload()
-				#logging.progress('%s: deleted user and resource in %s.' % (
-				#	self.name, self.paths.accounts))
+			# remove proxies
+			for g in user.groups:
+				print "g", g.name
+				# find the resource, and remove proxy
+				resource_principal = principalForPrincipalID('resources:resource_'+g.name)
+				action_removeProxy(resource_principal, ('users:'+user.login))
+
+
+				logging.progress('{0}: deleted proxy for user {1} on resource {2}'.format(
+					self.name, user.login, 'resource_'+group.name))
+
+			if self.calendarserver_backend == LDAP_BACKEND:
+				# no specif action
+				pass
+
+			elif self.calendarserver_backend == XML_BACKEND:
+
+				# delete the user from the account.xml file
+				if self.del_account(acttype='user', uid=user.login):
+					self.__write_elements_and_reload()
+			else:
+				logging.warning2('{0}: unknown calendarser backend {1}.'.format(
+				self.name, self.calendarserver_backend))
+
+			logging.progress('{0}: user {1} deleted.'.format(
+				self.name, user.login))
 
 			return True
 
@@ -939,7 +838,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			logging.warning(_(u'{0}: {1}').format(stylize(ST_NAME, self.name), e))
 			print_exc()
 			return False
-	
+
 	@events.handler_method
 	@only_if_enabled
 	def group_pre_add(self, *args, **kwargs):
@@ -963,13 +862,13 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		resource_uuid = str(uuid.uuid1())
 		try:
-			if not LMC.backends.guess_one('openldap').enabled: 
+			if not LMC.backends.guess_one('openldap').enabled:
 				self.add_group(uid=group.name, guid=str(uuid.uuid1()),
 								name=group.description)
 
 
 			if group.is_standard:
-		
+
 				self.add_resource(uid="resource_"+group.name, guid=resource_uuid,
 									name=group.description,
 									type='groups',
@@ -980,18 +879,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 									gst_uid=group.guest_group.name)
 
 				self.__write_elements_and_reload()
-
-				# deal with proxies
-				
-				self.setup_calendarserver_environement()
-				
-				# the standard group ressource is the principal
-				#principal = config.directory.recordWithShortName("resources", "resource_"+group.sortName)
-				principal = principalForPrincipalID('resources:resource_'+group.name.replace('gst-', '').replace('rsp-',''))
-
-				action_addProxy(principal, 'read', ('groups:gst-'+group.name))
-				action_addProxy(principal, 'write', ('groups:rsp-'+group.name))
-				action_addProxy(principal, 'write', ('groups:'+group.name))
 
 
 
@@ -1006,7 +893,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			logging.warning(_(u'{0}: {1}').format(stylize(ST_NAME, self.name), e))
 			print_exc()
 			return False
-	
+
 	@events.handler_method
 	@only_if_enabled
 	def group_pre_del(self, *args, **kwargs):
@@ -1063,6 +950,23 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 
 		if LMC.backends.guess_one('openldap').enabled:
+
+			# deal with proxies
+
+			self.setup_calendarserver_environement()
+
+			# the standard group ressource is the principal
+			#principal = config.directory.recordWithShortName("resources", "resource_"+group.sortName)
+			principal = principalForPrincipalID('resources:resource_'+group.name.replace('gst-', '').replace('rsp-',''))
+
+			if group.is_guest:
+				action_addProxy(principal, 'read', ('users:'+user.login))
+			else:
+				action_addProxy(principal, 'write', ('users:'+user.login))
+
+
+
+
 
 			self.service(svccmds.RESTART)
 
