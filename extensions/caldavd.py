@@ -53,6 +53,8 @@ import copy, types
 XML_BACKEND  = "twistedcaldav.directory.xmlfile.XMLDirectoryService"
 LDAP_BACKEND = "twistedcaldav.directory.ldapdirectory.LdapDirectoryService"
 
+GENERIC_PWD = "calendar_user"
+
 def my_Configdict2xmlEtree(_dict):
 	""" Map a dict object into xml """
 
@@ -112,14 +114,22 @@ def only_if_backend_openldap_is_not_enabled(func):
 class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	""" Handles Apple Calendar Server configuration and service.
 
+		How it works ?
+			-> if licornd's backend is OpenLDAP :
+				- users are stored in LDAP
+				- a ressource for each group stored in resources.xml file
+
+
+			-> if licornd's backend is SHADOW:
+				- users and resources are stored in xml files
+
+			- users relationship with groups are managed by calendarserver
+
 
 
 		.. versionadded:: 1.2.4
 		.. versionmodified:: 1.7. Rework the extensions to work
 			with calendarserver 3.2
-
-
-
 
 	"""
 	def __init__(self):
@@ -286,35 +296,48 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		xml_parsed.getroot()[0][count_ref - 1] = directoryservice_xml
 
 		xml_parsed.write(self.paths.configuration)
+
+		# set the new calendarser backend
+		self.calendarserver_backend = LDAP_BACKEND if key == 'ldap' else XML_BACKEND
+
+
 	def check(self, batch=False, auto_answer=None):
 		""" Check eveything needed for the caldavd extension and service.
-			First check ``chmod`` on caldavd files (because they
-			contain user passwords in clear-text).
 
-			Secondly, match the caldav backend to the licorn backend.
+			1. Check that calendarserver use the right backend:
+				- if licornd backend is ONLY shadow, calendarserver's backend is
+					XMLDirectoryService
+				- elif OPENLAP is enabled in licornd backend, calendarserver has
+					to user LdapDirectoryService
 
-			If backend 'openldap' is activated on Licorn side, only users and
-				groups from licorn ldap backend will be used into calendarserver
 
-			If backend 'openldap' not activated, use default 'shadow' backend.
+			2. if calendarserver's backend is XMLDirectoryService:
+				- check that already existing users and groups have a calendar
+
+			3. for all users, check their relationship with groups and apply
+				proxies.
 
 		"""
 
 		assert ltrace_func(TRACE_CALDAVD)
 
+		# get actual calendarserver backend
+		self.calendarserver_backend = caldav_config.DirectoryService.type
+
 		# check licorn backends
 		shadow_backend = LMC.backends.guess_one('shadow')
-		ldap_backend   = LMC.backends.guess_one('openldap')
+		try:
+			# openLDAP may not be installed
+			ldap_backend = LMC.backends.guess_one('openldap')
+		except KeyError:
+			ldap_backend = None
 
-		GENERIC_PWD = "calendar_user"
-
-		self.calendarserver_backend = caldav_config.DirectoryService.type
 
 		need_reload = False
 
 		# if current licorn backend is LDAP and caldav backend is not LDAP,
 		# change caldav backend to LDAP
-		if ldap_backend.enabled:
+		if ldap_backend is not None and ldap_backend.enabled:
 			if self.calendarserver_backend != LDAP_BACKEND:
 				need_reload = True
 				self.switch_directoryService('ldap')
@@ -331,9 +354,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			# effect.
 			self.service(svccmds.RELOAD)
 
-		# after reload check existing users/groups
 
-		if not ldap_backend.enabled:
+		if self.calendarserver_backend == XML_BACKEND:
 			# check if already existing STD users have a calendar.
 			for user in LMC.users.select(filters.STANDARD):
 				if not self.check_if_element_has_calendar('users', user.login):
@@ -341,25 +363,33 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 
 
-			for group in LMC.groups.select(filters.STANDARD):
-				if not self.check_if_element_has_calendar('groups', group.name) and \
-					not self.check_if_element_has_calendar('groups', 'rsp-'+group.name) and \
-					not self.check_if_element_has_calendar('groups', 'gst-'+group.name) and \
-					not self.check_if_element_has_calendar('resources', 'resource_'+group.name):
+		for group in LMC.groups.select(filters.STANDARD):
+			self.group_post_add(group=group)
 
-						self.group_post_add(group=group.responsible_group)
-						self.group_post_add(group=group.guest_group)
-						self.group_post_add(group=group)
+			"""if not self.check_if_element_has_calendar('groups', group.name) and \
+				not self.check_if_element_has_calendar('groups', 'rsp-'+group.name) and \
+				not self.check_if_element_has_calendar('groups', 'gst-'+group.name) and \
+				not self.check_if_element_has_calendar('resources', 'resource_'+group.name):
 
-						for u in group.members:
-							self.group_post_add_user(group=group, user=u)
+					self.group_post_add(group=group.responsible_group)
+					self.group_post_add(group=group.guest_group)
+					self.group_post_add(group=group)
 
-						for u in group.responsible_group.members:
-							self.group_post_add_user(group=group.responsible_group, user=u)
+					for u in group.members:
+						self.group_post_add_user(group=group, user=u)
 
-						for u in group.guest_group.members:
-							self.group_post_add_user(group=group.guest_group, user=u)
+					for u in group.responsible_group.members:
+						self.group_post_add_user(group=group.responsible_group, user=u)
 
+					for u in group.guest_group.members:
+						self.group_post_add_user(group=group.guest_group, user=u)"""
+
+
+
+		for u in LMC.users.select(filters.STANDARD):
+			for g in u.groups:
+				if not g.is_system or g.is_guest or g.is_responsible:
+					self.group_post_add_user(user=u, group=g)
 
 
 		# if ldap backend check if group resource exists
@@ -369,7 +399,14 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		#	'pre-existing users and groups.**'))
 
 	def check_if_element_has_calendar(self, _type, element):
-		print ">> check if calendar ",element, _type, principalForPrincipalID('{0}:{1}'.format(_type, element))
+		""" Return True is element ``element`` of type ``type`` has already
+			a calendar else False
+		"""
+		logging.info('{0}: Checking if element {1} of type {2} has already '
+			'a calendar'.format(
+				stylize(ST_NAME, self.name), stylize(ST_PATH, element),
+				stylize(ST_PATH, _type)))
+
 		if principalForPrincipalID('{0}:{1}'.format(_type, element)) is None:
 			return False
 		else:
@@ -380,8 +417,11 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	def setup_calendarserver_environement(self):
 		""" setup calendarserver environment with its own internal mecanism """
 
+		# load the calendarserver configuration
 		loadConfig(None)
 		caldav_config.directory = getDirectory()
+
+		# setup memcache
 		setupMemcached(caldav_config)
 
 	def __parse_files(self):
@@ -639,6 +679,17 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			xmlromember.tail = '\n	'"""
 
 		return True
+	def del_resource(self, uid):
+		for xmldata in self.data.resources.findall('resource'):
+			if xmldata.find('uid').text == uid:
+				self.data.resources.getroot().remove(xmldata)
+				return True
+
+		logging.warning2(_(u'{0}: unable to delete {1} {2}, not found in {3}.').format(
+			stylize(ST_NAME, self.name), "resource", stylize(ST_UGID, uid),
+			stylize(ST_PATH, self.paths.resources)))
+		return False
+
 	def add_member(self, name, login, **kwargs):
 		""" Create a new entry in the members element of a group. """
 
@@ -723,7 +774,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		user     = kwargs.pop('user')
 		password = kwargs.pop('password')
 
-		"""logging.progress(_(u'{0}: creating calendar for {1}: '
+		"""logging.info(_(u'{0}: creating calendar for {1}: '
 			'{2}').format(stylize(ST_NAME, self.name),
 						stylize(ST_PATH, "user"),
 						stylize(ST_OK, user.login)))"""
@@ -733,15 +784,13 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			return True
 
 		try:
-			# create an internal guest group to hold R/O proxies.
-			# do not call it 'gst-$USER' in case the user has the name of
-			# a group, this would conflict with the genuine gst-$GROUP.
-			"""gst_uid = '.org.%s.%s%s' % (self.name,
-									LMC.configuration.groups.guest_prefix,
-									user.login)"""
 
 			if self.add_user(uid=user.login, guid=str(uuid.uuid1()),
 									password=password, name=user.gecos):
+
+
+				logging.info('{0}: calendar for user {1} created'.format(
+					self.name, user.login))
 
 				self.__write_elements_and_reload()
 
@@ -781,7 +830,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 							attrname='password', value=password):
 
 				self.__write_elements_and_reload()
-				#logging.progress('%s: changed user %s password.' % (
+				#logging.info('%s: changed user %s password.' % (
 				#	self.name, self.paths.accounts))
 			return True
 		except Exception, e:
@@ -808,13 +857,19 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			# remove proxies
 			for g in user.groups:
 				print "g", g.name
+
+				if g.is_guest or g.is_responsible:
+					std_group = g.standard_group
+				else:
+					stg_group = g
+
 				# find the resource, and remove proxy
-				resource_principal = principalForPrincipalID('resources:resource_'+g.name)
+				resource_principal = principalForPrincipalID('resources:resource_'+std_group.name)
 				action_removeProxy(resource_principal, ('users:'+user.login))
 
 
-				logging.progress('{0}: deleted proxy for user {1} on resource {2}'.format(
-					self.name, user.login, 'resource_'+group.name))
+				logging.info('{0}: deleted proxy for user {1} on resource {2}'.format(
+					self.name, user.login, 'resource_'+g.name))
 
 			if self.calendarserver_backend == LDAP_BACKEND:
 				# no specif action
@@ -829,7 +884,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				logging.warning2('{0}: unknown calendarser backend {1}.'.format(
 				self.name, self.calendarserver_backend))
 
-			logging.progress('{0}: user {1} deleted.'.format(
+			logging.info('{0}: user {1} deleted.'.format(
 				self.name, user.login))
 
 			return True
@@ -849,27 +904,40 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	@events.handler_method
 	@only_if_enabled
 	def group_post_add(self, *args, **kwargs):
-		""" Create a caldavd group account and the associated calendar resource,
-			then write the configuration and release the associated lock.
+		"""
+			Group added handler.
+
+			Groups in calendarserver have not calendars.
+			Create a ressource for each standard groups.
 		"""
 
 		assert ltrace_func(TRACE_CALDAVD)
 
 		group = kwargs.pop('group')
 
-		if not (group.is_responsible or group.is_standard or group.is_guest):
+		# only do something is group is standard
+		if not group.is_standard:
 			return
 
+		# is this still usefull ?
 		resource_uuid = str(uuid.uuid1())
+
 		try:
-			if not LMC.backends.guess_one('openldap').enabled:
+			"""if not LMC.backends.guess_one('openldap').enabled:
 				self.add_group(uid=group.name, guid=str(uuid.uuid1()),
-								name=group.description)
+								name=group.description)"""
 
 
-			if group.is_standard:
+			#if group.is_standard:
+			resource_name = "resource_"+group.name
 
-				self.add_resource(uid="resource_"+group.name, guid=resource_uuid,
+
+			group_resource_principal = principalForPrincipalID(
+													'resources:'+resource_name)
+		
+			if group_resource_principal is None:
+
+				self.add_resource(uid=resource_name, guid=resource_uuid,
 									name=group.description,
 									type='groups',
 									# we've got to construct the guest group
@@ -880,11 +948,16 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 				self.__write_elements_and_reload()
 
+				logging.info('{0}: resource {1} created for group {2}.'.format(
+					stylize(ST_NAME, self.name), stylize(ST_PATH, resource_name),
+					stylize(ST_PATH, group.name)))
 
+			else:
+				logging.info('{0}: resource {1} already exists for group {2}.'.format(
+					stylize(ST_NAME, self.name), stylize(ST_PATH, resource_name),
+					stylize(ST_PATH, group.name)))
 
-
-
-				#logging.progress('%s: added group and resource in %s.' % (
+				#logging.info('%s: added group and resource in %s.' % (
 				#	self.name, self.paths.accounts))
 
 			return True
@@ -897,25 +970,28 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	@events.handler_method
 	@only_if_enabled
 	def group_pre_del(self, *args, **kwargs):
-		""" delete a group and its resource in the caldavd accounts file, then
-			reload the service. """
+		""" Pre delete group handler
+			Remove the associated resource.
+			No need to remove all proxies, they are removed automaticaly.
+		"""
 
 		assert ltrace_func(TRACE_CALDAVD)
 
 		group = kwargs.pop('group')
 
-		if not (group.is_standard or group.is_guest):
+		if not group.is_standard:
 			return
 
 		try:
-			#TODO: self.locks.accounts.acquire()
-			self.del_account(acttype='resource', uid=group.name)
-			if not LMC.backends.guess_one('openldap').enabled:
-				self.del_account(acttype='group', uid=group.name)
+			# delete the group resource
+			self.del_resource(uid="resource_"+group.name)
 
+			# write and reload
 			self.__write_elements_and_reload()
-				#logging.progress('%s: deleted group and resource in %s.' % (
-				#	self.name, self.paths.accounts))
+
+			logging.info('{0}: resource {1} deleted for group {2}.'.format(
+				stylize(ST_NAME, self.name), stylize(ST_PATH, "resource_"+group.name),
+				stylize(ST_PATH, group.name)))
 
 			return True
 
@@ -936,8 +1012,10 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	@events.handler_method
 	@only_if_enabled
 	def group_post_add_user(self, *args, **kwargs):
-		""" add a user to the member element of a group in the caldavd
-			accounts file, then reload the service. """
+		""" User added in group handler.
+
+			Find the group associated resource and declare user as proxy.
+		"""
 
 		assert ltrace_func(TRACE_CALDAVD)
 
@@ -945,53 +1023,38 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		user  = kwargs.pop('user')
 
 		# we don't deal with system accounts, don't bother us with that.
-		if user.is_system or not (group.is_standard or group.is_guest):
+		if user.is_system:
 			return True
 
+		if group.is_guest or group.is_responsible:
+			std_group = group.standard_group
+		else:
+			std_group = group
 
-		if LMC.backends.guess_one('openldap').enabled:
-
-			# deal with proxies
-
-			self.setup_calendarserver_environement()
-
-			# the standard group ressource is the principal
-			#principal = config.directory.recordWithShortName("resources", "resource_"+group.sortName)
-			principal = principalForPrincipalID('resources:resource_'+group.name.replace('gst-', '').replace('rsp-',''))
-
-			if group.is_guest:
-				action_addProxy(principal, 'read', ('users:'+user.login))
-			else:
-				action_addProxy(principal, 'write', ('users:'+user.login))
-
-
-
-
-
-			self.service(svccmds.RESTART)
+		group_resource_principal = principalForPrincipalID(
+										'resources:resource_'+std_group.name)
+		if group_resource_principal is None:
+			logging.warning2('{0}: cannot find principal for {1}'.format(
+				stylize(ST_NAME, self.name), stylize(ST_PATH, 
+										'resources:resource_'+std_group.name)))
 
 		else:
+			if group.is_guest:
+				action_addProxy(group_resource_principal,
+													'read', ('users:'+user.login))
+			else:
+				action_addProxy(group_resource_principal,
+													'write', ('users:'+user.login))
 
-			try:
-				#TODO: self.locks.accounts.acquire()
-				if self.add_member(name=group.name, login=user.login):
-					self.__write_elements_and_reload()
-					#logging.progress('%s: added user %s in group %s in %s.' % (
-					#	self.name, login, name, self.paths.accounts))
-
-				return True
-			except Exception, e:
-				logging.warning(_(u'{0}: {1}').format(
-								stylize(ST_NAME, self.name), e))
-				print_exc()
-				return False
+		self.service(svccmds.RESTART)
 
 	@events.handler_method
 	@only_if_enabled
-	@only_if_backend_openldap_is_not_enabled
 	def group_pre_del_user(self, *args, **kwargs):
-		""" delete a user from the members element of a group in the caldavd
-			accounts file, then reload the service. """
+		""" User deleted from group handler.
+
+			Find the group associated resource and remove user's proxy.
+		"""
 
 		assert ltrace_func(TRACE_CALDAVD)
 
@@ -999,15 +1062,18 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		user  = kwargs.pop('user')
 
 		# we don't deal with system accounts, don't bother us with that.
-		if user.is_system or not (group.is_standard or group.is_guest):
+		if user.is_system:
 			return True
 
-
-		#call manage_principals
 		try:
-			#TODO: self.locks.accounts.acquire()
-			if self.del_member(name=group.name, login=user.login):
-				self.__write_elements_and_reload()
+
+			if group.is_guest or group.is_responsible:
+				std_group = group.standard_group
+			else:
+				stg_group = group
+
+			resource_principal = principalForPrincipalID('resources:resource_'+std_group.name)
+			action_removeProxy(resource_principal, ('users:'+user.login))
 
 			return True
 		except Exception, e:
