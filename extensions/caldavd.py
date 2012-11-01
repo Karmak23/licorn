@@ -31,7 +31,7 @@ from licorn.core.classes          import only_if_enabled
 from licorn.extensions import ServiceExtension
 
 
-from calendarserver.tools.principals   import action_addProxy, action_removeProxy,  addProxy, principalForPrincipalID
+from calendarserver.tools.principals   import action_addProxy, action_removeProxy,  addProxy, principalForPrincipalID, action_listProxies
 from calendarserver.tools.util         import getDirectory, loadConfig, setupMemcached
 from twistedcaldav.config              import config as caldav_config
 from twistedcaldav.config              import ConfigDict
@@ -128,8 +128,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 
 		.. versionadded:: 1.2.4
-		.. versionmodified:: 1.7. Rework the extensions to work
-			with calendarserver 3.2
+		.. versionmodified:: 1.7. Rework the extension to handle calendarserver 
+			3.2
 
 	"""
 	def __init__(self):
@@ -300,6 +300,10 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		# set the new calendarser backend
 		self.calendarserver_backend = LDAP_BACKEND if key == 'ldap' else XML_BACKEND
 
+		self.clear_accounts_and_ressources()
+		self.setup_calendarserver_environement()
+
+
 
 	def check(self, batch=False, auto_answer=None):
 		""" Check eveything needed for the caldavd extension and service.
@@ -332,27 +336,16 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		except KeyError:
 			ldap_backend = None
 
-
-		need_reload = False
-
 		# if current licorn backend is LDAP and caldav backend is not LDAP,
 		# change caldav backend to LDAP
 		if ldap_backend is not None and ldap_backend.enabled:
 			if self.calendarserver_backend != LDAP_BACKEND:
-				need_reload = True
 				self.switch_directoryService('ldap')
 
 		# elif current licorn backend is SHADOW, change caldav backend to SHADOW
 		elif shadow_backend.enabled:
 			if self.calendarserver_backend == LDAP_BACKEND:
-				need_reload = True
 				self.switch_directoryService('xml')
-
-
-		if need_reload:
-			# we changed something, reload the service in order to changes take
-			# effect.
-			self.service(svccmds.RELOAD)
 
 
 		if self.calendarserver_backend == XML_BACKEND:
@@ -361,10 +354,16 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				if not self.check_if_element_has_calendar('users', user.login):
 					self.user_post_add(user=user, password=GENERIC_PWD)
 
-
-
+			
 		for group in LMC.groups.select(filters.STANDARD):
-			self.group_post_add(group=group)
+			# if the group is in the same backend than calendarserver
+			if (group.backend == shadow_backend and 
+				self.calendarserver_backend == XML_BACKEND) or \
+				(ldap_backend is not None and 
+				group.backend.name == ldap_backend.name and 
+				self.calendarserver_backend == LDAP_BACKEND):
+			
+				self.group_post_add(group=group)
 
 			"""if not self.check_if_element_has_calendar('groups', group.name) and \
 				not self.check_if_element_has_calendar('groups', 'rsp-'+group.name) and \
@@ -383,13 +382,23 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 					for u in group.guest_group.members:
 						self.group_post_add_user(group=group.guest_group, user=u)"""
-
-
+		
+		
+		self.service(svccmds.RELOAD)
+		self.setup_calendarserver_environement()
 
 		for u in LMC.users.select(filters.STANDARD):
-			for g in u.groups:
-				if not g.is_system or g.is_guest or g.is_responsible:
-					self.group_post_add_user(user=u, group=g)
+
+			# if the user is in the same backend than calendarserver
+			if (u.backend.name == shadow_backend.name and 
+				self.calendarserver_backend == XML_BACKEND) or \
+				(ldap_backend is not None and 
+				u.backend.name == ldap_backend.name and 
+				self.calendarserver_backend == LDAP_BACKEND):
+			
+				for g in u.groups:
+					if not g.is_system or g.is_guest or g.is_responsible:
+						self.group_post_add_user(user=u, group=g)
 
 
 		# if ldap backend check if group resource exists
@@ -1017,10 +1026,13 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			Find the group associated resource and declare user as proxy.
 		"""
 
+
 		assert ltrace_func(TRACE_CALDAVD)
 
 		group = kwargs.pop('group')
 		user  = kwargs.pop('user')
+
+		print ">> group_post_add", group.name, user.login
 
 		# we don't deal with system accounts, don't bother us with that.
 		if user.is_system:
@@ -1039,6 +1051,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 										'resources:resource_'+std_group.name)))
 
 		else:
+
 			if group.is_guest:
 				action_addProxy(group_resource_principal,
 													'read', ('users:'+user.login))
@@ -1124,13 +1137,26 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					name=group.name))
 
 
+	def clear_accounts_and_ressources(self):
+		print "clearrrrrrrr"
+		new_xml = '<accounts realm="TOTOOTOTOTOTTO"></accounts>'
+
+		# build a tree structure
+		root = ET.Element("accounts")
+		root.set('realm', "TOTOTOTOTOOTOTO")
+		res_tree = ET.ElementTree(root)
+		ac_tree  = ET.ElementTree(root)
+
+		self.data = LicornConfigObject()
+		self.data.accounts  = ac_tree
+		self.data.resources = res_tree
+
+
+		self.data.service_defaults = readers.shell_conf_load_dict(
+					self.paths.service_defaults)
 
 
 
-
-
-
-
-
+		self.__write_elements_and_reload()
 
 
