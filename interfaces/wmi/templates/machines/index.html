@@ -1,72 +1,112 @@
-{#- Copyright 2011 META IT & Robin Lucbernet<rl@meta-it.fr>
+{#- Copyright 2012 META IT & Robin Lucbernet<robin@meta-it.fr>
     Distributed under the terms of the GNU GPL version 2. -#}
 
-{% from 'widgets/common.html' import licorn_list, jquery_popover_media with context %}
+{%- extends 'list.html' -%}
 
-{%- extends 'fullbase.html' -%}
-
-{%- block extended_media -%}
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/list.css" />
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/machines.css" />
-	{{ jquery_popover_media() }}
-	<script language="javascript" type="text/javascript" src="/media/js/list.js"></script>
-	<script language="javascript" type="text/javascript" src="/media/js/machines.js"></script>
+{%- block title -%}
+	{{ _('Machines management') }}
 {%- endblock -%}
 
-{%- block title -%}{{ _('Machines management') }}{%- endblock -%}
 
-{%- block main_content -%}
+{%- block list_title -%}
+	{{ _('Machines') }} (<span id='model_machines_count'></span><span id="model_machines_total" style="font-size:18px;">/{{ machines|length }}</span>)
+{%- endblock -%}
 
-	{#-
-		{ "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
-		{ "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"},
-	-#}
-	{%- set massive_actions = [ { "action_name" : "upgrade", "icon" : "/media/images/24x24/mass_skel.png"}, ] -%}
-	{%-
-		set headers = [ { "name" : "select",   "content" : "<input type=\'checkbox\' name=\'select\' id=\'massive_select\'>",
-																		"sortable" : False},
-						{ "name" : "state",    "content" : _("Status"), "sortable" : True, "default_sort" : False},
-						{ "name" : "hostname", "content" : _('Hostname'), "sortable" : True, "default_sort" : True},
-						{ "name" : "type",     "content" : _('Type'), "sortable" : True, "default_sort" : False},
-						{ "name" : "os",       "content" : _('Op. System'), "sortable" : True, "default_sort" : False},
-						{ "name" : "nav",      "content" : "", "sortable" : False} ]
-	-%}
-	{{ licorn_list('machines', 'hostname', _('Machines'),
-					massive_actions, headers,
-					machines_list, 'machines/machine_row.html',
-					[ 'hostname', 'mid' ], 'mid') }}
+{%- block massive_actions -%}
+	<div class="btn-group">
+		<button class="btn massive_action" data-url='/machines/massive/upgrade/' id="massive_upgrade" data-name='upgrade'>{{_('Upgrade')}}</button>
+		<button class="btn massive_action" data-url='/machines/massive/shutdown/' id="massive_shutdown" data-name='shutdown'>{{_('Shutdown')}}</button>
+		<!--<button class="btn">2</button>-->
+	</div>
+{%- endblock -%}
+
+{%- block list_filters -%}
+	<!-- 
+	<span class="btn-group" data-toggle="buttons-checkbox">
+		<button id='filter_server' class="btn filter_item" data-filter='server'>
+			<i class="icon-map-marker" title="{{ _('Servers') }}"></i>
+		</button>
+		<button id='filter_client' class="btn filter_item" data-filter='client'>
+			<i class="icon-wrench" title="{{ _('Client') }}"></i>
+		</button>
+		<button id='filter_licorn' class="btn filter_item" data-filter='licorn'>
+			<i class="icon-warning-sign" title="{{ _('Licorn machines (clients and servers)') }}"></i>
+		</button>
+		<button id='filter_other' class="btn filter_item" data-filter='other'>
+			<i class="icon-map-marker" title="{{ _('Other') }}"></i>
+		</button>
+	</span>
+	-->
+{%- endblock -%}
+
+{%- block list_headers -%}
+	<th class='table_column_header centered' style="width: 7%">{{ _('Type') }}</th>
+	<th class='table_column_header centered' style="width: 5%">{{ _('Status') }}</th>
+	<th class='table_column_header' style="width: 75%">{{ _('Hostname') }}</th>
+	<th class='table_column_header' style="width: 5%" title="{{ _('IP adress') }}">{{ _('IP') }}</th>
+	<th class='table_column_header centered' style="width: 5%">{{ _('Backend') }}</th>
+	<th class='table_column_header centered' style="width: 5%" title="{{ _('Operating System') }}">{{ _('OS') }}</th>
+{%- endblock -%}
+
+{%- block list_body -%}
+	{%- for machine in machines -%}
+		{%- include 'machines/machine_row.html' -%}
+	{%- endfor -%}
 
 	<script language="javascript" type="text/javascript">
+
 		$(document).ready(function() {
-			number_of_list = 1;
-			//init size of lists
-			$(".list_content").hide();
 
-			height = $("#main_content").height() - number_of_list * ($(".list_title").height());
-			content = $(".list:first").find(".list_content");
-			content.show();
-			$(".list:first").addClass('current_list');
-			//content.show().height(height);
-			$('.list_items').height(height - content.find('.search_bar').height() - content.find('.list_header').height() - 100);
-			$('.row').width(content.find('.list_header').width());
+			// setup the list
+			var START_TIME = new Date().getTime();
 
-			// init click event on list title
-			$(".list_title").each(function() {
-				$(this).click(function() {
-					$('.current_list').removeClass('current_list');
-					$(this).parent().addClass('current_list');
-					$(".list_content").hide();
-					$(this).parent().find(".list_content").show();
-				});
-			});
+			setup_list('machines');
 
-			$("#search_box").focus();
+			setup_upgrade_facilities()
+
+			var END_TIME = new Date().getTime();
+			totalTime = (END_TIME - START_TIME);
+			console.log("total time to setup machines list", totalTime);
 		});
+
+		function func_doubleclick_row(td) {
+			// what happens when a row has been double clicked,
+			// show the edit form.
+
+			if (! $(td).hasClass('no_double_click')) {
+
+				mid = td.data('id')
+
+				if (mid == null) {
+					mid = td.parent('.licorn_row').data('id')
+				}
+
+				$.get('/machines/edit/'+mid, function(modal_html) {
+					$("#modal").html(modal_html).modal()
+				})
+			}
+		}
+
+		function get_list_column() {
+			return ["String", "String", "String", "String", "String"]
+		}
+
+		// filters used to filter the table
+		var filters = { 'other' : true }
+
+		function setup_upgrade_facilities(selector) {
+			if (selector == null) {
+				selector = $(".machine_upgrade")
+			}
+			selector.click(function() {
+				mid = $(this).data('mid')
+				$.get('/machines/upgrade/'+mid)
+			})
+		}
 	</script>
-
 {%- endblock -%}
 
-{%- block sub_content -%}
-{%- endblock -%}
+
+
 
 

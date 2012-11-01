@@ -1,135 +1,127 @@
-{#- Copyright 2011 META IT & Robin Lucbernet<rl@meta-it.fr>
+{#- Copyright 2012 META IT & Robin Lucbernet<robin@meta-it.fr>
     Distributed under the terms of the GNU GPL version 2. -#}
 
-{% from 'widgets/common.html' import licorn_list, jquery_popover_media %}
+{%- extends 'list.html' -%}
 
-{%- extends 'fullbase.html' -%}
-
-{%- block extended_media -%}
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/list.css" />
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/groups.css" />
-	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/table_view.css" />
-	{{ jquery_popover_media() }}
-	<script language="javascript" type="text/javascript" src="/media/js/list.js"></script>
-	<script language="javascript" type="text/javascript" src="/media/js/groups.js"></script>
+{%- block title -%}
+	{{ _('Groups management') }}
 {%- endblock -%}
 
-{%- block title -%}{{ _('Groups management') }}{%- endblock -%}
 
-{%- block main_content -%}
+{%- block list_title -%}
+	{{ _('Groups') }} (<span id='model_groups_count'></span><span id="model_groups_total" style="font-size:18px;">/{{ groups|length }}</span>)
+{%- endblock -%}
 
-	{%- if groups_list|length > 100 -%}
+{%- block massive_actions -%}
+
+	<span class="btn-group">
+		<button class="btn massive_action" data-url='/groups/massive/delete/' title="{{ _('Massively delete selected groups.') }}"  data-name='delete' id="massive_delete">
+			<img src="/media/images/14x14/mass_del.png" alt="massive delete icon"/>
+		</button>
+		<button class="btn massive_action" data-url='/groups/massive/permissivness/' data-name='permissive' id="massive_permissive" title="{{ _('Massively make/unmake selected groups permissive.') }}" >
+			<img src="/media/images/14x14/mass_lock.png" alt="massive permissive icon"/>
+		</button>
+		<button class="btn massive_action" data-url='/groups/massive/export/' data-name='export' id="massive_export" title="{{ _('Massively export seleted groups.') }}" >
+			<img src="/media/images/14x14/mass_export.png" alt="massive export icon"/>
+		</button>
+		<button class="btn massive_action" data-url='/groups/massive/apply_skel/' data-name='skel' id="massive_skel" title="{{ _('Massively reapply groups\' skel on groups\' members.') }}">
+			<img src="/media/images/14x14/mass_skel.png" alt="massive apply skel icon"/>
+		</button>
+		<button class="btn massive_action" data-url='/groups/massive/edit/' data-name='edit' id="massive_edit" title="{{ _('Massively edit groups.') }}">
+			<img src="/media/images/14x14/mass_group.png" alt="massive edit groups icon"/>
+		</button>
+	</span>
+
+{%- endblock -%}
+
+{%- block list_filters -%}
+
+
+
+
+	<span class="btn-group" data-toggle="buttons-checkbox">
+		{% if request.user.is_superuser %}
+			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
+				<i class="icon-map-marker" title="{{ _('Standard') }}"></i>
+			</button>
+			<button id='filter_privileged' class="btn filter_item" data-filter='privileged'>
+				<i class="icon-glass"></i>
+			</button>
+			<button id='filter_system' class="btn filter_item" data-filter='system'>
+				<i class="icon-wrench" title="{{ _('Systems') }}"></i>
+			</button>
+			<button id='filter_restricted' class="btn filter_item" data-filter='restricted'>
+				<i class="icon-warning-sign" title="{{ _('Restricted') }}"></i>
+			</button>
+		{% elif request.user.is_staff %}
+			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
+				<i class="icon-map-marker" title="{{ _('Standard') }}"></i>
+			</button>
+			<button id='filter_privileged' class="btn filter_item" data-filter='privileged'>
+				<i class="icon-glass" title="{{ _('Privileged') }}"></i>
+			</button>
+		{% endif %}
+
+	</span>
+{%- endblock -%}
+
+{%- block list_headers -%}
+	<th class='table_column_header centered' width="7%">{{ _('Type') }}</th>
+	<th class='table_column_header centered' width="7%">{{ _('Permissive') }}</th>
+	<th class='table_column_header'          width="12%">{{ _('Name') }}</th>
+	<th class='table_column_header'          width="50%">{{ _('Description') }}</th>
+	<th class='table_column_header centered' width="7%" title="{{ _('Group identifier') }}">{{ _('Gid') }}</th>
+	<th class='table_column_header centered' width="7%">{{ _('Backend') }}</th>
+	<th class='table_column_header centered' width="12%">{{ _('Skel') }}</th>
+{%- endblock -%}
+
+{%- block list_body -%}
+	{%- for group in groups -%}
+		{%- include 'groups/group_row.html' -%}
+	{%- endfor -%}
+
+
 	<script language="javascript" type="text/javascript">
-		loading_animation();
-	</script>
-	{%- endif -%}
 
-	<!-- standard groups list -->
-
-	{%- set name = "groups" -%}
-	{%- set identifier = "gidNumber" -%}
-	{%- set main_column = "name" -%}
-	{%- set title = _('Groups') -%}
-	{%- set massive_actions = [ { "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
-								{ "action_name" : "permissiveness", "icon" : "/media/images/24x24/mass_lock.png"},
-								{ "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"},
-								{ "action_name" : "skel", "icon" : "/media/images/24x24/mass_skel.png"},
-								{ "action_name" : "edit", "icon" : "/media/images/24x24/mass_group.png"} ] -%}
-
-	{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'groups_massive_select\'>", "sortable" : False},
-						{ "name" : "permissive", "content" : "<img src=\'/media/images/24x24/locked_header.png\'/>", "sortable" : True, "default_sort" : False},
-						{ "name" : "name", "content" : _('Name'), "sortable" : True, "default_sort" : True},
-						{ "name" : "description", "content" : _('Description'), "sortable" : True, "default_sort" : False},
-						{ "name" : "gidNumber", "content" : _('GID'), "sortable" : True, "default_sort" : False},
-						{ "name" : "skel", "content" : _('Skeleton'), "sortable" : True, "default_sort" : False},
-						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
-
-	{%- set list_items = groups_list -%}
-	{%- set macro_row = 'groups/group_row.html' -%}
-	{%- set search_columns = [ 'gidNumber', 'description', 'name' ] -%}
-
-	{{ licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) }}
-
-	{%- if request.user.is_superuser -%}
-		<!-- system groups list -->
-		<br>
-		{%- set name = "sys_groups" -%}
-		{%- set title = _('System groups') -%}
-		{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'sys_groups_massive_select\'>", "sortable" : False},
-						{ "name" : "priv", "content" : "Privilege", "sortable" : True, "default_sort" : False},
-						{ "name" : "name", "content" : _('Name'), "sortable" : True, "default_sort" : True},
-						{ "name" : "description", "content" : _('description'), "sortable" : True, "default_sort" : False},
-						{ "name" : "gidNumber", "content" : _('uid'), "sortable" : True, "default_sort" : False},
-						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
-		{%- set list_items = system_groups_list -%}
-
-		{{ licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) }}
-
-	{%- endif -%}
-
-	<script language="javascript" type="text/javascript">
 		$(document).ready(function() {
 
-			number_of_list = {{ 2 if request.user.is_superuser else 1 }};
+			// setup the list
+			var START_TIME = new Date().getTime();
 
-			//init size of lists
-			//$(".list_content").hide();
+			setup_list('groups');
 
-			// hide everything
-			$(".list_header").hide();
-			$(".list_items").hide();
-			$(".bar_nav").hide();
-
-			// show only the first list
-			$(".list_header:first").show();
-			$(".list_items:first").show();
-			$(".bar_nav:first").show();
-			$(".bar_nav#search_bar_search:first").show()
-
-
-
-			height = $("#main_content").height() - number_of_list * ($(".list_title").height());
-			content = $(".list:first").find(".list_content");
-			content.show()
-			$(".list:first").addClass('current_list');
-			//content.show().height(height);
-			$('.list_items').height(height - content.find('.search_bar').height() - content.find('.list_header').height() - 100);
-			$('.row').width(content.find('.list_header').width());
-
-			// init click event on list title
-			if ($(".list_title").length > 1) {
-				
-				$(".list_title").click(function() {
-					var list = $('#'+$(this).data('list'))
-					$('.current_list').removeClass('current_list');
-					list.addClass('current_list');
-					// hide everything
-					$(".list_header").hide();
-					$(".list_items").hide();
-					$(".bar_nav").hide();
-
-					// show only the good list
-					list.find(".list_header").show();
-					list.find(".list_items").show();
-					list.find(".bar_nav").show();
-
-					// re sort the list
-					window["sort_"+$(this).data('list')]();
-					
-				});
-			}
-
-			remove_loading_animation();
-
-			$("#search_box").focus();
-
-
+			var END_TIME = new Date().getTime();
+			totalTime = (END_TIME - START_TIME);
+			console.log("total time to setup user list", totalTime);
 		});
+
+		function func_doubleclick_row(td) {
+			// what happens when a row has been double clicked,
+			// show the edit form.
+
+			if (! $(td).hasClass('no_double_click')) {
+
+				gid = td.data('id')
+
+				if (gid == null) {
+					gid = td.parent('.licorn_row').data('id')
+				}
+
+				$.get('/groups/edit/'+gid, function(modal_html) {
+					$("#modal").html(modal_html).modal()
+				})
+			}
+		}
+
+		function get_list_column() {
+			return ["String", "String", "String", "String", "Number", "String", "String"]
+		}
+
+		// filters used to filter the table
+		var filters = { 'standard' : true, 'system': true, 'restricted': false, 'privileged': true}
+
 	</script>
-
 {%- endblock -%}
 
-{%- block sub_content -%}
-{%- endblock -%}
 
 

@@ -1,12 +1,28 @@
 
 /* Main navigation bar */
-
+@import "base.less";
 @menu_width: 200px;
 @menu_line_height: 40px;
 @menu_item_height: 30px;
 @menu_link_color: white;
 
+div#banner {
+	background: @back_color url('/media/images/banner_back.png') top left no-repeat;
+	color: #fff;
+	height: 100%;
+	width: 220px;
+	position: fixed;
+	overflow: hidden;
+	left: 0px;
+	top: -1px;
+	float: left;
+}
+
 @menu_link_font_size: 16px;
+
+div#dynamic_mainnav_list {
+	margin : 0;
+}
 
 #mainnav {
 	border: none;
@@ -16,6 +32,14 @@
 }
 div#dynamic_mainnav_list {
 	margin:0;
+}
+.menu-current {
+	background-color: #7BE5FF !important;
+	width:156px !important;
+}
+.menu-text:hover {
+	background-color: #8d153e;
+	width:156px !important;
 }
 #auxnav {
 	border: none;

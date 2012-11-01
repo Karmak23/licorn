@@ -1,3 +1,11 @@
+.click_item, .priv_item, .group_item, .popover_item {
+	height: 30px;
+	display: block;
+	float: left;
+	margin: 5px;
+    cursor: pointer;
+}
+
 
 .popover_item, .popover_group_name, .popover_group_img { float: left; }
 .popover_item { opacity:0.6; }

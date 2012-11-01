@@ -1,0 +1,31 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">×</button>
+    {%- block title -%}
+      <h3>{{ _('Massive action confirmation') }}</h3>
+    {%- endblock -%}
+</div>
+<div class="modal-body">
+  {%- block confirm_text -%}
+
+  {%- endblock -%}
+  {%- block machines_list -%}
+    <ul>
+      {%- for m in machines -%}
+        <li> {{ m.hostname }}</li>
+      {%- endfor -%}
+    </ul>
+  {%- endblock -%}
+  {%- block endtext -%}
+  {%- endblock -%}
+</div>
+<div class="modal-footer">
+  {%- block footer -%}
+    <a href="#" class="btn" data-dismiss="modal">No, Thanks</a>
+    <a href="#" class="btn btn-primary" id="apply_massive_action">Yes, I want</a>
+  {%- endblock -%}
+</div>
+
+
+
+
+

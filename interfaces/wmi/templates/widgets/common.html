@@ -164,11 +164,11 @@
 		<div class="menu-title">
 			<a href="{{ href }}" class="menu_link ajax-menu-link-item"
 					title="{{ title }}" {{ ('target="%s"' % target) if target }}>
-				<div class="menu-back"></div>
+				<div class="menu-back"></div>	
 				<div class='menu-text'>{{ text }}</div>
 			</a>
 		</div>
-		<div class="menu-content">
+		<div class="menu-content" style='display:none;'>
 		{%- for item in sub_items -%}
 			{{ menu_subitem(*item) }}
 		{%- endfor -%}

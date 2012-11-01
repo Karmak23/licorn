@@ -1,6 +1,6 @@
 {%- macro updates_status(machine) -%}
 	{%- if machine.updates_available() -%}
-		{%-if item.security_updates() %}
+		{%-if machine.security_updates() %}
 			{%- set message = _('Security updates available. Click to install.') -%}
 			{%- set icon = 'software-update-urgent.png' -%}
 
@@ -11,43 +11,40 @@
 		{%- endif -%}
 
 		&nbsp;<img src="/media/images/16x16/{{ icon }}"
-			title="{{ message }}" alt="{{ message }}"/>
+			title="{{ message }}" alt="{{ message }}" data-mid="{{ machine.mid }}"/>
 	{%- endif -%}
 {%- endmacro -%}
 
-	<div class='{{ name }}_row row' id="{{ item.mid|replace('.','_') }}">
-		<span class="{{ name }}_select">
-			<input type="checkbox" name="selected" class="{{ name }}_checkbox">
+{%- macro get_machine_backend_img(machine) -%}
+	{{ machine.backend.name }}
+{%- endmacro -%}
+{%- macro get_machine_filter_class(machine) -%}
+	filter_other
+{%- endmacro -%}
+<tr class='licorn_row {{ get_machine_filter_class(machine) }}' data-id="{{ machine.mid }}" id='machines_{{ machine.wid }}'>
+	<td class='centered'>
+		<img src="/media/images/16x16/{{ get_host_type_html(machine.system_type)[0] }}" alt="{{ get_host_type_html(machine.system_type)[1] }}" title="{{ get_host_type_html(machine.system_type)[1] }}" width="16" height="16" />
+	</td>
+	<td class='centered'>
+		<img src="/media/images/16x16/{{ get_host_status_html[machine.status][0] }}"
+					alt="{{ get_host_status_html[machine.status][1] }}" title="{{ get_host_status_html[machine.status][1] }}" width="16" height="16" />
+	</td>
+	<td data-sort="{{ machine.hostname }}">
+		<span class='machine_hostname_changed_handler' id='{{ machine.wid }}' data-mid="{{ machine.mid }}">{{ machine.hostname }}<span>
+
+		<span id="machine_status" class='no_double_click'>
+			{{ updates_status(machine) }}
 		</span>
-		<span class="{{ name }}_state odd_even_typed ">
-			<img src="/media/images/16x16/{{ get_host_status_html[item.status][0] }}"
-				alt="{{ get_host_status_html[item.status][1] }}" width="16" height="16" />
-		</span>
-		<span title="{{ _('Click to edit machine {0}').format(item['hostname']) }}" class="{{ name }}_content">
-			<span class="{{ name }}_hostname odd_even_typed"> {{ item.hostname }} {{ updates_status(item) }}</span>
-			<span class="{{ name }}_type odd_even_typed">
-				<img src="/media/images/16x16/{{ get_host_type_html(item.system_type)[0] }}" alt="{{ get_host_type_html(item.system_type)[1] }}" width="16" height="16" />
-			</span>
-			<span class="{{ name }}_os odd_even_typed">
-				<img src="/media/images/16x16/{{ get_host_os_html(item.system_type)[0] }}"
-					alt="{{ get_host_os_html(item.system_type)[1] }}" width="16" height="16" />
-			</span>
-		</span>
-		<span class="{{ name }}_nav odd_even_typed">
-			<span class="item_menu">
-					<div class="{{ name }}_updates">
-						{{ updates_status(item) }}
-					</div>
-				<div class="{{ name }}_shutdown">
-					{%- set message = _('Shutdown this machine now.') -%}
-					<img src="/media/images/16x16/shutdown.png"
-						title="{{ message }}" alt="{{ message }}"/>
-				</div>
-			</span>
-		</span>
-	</div>
-	<script type='text/javascript'>
-		$(document).ready(function() {
-			init_machines_events('{{ name }}', '{{ item.mid }}', '{{ item.hostname }}', 'mid');
-		});
-	</script>
+	</td>
+	<td>
+		{{ machine.mid }}
+	</td>
+	<td class='centered'>
+		{{ get_machine_backend_img(machine) }}
+	</td>
+	<td class='centered'>
+		<img src="/media/images/16x16/{{ get_host_os_html(machine.os_details)[0] }}"
+						alt="{{ get_host_os_html(machine.os_details)[1] }}" title="{{ get_host_os_html(machine.os_details)[1] }}" width="16" height="16" />
+	</td>
+</tr>
+

@@ -13,6 +13,22 @@ class UserForm(forms.Form):
 
 		super(self.__class__, self).__init__(*args, **kwargs)
 
+		def widget_attrs(action_name, user):
+			widget_attrs = {}
+			if mode != 'new':
+				widget_attrs.update({
+					'class':'instant',
+					'data-instant-url': '/users/mod/{0}/{1}/'.format(user.uid, action_name)
+				})
+			if action_name == 'gecos':
+				widget_attrs.update({
+					"autofocus" : 'autofocus'
+				})
+			return widget_attrs
+
+
+
+
 		if mode=="massiv":
 			user_shell = LMC.configuration.users.default_shell
 		else:
@@ -52,18 +68,21 @@ class UserForm(forms.Form):
 
 			self.fields['profile'] = forms.ChoiceField(
 				widget=forms.Select(attrs={'readonly':'readonly'}),
-						choices = [(p.gidNumber, p.name) for p in LMC.profiles ],
-						initial = user_profile)
+				choices = [(p.gidNumber, p.name) for p in LMC.profiles ],
+				initial = user_profile)
 
 			self.fields['gecos'] = forms.CharField(
+				widget= forms.TextInput(attrs=widget_attrs('gecos', user)),
 				max_length=100,
 				initial=user_gecos,
 				label=_('Full name'))
 
 			self.fields['password'] = forms.CharField(widget=forms.PasswordInput)
-			self.fields['password_confim'] = forms.CharField(widget=forms.PasswordInput)
+			self.fields['password_confim'] = forms.CharField(
+				widget=forms.PasswordInput(attrs=widget_attrs('password', user)))
 
-		self.fields['shell'] = forms. ChoiceField(
+		self.fields['shell'] = forms.ChoiceField(
+			widget= forms.Select(attrs=widget_attrs('shell', user)),
 				choices = [(p, p) for p in LMC.configuration.users.shells ],
 				initial = user_shell)
 
@@ -112,3 +131,18 @@ class ImportForm(forms.Form):
 				initial='',
 				label=_('Password column'))
 
+
+# key : (id, text, active)
+def get_user_form_blocks(request):
+	group_form_blocks = {
+		'agid' : ('ageneral', u'General information', True),
+		'bstandard' : ('bstandard', u'Groups', False),
+	}
+
+	if request.user.is_superuser:
+		group_form_blocks.update({
+			'cprivileged' : ('cprivileged', u'Privileged groups', False),
+			'dsystem' : ('dsystem', u'Systems groups', False)
+		})
+
+	return group_form_blocks

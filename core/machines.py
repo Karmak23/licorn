@@ -53,19 +53,73 @@ def myself_or_system_forward(func):
 	@functools.wraps(func)
 	def wrap(self, *a, **kw):
 		if self.myself:
+			kw['machine'] = self
 			return getattr(LMC.system, func.__name__)(*a, **kw)
+
 
 		if self.system:
 			try:
 				return getattr(self.system, func.__name__)(*a, **kw)
-
 			except:
 				logging.exception(_('Failed to call `{0}()` on machine {1}!').format(
 					stylize(ST_NAME, func.__name__), stylize(ST_NAME, self.hostname)))
 		else:
-			logging.warning(_('Cannot call `{0}` on non-connected machine {1}!').format(
-				stylize(ST_NAME, func.__name__), stylize(ST_NAME, self.hostname)))
+			msg = _('Cannot call `{0}` on non-connected machine {1}!').format(
+				stylize(ST_NAME, func.__name__), stylize(ST_NAME, self.hostname))
+			logging.warning(msg)
+
+			if kw.get('raise_exception', False):
+				msg = _('Cannot call <strong>{0}</strong> on non-connected '
+					'machine <strong>{1}</strong>!').format( func.__name__,
+																self.hostname)
+				raise exceptions.LicornWebCommandException(msg)
+
 	return wrap
+
+
+_nmap_os_details = {
+	"apple"  : host_os.APPLE,
+	"linux"  : host_os.LINUX,
+	"windows": host_os.WINDOWS,
+}
+_nmap_device_type = {
+	'router'         : host_types.ROUTER,
+	'media'          : host_types.MEDIA,
+	'general purpose': host_types.UNKNOWN,
+}
+_nmap_ether_vendor_database = {
+	'freebox' : host_types.FREEBOX,
+	'vmware'  : host_types.VMWARE,
+	'apple'   : host_types.APPLE,
+}
+_nmap_ether_address_database = {
+	'6C:2E'    : host_types.FREEBOX,
+	'08:00:27' : host_types.VIRTUALBOX,
+	'00:16:3E' : host_types.VIRTUALBOX,
+}
+
+def check_info_is_in_dict(what, _dict, _startswith=False):
+	if _startswith:
+		for key, value in _dict.iteritems():
+			if what.startswith(key):
+				return value
+	else:
+		for key, value in _dict.iteritems():
+			if key in what.lower():
+				return value
+
+	raise KeyError
+
+def test_nmap_installed():
+
+	if os.path.exists('/usr/bin/nmap'):
+		return True
+
+	logging.warning(_(u'{0}: {1} is not installed. Detailled OS information '
+						u'will not available.').format(
+							stylize(ST_NAME, 'machines'),
+							stylize(ST_PATH, 'nmap')))
+	return False
 
 class Machine(CoreStoredObject, SharedResource):
 
@@ -89,7 +143,7 @@ class Machine(CoreStoredObject, SharedResource):
 	_nmap_cmd_base      = [ 'nmap', '-v', '-n', '-T5', '-sP', '-oG', '-' ]
 	_nmap_cmd_scan_base = [ 'nmap', '-v', '-n', '-T5', '-p0-65535', '-oG', '-' ]
 	_nmap_cmd_gos_base  = [ 'nmap', '-n', '-O' ]
-	_nmap_installed     = os.path.exists('/usr/bin/nmap')
+	_nmap_installed     = test_nmap_installed()
 
 	# translation table between nmap common values and our internal ones
 	# examples:
@@ -147,18 +201,19 @@ class Machine(CoreStoredObject, SharedResource):
 		# this just annoys me, don't do anything with it.
 		'general purpose': 0x0
 		}
-	_nmap_os_running = {
+	"""_nmap_os_running = {
 		'Apple Mac OS X 10.5.X': host_types.APPLE,
 		'Linux 2.6.X':           host_types.LNX_GEN,
-		}
-	_nmap_os_details = {
+		}"""
+
+	"""_nmap_os_details = {
 		'HP Photosmart printer': host_types.MULTIFUNC,
-		}
-	_nmap_os_ether = {
+		}"""
+	"""_nmap_os_ether = {
 		'Freebox SA': host_types.FREEBOX,
 		'VMware':     host_types.VMWARE,
 		'Apple':      host_types.APPLE,
-		}
+		}"""
 
 	_lpickle_ = {
 		'drop__' : False,
@@ -193,6 +248,8 @@ class Machine(CoreStoredObject, SharedResource):
 		# OS and OS level, arch, mixed in one integer.
 		self.system_type = system_type
 
+		self.os_details = host_os.UNKNOWN
+
 		# scanned by nmap if present, converted to various
 		# features offered by the machine in our various interfaces.
 		self.open_ports = deque()
@@ -208,6 +265,7 @@ class Machine(CoreStoredObject, SharedResource):
 		# if the current object is local or not.
 		self.myself = myself
 
+
 		for machine in self.linked_machines:
 			machine.master_machine = self
 
@@ -220,6 +278,10 @@ class Machine(CoreStoredObject, SharedResource):
 	def mid(self):
 		""" The IP address of the host. """
 		return self.__mid
+	@property
+	def wid(self):
+		""" Used in the WMI, return the IP address replacing '.' by '_' """
+		return self.__mid.replace('.', '_')
 
 	# Comfort alias ("mid" is not a common name,
 	# only for me and Licorn® internals)
@@ -241,6 +303,8 @@ class Machine(CoreStoredObject, SharedResource):
 		self.__hostname = hostname
 
 		Machine.by_hostname[hostname] = self
+
+		LicornEvent('machine_hostname_changed', host=self).emit()
 
 	name = hostname
 	@property
@@ -265,15 +329,20 @@ class Machine(CoreStoredObject, SharedResource):
 		logging.info(_(u'{0}: Linked {1} to {2}.').format(
 								caller, stylize(ST_UGID, licorn_object.ip),
 								stylize(ST_UGID, self.ip)))
+
 	def guess_os(self):
 		""" Use NMAP for OS fingerprinting and better service detection. """
 
 		caller = current_thread().name
 
+		# cache the machine state to know if something changed.
+		machine_os = self.os_details
+		machine_type = self.system_type
+
+
 		if Machine._nmap_installed:
 			for line in process.execute(
 					Machine._nmap_cmd_gos_base + [self.mid])[0].splitlines():
-
 				try:
 					key, value = line.split(': ', 1)
 				except ValueError:
@@ -281,22 +350,25 @@ class Machine(CoreStoredObject, SharedResource):
 
 				try:
 					if key == 'Device type':
-						self.system_type |= Machine._nmap_os_devices[value]
+						if self.system_type is host_types.UNKNOWN:
+							self.system_type = check_info_is_in_dict(value, _nmap_device_type)
 
 					elif key == 'Running':
-						if not self.system_type & Machine._nmap_os_running[value]:
-							self.system_type |= Machine._nmap_os_running[value]
+						self.os_details = check_info_is_in_dict(value, _nmap_os_details)
 
 					elif key == 'OS details':
-						if not self.system_type & Machine._nmap_os_details[value]:
-							self.system_type |= Machine._nmap_os_details[value]
+						self.os_details = check_info_is_in_dict(value, _nmap_os_details)
 
 					elif key == 'MAC Address':
-						# See if we got something from the words in parentheses
-						self.system_type |= Machine._nmap_os_ether[
-												value.rsplit('(', 1)[1][:-1]]
+						try:
+							# try vendor name
+							self.system_type = check_info_is_in_dict(value.rsplit('(', 1)[1][:-1], _nmap_ether_vendor_database)
+						except KeyError:
+							# try to map mac address
+							self.system_type = check_info_is_in_dict(value.split(' ')[0], _nmap_ether_address_database, _startswith=True)
+
 					elif key in ('Not shown', 'Warning', 'Network Distance',
-							'Nmap done', 'Note'):
+							'Nmap done', 'Note', 'OS'):
 						continue
 					else:
 						logging.warning2(_(u'{0}: guess_os({1}) → unknown '
@@ -311,6 +383,11 @@ class Machine(CoreStoredObject, SharedResource):
 						u'if you what type of device it is.').format(
 							caller, self.mid, key, value))
 					continue
+
+
+			if self.system_type != machine_type or self.os_details != machine_os:
+				LicornEvent('machine_changed', host=self).emit()
+
 		else:
 			assert ltrace(TRACE_MACHINES, '| %s: guess_os(%s) → nmap '
 				'not installed, can\'t guess OS.' % (caller, self.mid))
@@ -323,15 +400,28 @@ class Machine(CoreStoredObject, SharedResource):
 		old_status = self.status
 		UP_status = [ host_status.ONLINE, host_status.PINGS, host_status.ACTIVE ]
 
+		def and_more_func():
+			# resolve machine name
+			workers.network_enqueue(priorities.LOW, self.resolve)
+
+			# scan ports
+			workers.network_enqueue(priorities.NORMAL, self.scan_ports)
+
+			# arping
+			workers.network_enqueue(priorities.LOW, self.arping)
+
+			# guess possibles information
+			workers.network_enqueue(priorities.NORMAL, self.guess_os)
+
+
 		with self.lock:
 
 			if self.myself:
 				self.status = host_status.ACTIVE
 
 				if and_more:
-					workers.network_enqueue(priorities.NORMAL, self.scan_ports)
-					workers.network_enqueue(priorities.LOW, self.arping)
-					workers.network_enqueue(priorities.LOW, self.resolve)
+					and_more_func()
+
 				assert ltrace(TRACE_MACHINES, '| %s: ping(%s) → %s' % (
 									caller, self.mid, host_status[self.status]))
 
@@ -362,9 +452,7 @@ class Machine(CoreStoredObject, SharedResource):
 									else 'host_online', host=self).emit()
 
 				if and_more:
-					workers.network_enqueue(priorities.NORMAL, self.scan_ports)
-					workers.network_enqueue(priorities.LOW, self.arping)
-					workers.network_enqueue(priorities.LOW, self.resolve)
+					and_more_func()
 
 				self.has_already_been_online = True
 			# close the socket (no more needed), else we could get
@@ -385,7 +473,6 @@ class Machine(CoreStoredObject, SharedResource):
 
 			try:
 				self.hostname = socket.gethostbyaddr(self.mid)[0]
-
 			except Exception:
 				logging.exception(_(u'Could not resolve machine name for '
 									u'address {0}'), self.mid)
@@ -467,14 +554,14 @@ class Machine(CoreStoredObject, SharedResource):
 				remotesys.noop()
 
 			except Pyro.errors.ProtocolError, e:
-				workers.network_enqueue(priorities.LOW, self.guess_os)
+				#workers.network_enqueue(priorities.LOW, self.guess_os)
 				assert ltrace(TRACE_MACHINES, '  %s: cannot pyroize %s '
 								'(was: %s)' % (caller, self.mid, e))
 
 			except Pyro.errors.PyroError, e:
 				remotesys.release()
 				del remotesys
-				workers.network_enqueue(priorities.LOW, self.guess_os)
+				#workers.network_enqueue(priorities.LOW, self.guess_os)
 				assert ltrace(TRACE_MACHINES, '%s: pyro error %s on %s.' % (
 						caller, e, self.mid))
 
@@ -685,17 +772,21 @@ class Machine(CoreStoredObject, SharedResource):
 		# avoid a potential massive waiting time for the unlucky first
 		# 'get machines' or machines listing in the WMi.
 		self.software_updates()
-	@not_myself
+	"""@not_myself
 	@system_connected
-	def shutdown(self, warn_users=True):
-		""" Shutdown a machine, after having warned the connected user(s) if
-			asked to."""
+	def shutdown(self, warn_users=True, *args, **kwargs):
+		""" """ Shutdown a machine, after having warned the connected user(s) if
+			asked to.""" """
 
 		with self.lock:
-			self.status = host_status.SHUTTING_DOWN
+-			self.status = host_status.SHUTTING_DOWN
 
 		self.system.shutdown()
-		logging.info(_('Shut down machine {0}.').format(self.hostname))
+-		logging.info(_('Shut down machine {0}.').format(self.hostname))"""
+
+	@myself_or_system_forward
+	def shutdown(self, warn_users=True, *args, **kwargs): pass
+
 	@not_myself
 	@system_connected
 	def restart(self, condition=None):
@@ -779,7 +870,6 @@ class MachinesController(DictSingleton, CoreController):
 		super(MachinesController, self).__init__(name='machines')
 
 		MachinesController.init_ok = True
-		events.collect(self)
 	def add_machine(self, mid, hostname=None, ether=None, backend=None,
 		system_type=host_types.UNKNOWN, system=None, status=host_status.UNKNOWN,
 		myself=False):
@@ -1057,6 +1147,19 @@ class MachinesController(DictSingleton, CoreController):
 				count += 1
 
 		return count
+
+	@events.handler_method
+	def software_upgrades_started(self, event, *a, **kw):
+
+		# don't need to test settings.role, only the SERVER has a MachineController.
+		if event._forwarded:
+			self[event.sender].status |= host_status.UPGRADING
+	@events.handler_method
+	def software_upgrades_finished(self, event, *a, **kw):
+
+		# don't need to test settings.role, only the SERVER has a MachineController.
+		if event._forwarded:
+			self[event.sender].status -= host_status.UPGRADING
 
 		#
 		# WARNING: don't service_wait() here, the thread would join its own

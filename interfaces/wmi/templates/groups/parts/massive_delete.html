@@ -1,0 +1,43 @@
+{%- extends 'groups/massive.html' -%}
+
+{%- macro massive_dialog_title() -%}
+	{{ _('Massive deletion confirmation') }}
+{%- endmacro -%}
+
+{%- block confirm_text -%}
+	<p>{{ _('Do you really want to <em><strong>delete</strong></em> selected groups ?') }}</p>
+{%- endblock -%}
+
+{%- block end_text -%}
+<div>
+	<p>{{ _("Group shared data will be archived in directory <strong>{0}</strong> "
+		"and accessible to members of group <em>{1}</em> for eventual recovery."
+		).format(archive_dir, admin_group) }}</p>
+	<p>{{ _("However, you can decide to remove them permanently.") }}</p>
+
+	<span>
+		<table>
+			<tr>
+				<td><input type='checkbox' id='delete_no_archive' autofocus='autofocus'/></td>
+				<td>&nbsp;</td>
+				<td>
+					<label class="control-label" for="delete_no_archive">
+						{{ _("Definitely remove group shared data (no archiving).") }}
+					</label>
+				</td>
+			</tr>
+		</table>
+	</span>
+</div>
+
+<script language="javascript" type="text/javascript">
+
+$(document).ready(function() {
+	$('#delete_no_archive').checkbox({
+        'on_text': "{{ _('Yes') }}",
+        'off_text' : "{{ _('No') }}"
+    })
+});
+
+</script>
+{%- endblock -%}

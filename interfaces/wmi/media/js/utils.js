@@ -36,15 +36,36 @@ function head_over_to(next_location) {
 	document.location = next_location;
 }
 
-function loading_animation_func() {
-	$('body').prepend('<div id="loading_information"><span class="push_reconnection_notification">'
-		+ gettext('Collecting data, please wait&hellip;') + '</span></div>');
-	$("#loading_information").fadeIn('slow');
+function loading_animation_func(msg, fit_to_table) {
+	msg = msg || gettext('Collecting data, please wait&hellip;');
+
+	if (fit_to_table == null) {
+		fit_to_table = false
+	}
+
+	console.log(msg, fit_to_table)
+
+	if ($('#loading_information').length != 0) return;
+
+	//create the div
+	div = $('<div id="loading_information"><span class="push_reconnection_notification">'
+		+ msg + '</span></div>')
+
+	if (fit_to_table) {
+		table = $('table.sortable')
+		div.height(table.height()).width(table.width());
+		table.prepend(div)
+	}
+	else {
+		div.height('100%').width('100%')
+		$('body').prepend(div)
+	}
+	div.show();
 }
 
 function remove_loading_animation() {
-	$('#loading_information').fadeOut('slow', function(){
-		$('body').remove('#loading_information');
+	$('#loading_information').hide(function(){
+		$('#loading_information').remove();
 	});
 }
 
@@ -348,8 +369,8 @@ function init_instant_apply(page_name) {
 	interval = 1000;
 
 	form_div = $('#table')
-
-	form_div.find('input:text').keyup(function() {
+	//console.log('init_instant_apply ', $('.instant_apply_click'))
+	$('input:text').keyup(function() {
 		//console.log('keyUp');
 		clearTimeout(instant_apply_timeout_textbox);
 
@@ -361,7 +382,7 @@ function init_instant_apply(page_name) {
 
 	});
 
-	form_div.find('input:checkbox').click(function() {
+	$('input:checkbox').click(function() {
 		checked = this.checked;
 		if (this.checked == true) {
 			checked = 'True';
@@ -374,7 +395,7 @@ function init_instant_apply(page_name) {
 		$.get(page);
 	});
 
-	form_div.find('input:password').keyup(function() {
+	$('input:password').keyup(function() {
 
 		var empty = false;
 		form_div.find('input:password').each(function() {
@@ -428,7 +449,7 @@ function init_instant_apply(page_name) {
 		'resp'          : 3 }
 
 	$('.instant_apply_click').click(function() {
-		//console.log('group click '+$('#sub_content').attr('value'))
+		console.log('clickkkkk')
 		div = $('#sub_content').find('#'+$(this).attr('id')).filter('.click_item');
 		//console.log(div)
 		div.find('.item_hidden_input').addClass('item_currently_selected');

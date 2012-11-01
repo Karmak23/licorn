@@ -1,67 +1,128 @@
-{%- set gname = item['name'] -%}
+{%- macro get_group_type_img(group) -%}
 
-{%- if item.is_permissive -%}
-	{%- set perm_title = _("Make group {0} permissive.").format(gname) -%}
-	{%- set perm_class = "group_permissive_action" -%}
-	{%- set perm_img   = "/media/images/24x24/locked_box.png" -%}
+	{% if group.is_privilege %}
+		<i title="{{ _('Privileged group') }}" class="icon-glass licorn_tooltip"></i>
+	{% elif group.is_system_restricted %}
+		<i title="{{ _('Restricted system group') }}" class="icon-warning-sign licorn_tooltip"></i>
+	{% elif group.is_system %}
+		<i title="{{ _('System group') }}" class="icon-wrench licorn_tooltip"></i>
+	{% elif group.is_standard %}
+		<i title="{{ _('Standard group') }}" class="icon-map-marker licorn_tooltip"></i>
+	{% endif %}
+{%- endmacro -%}
 
-{%- else -%}
-	{%- set perm_title = _("Make group {0} NOT permissive.").format(gname) -%}
-	{%- set perm_class = "group_unpermissive_action" -%}
-	{%- set perm_img   = "/media/images/24x24/locked.png" -%}
+{%- macro get_group_type(group) -%}
 
-{%- endif -%}
-{%- set perm_alt = perm_title -%}
-<div class='{{ name }}_row row' id="{{ item['gidNumber'] }}">
-	<span class="{{ name }}_select">
+	{% if group.is_privilege %}
+		{{ _('privileged') }}
+	{% elif group.is_system_restricted %}
+		restricted
+	{% elif group.is_system %}
+		{{ _('system') }}
+	{% elif group.is_standard %}
+		{{ _('standard') }}
+	{% endif %}
+{%- endmacro -%}
+{%- macro get_group_filter_class(group) -%}
+	{% if group.is_privilege %}
+		filter_privileged
+	{% elif group.is_system_restricted %}
+		filter_restricted
+	{% elif group.is_system %}
+		filter_system
+	{% elif group.is_standard %}
+		filter_standard
+	{% endif %}
+{%- endmacro -%}
 
-			<input type="checkbox" name="selected"
-			class="{{ name }}_checkbox" {{ "disabled" if item.is_system_restricted }}>
-	</span>
-	{%- if item.is_system -%}
-		<span class="{{ name }}_privilege odd_even_typed "
-			value='{{ item.is_privilege }}'>
-			{{ item.is_privilege }}
-		</span>
+{%- macro get_group_backend_img(group) -%}
+
+	{%- if group.backend.name == 'openldap' -%}
+		<i title="{{ _('Openldap backend') }}" class="icon-tasks"></i>
 	{%- else -%}
-		<span class="{{ name }}_permissive odd_even_typed
-			{{ 'is_permissive' if item.is_permissive }}">
-			<img src='{{ perm_img }}' class='{{ perm_class }}'
-				alt='{{ perm_alt }}' title='{{ perm_title }}'/>
-		</span>
+		<i title="{{ _('Shadow backend') }}" class="icon-hdd"></i>
+	{%- endif -%}
+{%- endmacro -%}
+
+{%- macro get_group_permissivness_img(group) -%}
+
+	{%- if not group.is_system -%}
+
+		{%- if group.is_permissive -%}
+			{%- set perm_title = _("Make group {0} permissive.").format(group.name) -%}
+			{%- set perm_class = "group_permissive_action" -%}
+			{%- set perm_img   = "/media/images/24x24/locked_box.png" -%}
+		{%- else -%}
+			{%- set perm_title = _("Make group {0} NOT permissive.").format(gname) -%}
+			{%- set perm_class = "group_not_permissive_action" -%}
+			{%- set perm_img   = "/media/images/24x24/locked.png" -%}
+		{%- endif -%}
+
+		{%- set perm_alt   = "Permissivness image" -%}
+
+		<img src='{{ perm_img }}' class='{{ perm_class }}' alt='{{ perm_alt }}' title='{{ perm_title }}'/>
 	{%- endif -%}
 
-	<span title="{{ _("Click to edit group {0}").format(gname) }}"
-		class="{{ name }}_content">
-		<span class="{{ name }}_name odd_even_typed"> {{ gname }}</span>
-		<span class="{{ name }}_description odd_even_typed {{ 'grayed_out' if not item.description }}">{{ item.description or _('No description') }}</span>
-		<span class="{{ name }}_gidNumber odd_even_typed">{{ item.gidNumber }}</span>
-		<span class="{{ name }}_skel odd_even_typed">{{ item.groupSkel }}</span>
-	</span>
-	<span class="{{ name }}_nav odd_even_typed">
-		<span class="item_menu">
-			{%- if not item.is_system_restricted -%}
+{%- endmacro -%}
 
-				{%- if not item.is_system -%}
-					{%- set skmsg = _('Reapply skel of members of group {0}').format(gname) %}
 
-					<div class="{{ name }}_reapply_skel">
-						<img src="/media/images/16x16/reapply-skel.png"
-							title="{{ skmsg }}" alt="{{ skmsg }}"/>
-					</div>
+<tr class='licorn_row {{ get_group_filter_class(group) }}' data-id="{{ group.gidNumber }}" id='groups_{{ group.gidNumber }}'>
+	<!-- type -->
+	<td class='centered'>
+		{{ get_group_type_img(group) }}
+	</td>
+	<!-- permissive -->
+	<td class='centered'>
+		{{ get_group_permissivness_img(group) }}
+	</td>
+	<!-- name -->
+	<td width="12%">
+		{%- if group.is_standard -%}
+			<strong>
+		{%- elif group.is_privilege -%}
+			<em>
+		{%-endif-%}
 
-				{%- endif -%}
+		<span>{{ group.name }}</span>
 
-				{%- set delmsg = _('Delete group {0}').format(gname) -%}
-				<div class="{{ name }}_delete{{ ('_bottom') if item.is_system }}">
-					<img src="/media/images/16x16/supprimer.png"
-						title="{{ delmsg }}" alt="{{ delmsg }}"/>
-				</div>
+		{%- if group.is_standard -%}
+			</strong>
+		{%- elif group.is_privilege -%}
+			</em>
+		{%-endif-%}
+	</td>
+	<!-- description -->
+	<td>
+		<span>{{ group.description }}</span>
+	</td>
+	<!-- gidNumber -->
+	<td>
+		<div class="centered">{{ group.gidNumber }}</div>
+	</td>
+	<!-- backend -->
+	<td class='centered'>
+		{{ get_group_backend_img(group) }}
+	</td>
+	<!-- skel -->
+	<td class="centered">
+		<a href='#' class='licorn_tooltip' title="{{ group.groupSkel }}">{{ group.groupSkel.split('/')[-1] }}</div>
+	</td>
 
-			{%- endif -%}
-		</span>
-	</span>
-</div>
-<script type='text/javascript'>
-	groups_list_event_items.push(['{{ name }}', '{{ item.gidNumber }}', '{{ gname }}', 'gidNumber']);
-</script>
+
+</tr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

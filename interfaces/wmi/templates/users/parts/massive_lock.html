@@ -1,0 +1,10 @@
+
+{%- extends 'users/massive.html' -%}
+
+{%- macro massive_dialog_title() -%}
+	{{ _('Massive lock toggle') }}
+{%- endmacro -%}
+
+{%- block confirm_text -%}
+	<p>{{ _('Do you really want to toggle <em><strong>lock state</strong></em> of selected users?') }}</p>
+{%- endblock -%}

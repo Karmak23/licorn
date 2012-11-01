@@ -1,0 +1,217 @@
+{#- Copyright 2011 META IT & Robin Lucbernet<rl@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{%- extends 'template_one_content.html' -%}
+
+{%- block extended_media -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_table.css" />
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.uitablefilter.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.iselectable.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/sortabletable.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.tablescroll.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/my_utils.js"></script>
+
+	<link rel="stylesheet" type="text/less" media="screen,projection" href="/media/css/ug-popover.css" />
+{%- endblock -%}
+
+{%- block title -%} {%- endblock -%}
+
+{%- block main_content -%}
+	<div class="modal hide fade" id="modal">
+		{{ modal_html }}
+	</div>
+
+	<div class='table_header row-fluid'>
+		<span id="table_header_title" class="span2">
+			{%- block list_title -%}
+			{%- endblock -%}
+		</span>
+
+		<span id="table_header_massive_actions" class='span3'>
+			<div class="centered">&nbsp;</div>
+			<div class="centered">
+				{%- block massive_actions -%}
+				{%- endblock -%}
+			</div>
+		</span>
+
+
+		<span id="table_header_filter" class='span2'>
+			<div class="centered">&nbsp;</div>
+			<div class="centered" id='list_filter'>
+				{%- block list_filters -%}
+				{%- endblock -%}
+			</div>
+		</span>
+
+		<span id="table_header_search" class='span3'>
+			<div class="centered">&nbsp;</div>
+			<div class="input-prepend" >
+				<span class="add-on"><i class="icon-search"></i></span>
+				<input class="input-large" type='text' accesskey="f" id="list_search"/>
+			</div>
+		</span>
+	</div>
+
+	<table class="table sortable" id="">
+		<thead>
+			<tr>
+				{%- block list_headers -%}
+				{%- endblock -%}
+			</tr>
+		</thead>
+		<tbody id='table_tbody'>
+			{%- block list_body -%}
+			{%- endblock -%}
+		</tbody>
+	</table>
+
+	<script language="javascript" type="text/javascript">
+		$(document).ready(function() {
+			{%- if modal_html -%}
+				// if modal_html is activated, prompt it!
+				$("#modal").modal();
+			{%- endif -%}
+		});
+
+		// sortableTable object
+		var st;
+
+		// Beyond this number, animations are disabled to lower CPU usage.
+		// This is purely arbitrary, we could maintain them. But wasting
+		// CPU cycles consumes our planet.
+		var max_items_animate = 100;
+
+		// row selected
+		var select_active_class = 'row_selected'
+
+		// hover row background color
+		var background_color_hover = 'rgb(245, 245, 245)'
+
+
+
+		function setup_list(list_name) {
+
+			$('.table').attr('id', "model_"+list_name+"_table")
+
+			// bind keys
+			bind_hotkeys(list_name);
+
+			// search field
+			my_setup_table_search($('#list_search'))
+
+			// make rows selectable
+			setup_table_row_selectable($('#model_'+list_name+'_table tbody'), select_active_class, '.not-me');
+
+			// filters btn
+			setup_table_filter('model_'+list_name+'_table tbody', $('.filter_item'), filters)
+
+			// setup doubleclick on each rows
+			setup_table_row_doubleclick($('#model_'+list_name+'_table tbody td'), func_doubleclick_row);
+
+			// update number items of list and apply events
+			update_number_items(list_name);
+			$('.filter_item').click(function() {
+				update_number_items(list_name)
+			})
+
+			// make the table sortable
+			setup_sortabletable(list_name);
+
+			// massives actions
+			setup_massive_actions(list_name);
+
+			// setup hover event over table rows
+			setup_hover(list_name);
+
+			// PERF ISSUE
+			//$('.licorn_tooltip').tooltip()
+		}
+
+		// timer used to prevent massive operation to be ran several times
+		var setup_row_timeout;
+
+		function setup_row(list_name, row, old) {
+			// function called when a new row is inserted (not already displayed) into the table.
+
+			// apply events
+			setup_table_row_doubleclick($(row), func_doubleclick_row);
+
+			// because this method can be ran several times in a short period,
+			// TRY to run these massive operations once.
+			clearTimeout(setup_row_timeout);
+
+			setup_row_timeout = setTimeout( function() {
+				// make rows selectable
+				setup_table_row_selectable($('#model_'+list_name+'_table tbody'), select_active_class, '.not-me')
+				// setup hover animation
+				setup_hover();
+				// update the number of list items
+				update_number_items(list_name);
+
+				// get the sort column
+				col = $('#model_'+list_name+'_table').attr('data-sort-col')
+
+				// if the cell whose changed is not one of the currently sorted column, sort is useless
+				changed_col = get_changed_col(row, old)
+
+				if (parseInt(changed_col) == parseInt(col) || changed_col==null) {
+					// get the sort way
+					current_way = $($('.table_column_header').get(parseInt(col))).attr('data-sort-way')
+					if (current_way == null) {
+						current_way = 0
+					}
+
+					// should we animate ?
+					animate = $('#model_'+list_name+'_table .licorn_row').length > max_items_animate
+
+					if (animate) {
+						loading_animation_func(gettext('Please wait while sorting list'), true);
+
+						tim = setTimeout( function() {
+							st.sort(col, parseInt(current_way))
+							remove_loading_animation();
+						}, 500);
+					}
+					else {
+						st.sort(col, parseInt(current_way))
+					}
+				}
+			}, 500);
+
+
+			// check the table context (search and filters) before showing the row
+			if (filters[get_row_filter($(row))] && does_row_match_search($(row))) {
+				console.log('row  matching table context');
+				$(row).addClass('not_filtered').show();
+			}
+			else {
+				console.log('row not matching table context');
+				$(row).addClass('filtered')
+			}
+		}
+	</script>
+
+
+{%- endblock -%}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

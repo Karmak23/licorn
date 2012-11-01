@@ -1,0 +1,14 @@
+{%- extends 'groups/massive.html' -%}
+
+{%- macro massive_dialog_title() -%}
+	{{ _('Massive skeleton re-application') }}
+{%- endmacro -%}
+
+{%- block confirm_text -%}
+	<p>{{ _('Do you really want to groups\' <em><strong>skeleton</strong></em> on selected groups\' member?') }}</p>
+{%- endblock -%}
+
+{%- block end_text -%}
+	<p>	{{ _("This will reset the desktops, icons and menus of all members of the group, according to the content of the skel you choose. This will NOT alter any of the user personnal data, nor the group shared data.") }}
+	</p>
+{%- endblock -%}

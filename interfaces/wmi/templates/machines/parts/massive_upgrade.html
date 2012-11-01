@@ -1,0 +1,36 @@
+{%- extends 'machines/massive_select.html' -%}
+
+{%- block title -%}
+      <h3>{{ _('Massive upgrade confirmation') }}</h3>
+    {%- endblock -%}
+
+{%- block confirm_text -%}
+	<p>{{ _('Do you really want to <em><strong>upgrade</strong></em> all these machines ?') }}</p>
+{%- endblock -%}
+
+{%- block endtext -%}
+	<span>
+		<table>
+			<tr>
+				<td><input type='checkbox' id='software_upgrade'/></td>
+				<td>&nbsp;</td>
+				<td>
+					<label class="control-label" for="software_upgrade">
+						{{ _("Also include softwares upgrades") }}
+					</label>
+				</td>
+			</tr>
+		</table>
+	</span>
+	
+	<script language="javascript" type="text/javascript">
+
+		$(document).ready(function() {
+			$('#software_upgrade').checkbox({
+		        'on_text': "{{ _('Yes') }}",
+		        'off_text' : "{{ _('No') }}"
+		    })
+		});
+
+	</script>
+{%- endblock -%}

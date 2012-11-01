@@ -1,0 +1,127 @@
+<script language="javascript" type="text/javascript" src="/media/js/licorn_form.js"></script>
+<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/licorn_form.css" />
+
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">×</button>
+    <h3>{{ _('Edit machine <span id="machine_hostname_{1}">{0}</span>'.format(machine.hostname, machine.wid)) }}</h3>
+</div>
+<div class="modal-body">
+
+	{% if form.errors and not form.non_field_errors() -%}
+	    <div class="error_div error_text">
+			{% trans count=form.errors.items()|length() %}
+			    Merci de corriger l'erreur ci-dessous&nbsp;:
+			{% pluralize %}
+			    Merci de corriger les erreurs suivantes&nbsp;:
+			{% endtrans %}
+	    </div>
+	{% endif -%}
+
+	{% if form.non_field_errors() %}
+	    {% for error in form.non_field_errors() %}
+			<p class="errornote">
+				{{ error }}
+			</p>
+	    {% endfor %}
+	{% endif %}
+
+	<form class="form-horizontal" action="ACTION" method="post" id="account-creation-form">{% csrf_token %}
+
+
+	{# Need to use tabs instead of booleans because in the for loop, variable are out of scope adn cannot be reset #}
+	{%- set first = [] -%}
+	{%- set header_displayed = []  -%}
+	
+
+
+	<!-- tab headers -->
+	{%- if form.tab -%}
+		<ul class="nav nav-tabs" id="myTab">
+			{% for block in form_blocks %}
+				<li {{ 'class="active"' if form_blocks[block][2] }}><a href="#{{ form_blocks[block][0] }}" data-toggle="tab">{{ form_blocks[block][1] }}</a></li>
+			{% endfor %}
+		</ul>
+		<div class="tab-content">
+	{%- endif -%}
+
+
+	{% for field in form.visible_fields() %}
+		{% set one_required = []  %}
+		{%- if field.field.required -%}
+			{%  do one_required.append(1) %}
+		{%- endif -%}
+
+	    {% if field.name in form_blocks %}
+	    	{% if form.tab %}
+	    		{%  do header_displayed.append(1)  -%}
+	    		{% if first %}
+		    		</div> <!-- end tab-tane -->
+				{%- else -%}
+					{%- do first.append(1) -%}
+				{%- endif -%}
+	    		<div class="tab-pane {{ 'active' if form_blocks[field.name][2] }}" id="{{ form_blocks[field.name][0] }}">
+	    	{% else %}
+				{%  do header_displayed.append(1)  -%}
+		    	{% if first %}
+		    		</fielset>
+		    	{%- else -%}
+		    		{%- do first.append(1) -%}
+				{%- endif -%}
+	    		<fieldset>
+    				<legend>{{ form_blocks[field.name][1] }}</legend>
+	    	{% endif %}
+
+			<!--{{ ('<h3>' + form_blocks[field.name][0] + '</h3>') if form_blocks[field.name][0] }}
+			{{ ('<p><div class="form-row">' + form_blocks[field.name][1] + '</div></p>') if form_blocks[field.name][1] }} -->
+	    {% endif %}
+
+		<div class="control-group">
+			<label class="control-label" for="id_{{ field.name }}">
+				{{ field.label }}
+				{%-if field.field.required -%}
+					&nbsp;
+					<span class="required_field">*</span>
+				{%- endif -%}
+			</label>
+			<div class="controls">
+				{{ field }}
+
+				{%-if field.field.help_text -%}
+					<p class="help-block">{{ field.field.help_text }}</p>
+				{%- endif -%}
+			</div>
+		</div>
+
+
+
+		{%- if one_required -%}
+			<p class="required_field">*&nbsp;: champ obligatoire.</p>
+		{%- endif -%}
+
+
+
+	{% endfor %}
+
+	{%- if header_displayed -%}
+		{% if form.tab %}
+			</div>
+		{% else %}
+			</fieldset>
+		{% endif %}
+	{%- endif -%}
+
+	{%- if form.tab -%}
+		</div> <!-- end tab-content -->
+	{%- endif -%}
+
+
+
+
+	</form>
+
+
+  </div>
+  <div class="modal-footer">
+    <a href="#" class="btn" data-dismiss="modal">Close</a>
+    <a href="#" class="btn btn-primary">Save changes</a>
+</div>

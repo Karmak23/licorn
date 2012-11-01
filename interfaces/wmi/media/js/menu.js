@@ -8,6 +8,15 @@
 * Licensed under the terms of the GNU GPL version 2
 */
 
+function setup_ajaxized_modal_loaders() {
+	$('.ajax-load-modal').click(function(){
+		the_link = $(this);
+		$.get(the_link.attr('href'), function(html) {
+			$('#modal').html(html).modal();
+		})
+	})
+}
+
 function setup_ajaxized_div_loaders(css_selector, div_selector) {
 
 	$(css_selector).click(function() {
@@ -231,6 +240,8 @@ $(document).ready(function() {
 	setup_ajaxized_div_loaders('.ajax-load-content', '#content');
 	setup_ajaxized_div_loaders('.ajax-load-main-content', '#main_content');
 	setup_ajaxized_div_loaders('.ajax-load-sub-content', '#sub_content');
+
+	setup_ajaxized_modal_loaders()
 
 	setup_ajaxized_location_loaders('.ajax-menu-link-item');
 

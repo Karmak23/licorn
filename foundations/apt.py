@@ -45,15 +45,23 @@ def apt_do_check(**kwargs):
 	apt_check.init()
 	return apt_check.run(opts)
 
-def apt_do_upgrade():
-	try:
-		return process.execute(['unattended-upgrades'])
+def apt_do_upgrade(software_upgrades=False):
+	if software_upgrades:
+		try:
+			raise NotImplementedError(_(u'software_upgrades not yet implemented'))
+		except:
+			logging.exception(_(u'Error while running « software-upgrades »!'))
+			return None, None
 
-		# NOTE: we do not send an event / notification here. It's up
-		# to the [much higher] calling function to do it.
+	else:
+		try:
+			return process.execute(['unattended-upgrades'])
 
-	except:
-		logging.exception(_(u'Error while running « unattended-upgrades »!'))
-		return None, None
+			# NOTE: we do not send an event / notification here. It's up
+			# to the [much higher] calling function to do it.
+
+		except:
+			logging.exception(_(u'Error while running « unattended-upgrades »!'))
+			return None, None
 
 __all__ = ('version_compare', 'apt_do_check', 'apt_do_upgrade', )

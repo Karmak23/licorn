@@ -1,0 +1,61 @@
+@import "base.less";
+
+body {
+	background-color: #fff;
+	margin: 0;
+	padding: 0;
+	color: @font_color;
+	font-family: "Bitstream Charter", Georgia, Serif;
+}
+#main_content {
+
+}
+#content {
+	margin-right:2.56%;
+}
+
+#loading_information {
+	position: absolute;
+	background-color: white;
+	opacity: 0.9;
+	color: black;
+	font-size: 150%;
+	padding-top: 25%;
+	vertical-align: middle;
+	text-align: center;
+	z-index:1031;
+}
+
+// http://stackoverflow.com/questions/9538868/prevent-body-from-scrolling-when-a-modal-is-opened
+body.modal-open {
+    overflow: hidden;
+}
+
+
+/* duplicated from main.css */
+.nowrap {
+	white-space: nowrap;
+}
+.greyed_out, .grayed_out {
+	color: lighten(desaturate(@font_color, 50%), 30%);
+}
+.bigger {
+	font-size: 120%;
+}
+.biggest {
+	font-size: 140%;
+}
+.smaller {
+	font-size: 80%;
+	line-height: 80%;
+}
+.smallest, .very_small_font {
+	font-size: 60%;
+	line-height: 60%;
+}
+.waiting {
+    cursor: wait;
+}
+.cursor-help {
+    cursor: help;
+}

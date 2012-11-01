@@ -1,0 +1,24 @@
+
+{%- extends 'massive-common.html' -%}
+
+{%- macro not_applicable_text() -%}
+	{{ _('This action is not applicable to the user account(s) you selected:') }}
+{%- endmacro -%}
+
+{%- macro not_applicable_unselected_text() -%}
+	{{ _('this operation is not applicable to one or more user account(s); they have been automatically un-selected:') }}
+{%- endmacro -%}
+
+{%- macro not_applicable_list(others) -%}
+	{%- for u in others -%}
+		<li> {{ u.login }}</li>
+	{%- endfor -%}
+{%- endmacro -%}
+
+{%- block data_list -%}
+	{%- block users_list -%}
+		{%- for u in users -%}
+			<li> {{ u.login }}</li>
+		{%- endfor -%}
+	{%- endblock -%}
+{%- endblock -%}

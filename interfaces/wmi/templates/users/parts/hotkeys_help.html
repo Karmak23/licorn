@@ -1,0 +1,17 @@
+
+{%- extends 'hotkeys.html' -%}
+
+    {%- block help_title -%}
+      {{ _('User accounts management help') }}
+    {%- endblock -%}
+
+	{%- block help_specific -%}
+		<h4>{{ _('User accounts specific operations:') }}</h4>
+		<ul>
+			<li><strong>{{ _('N') }}</strong>{{ _(': create a new account,') }}</li>
+			<li><strong>{{ _('Backspace') }} {{ _('or') }} {{ _('Delete') }}</strong>{{ _(': delete selected account(s),') }}</li>
+			<li><strong>{{ _('L') }}</strong>{{ _(': reapply a skeleton on selected account(s),') }}</li>
+			<li><strong>{{ _('X') }}</strong>{{ _(': export selected account(s) (CSV or XML format),') }}</li>
+			<li><strong>{{ _('P') }}</strong>{{ _(': toggle locked state of selected account(s).') }}</li>
+		</ul>
+    {%- endblock -%}

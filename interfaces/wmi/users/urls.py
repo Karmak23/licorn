@@ -6,8 +6,6 @@ from licorn.foundations import hlstr
 urlpatterns = patterns('users.views',
     (r'^/?$', 'main'),
 
-    (r'^.*message/(?P<part>.+)/(?P<uid>\d+)?/?$', 'message'),
-
     (r'^new/?$', 'user', { 'action': 'new' }),
 
     (r'^edit/(?P<uid>\d+)/?$', 'user',  { 'action': 'edit' }),
@@ -17,8 +15,8 @@ urlpatterns = patterns('users.views',
 
     (r'^delete/(?P<uid>\d+)/(?P<no_archive>.*)/?$', 'delete'),
 
-    (r'^view/(?P<uid>\d+)/?$', 'view'),
-    (r'^(?i)view/(?P<login>%s)/?$' % hlstr.regex['login'][1:-1]  , 'view', {'semantic': True}),
+    #(r'^view/(?P<uid>\d+)/?$', 'view'),
+    #(r'^(?i)view/(?P<login>%s)/?$' % hlstr.regex['login'][1:-1]  , 'view', {'semantic': True}),
 
 	# consider this one as a replacement for mod* and use only the 'value' argument
 	#     (r'^mod/(?P<uid>\d+)/(?P<action>\w+)/(?P<value>.+)$', 'mod'),
@@ -33,13 +31,18 @@ urlpatterns = patterns('users.views',
 
 	# consider (?:\d,?)+ as RE for P<uids>
 
-    (r'^massive/delete/(?P<uids>[,\d]+)/(?P<no_archive>.*)/?$', 'massive', {'action': 'delete'}),
-    (r'^massive/skel/(?P<uids>[,\d]+)/(?P<skel>.*)/?$', 'massive', {'action': 'skel'}),
-    (r'^massive/export/(?P<uids>[,\d]+)(?:/(?P<type>.*))?/?$', 'massive', {'action': 'export'}),
-    (r'^massive/lock/(?P<uids>[,\d]+)/?$', 'massive', {'action': 'lock'}),
-    (r'^massive/edit/(?P<uids>[,\d]+)/?$', 'massive', {'action': 'edit'}),
-    (r'^massive/shell/(?P<uids>[,\d]+)/(?P<shell>.*)/?$', 'massive', {'action': 'shell'}),
-    (r'^massive/groups/(?P<uids>[,\d]+)/(?P<group>.*)/?$', 'massive', {'action': 'groups'}),
+    #(r'^massive/delete/(?P<uids>[,\d]+)/(?P<no_archive>.*)/?$', 'massive', {'action': 'delete'}),
+    #(r'^massive/skel/(?P<uids>[,\d]+)/(?P<skel>.*)/?$', 'massive', {'action': 'skel'}),
+    #(r'^massive/export/(?P<uids>[,\d]+)(?:/(?P<type>.*))?/?$', 'massive', {'action': 'export'}),
+    #(r'^massive/lock/(?P<uids>[,\d]+)/?$', 'massive', {'action': 'lock'}),
+    #(r'^massive/edit/(?P<uids>[,\d]+)/?$', 'massive', {'action': 'edit'}),
+    #(r'^massive/shell/(?P<uids>[,\d]+)/(?P<shell>.*)/?$', 'massive', {'action': 'shell'}),
+    #(r'^massive/groups/(?P<uids>[,\d]+)/(?P<group>.*)/?$', 'massive', {'action': 'groups'}),
+
+    (r'^massive/(?P<action>\w+)/(?P<uids>[^/]+)/(?P<value>.*)/?$', 'massive'),
+    (r'^massive_select_template/(?P<action_name>.+)/(?P<uids>.+)/?$', 'massive_select_template'),
+
+    (r'^hotkeys_help/?$', 'hotkeys_help'),
 
     (r'^import/(?P<confirm>.*)/?$', 'import_view'),
     (r'^upload/?$', 'upload_file'),

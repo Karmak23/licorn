@@ -6,6 +6,23 @@ from licorn.foundations.constants import filters
 from licorn.interfaces.wmi.libs   import utils
 from licorn.core                  import LMC
 
+def update_user_row(user, remove=False, uid=None):
+	if remove:
+		return utils.format_RPC_JS('remove_instance',
+								'users',
+								uid
+								)
+	else:
+		return utils.format_RPC_JS('update_instance',
+								'users',
+								user.uidNumber,
+								render_to_string('users/user_row.html', {
+									'user': user,
+								}),
+								"setup_row"
+								)
+
+
 def users_import_started_handler(request, event):
 	if request.user.is_staff:
 		yield utils.format_RPC_JS('body_wait', True)
@@ -43,21 +60,13 @@ def user_added_handler(request, event):
 
 		user = event.kwargs['user']
 
-		yield utils.notify(_(u'User account "{0}" added on '
-							u'the system.').format(user.login))
+	yield utils.notify(_(u'User account "{0}" added on '
+						u'the system.').format(user.login))
 
-		yield utils.format_RPC_JS('add_row',
-									'users' if user.is_standard else 'sys_users',
-									render_to_string('users/user_row.html', {
-										'item': user,
-										'name': '%s' % 'users'
-											if user.is_standard else 'sys_users' }))
-		yield utils.format_RPC_JS('init_users_events',
-									'users' if user.is_standard else 'sys_users',
-									user.uid, user.login, 'uidNumber')
+	yield update_user_row(user)
 
-		for i in update_users_number(request, event):
-			yield i
+	yield utils.format_RPC_JS('update_total_items', 'users', "/"+str(len(LMC.users)))
+
 def user_deleted_handler(request, event):
 
 	if request.user.is_staff:
@@ -68,11 +77,10 @@ def user_deleted_handler(request, event):
 		yield utils.notify(_(u'User account "{0}" deleted from '
 							u'the system.').format(login))
 
-		yield utils.format_RPC_JS('del_row', 'sys_users'
-								if system else 'users', uid)
+	yield update_user_row(None, remove=True, uid=uid)
 
-		for i in update_users_number(request, event):
-			yield i
+	yield utils.format_RPC_JS('update_total_items', 'users', "/"+str(len(LMC.users)))
+
 def user_gecos_changed_handler(request, event):
 
 	user   = event.kwargs['user']
@@ -89,14 +97,7 @@ def user_gecos_changed_handler(request, event):
 		yield utils.notify(_(u'User account <strong>{0}</strong> full name '
 			u'is now <em>{1}<em>.').format(user.login, user.gecos))
 
-		update = True
-
-	if update:
-		yield utils.format_RPC_JS('update_row_value',
-								'users' if user.is_standard
-									else 'sys_users', user.uidNumber,
-								"gecos", user.gecos or _('No name given'),
-								[ '-grayed_out' ] if user.gecos else [ '+grayed_out' ])
+	yield update_user_row(user)
 
 def user_userPassword_changed_handler(request, event):
 
@@ -137,7 +138,5 @@ def user_locked_changed_handler(request, event):
 			yield utils.notify(_(u'User account "{0}" has '
 								u'been unlocked.').format(user.login))
 
-		yield utils.format_RPC_JS('change_locked_state',
-									'users' if user.is_standard else 'sys_users',
-									user.uidNumber,
-									user.locked)
+	yield update_user_row(user)
+

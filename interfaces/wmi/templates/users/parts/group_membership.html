@@ -1,0 +1,86 @@
+
+
+
+{%- macro get_group_membership(users, group) -%}
+	{% if users == [ None ] %}
+		
+		{%- set rel = 0 -%}
+		
+	{% else %}
+
+		{# http://stackoverflow.com/questions/4870346/can-a-jinja-variables-scope-extend-beyond-in-an-inner-block #}
+		{%- set rel_ref = [] -%}
+		{%- set same_rel = [] -%}
+
+
+		{% for u in users %}
+			{% if rel_ref == [] %}
+				{%- do rel_ref.append(u.get_relationship(group.gidNumber)) -%}
+			{% else %}
+				{% if rel_ref[0] != u.get_relationship(group.gidNumber) %}
+					{%- do same_rel.append(0) -%}
+				{% endif %}
+			{% endif %}
+		{% endfor %}
+
+
+		{% if same_rel == [] %}
+			{%- set rel = rel_ref[0] -%}
+		{% else %}
+			{%- set rel = 4 -%}
+		{% endif %}
+
+	{% endif %}
+
+
+
+
+
+	{{-rel-}}
+{%- endmacro -%}
+
+{% set get_image_relationship = { 
+		"0": "",
+		"1": '<img src="/media/images/24x24/guest+3px.png"/>',
+		"2": '<img src="/media/images/24x24/member+3px.png"/>',
+		"3": '<img src="/media/images/24x24/resp+3px.png"/>',
+		"4": "",
+	}
+%}
+
+
+
+
+{% set uids = [] %}
+{% for u in users %}
+	{% do uids.append(u.uidNumber) %}
+{% endfor %}
+
+
+{% set button_types = { "0": 'default', "1":'primary', "2":'success', "3":'danger', "4":'warning' } %}
+{% set current_rel = get_group_membership(users, group)|trim %}
+
+<span class="btn btn-{{ button_types[current_rel] }} trigger_popover" data-rel="{{current_rel}}" data-id={{group.gidNumber}} id="btn_{{group.gidNumber}}" data-type="group">
+	<span class='group_name'>{{ group.name }}</span> <span class='rel_img'>{{ get_image_relationship[current_rel]}}</span>
+
+
+
+	<div class="popover">
+		<div width="auto">
+			<span class="instant_click btn btn-default rel_0" data-instant-url="/users/massive/groups/{{uids|join(',')}}/{{ group.gidNumber }}/0" data-id="{{group.gidNumber}}" data-dismiss="clickover" data-relid="0">no membership {{ get_image_relationship['0']}}</span>
+			{% if group.is_standard %}
+			<span class="instant_click btn btn-primary rel_1" data-instant-url="/users/massive/groups/{{uids|join(',')}}/{{ group.gidNumber }}/1" data-id="{{group.gidNumber}}" data-dismiss="clickover" data-relid="1">guest {{ get_image_relationship['1']}}</span>
+			{% endif %}
+			<span class="instant_click btn btn-success rel_2" data-instant-url="/users/massive/groups/{{uids|join(',')}}/{{ group.gidNumber }}/2" data-id="{{group.gidNumber}}" data-dismiss="clickover" data-relid="2">member {{ get_image_relationship['2']}}</span>
+			{% if group.is_standard %}
+			<span class="instant_click btn btn-danger rel_3" data-instant-url="/users/massive/groups/{{uids|join(',')}}/{{ group.gidNumber }}/3" data-id="{{group.gidNumber}}" data-dismiss="clickover" data-relid="3">responsible {{ get_image_relationship['3']}}</span>
+			{% endif %}
+		</div>
+	</div>
+
+
+
+</span>
+
+
+

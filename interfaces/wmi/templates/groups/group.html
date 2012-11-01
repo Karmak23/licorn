@@ -1,129 +1,231 @@
-{#- Copyright 2011 META IT & & Robin Lucbernet<rl@meta-it.fr>
-    Distributed under the terms of the GNU GPL version 2. -#}
 
-<div id='sub_content_header'>
-	<h1 id='sub_content_title'>{{ title }}</h1>
-</div>
 
-<div id='sub_content_area'>
-	<form id='user_form'>{% csrf_token %}
-	<div id='table' name='{{ group_gid }}'>
-	<br />
 
-		{%- for field in form.visible_fields() -%}
-			{%- set immutable = field.name in form.immutables -%}
-				<div class='sub_content_line big_line'>
-					<div class='sub_content_half_line'>
-						<strong>{{ field.label_tag() }}</strong><br />{{ _('(fixed)') if immutable }}</div>
-					<div class='sub_content_half_line align_right'>
-						{%- if immutable -%}
-							{{ field.value() }}
-						{%- else -%}
-							{{ field }}
-						{%- endif -%}
+{%- extends 'modal.html' -%}
 
-					</div>
+    {%- block title -%}
+	    {%- if mode == 'new' -%}
+	    	<h3>{{ _('New group') }}</h3>
+	    {%- elif mode == 'edit' -%}
+	    	<h3>{{ _('Edit group') }} {{ '<span id="machine_hostname_{1}">{0}</span>'.format(group.name, group.gid) }}</h3>
+	    {%- elif mode == 'massiv' -%}
+	    	<h3>{{ _('Massive group edition') }}</h3>
+	    {%- endif -%}
+    {%- endblock -%}
+
+
+  {%- block body -%}
+
+  	{% if form.errors and not form.non_field_errors() -%}
+	    <div class="error_div error_text">
+			{% trans count=form.errors.items()|length() %}
+			    Merci de corriger l'erreur ci-dessous&nbsp;:
+			{% pluralize %}
+			    Merci de corriger les erreurs suivantes&nbsp;:
+			{% endtrans %}
+	    </div>
+	{% endif -%}
+
+	{% if form.non_field_errors() %}
+	    {% for error in form.non_field_errors() %}
+			<p class="errornote">
+				{{ error }}
+			</p>
+	    {% endfor %}
+	{% endif %}
+
+	<form class="form-horizontal" id='licorn_form'>
+
+		{% csrf_token %}
+
+	<ul class="nav nav-tabs" id="myTab">
+		{% for block in form_blocks %}
+			<li {{ 'class="active"' if form_blocks[block][2] }}><a href="#{{ form_blocks[block][0] }}" data-toggle="tab">{{ form_blocks[block][1] }}</a></li>
+		{% endfor %}
+	</ul>
+	<div class="tab-content">
+
+
+	<div class="tab-pane active" id="general">
+
+		<div class="control-group">
+			{% for field in form.visible_fields() %}
+			<div style="min-height:50px;">
+				<label class="control-label" for="id_{{ field.name }}">
+					{{ field.label }}
+					{%-if field.field.required -%}
+						&nbsp;<span class="required_field">*</span>
+					{%- endif -%}
+				</label>
+				<div class="controls" style="vertical-align:center;">
+					{{ field }}
+
+					{%-if field.field.help_text -%}
+						<p class="help-block">{{ field.field.help_text }}</p>
+					{%- endif -%}
 				</div>
-		{%- endfor -%}
+			</div>
+			{% endfor %}
+		</div>
+		{% if mode == 'edit' %}
+		<a href="#" class="btn btn-danger btn-block" id="delete_group_button" data-gid='{{group.gid}}'>{{ _('Delete group') }}</a>
+		{%endif%}
 	</div>
+	
+		
+	{# add users and sys_user pane #}
 
-	{%- for title, users_list in users_lists -%}
-		{%- include 'groups/users_list.html' -%}
+	{%- for list in users_lists -%}
+		<div class="tab-pane" id="{{ list.list_name }}">
+			<div>
+					<div class="row-fluid" style="margin-bottom:20px;">
+
+						<div class="span8">
+							
+								{{ _('More information on <a href="http://docs.licorn.org/groups/permissions" target=_blank>Groups permissions</a>')}}
+							
+						</div>
+
+						{% if mode != 'new' %}
+							<div class="span4">
+								<span class="btn-group" data-toggle="buttons-radio">
+									<button type="button" id='sort_alpha' class="btn btn-mini sort_item" data-sort="alpha" data-id="{{ list.list_name }}" title="{{ _('Sort list by user login') }}">
+										{{ _("User login") }}
+									</button>
+									<button type="button" id='sort_relation' class="btn btn-mini sort_item" data-sort="relation" data-id="{{ list.list_name }}" title="{{ _('Sort list by relationship') }}">
+										{{ _("Relationship") }}
+									</button>
+
+								</span>
+							</div>
+						
+						{% endif %}
+					</div>
+				{{list.list_content}}
+				
+			</div>
+    	</div>
 	{%- endfor -%}
 
-	{%- if mode == 'new' -%}
-	<div id='new_item_actions' class="one_line">
-		<span class='sub_content_half_line'>
-			<div id='cancel_button' class="interface_button float_left">{{ _('Cancel') }}</div>
-		</span>
-		<span class='sub_content_half_line'>
-			<div id='save_user_button' class="interface_button float_right">{{ _('Add') }}</div>
-		</span>
-	</div>
-	{%- endif -%}
+
+	</div> <!-- end tab-content -->
+	
+
+
 
 	</form>
-</div>
 
-<script type="text/javascript">
+
+  {%- endblock -%}
+  {%- block footer -%}
+  <span class="row-fluid">
+
+  	{% if mode == "new" %}
+	  	<div class="span7">
+	    	<input type='checkbox' id='keep_modal_open' style="float:left;">
+	    	<label for='keep_modal_open'>{{ _('Keep the modal open and  remember users relationships.') }}</label>
+	    </div>
+	    <div class="span5">
+	    	<!--<button type="button" id='clear_form' class="btn">{{ _("Clear form") }}</button>-->
+	    	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+	    	<a href="#" class="btn btn-primary" id="save_group_button">{{ _('Add group') }}</a>
+	    </div>
+    {% else %}
+        <a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+	{%endif%}
+  </span>
+  	
+
+    <style>
+    	.my_popover{
+    		width:auto;
+    	}
+    </style>
+    <script type="text/javascript">
 	$(document).ready(function() {
+		
+		// .click_item are our user box, when click is triggered, 
+		// show the popover containing possible relationship
 
-		$('.click_item').each(function() {
-			// display only relevant groups
-			rel = $(this).attr('value');
-			$(this).find('.rel_'+rel).hide();
-			$(this).popover({content: $(this).find('.user_popover_content'), position: 'top'});
+		setup_sort_items('.trigger_popover', $('.sort_item'), "user_login");
+
+		// init the popover
+		$('.trigger_popover').each(function() {
+
+			// display only relevant relationship (do not display the current one)
+			current_rel = $(this).data('rel')
+			$(this).find('.rel_'+current_rel).hide();
+			var popover_id = $(this).data('id')
+
+			// init tht popover
+			$(this).clickover({
+				title : 'relationship',
+				content  : function() { return $(this).find('.popover').html();},
+				html: true,
+				placement : 'top',
+				template: '<div class="popover my_popover" id="popover_'+popover_id+'"><div class="arrow"></div><div class="popover-inner"><div class="popover-content"><p></p></div></div></div>'
+
+			}).click(function() {
+
+				// on popover display, initialize instant_click, if 'edit' or 'massiv' mode
+				{% if mode == 'edit' or mode == 'massiv' %}
+					console.log('inti',popover_id, $("#popover_"+$(this).data('id')))
+					init_instant_click($("#popover_"+$(this).data('id')))
+				{% elif mode == 'new' %}
+					{# no instant apply, but give a visual feedback #}
+					$('#popover_'+$(this).data('id')+' .instant_click').click(function() {
+						update_relationship($(this).data('id'), null,  $(this).data('relid'))
+					});
+				{% endif -%}
+			});
 		});
 
-		$('.popover_item').click(function() {
-			// update the current popover
-			user_id = $(this).attr('id');
-			new_rel = $(this).attr('value');
+		
 
-			div = $('#sub_content').find('#'+user_id).filter('.click_item');
-			div.find('.item_hidden_input').attr('value', ''); // erase old membership
-			div.find('input[name$="'+new_rel+'_users"]').attr('value', user_id); // update new membership
 
-			{%- if mode == 'new' -%}
-				// visual feedback on users because no instant_apply in new
-				update_relationship('user', user_id, null, new_rel) ;
-			{%- endif -%}
 
-			//close the popover
-			$(".click_item#"+user_id).popover('hide');
-		});
+		
 
-		{%- if mode == 'edit' -%}
-			init_instant_apply('groups');
+		{%- if mode == 'new' -%}
+			
+			function post_form() {
+				var serialized_form = $('#licorn_form').serialize()
 
-			lock_sub_content("{{ group_gid }}");
-			select_row("groups", "{{ group_gid }}");
-		{%- elif mode == 'massiv' -%}
+				//console.log(serialized_form)
 
-			// select rows to be edited
-			var tab_gids = "{{gids}}".split(',');
-			$.each(tab_gids, function(i, gid) {
-				if (i==0) {
-					select_row('groups', gid)
+				$.each($('form .trigger_popover'), function() {
+					
+					rel = $(this).attr('data-rel')
+					
+					if (rel == "0") {
+						serialized_form += "&no_membership_users="+$(this).data('id')
+					}
+					else if (rel == "1") {
+						serialized_form += "&guest_users="+$(this).data('id')
+					}
+					else if (rel == "2") {
+						serialized_form += "&member_users="+$(this).data('id')
+					}
+					else if (rel == "3") {
+						serialized_form += "&resp_users="+$(this).data('id')
+					}
+					
+				})
+
+				//console.log(serialized_form)
+				$.post("/groups/create/", serialized_form);
+
+				if ($('#keep_modal_open').is(':checked')) {
+					$('#id_name').val('');
+					$('#id_description').val('');
 				}
 				else {
-					select_row('groups', gid, false)
+					$('#modal').modal('hide')
 				}
-			})
-			lock_sub_content();
-			// init massive mode
+			};
 
-			// for skel
-			$('#id_skel').change(function() {
-				url = '/groups/massive/skel/'+$.URLEncode("{{gids}}")+'/'+$.URLEncode($('#id_skel').val())
-				//console.log(url)
-				$.get(url)
-			})
-			// for groups :
-			var rel_ids = {
-				'no_membership' : 0,
-				'guest'         : 1,
-				'member'        : 2,
-				'resp'          : 3 }
-
-			$('.instant_apply_click').click(function() {
-				div = $('#sub_content').find('#'+$(this).attr('id')).filter('.click_item');
-				div.find('.item_hidden_input').addClass('item_currently_selected');
-
-				url = '/groups/massive/users/'+$.URLEncode("{{ gids }}")+'/'+$(this).attr('id')
-							+ '/' + rel_ids[$(this).attr('value')]
-				console.log(url)
-				$.get(url);
-			});
-
-		{%- elif mode == 'new' -%}
-			unlock_sub_content();
-
-			function post_form() {
-				$.post("/groups/create/", $('#user_form').serialize());
-			}
-
-			$(document).keyup(function(e) {
+			$(document).unbind("keyup.setup_enter_post_form");
+			$(document).bind("keyup.setup_enter_post_form", function(e) {
 				if (e.keyCode == 13) { // enter
 					post_form();
 				}
@@ -131,27 +233,46 @@
 
 
 			// click save button
-			$('#save_user_button').click( function() {
+			$('#save_group_button').click( function() {
+				$('#save_group_button').unbind('click');
 				post_form();
 			});
+			
 
-			// click cancel button
-			$('#cancel_button').click(function() {
-				unlock_sub_content();
-				reload_div('#sub_content','');
-			});
+			$('#modal').modal('hide');
+
+			
 		{%- endif -%}
 
-		// we need to wait a small amount of time, else the subcontent is
-		// not yet reloaded and the focus won't work.
-		setTimeout(function() {
-			{%- if mode == 'edit' -%}
-				$('#id_description').focus();
+		$('#id_permissive').checkbox({
+	        'on_text': "{{ _('No') }}",
+	        'off_text' : "{{ _('Yes') }}",
+	        'wrapper' : "jquery_checkbox_wrapper"
+	    })
 
-			{%- else -%}
-				$('#id_name').focus();
+	    $('#delete_group_button').click( function() {
+				
+				$('#groups_'+$(this).data('gid')).addClass(select_active_class)
+				$('#massive_delete').trigger('click');
 
-			{%- endif -%}
-		}, 250);
+			});
+
+
+
 	});
 </script>
+
+
+
+    
+  {%- endblock -%}
+
+
+
+
+
+
+
+
+
+

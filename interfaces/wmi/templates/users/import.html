@@ -1,170 +1,151 @@
+{%- extends 'modal.html' -%}
 
-<div id='sub_content_header'>
-	<h1 id='sub_content_title'>{{ _('User accounts import') }}</h1>
-</div>
+{%- block title -%}
+	<h3>{{ _('User accounts import') }}</h3>
+{%- endblock -%}
 
-<div id='sub_content_area'>
+{%- block body -%}
+	
+
+
 	<div style="padding: 0 10px 20px; text-align: center">
 		{{ _('Please select a CSV file to import user accounts from:') }}
 	</div>
-	<form id="LoadCSV_form" method='post' enctype='multipart/form-data' target='result'>
-		{% csrf_token %}
 
-		<div class='sub_content_line big_line'>
-			<div class='sub_content_third_line'>
-				<strong>{{ _("File (csv format)") }}</strong>
-			</div>
-			<div class='sub_content_two_third_line align_right'>
+
+	<form class="form-horizontal">
+		{% csrf_token %}
+		<div class="control-group">
+			<label class="control-label" for="inputCsvFile">{{ _("File (csv format)") }}</label>
+			<div class="controls">
 				{{ form['file']}}
 			</div>
 		</div>
 
-		<div class='sub_content_line big_line'>
-			<div class='sub_content_third_line'>
-				<strong>{{ _("Columns separator") }}</strong>
-			</div>
-			<div class='sub_content_two_third_line align_right'>
+		<div class="control-group">
+			<label class="control-label" for="inputCsvFile">{{ _("Column separator") }}</label>
+			<div class="controls">
 				{{ form['separator']}}
 			</div>
 		</div>
 
-		<div id='global_profile'class='sub_content_line big_line'>
-			<div class='sub_content_third_line'>
-				<strong>{{ _('Global profile') }}</strong>
-			</div>
-			<div class='sub_content_two_third_line align_right'>
-				{{ form['profile'] }}
+		<div class="control-group">
+			<label class="control-label" for="inputCsvFile">{{ _("Global profile") }}</label>
+			<div class="controls">
+				{{ form['profile']}}
 			</div>
 		</div>
 
-		<div class='sub_content_line big_line'>
-			<div class='sub_content_third_line'>
-				{{ _("The file contains") }}
-			</div>
-			<div class='sub_content_two_third_line'>
-				<input class="input_choose" id="__name" type="checkbox" value="name">
-				<label for="__name">{{ _("Firstname and lastname") }}</label> <br>
-				<input class="input_choose" id="__gecos" type="checkbox" value="gecos">
-				<label for="__gecos">{{ _("Gecos") }}</label> <br>
-				<input class="input_choose" id="__group" type="checkbox" value="group">
-				<label for="__group">{{ _("Group") }}</label><br>
-				<input class="input_choose" id="__login" type="checkbox" value="login">
-				<label for="__login">{{ _("Login") }}</label><br>
-				<input class="input_choose" id="__profile" type="checkbox" value="profile">
-				<label for="__profile">{{ _("Profile") }}</label><br>
-				<input class="input_choose" id="__password" type="checkbox" value="password">
-				<label for="__password">{{ _("Password") }}</label><br>
-
+		<div class="control-group">
+			<label class="control-label" for="inputCsvFile">{{ _("The file contains") }}</label>
+			<div class="controls">
+				<div>
+					<input class="input_choose" id="__name" type="checkbox" value="name" >
+					<label for="__name" style="display:inline">{{ _("Firstname and lastname") }}</label>
+				</div>
+				<div>
+					<input class="input_choose" id="__gecos" type="checkbox" value="gecos">
+					<label for="__gecos" style="display:inline">{{ _("Gecos") }}</label> <br>
+				</div>
+				<div>
+					<input class="input_choose" id="__group" type="checkbox" value="group">
+					<label for="__group" style="display:inline">{{ _("Group") }}</label><br>
+				</div>
+				<div>
+					<input class="input_choose" id="__login" type="checkbox" value="login">
+					<label for="__login" style="display:inline">{{ _("Login") }}</label><br>
+				</div>
+				<div>
+					<input class="input_choose" id="__profile" type="checkbox" value="profile">
+					<label for="__profile" style="display:inline">{{ _("Profile") }}</label><br>
+				</div>
+					<input class="input_choose" id="__password" type="checkbox" value="password">
+					<label for="__password" style="display:inline">{{ _("Password") }}</label><br>
+				<div>
 			</div>
 		</div>
 		<div id="contains_name" class="contains_choose">
-			<div class='sub_content_line big_line'>
-				<div class='sub_content_third_line'>
-					<strong>{{ _('Firstname column') }}</strong>
-				</div>
-				<div class='sub_content_two_third_line align_right'>
-					{{ form['firstname'] }}
+			<div class="control-group">
+				<label class="control-label">{{ _("Fistname column") }}</label>
+				<div class="controls">
+					{{ form['firstname']}}
 				</div>
 			</div>
-			<div class='sub_content_line big_line'>
-				<div class='sub_content_third_line'>
-					<strong>{{ _('Lastname column') }}</strong>
-				</div>
-				<div class='sub_content_two_third_line align_right'>
-					{{ form['lastname'] }}
+			<div class="control-group">
+				<label class="control-label" for="inputCsvFile">{{ _("Lastname column") }}</label>
+				<div class="controls">
+					{{ form['lastname']}}
 				</div>
 			</div>
 		</div>
+
 		<div id="contains_gecos" class="contains_choose">
-			<div class='sub_content_line big_line'>
-				<div class='sub_content_third_line'>
-					<strong>{{ _('Gecos column') }}</strong>
-				</div>
-				<div class='sub_content_two_third_line align_right'>
-					{{ form['gecos'] }}
+			<div class="control-group">
+				<label class="control-label" for="inputCsvFile">{{ _("Full name column") }}</label>
+				<div class="controls">
+					{{ form['gecos']}}
 				</div>
 			</div>
 		</div>
-
 		<div id="contains_group" class="contains_choose">
-			<div class='sub_content_line big_line'>
-				<div class='sub_content_third_line'>
-					<strong>{{ _('Group column') }}</strong>
-				</div>
-				<div class='sub_content_two_third_line align_right'>
-					{{ form['group'] }}
+			<div class="control-group">
+				<label class="control-label" for="inputCsvFile">{{ _("Group(s) column") }}</label>
+				<div class="controls">
+					{{ form['group']}}
 				</div>
 			</div>
 		</div>
-
+		
 		<div id="contains_login" class="contains_choose">
-			<div class='sub_content_line big_line'>
-				<div class='sub_content_third_line'>
-					<strong>{{ _('Login column') }}</strong>
-				</div>
-				<div class='sub_content_two_third_line align_right'>
-					{{ form['login'] }}
+			<div class="control-group">
+				<label class="control-label" for="inputCsvFile">{{ _("Login column") }}</label>
+				<div class="controls">
+					{{ form['login']}}
 				</div>
 			</div>
 		</div>
 
 		<div id="contains_profile" class="contains_choose">
-			<div class='sub_content_line big_line'>
-				<div class='sub_content_third_line'>
-					<strong>{{ _('Profile column') }}</strong>
-				</div>
-				<div class='sub_content_two_third_line align_right'>
-					{{ form['profile_col'] }}
-				</div>
-			</div>
-		</div>
-
-		<div id="contains_password" class="contains_choose">
-			<div class='sub_content_line big_line'>
-				<div class='sub_content_third_line'>
-					<strong>{{ _('Password column') }}</strong>
-				</div>
-				<div class='sub_content_two_third_line align_right'>
-					{{ form['password'] }}
-				</div>
-			</div>
-		</div>
-
-
-		<br />
-		<br />
-
 		
-
-
-
-
-
-		<!--{%- for field in form.visible_fields() -%}
-			<div class='sub_content_line big_line'>
-				<div class='sub_content_third_line'>
-					<strong>{{ field.label_tag() }}</strong></div>
-				<div class='sub_content_two_third_line align_right'>
-					{{ field }}
+			<div class="control-group">
+				<label class="control-label" for="inputCsvFile">{{ _("Profile column") }}</label>
+				<div class="controls">
+					{{ form['profile_col']}}
 				</div>
 			</div>
-		{%- endfor -%}-->
+		</div>
+		<div id="contains_password" class="contains_choose">
+		
+			<div class="control-group">
+				<label class="control-label" for="inputpassword">{{ _("Password column") }}</label>
+				<div class="controls">
+					{{ form['password']}}
+				</div>
+			</div>
+		</div>
+
+
+
+	</form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 		<input type='hidden' id='csv_filepath'/>
-		<div id='new_item_actions' class="one_line">
-			<span class='sub_content_half_line'>
-				<input type="button" name="test_submit"
-					value="{{ _('Test import') }}" id='TestCSV_button'
-					class="interface_button float_left"/>
-			</span>
-			<span class='sub_content_half_line'>
-				<input type="button" name="submit" value="{{ _('Import') }}"
-					id='ImportCSV_button' class="interface_button float_right"/>
-			</span>
-		</div>
-	</form>
+		
+
 	<div id='test_result'></div>
-</div><!-- sub_content_area -->
 
 <script type="text/javascript" src='/media/js/jquery.ajaxfileupload.js'></script>
 <script type="text/javascript" src='/media/js/jquery.csvtotable.js'></script>
@@ -251,4 +232,25 @@
 			}
 		})
 	});
+</script>
+
+
+{%- endblock -%}
+
+
+{%- block footer -%}
+	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+    <a href="#" class="btn btn-primary" id="TestCSV_button">{{ _('Test import') }}</a>
+    <a href="#" class="btn btn-success" id="ImportCSV_button">{{ _('Import') }}</a>
+{%- endblock -%}
+
+
+
+
+
+
+
+
+
+
 

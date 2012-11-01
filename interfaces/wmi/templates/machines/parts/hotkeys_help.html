@@ -1,0 +1,14 @@
+
+{%- extends 'hotkeys.html' -%}
+
+    {%- block help_title -%}
+      {{ _('Machines management help') }}
+    {%- endblock -%}
+
+	{%- block help_specific -%}
+		<h4>{{ _('Machine specific operations:') }}</h4>
+		<ul>
+			<li><strong>{{ _('U') }}</strong>{{ _(': upgrade selected machine(s), if applicable,') }}</li>
+			<li><strong>{{ _('H') }}</strong>{{ _(': shutdown selected machine(s), if applicable.') }}</li>
+		</ul>
+    {%- endblock -%}

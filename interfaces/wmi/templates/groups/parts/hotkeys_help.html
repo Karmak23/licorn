@@ -1,0 +1,17 @@
+
+{%- extends 'hotkeys.html' -%}
+
+    {%- block help_title -%}
+      {{ _('Groups management help') }}
+    {%- endblock -%}
+
+	{%- block help_specific -%}
+		<h4>{{ _('Groups specific operations:') }}</h4>
+		<ul>
+			<li><strong>{{ _('N') }}</strong>{{ _(': create a new group,') }}</li>
+			<li><strong>{{ _('Backspace') }} {{ _('or') }} {{ _('Delete') }}</strong>{{ _(': delete selected group(s),') }}</li>
+			<li><strong>{{ _('L') }}</strong>{{ _(': reapply an account skeleton to members of selected group(s),') }}</li>
+			<li><strong>{{ _('X') }}</strong>{{ _(': export selected group(s) (CSV or XML format),') }}</li>
+			<li><strong>{{ _('P') }}</strong>{{ _(': toggle permissive state of selected group(s).') }}</li>
+		</ul>
+    {%- endblock -%}
