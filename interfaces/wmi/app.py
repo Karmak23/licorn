@@ -481,6 +481,26 @@ class WmiEventApplication(ObjectSingleton):
 						else:
 							self.handlers[event_name] = [ value ]
 
+				for ext in LMC.extensions:
+					if entry in ext.controllers_compat and hasattr(ext, '_wmi_{0}_event_handlers'.format(entry)):
+						print "{0} has an event dict for {1}".format(ext, entry)
+
+
+
+						for event_name, value in getattr(ext, '_wmi_{0}_event_handlers'.format(entry)).iteritems():
+							if event_name.endswith('_handler'):
+								event_name = event_name[0:-8]
+								print ">>>> ", event_name
+								if event_name in self.handlers:
+									self.handlers[event_name].append(value)
+								else:
+									self.handlers[event_name] = [ value ]
+
+					else:
+						print "{0} has NO dict".format(entry)
+
+
+
 		assert ltrace_var(TRACE_DJANGO, self.push_permissions)
 
 		# this is meant to go in an external module / process in the near future.

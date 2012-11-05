@@ -15,6 +15,9 @@ import os, uuid, functools
 from traceback import print_exc
 import xml.etree.ElementTree as ET
 
+
+from Queue import Queue
+
 from licorn.foundations           import logging, pyutils, fsapi, network
 from licorn.foundations           import readers, writers, events
 from licorn.foundations.workers   import workers
@@ -31,7 +34,7 @@ from licorn.core.classes          import only_if_enabled
 from licorn.extensions import ServiceExtension
 
 
-from calendarserver.tools.principals   import action_addProxy, action_removeProxy,  addProxy, principalForPrincipalID, action_listProxies
+from calendarserver.tools.principals   import action_addProxy, action_removeProxy,  addProxy, action_readProperty, getProxies, principalForPrincipalID, action_listProxies
 from calendarserver.tools.util         import getDirectory, loadConfig, setupMemcached
 from twistedcaldav.config              import config as caldav_config
 from twistedcaldav.config              import ConfigDict
@@ -39,6 +42,8 @@ from twistedcaldav.directory.directory import DirectoryRecord
 
 
 from twistedcaldav.directory.directory import DirectoryService
+
+from licorn.foundations.events    import LicornEvent
 
 
 
@@ -110,6 +115,86 @@ def only_if_backend_openldap_is_not_enabled(func):
 
 
 
+from licorn.interfaces.wmi.libs   import utils
+
+def add_proxie_handler(request, event):
+	print "event kw", event.kwargs
+	user  = event.kwargs['user']
+	proxy = event.kwargs['user_proxy']
+	mode = event.kwargs['proxy_type']
+
+
+	yield utils.notify(_("User {0} is now a proxie of {1}'s calendar".format(
+		proxy.login,
+		user.login)))
+
+	# add the new proxy to the correct list
+	yield utils.format_RPC_JS('update_instance',
+							'readers_proxy' if mode=='read' else 'writers_proxy',
+							proxy.login,
+							get_table_line(proxy, mode),
+							'setup_calendar_row'
+							)
+	# remove the proxy from avalaible proxies
+	yield utils.format_RPC_JS('remove_instance',
+						'avalaible_proxies',
+						proxy.login
+						)
+
+
+def get_table_line(proxy, mode, avalaible_list=False):
+
+	if avalaible_list:
+		list_id = 'avalaible_proxies'
+	else:
+		list_id = 'readers_proxy' if mode=='read' else 'writers_proxy'
+
+	template = """<tr class="proxy" data-login='{0}' id="{2}_{0}" {4} >
+					<td>{1}</td>
+					<td class='centered'><img src="/media/images/14x14/{3}"></td>
+				</tr>"""
+	return template.format(proxy.login, '(users)'+proxy.login, 
+		list_id,
+		'mass_add.png' if avalaible_list else "mass_del.png",
+		"data-proxy-type='{0}'".format(mode) if not avalaible_list else "")
+
+def del_proxie_handler(request, event):
+	user  = event.kwargs['user']
+	proxy = event.kwargs['user_proxy']
+	mode = event.kwargs['proxy_type']
+
+	yield utils.notify(_("User {0} is no more proxie of {1}'s calendar").format(
+													proxy.login, user.login))
+
+	yield utils.format_RPC_JS('remove_instance',
+								'readers_proxy' if mode=='read' else 'writers_proxy',
+								proxy.login,
+		"<tr class='no-data'><td><em>{0}</em></td></tr>".format(_('No <strong>{0}</strong> proxy for the moment').format(mode))
+								)
+
+	# add the proxy to the avalaible proxies list
+	yield utils.format_RPC_JS('update_instance',
+							'avalaible_proxies',
+							proxy.login,
+							get_table_line(proxy, mode, avalaible_list=True),
+							"setup_avalaible_proxies"
+							)
+
+
+def my_deferred_blocker(d, timeout=None):
+    q = Queue()
+    d.addBoth(q.put)
+    try:
+    	#ret = q.get()
+        ret = q.get()
+        print "ret=", ret
+    except Exception, e:
+    	print "BLOCK_ON error", e
+        #raise Timeout
+    except Queue.EMPTY:
+    	print "queue empty"
+    else:
+    	return ret
 
 class CaldavdExtension(ObjectSingleton, ServiceExtension):
 	""" Handles Apple Calendar Server configuration and service.
@@ -398,6 +483,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			
 				for g in u.groups:
 					if not g.is_system or g.is_guest or g.is_responsible:
+						
 						self.group_post_add_user(user=u, group=g)
 
 
@@ -1137,6 +1223,90 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					name=group.name))
 
 
+	def _wmi_user_tab(self, users, mode):
+		if mode not in ('new', "massiv"):
+
+			
+
+
+
+
+			user = users[0]
+			
+			from licorn.interfaces.wmi.users.views import generate_tab_content
+			from django.template.loader         import render_to_string
+
+
+
+			#( tid, sort, title, content )
+			#self.setup_calendarserver_environement()
+			
+
+			# get proxies 
+			principal_user = principalForPrincipalID('users:'+user.login)
+			proxies = my_deferred_blocker(action_listProxies(principal_user, "read"))
+			
+			#proxies.addCallback(self.draw_proxies, user)
+			
+			print ">>PR", proxies
+
+			proxies = my_deferred_blocker(getProxies(principal_user))
+			
+			content = render_to_string('/users/parts/calendar_content.html', {
+					'user' : user,
+					'read_proxies' : [ principalForPrincipalID(p) for p in proxies[0] ],
+					'write_proxies' : [ principalForPrincipalID(p) for p in proxies[1] ],
+					'users_principals' : self.get_users_principals(),
+					})
+			
+
+			return [{ 'id' : 'calendar', 'sort':10, 'title': 'Calendar options',
+				'content': generate_tab_content('calendar', content)}]
+
+
+	
+		else:
+			return None
+	def get_users_principals(self):
+		for u in LMC.users.select(filters.STANDARD):
+			p = principalForPrincipalID('users:'+u.login)
+			if p:
+				yield p
+
+	def _wmi_user_urls(self):
+		return [
+			(r'^calendar/(?P<uid>\d+)/(?P<action>\w+)/(?P<value>.*)/(?P<option>.*)$', self._wmi_action),
+			]
+	
+
+	os.environ['DJANGO_SETTINGS_MODULE'] = "licorn.interfaces.wmi.settings"
+	
+	def _wmi_action(self, request, uid, action, value, option):
+		from django.http import HttpResponse
+
+		user           = LMC.users.guess_one(uid)
+		user_principal = principalForPrincipalID('users:'+user.login)
+
+		nu       = value
+		new_user = LMC.users.guess_one(nu)
+
+		if action == 'add':
+			if option == 'read':
+				action_addProxy(user_principal, 'read', ('users:'+new_user.login))
+			elif option == 'write':
+				action_addProxy(user_principal, 'write', ('users:'+new_user.login))
+
+			LicornEvent('calendar_add_proxie', user=user, user_proxy=new_user,
+					proxy_type=option).emit()
+
+		elif action == 'del':
+			action_removeProxy(user_principal, 'users:'+new_user.login)
+			LicornEvent('calendar_del_proxie', user=user, user_proxy=new_user,
+				proxy_type=option).emit()
+
+		return HttpResponse('OK')
+
+
 	def clear_accounts_and_ressources(self):
 		print "clearrrrrrrr"
 		new_xml = '<accounts realm="TOTOOTOTOTOTTO"></accounts>'
@@ -1159,4 +1329,9 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		self.__write_elements_and_reload()
 
+
+	_wmi_users_event_handlers = {
+			'calendar_add_proxie_handler' : add_proxie_handler,
+			'calendar_del_proxie_handler' : del_proxie_handler,
+		}
 

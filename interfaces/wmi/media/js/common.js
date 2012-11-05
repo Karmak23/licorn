@@ -1,24 +1,39 @@
 var page_cleaner_interval;
 
-function remove_instance(model, iid) {
+function remove_instance(model, iid, no_item_display) {
 	table = $('#model_' + model + '_table');
 	old   = $('#' + model + '_' + iid);
+	console.log(">> remove_instance", table, old)
 	old.addClass('to-remove');
 	old.hide();
 	old.remove();
+
+	if ($(table).find('tbody tr').length == 0) {
+		console.log('we should display no items', no_item_display)
+		console.log(no_item_display)
+		if (no_item_display != null) {
+			console.log('HEREEE', $(table).find('tbody'))
+			table.find('tbody').html(no_item_display)
+		}
+	}
 }
 
 function update_instance(model, iid, new_html, action_func) {
 	// This function will work with anything, but best for replacing a <tr>
 	// with a new one, already rendered.
 	//
-	console.log('update_instance')
+	console.log('update_instance', model)
+	console.log('new_html', new_html)
 	new_  = $(new_html);
+	console.log('new_html', new_)
 	new_.hide()
 
 	table = $('#model_' + model + '_table');
+	console.log('table','#model_' + model + '_table',  table)
 
 	old   = $('#' + model + '_' + iid);
+
+	console.log("old", old)
 	
 	if (old.length) {
 		// this instance was already known.
@@ -60,7 +75,7 @@ function update_instance(model, iid, new_html, action_func) {
 		}
 	}
 	else {
-		console.log('show the new')
+		console.log('show the new', new_)
 		new_.show();
 	}
 

@@ -2,6 +2,7 @@ from django.conf.urls.defaults import *
 from django.conf import settings
 
 from licorn.foundations import hlstr
+from licorn.core                  import LMC
 
 urlpatterns = patterns('users.views',
     (r'^/?$', 'main'),
@@ -50,3 +51,10 @@ urlpatterns = patterns('users.views',
     (r'^check_pwd_strenght/(?P<pwd>.+)/?$', 'check_pwd_strenght'),
     (r'^generate_pwd/?$', 'generate_pwd'),
     )
+
+for ext in LMC.extensions:
+    if 'users' in ext.controllers_compat and hasattr(ext, '_wmi_user_urls'):
+        for url_regex, view in ext._wmi_user_urls():
+             urlpatterns += patterns('', (url_regex, view))
+
+
