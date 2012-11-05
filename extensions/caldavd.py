@@ -1131,21 +1131,55 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 		group_resource_principal = principalForPrincipalID(
 										'resources:resource_'+std_group.name)
+
 		if group_resource_principal is None:
 			logging.warning2('{0}: cannot find principal for {1}'.format(
 				stylize(ST_NAME, self.name), stylize(ST_PATH, 
 										'resources:resource_'+std_group.name)))
 
 		else:
+			def __add_user_group(d, group, user):
+				#print "__add_user_group", d
 
-			if group.is_guest:
-				action_addProxy(group_resource_principal,
+				read_proxies, write_proxies = d
+
+				read_proxies  = [ principalForPrincipalID(pid).record.shortNames[0] for pid in read_proxies ]
+				write_proxies = [ principalForPrincipalID(pid).record.shortNames[0] for pid in write_proxies ]
+
+				#print "R", read_proxies
+				#print "W", write_proxies
+
+				if group.is_guest:
+					if user.login not in read_proxies:
+						action_addProxy(group_resource_principal,
 													'read', ('users:'+user.login))
-			else:
-				action_addProxy(group_resource_principal,
-													'write', ('users:'+user.login))
+					else:
+						logging.info('{0}: user {1} already a read proxy of ressource {2}'.format(
+							stylize(ST_NAME, self.name), stylize(ST_PATH, 
+							user.login), stylize(ST_PATH, 
+										group_resource_principal)))
+				else:
+					if user.login not in write_proxies:
+						action_addProxy(group_resource_principal,
+														'write', ('users:'+user.login))
+					else:
+						logging.info('{0}: user {1} already a write proxy of ressource {2}'.format(
+							stylize(ST_NAME, self.name), stylize(ST_PATH, 
+							user.login), stylize(ST_PATH, 
+										group_resource_principal)))
 
-		self.service(svccmds.RESTART)
+
+				self.service(svccmds.RESTART)
+
+
+
+			proxies = getProxies(group_resource_principal)
+			proxies.addCallback(__add_user_group, group, user)
+			
+
+		
+
+	
 
 	@events.handler_method
 	@only_if_enabled
