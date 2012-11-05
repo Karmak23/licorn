@@ -1,0 +1,5 @@
+<ul class="nav nav-tabs" id="myTab">
+	{% for tab in tabs %}
+		<li {{ 'class="active"' if tab['default'] }}><a href="#{{ tab['id'] }}" data-toggle="tab">{{ tab['title'] }}</a></li>
+	{% endfor %}
+</ul>

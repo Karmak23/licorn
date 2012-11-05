@@ -43,7 +43,7 @@ from licorn.interfaces.wmi.app             import wmi_event_app
 from licorn.interfaces.wmi.libs            import utils
 from licorn.interfaces.wmi.libs.decorators import staff_only, check_users
 
-from forms import UserForm, SkelInput, ImportForm, get_user_form_blocks
+from forms import UserForm, SkelInput, ImportForm
 
 # NOTE: mod() is not protected by @staff_only because standard users
 # need to be able to modify their personnal attributes (except groups).
@@ -414,6 +414,24 @@ def massive_select_template(request, action_name, uids, *args, **kwargs):
 	return HttpResponse(render_to_string('users/parts/massive_{0}.html'.format(
 														action_name), _dict))
 
+
+def generate_tab_content(tid, content, active=False):
+	return '<div class="tab-pane {0}" id="{1}" style="overflow:hidden;">{2}</div>'.format(
+		'active' if active else '', tid, content)
+def generate_tab_headers(tabs):
+	return render_to_string('/users/parts/tabs_headers.html', {
+		'tabs' : tabs
+		})
+def generate_group_tab_content(mode, groups_tab_content):
+
+	content=render_to_string('/users/parts/groups_list_content.html', {
+		'list':groups_tab_content,
+		'mode':mode
+		})
+
+	return generate_tab_content(groups_tab_content['list_name'], content)
+
+
 def get_user_template(request, mode, users):
 	print "get_user_template", mode, users
 
@@ -454,17 +472,82 @@ def get_user_template(request, mode, users):
 			}
 		)
 
+
+	# TABs 
+
+	tabs = []
+	tabs.append({
+		'id' : 'general', 
+		'sort': 1, 
+		'title' : _(u'General information'), 
+		'content': generate_tab_content('general', '/users/parts/general_information.html', active=True), 
+		'default': True })
+
+	tabs.append({
+		'id' : 'std_groups', 
+		'sort': 2, 
+		'title' : _(u'Groups'), 
+		'content': generate_group_tab_content(mode, {
+			'list_name'    : 'std_groups',
+			'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
+				'users' : users,
+				'group' : g
+				}) for g in pyutils.alphanum_sort(LMC.groups.select(filters.STANDARD), key= 'name')])
+		}), 
+		'default': False })
+	if request.user.is_superuser:
+		tabs.append({
+			'id' : 'priv_groups',
+			'sort': 3,
+			'title' : _(u'Privileged groups'), 
+			'content': generate_group_tab_content(mode, {
+				'list_name'    : 'priv_groups',
+				'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
+					'users' : users,
+					'group' : g
+					}) for g in pyutils.alphanum_sort(LMC.groups.select(filters.PRIVILEGED), key= 'name')])
+				}), 
+			'default': False })
+		tabs.append({
+			'id' : 'sys_groups',
+			'sort': 4, 
+			'title' : _(u'System groups'), 
+			'content': generate_group_tab_content(mode, {
+				'list_name'    : 'sys_groups',
+				'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
+					'users' : users,
+					'group' : g
+					}) for g in pyutils.alphanum_sort(LMC.groups.select(filters.SYSTEM), key= 'name')])
+				}), 
+			'default': False })
+
+	# do not forget extensions' tabs !
+	for ext in LMC.extensions:
+		if 'users' in ext.controllers_compat and hasattr(ext, '_wmi_user_tab'):
+			for tab in ext._wmi_user_tab(users, mode):
+				print "éééé", tab
+				tabs.append({'id' : tab['id'], 'sort': tab['sort'],
+					 'title' : tab['title'], 'content': tab['content'], 'default': False })
+
+
+	# generate tabs html
+	tabs_html = generate_tab_headers(tabs)  + "<div class='tab-content'>" + ' '.join([ tab['content'] for tab in tabs ]) + '</div>'
+
+
 	# we need to sort the form_blocks dict to display headers in order
-	sorted_blocks = OrderedDict({})
+
+
+	"""sorted_blocks = OrderedDict({})
 	form_blocks = get_user_form_blocks(request)
 	for k in sorted(form_blocks.iterkeys()):
-		sorted_blocks.update({ k: form_blocks[k]})
+		sorted_blocks.update({ k: form_blocks[k]})"""
 
 	_dict.update({
 				'mode'    	  : mode,
 				'form'        : UserForm(mode, users[0]),
-				'groups_lists' : groups_lists,
-				'form_blocks' : sorted_blocks
+				'tabs'        : tabs_html
+				#'groups_lists' : groups_lists,
+				#'form_blocks' : sorted_blocks
 			})
 
 	if mode == 'edit':

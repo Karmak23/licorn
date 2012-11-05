@@ -1,0 +1,27 @@
+<div>
+
+	<div class="row-fluid" style="margin-bottom:20px;">
+
+		<div class="span8">
+
+				{{ _('More information on <a href="http://docs.licorn.org/groups/permissions" target=_blank>Groups permissions</a>')}}
+
+		</div>
+	{% if mode != 'new' %}
+		<div class="span4">
+			<span class="btn-group" data-toggle="buttons-radio">
+				<button type="button" id='sort_alpha' class="btn btn-mini sort_item" data-sort="alpha" data-id="{{ list.list_name }}" title="{{ _('Sort list by group name') }}">
+					{{ _("Group name") }}
+				</button>
+				<button type="button" id='sort_relation' class="btn btn-mini sort_item" data-sort="relation" data-id="{{ list.list_name }}" title="{{ _('Sort list by relationship') }}">
+					{{ _("Relationship") }}
+				</button>
+
+			</span>
+		</div>
+		{% endif %}
+	</div>
+
+	{{list.list_content}}
+
+</div>
