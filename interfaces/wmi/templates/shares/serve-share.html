@@ -129,7 +129,7 @@
 				<tr>
 					<td class="nowrap"><i class="icon-file"></i> <a href="{{
 								url_for('wmi.shares.views.download',
-								args=(share.coreobj.name, share.name, pub_fname))}}" class='download_file'>{{ pub_fname }}</a></td>
+								args=(share.coreobj.name, share.name, pub_fname|urlencode))}}" class='download_file'>{{ pub_fname }}</a></td>
 					<td>{{ bytes_to_human(infos.size) }}</td>
 					<td>{{ format_time_delta(infos.mtime, use_neg=True, long_output=False) }}</td>
 					<td>{{ infos.mimetype }}</td>
