@@ -1297,8 +1297,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			return [{ 'id' : 'calendar', 'sort':10, 'title': 'Calendar options',
 				'content': generate_tab_content('calendar', content)}]
 
-
-	
 		else:
 			return None
 	def get_users_principals(self):
@@ -1309,13 +1307,10 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 	def _wmi_user_urls(self):
 		return [
-			(r'^calendar/(?P<uid>\d+)/(?P<action>\w+)/(?P<value>.*)/(?P<option>.*)$', self._wmi_action),
+			(r'^calendar/(?P<uid>\d+)/(?P<action>\w+)/(?P<value>.*)/(?P<option>.*)$', self._wmi_url_action),
 			]
-	
 
-	os.environ['DJANGO_SETTINGS_MODULE'] = "licorn.interfaces.wmi.settings"
-	
-	def _wmi_action(self, request, uid, action, value, option):
+	def _wmi_url_action(self, request, uid, action, value, option):
 		from django.http import HttpResponse
 
 		user           = LMC.users.guess_one(uid)
