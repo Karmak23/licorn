@@ -1,7 +1,9 @@
 {#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
     Distributed under the terms of the GNU GPL version 2. -#}
 
-{% from 'widgets/common.html' import countdown %}
+{% from 'widgets/common.html' import countdown, updates_status %}
+
+
 
 {%- set statuses = [ '', '', '' ] -%}
 {%- for ds_method in dynstatuses().itervalues() -%}
@@ -18,6 +20,8 @@
 	<h1>{{ _('System information') }}</h1>
 
 	{{ informations[0] }}
+	
+	<span style="float:right;">{{ updates_status(machine, big=True) }}</span>
 
 	<p>{{ _('Licorn® Server <strong>{0}</strong>, {1} {2} (version&nbsp;{3}).').format(
 			config('network.hostname'),
@@ -41,6 +45,7 @@
 	{{ informations[1] }}
 
 	{{ informations[2] }}
+
 
 </div>
 <div>
