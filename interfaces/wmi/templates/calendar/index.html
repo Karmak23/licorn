@@ -1,0 +1,146 @@
+{#- Copyright 2012 META IT & Robin Lucbernet<robin@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{%- extends 'list.html' -%}
+
+{%- block title -%}
+	{{ _('My calendars') }}
+{%- endblock -%}
+
+
+{%- block list_title -%}
+	{{ _('Calendars') }}
+{%- endblock -%}
+
+{%- block massive_actions -%}
+
+{%- endblock -%}
+
+{%- block list_filters -%}
+	<span class="btn-group" data-toggle="buttons-checkbox">
+		{% if request.user.is_superuser %}
+			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
+				<i class="icon-map-marker" title="{{ _('Standard') }}"></i>
+			</button>
+			<button id='filter_system' class="btn filter_item" data-filter='system'>
+				<i class="icon-wrench" title="{{ _('Systems') }}"></i>
+			</button>
+			<button id='filter_restricted' class="btn filter_item" data-filter='restricted'>
+				<i class="icon-warning-sign" title="{{ _('Restricted') }}"></i>
+			</button>
+		{% elif request.user.is_staff %}
+			<!--<button id='filter_standart' class="btn filter_item" data-filter='standard'>
+				<i class="icon-map-marker" title="{{ _('Standard') }}"></i>
+			</button>-->
+		{% endif %}
+
+	</span>
+{%- endblock -%}
+
+{%- block list_headers -%}
+	<th class='table_column_header centered' width="7%">{{ _('Type') }}</th>
+	<th class='table_column_header centered' width="7%">{{ _('Type') }}</th>
+	<th class='table_column_header'          width="12%">{{ _('Name') }}</th>
+	<th class='table_column_header'          width="12%">{{ _('Description') }}</th>
+	<th class='table_column_header'          width="50%">{{ _('URL') }}</th>
+{%- endblock -%}
+
+{%- block list_body -%}
+	{%- for calendar in calendars -%}
+		{%- include 'calendar/calendar_row.html' -%}
+	{%- endfor -%}
+
+	<script language="javascript" type="text/javascript">
+
+		$(document).ready(function() {
+
+			// setup the list
+			setup_list('calendars');
+
+			$('.copy_url').click(function() {
+				console.log('click')
+			})
+
+			text = $('<span></span>')
+
+			$('.copy_url').clickover({
+				content : function() { return $(text).html($(this).html().trim()); },
+				placement : 'bottom',
+				template: '<div class="popover my_popover"><div class="arrow"></div><div class="popover-inner"><div class="popover-content" ><p></p></div></div></div>',
+					}).click(function() {
+						fnSelect(text)
+						
+					});
+
+
+					
+
+
+		});
+
+		function fnSelect(obj) {
+			if (document.selection) {
+			var range = document.body.createTextRange();
+	 	        range.moveToElementText(obj);
+			range.select();
+			}
+			else if (window.getSelection) {
+			var range = document.createRange();
+			range.selectNode(obj[0]);
+			window.getSelection().addRange(range);
+			}
+		}
+
+		function selectText(element, el) {
+		    var doc = document
+		    if (el == null) {
+		    	var text = doc.getElementById(element)
+		    }
+		    else {
+		    	var text = el
+		    }
+		    var ange, selection
+		    ;    
+		    if (doc.body.createTextRange) { //ms
+		        range = doc.body.createTextRange();
+		        range.moveToElementText(text);
+		        range.select();
+		    } else if (window.getSelection) { //all others
+		        selection = window.getSelection();        
+		        range = doc.createRange();
+		        range.selectNodeContents(text);
+		        selection.removeAllRanges();
+		        selection.addRange(range);
+		    }
+		}
+
+		function func_doubleclick_row(td) {
+			// what happens when a row has been double clicked,
+			// show the edit form.
+
+			if (! $(td).hasClass('no_double_click')) {
+
+				uid = td.data('id')
+
+				if (uid == null) {
+					uid = td.parent('.licorn_row').data('id')
+				}
+
+				$.get('/users/edit/'+uid, function(modal_html) {
+					$("#modal").html(modal_html).modal()
+				})
+			}
+		}
+
+		function get_list_column() {
+			return [ "String", "String", "String", "String", "String" ]
+		}
+
+		// filters used to filter the table
+		var filters = { 'standard' : true, 'system': true, 'restricted': false }
+		
+	</script>
+{%- endblock -%}
+
+
+

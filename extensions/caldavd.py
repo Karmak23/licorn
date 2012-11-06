@@ -45,7 +45,8 @@ from twistedcaldav.directory.directory import DirectoryService
 
 from licorn.foundations.events    import LicornEvent
 
-
+from django.template.loader         import render_to_string
+	
 
 
 
@@ -1278,6 +1279,12 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
 			# get proxies 
 			principal_user = principalForPrincipalID('users:'+user.login)
+
+
+			print "USERRRRRR P", principal_user
+
+
+
 			proxies = my_deferred_blocker(action_listProxies(principal_user, "read"))
 			
 			#proxies.addCallback(self.draw_proxies, user)
@@ -1309,6 +1316,41 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		return [
 			(r'^calendar/(?P<uid>\d+)/(?P<action>\w+)/(?P<value>.*)/(?P<option>.*)$', self._wmi_url_action),
 			]
+
+	def _wmi_urls(self):
+		return [
+			(r'^calendar/?$', self._wmi_home),
+			]
+
+	def _wmi_home(self, request):
+		from django.shortcuts import render
+
+		wmi_user = LMC.users.guess_one(request.user.username)
+
+		r, w = self.get_user_proxies(wmi_user)
+
+		calendars = []
+
+		for principal in r:
+			calendars.append({
+				'principal_type' : principal.record.recordType,
+				'proxy_type'     : "read",
+				'name'           : principal.record.shortNames[0],
+				'url'            : "http://%s:%s%scalendar/" % (caldav_config.ServerHostName, caldav_config.HTTPPort, principal.calendarHomeURLs()[0]),
+				'desc'           : principal.record.fullName
+			})
+		for principal in w:
+			calendars.append({
+				'principal_type' : principal.record.recordType,
+				'proxy_type'     : "write",
+				'name'           : principal.record.shortNames[0],
+				'url'            : "http://%s:%s%scalendar/" % (caldav_config.ServerHostName, caldav_config.HTTPPort, principal.calendarHomeURLs()[0]),
+				'desc'           : principal.record.fullName
+			})
+
+		print "CALENDARSSSSZ", calendars
+
+		return render(request, 'calendar/index.html', { 'calendars' : calendars })
 
 	def _wmi_url_action(self, request, uid, action, value, option):
 		from django.http import HttpResponse
@@ -1364,3 +1406,26 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			'calendar_del_proxie_handler' : del_proxie_handler,
 		}
 
+
+	def get_user_proxies(self, user):
+
+		principals = []
+
+		user_read_proxies  = []
+		user_write_proxies = []
+
+		principal_user = principalForPrincipalID('users:'+user.login)
+
+		print "READ ", my_deferred_blocker(principal_user.proxyFor(False))
+		print "Write ", my_deferred_blocker(principal_user.proxyFor(True))
+
+		user_read_proxies  = [ x for x in my_deferred_blocker(principal_user.proxyFor(False)) ]
+		user_write_proxies = [ x for x in my_deferred_blocker(principal_user.proxyFor(True)) ]
+		
+		return user_read_proxies, user_write_proxies
+
+
+
+	def _wmi_dynamic_sidebar(self, request):
+		return render_to_string('calendar/parts/sidebar.html', {
+			})

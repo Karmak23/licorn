@@ -6,6 +6,8 @@ from django.http               import HttpResponseRedirect, HttpResponsePermanen
 
 from libs.utils                import dynamic_urlpatterns
 
+from licorn.core               import LMC
+
 handler500 = 'wmi.system.views.error_handler'
 
 js_info_dict = { 'domain': 'djangojs', 'packages': ('wmi',), }
@@ -46,4 +48,9 @@ urlpatterns = patterns('',
 # dynamic app routes, loaded only if all dependancies are satisfied.
 for base_url, module_name in dynamic_urlpatterns(os.path.dirname(__file__)):
 	urlpatterns += patterns('', (base_url, include('wmi.%s.urls' % module_name)))
+
+for ext in LMC.extensions:
+	if ext.enabled and hasattr(ext, '_wmi_urls'):
+		for url_regex, view in ext._wmi_urls():
+			urlpatterns += patterns('', (url_regex, view))
 

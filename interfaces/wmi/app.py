@@ -468,6 +468,11 @@ class WmiEventApplication(ObjectSingleton):
 					if hasattr(module, 'dynamic_infos'):
 						self.dynamic_infos[entry] = module.dynamic_infos
 
+			# check dynamic sidebar in extensions
+			for ext in LMC.extensions:
+				if ext.enabled and hasattr(ext, '_wmi_dynamic_sidebar'):
+					self.dynamic_sidebars[ext.name] = ext._wmi_dynamic_sidebar
+
 			if os.path.exists(os.path.join(dirname, entry, 'event_handlers.py')):
 
 				module = __import__('licorn.interfaces.wmi.%s.event_handlers' % entry,

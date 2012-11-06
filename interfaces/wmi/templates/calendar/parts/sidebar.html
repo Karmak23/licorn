@@ -1,0 +1,13 @@
+{%- from 'widgets/common.html' import menu_item -%}
+
+	{%- set subitems = [] -%}
+
+	{{
+		menu_item(
+			"calendar_menuitem",
+			"/calendar",
+			_('List of my calendars'),
+			_('My calendars'),
+			subitems
+		)
+	}}
