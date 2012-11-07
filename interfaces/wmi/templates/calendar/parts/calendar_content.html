@@ -3,7 +3,9 @@
 		<h4>Permissions</h4>
 	</span>
 	<span class="span12">
-		{{ _("The calendar of user <strong>{0}</strong> is readable/writable by:").format(user.login) }}
+		{% block calendar_tab_line %}
+		
+		{% endblock %}
 	</span>
 	<div class="row-fluid">
 		<span class="span6">
@@ -61,24 +63,30 @@
 					<th></th>
 				</thead>
 				<tbody>
-					{% for up in users_principals %}
-						<tr class="proxy" id="avalaible_proxies_{{ up.record.shortNames[0] }}">
-							<td>{{ up }}</td>
-							<td class='centered'>
-								<img src="/media/images/14x14/mass_add.png">
-								<div class="popover">
-									<div class="row-fluid">
-										<div class="span6">
-											<span class="btn btn-primary" onClick='add_proxy("{{ up.record.shortNames[0] }}", "read");' data-dismiss='clickover'>{{ _('Reader') }}</span>
-										</div>
-										<div class="span6">
-											<span class="btn btn-success" onClick='add_proxy("{{ up.record.shortNames[0] }}", "write");' data-dismiss='clickover'>{{ _('Writer') }}</span>
+					{% if users_principals|length == 0 %}
+						<tr class="no-data">
+							<td><em>{{ _('No <strong>avalaible</strong> proxy for the moment') }}</em></td>
+						</tr>
+					{% else %}
+						{% for up in users_principals %}
+							<tr class="proxy" id="avalaible_proxies_{{ up.record.shortNames[0] }}">
+								<td>{{ up }}</td>
+								<td class='centered'>
+									<img src="/media/images/14x14/mass_add.png">
+									<div class="popover">
+										<div class="row-fluid">
+											<div class="span6">
+												<span class="btn btn-primary" onClick='add_proxy("{{ up.record.shortNames[0] }}", "read");' data-dismiss='clickover'>{{ _('Reader') }}</span>
+											</div>
+											<div class="span6">
+												<span class="btn btn-success" onClick='add_proxy("{{ up.record.shortNames[0] }}", "write");' data-dismiss='clickover'>{{ _('Writer') }}</span>
+											</div>
 										</div>
 									</div>
-								</div>
-							</td>
-						</tr>
-					{% endfor %}
+								</td>
+							</tr>
+						{% endfor %}
+					{% endif %}
 				</tobody>
 			</table>
 		</span>
@@ -116,16 +124,13 @@
 	function init_delete_click(img) {
 		img.click(function() {
 			row = $(this).parent().parent()
-			url_to_get = '/calendar/users/{{ user.uidNumber }}/del/' + row.data('login') + '/' + row.data('proxy-type')
+			url_to_get = '{{ base_url_action }}/del/' + row.data('login') + '/' + row.data('proxy-type')
 			console.log(url_to_get)
 			$.get(url_to_get);
 		})
 	}
 
 	function init_add_click(img) {
-		/*img.click(function() {
-			$.get('/users/calendar/'+{{ user.uidNumber }}+'/add/' + $(this).parent().parent().data('login'));
-		})*/
 		$(img).clickover({
 				title : 'relationship',
 				content  : function() { return $(this).parent().find('.popover').html(); },
@@ -137,10 +142,10 @@
 	}
 
 	function add_proxy(who, type) {
-		$.get('/calendar/users/'+{{ user.uidNumber }}+'/add/' + who + '/' + type);
+		$.get('{{ base_url_action }}'+'/add/' + who + '/' + type);
 	}
 	function del_proxy(who, type) {
-		$.get('/calendar/users/'+{{ user.uidNumber }}+'/del/' + who + '/' + type);
+		$.get('{{ base_url_action }}'+'/del/' + who + '/' + type);
 	}
 
 	function setup_calendar_row(list_name, row, old) {

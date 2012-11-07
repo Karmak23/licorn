@@ -18,14 +18,25 @@ from licorn.interfaces.wmi.libs import utils
 
 
 def calendar_add_proxie_handler(request, event):
-	user  = event.kwargs['user']
+	try:
+		user  = event.kwargs['user']
+	except KeyError:
+		user  = None
+		group = event.kwargs['group']
+
+
 	proxy = event.kwargs['user_proxy']
 	mode = event.kwargs['proxy_type']
 
+	if user is not None:
+		yield utils.notify(_("User {0} is now a proxie of {1}'s calendar".format(
+			proxy.login,
+			user.login)))
+	else:
+		yield utils.notify(_("User {0} is now a proxie of {1}'s calendar".format(
+			proxy.login,
+			group.name)))
 
-	yield utils.notify(_("User {0} is now a proxie of {1}'s calendar".format(
-		proxy.login,
-		user.login)))
 
 	# add the new proxy to the correct list
 	yield utils.format_RPC_JS('update_instance',
@@ -47,12 +58,22 @@ def calendar_add_proxie_handler(request, event):
 
 
 def calendar_del_proxie_handler(request, event):
-	user  = event.kwargs['user']
+	try:
+		user  = event.kwargs['user']
+	except KeyError:
+		user  = None
+		group = event.kwargs['group']
+
 	proxy = event.kwargs['user_proxy']
 	mode = event.kwargs['proxy_type']
 
-	yield utils.notify(_("User {0} is no more proxie of {1}'s calendar").format(
+
+	if user is not None:
+		yield utils.notify(_("User {0} is no more proxie of {1}'s calendar").format(
 													proxy.login, user.login))
+	else:
+		yield utils.notify(_("User {0} is no more proxie of {1}'s calendar").format(
+													proxy.login, group.name))
 
 	yield utils.format_RPC_JS('remove_instance',
 								'readers_proxy' if mode=='read' else 'writers_proxy',

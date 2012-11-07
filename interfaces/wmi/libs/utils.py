@@ -290,6 +290,12 @@ def dynamic_users_tabs():
 	from licorn.interfaces.wmi.app import wmi_event_app
 
 	return wmi_event_app.dynamic_users_tab
+def dynamic_groups_tabs():
+	""" This is a Jinja2 global function. """
+
+	from licorn.interfaces.wmi.app import wmi_event_app
+
+	return wmi_event_app.dynamic_groups_tab
 def dyndata_merge(data, rendered_data):
 	""" A real-example: take `statuses` from `system/index_main.html` and
 		merge rendered strings from dynamic_status() functions coming from

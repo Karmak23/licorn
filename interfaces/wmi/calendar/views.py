@@ -73,27 +73,33 @@ def home(request):
 
 	return render(request, 'calendar/index.html', { 'calendars' : calendars })
 
-def action(request, uid, action, value, option):
+def action(request, obj_id, action, value, option):
 
-	user           = LMC.users.guess_one(uid)
-	user_principal = principalForPrincipalID('users:'+user.login)
+	if 'users' in request.META['PATH_INFO']:
+		obj       = LMC.users.guess_one(obj_id)
+		principal = principalForPrincipalID('users:'+obj.login)
+		event_kwargs = { 'user' : obj }
+	else:
+		obj       = LMC.groups.guess_one(obj_id)
+		principal = principalForPrincipalID('resources:resource_'+obj.name)
+		event_kwargs = { 'group' : obj }
 
-	nu       = value
-	new_user = LMC.users.guess_one(nu)
+
+	new_user = LMC.users.guess_one(value)
 
 	if action == 'add':
 		if option == 'read':
-			action_addProxy(user_principal, 'read', ('users:'+new_user.login))
+			action_addProxy(principal, 'read', ('users:'+new_user.login))
 		elif option == 'write':
-			action_addProxy(user_principal, 'write', ('users:'+new_user.login))
+			action_addProxy(principal, 'write', ('users:'+new_user.login))
 
-		LicornEvent('calendar_add_proxie', user=user, user_proxy=new_user,
-				proxy_type=option).emit()
+		LicornEvent('calendar_add_proxie', user_proxy=new_user,
+				proxy_type=option, **event_kwargs).emit()
 
 	elif action == 'del':
-		action_removeProxy(user_principal, 'users:'+new_user.login)
-		LicornEvent('calendar_del_proxie', user=user, user_proxy=new_user,
-			proxy_type=option).emit()
+		action_removeProxy(principal, 'users:'+new_user.login)
+		LicornEvent('calendar_del_proxie', user_proxy=new_user,
+			proxy_type=option, **event_kwargs).emit()
 
 	return HttpResponse('OK')
 

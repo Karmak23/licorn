@@ -384,18 +384,60 @@ def get_group_template(request, mode, groups):
 			}
 		)
 
-	# we need to sort the form_blocks dict to display headers in order
-	sorted_blocks = OrderedDict({})
-	form_blocks = get_group_form_blocks(request)
-	for k in sorted(form_blocks.iterkeys()):
-		sorted_blocks.update({ k: form_blocks[k]})
+	
+	# TABs 
+
+	tabs = []
+	tabs.append({
+		'id' : 'general', 
+		'title' : _(u'General information'), 
+		'content': generate_tab_content(
+			'general', 
+			render_to_string('/groups/parts/general_information.html', { 'form' : GroupForm(mode, groups[0]) }),
+			active=True), 
+		'default': True })
+
+	tabs.append({
+		'id' : 'std_users', 
+		'title' : _(u'Users'), 
+		'content': generate_group_tab_content(mode, {
+			'list_name'    : 'std_users',
+			'list_content' : ''.join([render_to_string('/groups/parts/user_membership.html', {
+				'groups' : groups,
+				'user'   : u
+				}) for u in pyutils.alphanum_sort(LMC.users.select(filters.STANDARD), key='login')])
+		}), 
+		'default': False })
+	if request.user.is_superuser:
+		tabs.append({
+			'id' : 'sys_users',
+			'title' : _(u'System users'), 
+			'content': generate_group_tab_content(mode, {
+				'list_name'    : 'sys_users',
+				'list_content' : ''.join([render_to_string('/groups/parts/user_membership.html', {
+					'groups' : groups,
+					'user'   : u
+					}) for u in pyutils.alphanum_sort(LMC.users.select(filters.SYSTEM), key= 'login')])
+				}), 
+			'default': False })
+
+	# do not forget extensions' tabs !
+	new_groups_tabs = utils.dynamic_groups_tabs()
+	for key, value in new_groups_tabs.iteritems():
+		for tab in value(groups, mode):
+			tabs.append({'id' : tab['id'], 'title' : tab['title'], 'content': tab['content'], 'default': False })
+
+
+	# generate tabs html
+	tabs_html = generate_tab_headers(tabs)  + "<div class='tab-content'>" + ' '.join([ tab['content'] for tab in tabs ]) + '</div>'
+
+
 
 	_dict.update({
 				'mode'    	  : mode,
 				'title'       : _("Massive edit"),
 				'form'        : GroupForm(mode, groups[0]),
-				'users_lists' : users_lists,
-				'form_blocks' : sorted_blocks
+				'tabs'        : tabs_html
 			})
 	if mode == 'edit':
 		_dict.update({"group" : groups[0] })
@@ -424,3 +466,20 @@ def get_group_template(request, mode, groups):
 
 def hotkeys_help(request):
 	return render(request, '/groups/parts/hotkeys_help.html')
+
+def generate_tab_content(tid, content, active=False):
+	return '<div class="tab-pane {0}" id="{1}" style="overflow:hidden;">{2}</div>'.format(
+		'active' if active else '', tid, content)
+def generate_tab_headers(tabs):
+	return render_to_string('/users/parts/tabs_headers.html', {
+		'tabs' : tabs
+		})
+def generate_group_tab_content(mode, groups_tab_content):
+
+	content=render_to_string('/users/parts/groups_list_content.html', {
+		'list':groups_tab_content,
+		'mode':mode
+		})
+
+	return generate_tab_content(groups_tab_content['list_name'], content)
+

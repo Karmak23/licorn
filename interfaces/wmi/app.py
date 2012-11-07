@@ -430,6 +430,7 @@ class WmiEventApplication(ObjectSingleton):
 		self.dynamic_statuses  = {}
 		self.dynamic_infos     = {}
 		self.dynamic_users_tab = {}
+		self.dynamic_groups_tab = {}
 
 		for entry in os.listdir(dirname):
 			# If is has 'views' and 'urls', we consider it a django app;
@@ -471,6 +472,9 @@ class WmiEventApplication(ObjectSingleton):
 
 					if hasattr(module, 'dynamic_users_tab'):
 						self.dynamic_users_tab[entry] = module.dynamic_users_tab
+
+					if hasattr(module, 'dynamic_groups_tab'):
+						self.dynamic_groups_tab[entry] = module.dynamic_groups_tab
 
 			if os.path.exists(os.path.join(dirname, entry, 'event_handlers.py')):
 

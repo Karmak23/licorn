@@ -18,22 +18,12 @@
 
 {%- block list_filters -%}
 	<span class="btn-group" data-toggle="buttons-checkbox">
-		{% if request.user.is_superuser %}
-			<button id='filter_standart' class="btn filter_item" data-filter='standard'>
-				<i class="icon-map-marker" title="{{ _('Standard') }}"></i>
-			</button>
-			<button id='filter_system' class="btn filter_item" data-filter='system'>
-				<i class="icon-wrench" title="{{ _('Systems') }}"></i>
-			</button>
-			<button id='filter_restricted' class="btn filter_item" data-filter='restricted'>
-				<i class="icon-warning-sign" title="{{ _('Restricted') }}"></i>
-			</button>
-		{% elif request.user.is_staff %}
-			<!--<button id='filter_standart' class="btn filter_item" data-filter='standard'>
-				<i class="icon-map-marker" title="{{ _('Standard') }}"></i>
-			</button>-->
-		{% endif %}
-
+		<button id='filter_read' class="btn filter_item" data-filter='read'>
+			<i class="icon-eye-open" title="{{ _('Reader') }}"></i>
+		</button>
+		<button id='filter_write' class="btn filter_item" data-filter='write'>
+			<i class="icon-calendar" title="{{ _('Writer') }}"></i>
+		</button>
 	</span>
 {%- endblock -%}
 
@@ -57,10 +47,6 @@
 			// setup the list
 			setup_list('calendars');
 
-			$('.copy_url').click(function() {
-				console.log('click')
-			})
-
 			text = $('<span></span>')
 
 			$('.copy_url').clickover({
@@ -68,13 +54,9 @@
 				placement : 'bottom',
 				template: '<div class="popover my_popover"><div class="arrow"></div><div class="popover-inner"><div class="popover-content" ><p></p></div></div></div>',
 					}).click(function() {
-						fnSelect(text)
-						
+						//console.log('HERE', $('.popover-content:visible').last().find('span'))
+						fnSelect($('.popover-content:visible').last().find('span'))
 					});
-
-
-					
-
 
 		});
 
@@ -91,45 +73,12 @@
 			}
 		}
 
-		function selectText(element, el) {
-		    var doc = document
-		    if (el == null) {
-		    	var text = doc.getElementById(element)
-		    }
-		    else {
-		    	var text = el
-		    }
-		    var ange, selection
-		    ;    
-		    if (doc.body.createTextRange) { //ms
-		        range = doc.body.createTextRange();
-		        range.moveToElementText(text);
-		        range.select();
-		    } else if (window.getSelection) { //all others
-		        selection = window.getSelection();        
-		        range = doc.createRange();
-		        range.selectNodeContents(text);
-		        selection.removeAllRanges();
-		        selection.addRange(range);
-		    }
-		}
 
 		function func_doubleclick_row(td) {
 			// what happens when a row has been double clicked,
 			// show the edit form.
 
-			if (! $(td).hasClass('no_double_click')) {
-
-				uid = td.data('id')
-
-				if (uid == null) {
-					uid = td.parent('.licorn_row').data('id')
-				}
-
-				$.get('/users/edit/'+uid, function(modal_html) {
-					$("#modal").html(modal_html).modal()
-				})
-			}
+			return false;
 		}
 
 		function get_list_column() {
@@ -137,7 +86,7 @@
 		}
 
 		// filters used to filter the table
-		var filters = { 'standard' : true, 'system': true, 'restricted': false }
+		var filters = { 'read' : true, 'write': true }
 		
 	</script>
 {%- endblock -%}

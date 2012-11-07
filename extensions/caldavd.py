@@ -874,11 +874,19 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 				if g.is_guest or g.is_responsible:
 					std_group = g.standard_group
 				else:
-					stg_group = g
+					std_group = g
+
+				if g.is_guest:
+					option = "read"
+				else:
+					option = "write"
 
 				# find the resource, and remove proxy
 				resource_principal = principalForPrincipalID('resources:resource_'+std_group.name)
 				action_removeProxy(resource_principal, ('users:'+user.login))
+
+				LicornEvent('calendar_del_proxie', user_proxy=new_user, group=group,
+					proxy_type=option).emit()
 
 
 				logging.info('{0}: deleted proxy for user {1} on resource {2}'.format(
@@ -1071,6 +1079,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					if user.login not in read_proxies:
 						action_addProxy(group_resource_principal,
 													'read', ('users:'+user.login))
+						LicornEvent('calendar_add_proxie', group=group, user_proxy=user,
+								proxy_type="read").emit()
 					else:
 						logging.info('{0}: user {1} already a read proxy of ressource {2}'.format(
 							stylize(ST_NAME, self.name), stylize(ST_PATH, 
@@ -1080,6 +1090,9 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 					if user.login not in write_proxies:
 						action_addProxy(group_resource_principal,
 														'write', ('users:'+user.login))
+
+						LicornEvent('calendar_add_proxie', group=group, user_proxy=user,
+								proxy_type="write").emit()
 					else:
 						logging.info('{0}: user {1} already a write proxy of ressource {2}'.format(
 							stylize(ST_NAME, self.name), stylize(ST_PATH, 
@@ -1121,10 +1134,17 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			if group.is_guest or group.is_responsible:
 				std_group = group.standard_group
 			else:
-				stg_group = group
+				std_group = group
+
+			if group.is_guest:
+				option = "read"
+			else:
+				option = "write"
 
 			resource_principal = principalForPrincipalID('resources:resource_'+std_group.name)
 			action_removeProxy(resource_principal, ('users:'+user.login))
+			LicornEvent('calendar_del_proxie', group=group, user_proxy=user,
+				proxy_type=option).emit()
 
 			return True
 		except Exception, e:

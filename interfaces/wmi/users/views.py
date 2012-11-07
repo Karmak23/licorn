@@ -480,7 +480,10 @@ def get_user_template(request, mode, users):
 		'id' : 'general', 
 		'sort': 1, 
 		'title' : _(u'General information'), 
-		'content': generate_tab_content('general', '/users/parts/general_information.html', active=True), 
+		'content': generate_tab_content(
+			'general', 
+			render_to_string('/users/parts/general_information.html', { 'form' : UserForm(mode, users[0]), }),
+			active=True), 
 		'default': True })
 
 	tabs.append({
@@ -544,8 +547,8 @@ def get_user_template(request, mode, users):
 
 	_dict.update({
 				'mode'    	  : mode,
+				'tabs'        : tabs_html,
 				'form'        : UserForm(mode, users[0]),
-				'tabs'        : tabs_html
 				#'groups_lists' : groups_lists,
 				#'form_blocks' : sorted_blocks
 			})

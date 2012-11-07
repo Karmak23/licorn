@@ -1,0 +1,7 @@
+
+
+{% extends 'calendar/parts/calendar_content.html' %}
+
+{% block calendar_tab_line %}
+	{{ _("The calendar of group <strong>{0}</strong> is readable/writable by:").format(group.name) }}
+{% endblock %}

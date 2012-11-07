@@ -1,0 +1,34 @@
+<div class="control-group"  style="margin-bottom:0px">
+			{% for field in form.visible_fields() %}
+			<div style="min-height:40px;">
+				<label class="control-label" for="id_{{ field.name }}">
+					{{ field.label }}
+					{%-if field.field.required -%}
+						&nbsp;<span class="required_field">*</span>
+					{%- endif -%}
+				</label>
+				<div class="controls" style="vertical-align:center;">
+					{{ field }}
+
+					{%-if field.field.help_text -%}
+						<p class="help-block">{{ field.field.help_text }}</p>
+					{%- endif -%}
+				</div>
+			</div>
+			{% endfor %}
+			{% if mode == 'edit' %}
+				<div class="row-fluid">
+					<div class="span6">
+						{% if user.locked %}
+							<a href="#" class="btn btn-danger btn-block" id="lock_user_button" data-id='{{user.uid}}'>{{ _('Unlock user') }}</a>
+						{% else %}
+							<a href="#" class="btn btn-danger btn-block" id="unlock_user_button" data-id='{{user.uid}}'>{{ _('Lock user') }}</a>
+						{% endif %}
+					</div>
+					<div class="span6">
+						<a href="#" class="btn btn-danger btn-block" id="delete_user_button" data-id='{{user.uid}}'>{{ _('Delete user') }}</a>
+					</div>
+				</div>
+				
+			{% endif %}
+		</div>

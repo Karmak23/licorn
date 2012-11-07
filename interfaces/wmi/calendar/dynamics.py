@@ -15,8 +15,12 @@ from licorn.core                import LMC
 from licorn.interfaces.wmi.libs import utils
 
 from licorn.foundations.constants import filters
+from licorn.interfaces.wmi.groups.views import generate_tab_content
 
 from calendarserver.tools.principals   import principalForPrincipalID, getProxies
+
+
+
 
 @cache.cached(cache.five_minutes)
 def enabled():
@@ -38,11 +42,15 @@ def get_users_principals(do_not_include):
 
 	print ">>get_users_principals",  do_not_include
 
+	up = []
+
 	for u in LMC.users.select(filters.STANDARD):
 		if u.login not in do_not_include:
 			p = principalForPrincipalID('users:'+u.login)
 			if p:
-				yield p
+				up.append(p)
+
+	return up
 
 def dynamic_users_tab(users, mode):
 
@@ -74,11 +82,12 @@ def dynamic_users_tab(users, mode):
 		for t in [ str(p).split(')')[1] for p in write_proxies ]:
 			do_not_include.append(t)
 		
-		content = render_to_string('/calendar/parts/calendar_content.html', {
+		content = render_to_string('/calendar/parts/user_calendar_content.html', {
 				'user' : user,
 				'read_proxies' : read_proxies,
 				'write_proxies' : write_proxies,
 				'users_principals' : get_users_principals(do_not_include=do_not_include),
+				'base_url_action': "/calendar/users/"+str(user.uidNumber),
 				})
 		
 
@@ -86,4 +95,41 @@ def dynamic_users_tab(users, mode):
 			'content': generate_tab_content('calendar', content)}]
 
 	else:
-		return None
+		return []
+
+
+def dynamic_groups_tab(groups, mode):
+
+	if mode not in ('new', "massiv"):
+
+		group = groups[0]
+	
+		# get group principal 
+		principal_group = principalForPrincipalID('resources:resource_'+group.name)
+		# get its proxies
+		proxies = utils.my_deferred_blocker(getProxies(principal_group))
+
+		read_proxies = [ principalForPrincipalID(p) for p in proxies[0] ]
+		write_proxies = [ principalForPrincipalID(p) for p in proxies[1] ]
+
+		do_not_include = [ ]
+		for t in [ str(p).split(')')[1] for p in read_proxies ]:
+			do_not_include.append(t)
+
+		for t in [ str(p).split(')')[1] for p in write_proxies ]:
+			do_not_include.append(t)
+		
+		content = render_to_string('/calendar/parts/group_calendar_content.html', {
+				'group' : group,
+				'read_proxies' : read_proxies,
+				'write_proxies' : write_proxies,
+				'users_principals' : get_users_principals(do_not_include=do_not_include),
+				'base_url_action': "/calendar/groups/"+str(group.gidNumber),
+				})
+		
+
+		return [{ 'id' : 'calendar', 'sort':10, 'title': 'Calendar options',
+			'content': generate_tab_content('calendar', content)}]
+
+	else:
+		return []

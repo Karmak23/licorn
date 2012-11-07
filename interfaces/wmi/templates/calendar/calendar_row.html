@@ -17,9 +17,9 @@
 
 {%- macro get_proxy_type_img(type) -%}
 	{% if type == "read" %}
-		{{ _('Reader') }}
+		<i class="icon-eye-open" title="{{ _('Reader') }}"></i>
 	{% else %}
-		{{ _('Writer') }}
+		<i class="icon-calendar" title="{{ _('Writer') }}"></i>
 	{% endif %}
 {%- endmacro -%}
 
@@ -42,59 +42,15 @@
 	{% endif %}
 {%- endmacro -%}
 
-{%- macro get_user_filter_class(user) -%}
-	{% if user.is_system_restricted %}
-		filter_restricted
-	{% elif user.is_system %}
-		filter_system
-	{% elif user.is_standard %}
-		filter_standard
+{%- macro get_calendar_filter_class(calendar) -%}
+	{% if calendar.proxy_type == "read" %}
+		filter_read
+	{% else %}
+		filter_write
 	{% endif %}
 {%- endmacro -%}
 
-
-{%- macro get_user_profile(user) -%}
-	{% if user.is_system %}
-
-	{% elif user.is_standard %}
-		{%- if user.profile -%}
-			{{ user.profile.name }}
-		{%- else -%}
-			{{ _("No profile") }}
-		{%- endif -%}
-	{%- endif -%}
-{%- endmacro -%}
-
-
-
-
-{%- macro get_user_backend_img(user) -%}
-
-	{%- if user.backend.name == 'openldap' -%}
-		<i title="{{ _('Openldap backend') }}" class="icon-tasks"></i>
-	{%- else -%}
-		<i title="{{ _('Shadow backend') }}" class="icon-hdd"></i>
-	{%- endif -%}
-{%- endmacro -%}
-
-
-{%- macro get_user_lock_img(user) -%}
-
-	{%- if user.locked -%}
-		{%- set message = _('Unlock user account {0}').format(login) -%}
-		{%- set icon    = "locked.png" -%}
-
-	{%- else -%}
-		{%- set message = _('Lock user account {0}').format(login) -%}
-		{%- set icon    = "locked_box.png" -%}
-
-	{%- endif -%}
-
-	<img src="/media/images/24x24/{{icon}}" title="{{message}}" alt='lock/unlock user'>
-{%- endmacro -%}
-
-
-<tr class='licorn_row {{ get_user_filter_class(user) }}' data-id="{{ user.uidNumber }}" id='users_{{ user.uidNumber }}'>
+<tr class='licorn_row {{ get_calendar_filter_class(calendar) }}' data-id="{{ calendar.name }}" id='calendars_{{ calendar.name }}'>
 	<!-- type -->
 	<td class='centered'>
 		{{ get_principal_type_img(calendar.principal_type) }}
@@ -105,7 +61,7 @@
 	</td>
 	<!-- name -->
 	<td width="12%">
-		<span class="nowrap">{{ calendar.name|replace('_','-') }}</span>
+		<span class="nowrap">{{ calendar.name }}</span>
 	</td>
 	<!-- desc -->
 	<td width="12%">
