@@ -1044,8 +1044,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 		group = kwargs.pop('group')
 		user  = kwargs.pop('user')
 
-		print ">> group_post_add", group.name, user.login
-
 		# we don't deal with system accounts, don't bother us with that.
 		if user.is_system:
 			return True
@@ -1054,6 +1052,10 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			std_group = group.standard_group
 		else:
 			std_group = group
+
+		# If group has just been added into the system, 
+		# we need to reload calendarserver environement in order to find the ressource
+		self.setup_calendarserver_environement()
 
 		group_resource_principal = principalForPrincipalID(
 										'resources:resource_'+std_group.name)
