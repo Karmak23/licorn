@@ -522,12 +522,12 @@ def get_user_template(request, mode, users):
 			'default': False })
 
 	# do not forget extensions' tabs !
-	for ext in LMC.extensions:
-		if 'users' in ext.controllers_compat and hasattr(ext, '_wmi_user_tab'):
-			for tab in ext._wmi_user_tab(users, mode):
-				print "éééé", tab
-				tabs.append({'id' : tab['id'], 'sort': tab['sort'],
-					 'title' : tab['title'], 'content': tab['content'], 'default': False })
+
+	new_users_tabs = utils.dynamic_users_tabs()
+	for key, value in new_users_tabs.iteritems():
+		for tab in value(users, mode):
+			tabs.append({'id' : tab['id'], 'sort': tab['sort'],
+				 'title' : tab['title'], 'content': tab['content'], 'default': False })
 
 
 	# generate tabs html

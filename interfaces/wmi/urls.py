@@ -49,8 +49,5 @@ urlpatterns = patterns('',
 for base_url, module_name in dynamic_urlpatterns(os.path.dirname(__file__)):
 	urlpatterns += patterns('', (base_url, include('wmi.%s.urls' % module_name)))
 
-for ext in LMC.extensions:
-	if ext.enabled and hasattr(ext, '_wmi_urls'):
-		for url_regex, view in ext._wmi_urls():
-			urlpatterns += patterns('', (url_regex, view))
+
 

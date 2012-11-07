@@ -425,10 +425,11 @@ class WmiEventApplication(ObjectSingleton):
 
 		dirname = os.path.dirname(__file__)
 
-		self.push_permissions = {}
-		self.dynamic_sidebars = {}
-		self.dynamic_statuses = {}
-		self.dynamic_infos    = {}
+		self.push_permissions  = {}
+		self.dynamic_sidebars  = {}
+		self.dynamic_statuses  = {}
+		self.dynamic_infos     = {}
+		self.dynamic_users_tab = {}
 
 		for entry in os.listdir(dirname):
 			# If is has 'views' and 'urls', we consider it a django app;
@@ -442,7 +443,7 @@ class WmiEventApplication(ObjectSingleton):
 					self.push_permissions.update(module.push_permissions)
 
 					self.django_apps.append(entry)
-
+					
 				except AttributeError:
 					logging.warning(_(u'module {0} does not include a {1} dict '
 						u'in its {2} file!').format(stylize(ST_NAME, entry),
@@ -468,10 +469,8 @@ class WmiEventApplication(ObjectSingleton):
 					if hasattr(module, 'dynamic_infos'):
 						self.dynamic_infos[entry] = module.dynamic_infos
 
-			# check dynamic sidebar in extensions
-			for ext in LMC.extensions:
-				if ext.enabled and hasattr(ext, '_wmi_dynamic_sidebar'):
-					self.dynamic_sidebars[ext.name] = ext._wmi_dynamic_sidebar
+					if hasattr(module, 'dynamic_users_tab'):
+						self.dynamic_users_tab[entry] = module.dynamic_users_tab
 
 			if os.path.exists(os.path.join(dirname, entry, 'event_handlers.py')):
 
@@ -485,26 +484,6 @@ class WmiEventApplication(ObjectSingleton):
 							self.handlers[event_name].append(value)
 						else:
 							self.handlers[event_name] = [ value ]
-
-				for ext in LMC.extensions:
-					if entry in ext.controllers_compat and hasattr(ext, '_wmi_{0}_event_handlers'.format(entry)):
-						print "{0} has an event dict for {1}".format(ext, entry)
-
-
-
-						for event_name, value in getattr(ext, '_wmi_{0}_event_handlers'.format(entry)).iteritems():
-							if event_name.endswith('_handler'):
-								event_name = event_name[0:-8]
-								print ">>>> ", event_name
-								if event_name in self.handlers:
-									self.handlers[event_name].append(value)
-								else:
-									self.handlers[event_name] = [ value ]
-
-					else:
-						print "{0} has NO dict".format(entry)
-
-
 
 		assert ltrace_var(TRACE_DJANGO, self.push_permissions)
 

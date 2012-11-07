@@ -1,0 +1,169 @@
+<span class="row-fluid">
+	<span class="span12">
+		<h4>Permissions</h4>
+	</span>
+	<span class="span12">
+		{{ _("The calendar of user <strong>{0}</strong> is readable/writable by:").format(user.login) }}
+	</span>
+	<div class="row-fluid">
+		<span class="span6">
+			<table class="table read_proxies" id="model_readers_proxy_table" style="margin-top:0 !important;">
+				<thead>
+					<th>{{ _('Reader(s)') }}</th>
+					<th></th>
+				</thead>
+				<tbody>
+					{% if read_proxies|length == 0 %}
+						<tr class="no-data"><td><em>{{ _('No <strong>read</strong> proxy for the moment') }}</em></td></tr>
+					{% else %}
+						{% for rp in read_proxies %}
+							<tr class="proxy" data-login='{{ rp.record.shortNames[0] }}' data-proxy-type='read' id="readers_proxy_{{ rp.record.shortNames[0] }}">
+								<td>{{ rp }}</td>
+								<td class='centered'><img src="/media/images/14x14/mass_del.png"></td>
+							</tr>
+						{% endfor %}
+					{% endif %}
+				</tbody>
+			</table>
+		</span>
+		<span class="span6">
+			<table class="table write_proxies" id="model_writers_proxy_table" style="margin-top:0 !important;">
+				<thead>
+					<th>{{ _('Writer(s)') }}</th>
+					<th></th>
+				</thead>
+				<tbody>
+					{% if write_proxies|length == 0 %}
+						<tr class="no-data">
+							<td><em>{{ _('No <strong>write</strong> proxy for the moment') }}</em></td>
+						</tr>
+					{% else %}
+						{% for wp in write_proxies %}
+						<tr class='proxy' data-login='{{ wp.record.shortNames[0] }}' data-proxy-type='write' id="writers_proxy_{{ wp.record.shortNames[0] }}">
+							<td>{{ wp }}</td>
+							<td class='centered'><img src="/media/images/14x14/mass_del.png"></td>
+						</tr>
+						{% endfor %}
+					{% endif %}
+				</tbody>
+			</table>
+		</span>
+	</div>
+
+	<span class="span12">
+			<h4>Manage permissions</h4>
+		</span>
+	<div class="row-fluid">
+		<span class="span12">
+			<table class="table avalaible_proxies" id="model_avalaible_proxies_table" style="margin-top:0 !important;">
+				<thead>
+					<th>{{ _('Add a reader/writer on the calendar') }}</th>
+					<th></th>
+				</thead>
+				<tbody>
+					{% for up in users_principals %}
+						<tr class="proxy" id="avalaible_proxies_{{ up.record.shortNames[0] }}">
+							<td>{{ up }}</td>
+							<td class='centered'>
+								<img src="/media/images/14x14/mass_add.png">
+								<div class="popover">
+									<div class="row-fluid">
+										<div class="span6">
+											<span class="btn btn-primary" onClick='add_proxy("{{ up.record.shortNames[0] }}", "read");' data-dismiss='clickover'>{{ _('Reader') }}</span>
+										</div>
+										<div class="span6">
+											<span class="btn btn-success" onClick='add_proxy("{{ up.record.shortNames[0] }}", "write");' data-dismiss='clickover'>{{ _('Writer') }}</span>
+										</div>
+									</div>
+								</div>
+							</td>
+						</tr>
+					{% endfor %}
+				</tobody>
+			</table>
+		</span>
+	</div>
+<span>
+<script language="javascript" type="text/javascript">
+
+	$(document).ready(function() {
+		$.each($('.read_proxies tr.proxy'), function() {
+			setup_img_anim($(this));
+			init_delete_click($(this).find('img'));
+		})
+		$.each($('.write_proxies tr.proxy'), function() {
+			setup_img_anim($(this));
+			init_delete_click($(this).find('img'));
+		})
+		$.each($('.avalaible_proxies tr.proxy'), function() {
+			setup_img_anim($(this))
+			init_add_click($(this).find('img'));
+		})
+	});
+
+
+	function setup_img_anim(tr) {
+		tr.find('img').hide();
+		tr.hover(function() {
+			//in
+			$(this).find('img').show();
+		}, function() {
+			//out
+			$(this).find('img').hide();
+		})
+	}
+
+	function init_delete_click(img) {
+		img.click(function() {
+			row = $(this).parent().parent()
+			url_to_get = '/calendar/users/{{ user.uidNumber }}/del/' + row.data('login') + '/' + row.data('proxy-type')
+			console.log(url_to_get)
+			$.get(url_to_get);
+		})
+	}
+
+	function init_add_click(img) {
+		/*img.click(function() {
+			$.get('/users/calendar/'+{{ user.uidNumber }}+'/add/' + $(this).parent().parent().data('login'));
+		})*/
+		$(img).clickover({
+				title : 'relationship',
+				content  : function() { return $(this).parent().find('.popover').html(); },
+				html: true,
+				placement : 'top',
+				template: '<div class="popover my_popover"><div class="arrow"></div><div class="popover-inner"><div class="popover-content"><p></p></div></div></div>'
+
+			})
+	}
+
+	function add_proxy(who, type) {
+		$.get('/calendar/users/'+{{ user.uidNumber }}+'/add/' + who + '/' + type);
+	}
+	function del_proxy(who, type) {
+		$.get('/calendar/users/'+{{ user.uidNumber }}+'/del/' + who + '/' + type);
+	}
+
+	function setup_calendar_row(list_name, row, old) {
+		setup_img_anim(row)
+		init_delete_click($(row).find('img'))
+		row.show()
+	}
+	function setup_avalaible_proxies(list_name, row, old) {
+		console.log("setup_avalaible_proxies")
+		// the clickover content
+		html = '<div class="popover">'
+		html += '	<div class="row-fluid">'
+		html += '		<div class="span6">'
+		html += '			<span class="btn btn-primary" onClick="add_proxy(\''+row.data('login')+'\', \'read\');" data-dismiss="clickover">{{ _("Reader") }}</span>'
+		html += '		</div>'
+		html += '		<div class="span6">'
+		html += '			<span class="btn btn-success" onClick="add_proxy(\''+row.data('login')+'\', \'write\');" data-dismiss="clickover">{{ _("Writer") }}</span>'
+		html += '		</div>'
+		html += '	</div>'
+		html += '</div>'
+		$(row).find('img').after(html)
+		setup_img_anim($(row))
+		init_add_click($(row).find('img'));
+		row.show()
+	}
+</script>

@@ -23,6 +23,10 @@ from licorn.foundations.styles      import *
 from licorn.foundations.base        import ObjectSingleton
 from licorn.core                    import LMC, version
 
+
+from Queue import Queue
+
+
 # local imports
 from decorators                     import *
 
@@ -280,6 +284,12 @@ def dyninfos():
 	from licorn.interfaces.wmi.app import wmi_event_app
 
 	return wmi_event_app.dynamic_infos
+def dynamic_users_tabs():
+	""" This is a Jinja2 global function. """
+
+	from licorn.interfaces.wmi.app import wmi_event_app
+
+	return wmi_event_app.dynamic_users_tab
 def dyndata_merge(data, rendered_data):
 	""" A real-example: take `statuses` from `system/index_main.html` and
 		merge rendered strings from dynamic_status() functions coming from
@@ -307,3 +317,9 @@ def version_html():
 	return u'<p class="licorn_version">{0}</p>'.format(
 				_(u'Licorn® version {0}.').format(version))
 
+
+
+def my_deferred_blocker(d, timeout=None):
+    q = Queue()
+    d.addCallback(q.put)
+    return q.get()

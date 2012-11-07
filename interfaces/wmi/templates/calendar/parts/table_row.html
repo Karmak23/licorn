@@ -1,0 +1,16 @@
+
+{% if avalaible_list %}:
+	{%- set list_id = 'avalaible_proxies' -%}
+	{%- set proxy_type = "" -%}
+	{%- set img = "mass_add.png" -%}
+{% else %}
+	{%- set list_id = 'readers_proxy' if mode=='read' else 'writers_proxy' -%}
+	{%- set proxy_type = "data-proxy-type='{0}'".format(mode) -%}
+	{%- set img = "mass_del.png" -%}
+{% endif %}
+
+
+<tr class="proxy" data-login='{{ proxy.login }}' id="{{ list_id }}_{{ proxy.login }}" {{ proxy_type }} >
+	<td>(users){{proxy.login}}</td>
+	<td class='centered'><img src="/media/images/14x14/{{ img }}"></td>
+</tr>
