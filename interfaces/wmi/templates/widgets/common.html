@@ -271,3 +271,34 @@
 	</div>
 </div>
 {%- endmacro %}
+
+{%- macro updates_status(machine, big=False) -%}
+	{%- if machine.updates_available() -%}
+		{%-if machine.security_updates() %}
+			{% if big %}
+				{%- set message = _('Security updates available.') -%}
+			{% else %}
+				{%- set message = _('Security updates available. Click to install.') -%}
+			{% endif %}
+			{%- set icon = 'software-update-urgent.png' -%}
+
+		{%- else -%}
+			{% if big %}
+				{%- set message = _('Software updates available.') -%}
+			{% else %}
+				{%- set message = _('Software updates available. Click to install.') -%}
+			{% endif %}
+			{%- set icon = 'software-update-available.png' -%}
+
+		{%- endif -%}
+
+		{% if big %}
+			{%- set image_size = '48x48' -%}
+		{% else %}
+			{%- set image_size = "16x16" -%}
+		{% endif %}
+
+		&nbsp;<img src="/media/images/{{ image_size }}/{{ icon }}"
+			title="{{ message }}" alt="{{ message }}" data-mid="{{ machine.mid }}"/>
+	{%- endif -%}
+{%- endmacro -%}

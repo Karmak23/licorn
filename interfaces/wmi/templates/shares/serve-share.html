@@ -28,42 +28,33 @@
 				<a id="copy_url" href="#" class="btn btn-success">{{ share.uri }}</a>
 				<div id="copy_message_success" class="hidden">{{ _('Successfully copied to clipboard!') }}</div>
 				<script>
-					function success_message() {
-						setTimeout(function(){
-							$('#copy_message_success').slideDown('fast');
-							setTimeout(function(){
-								$('#copy_message_success').slideUp('slow');
-							}, 2000);
-						}, 150);
+					
+					$('a#copy_url').clickover({
+						title : "{{ _('Share link') }}",
+						content : '<center><span id="uri_select">{{ share.uri }}</span></center>',
+						placement : 'bottom',
+						template: '<div class="popover my_popover"><div class="arrow"></div><div class="popover-inner"><div class="popover-content"><p></p></div></div></div>'
+							}).click(function() {
+								selectText("uri_select")
+							});
+
+					function selectText(element) {
+					    var doc = document
+					        , text = doc.getElementById(element)
+					        , range, selection
+					    ;    
+					    if (doc.body.createTextRange) { //ms
+					        range = doc.body.createTextRange();
+					        range.moveToElementText(text);
+					        range.select();
+					    } else if (window.getSelection) { //all others
+					        selection = window.getSelection();        
+					        range = doc.createRange();
+					        range.selectNodeContents(text);
+					        selection.removeAllRanges();
+					        selection.addRange(range);
+					    }
 					}
-
-					function cleanup_zclip() {
-						$("#copy_message_success").focus();
-
-						setTimeout(function() {
-							// remove zclip to restore normal focus,
-							// else flash grabs it eternally.
-							$('a#copy_url').zclip('remove');
-						}, 150);
-
-						// restore zclip afterwards for the copy
-						// mechanism to continue working.
-						setTimeout(setup_zclip, 200);
-
-						return true;
-					}
-
-					function setup_zclip(){
-
-						$('a#copy_url').zclip({
-							path:'/media/images/ZeroClipboard.swf',
-							copy:$('a#copy_url').text(),
-							beforeCopy: success_message,
-							afterCopy: cleanup_zclip,
-						});
-					}
-
-					setup_zclip();
 				</script>
 		</div>
 	</div>
@@ -138,7 +129,7 @@
 				<tr>
 					<td class="nowrap"><i class="icon-file"></i> <a href="{{
 								url_for('wmi.shares.views.download',
-								args=(share.coreobj.name, share.name, pub_fname))}}" class='download_file'>{{ pub_fname }}</a></td>
+								args=(share.coreobj.name, share.name, pub_fname|urlencode))}}" class='download_file'>{{ pub_fname }}</a></td>
 					<td>{{ bytes_to_human(infos.size) }}</td>
 					<td>{{ format_time_delta(infos.mtime, use_neg=True, long_output=False) }}</td>
 					<td>{{ infos.mimetype }}</td>

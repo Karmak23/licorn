@@ -1178,7 +1178,7 @@ class MachinesController(DictSingleton, CoreController):
 			else:
 				for backend in self.backends:
 					backend.save_Machines()
-	def select(self, filter_string, filter_type=host_status, return_ids=False):
+	def select(self, filter_string, filter_type=host_status, return_ids=False, myself=False):
 		""" Filter machine accounts on different criteria. """
 
 		filtered_machines = []
@@ -1186,7 +1186,11 @@ class MachinesController(DictSingleton, CoreController):
 		assert ltrace(TRACE_MACHINES, '> select(%s)' % filter_string)
 
 		with self.lock:
-			if filter_type == host_status:
+			if myself:
+				for m in self.itervalues():
+					if m.myself:
+						filtered_machines.append(m)
+			elif filter_type == host_status:
 
 				def keep_status(machine, status=None):
 					if machine.status == status \

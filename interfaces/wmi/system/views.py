@@ -132,6 +132,7 @@ def main(request, *args, **kwargs):
 				'avg_loads'             : collectors.avg_loads(),
 				'connected'             : collectors.connected_users(),
 				'sub_content_template'  : 'system/index_sub.html',
+				'machine'               : LMC.machines.select(None, myself=True)[0]
 		})
 
 	else:

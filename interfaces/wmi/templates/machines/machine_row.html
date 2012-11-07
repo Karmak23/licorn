@@ -1,19 +1,5 @@
-{%- macro updates_status(machine) -%}
-	{%- if machine.updates_available() -%}
-		{%-if machine.security_updates() %}
-			{%- set message = _('Security updates available. Click to install.') -%}
-			{%- set icon = 'software-update-urgent.png' -%}
 
-		{%- else -%}
-			{%- set message = _('Software updates available. Click to install.') -%}
-			{%- set icon = 'software-update-available.png' -%}
-
-		{%- endif -%}
-
-		&nbsp;<img src="/media/images/16x16/{{ icon }}"
-			title="{{ message }}" alt="{{ message }}" data-mid="{{ machine.mid }}"/>
-	{%- endif -%}
-{%- endmacro -%}
+{% from 'widgets/common.html' import updates_status %}
 
 {%- macro get_machine_backend_img(machine) -%}
 	{{ machine.backend.name }}
