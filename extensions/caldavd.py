@@ -10,36 +10,41 @@ Licorn extensions: caldavd - http://docs.licorn.org/extensions/caldavd.html
 :license: GNU GPL version 2
 
 """
-# usefull modules import
+
 import os
 import uuid
 import types
 import functools
 
-# licorn imports
+
 from licorn.foundations.styles import *
 from licorn.foundations.ltraces import *
+
+
+from licorn.foundations.events    import LicornEvent
+
+from traceback import print_exc
+import xml.etree.ElementTree as ET
+
 from licorn.foundations import logging, fsapi
 from licorn.foundations import readers, writers, events
 from licorn.foundations.workers import workers
+
 from licorn.foundations.base import ObjectSingleton, LicornConfigObject
 from licorn.foundations.constants import distros, services, svccmds, \
     priorities, filters
+
 from licorn.core import LMC
 from licorn.core.classes import only_if_enabled
-from licorn.extensions import ServiceExtension
-from licorn.foundations.events import LicornEvent
 
-# calendarserver internals
+from licorn.extensions import ServiceExtension
+
 from calendarserver.tools.principals import action_addProxy, getProxies, \
     action_removeProxy, principalForPrincipalID
 from calendarserver.tools.util import getDirectory, loadConfig, setupMemcached
 from twistedcaldav.config import config as caldav_config
 from twistedcaldav.config import ConfigDict
 
-# other imports
-import xml.etree.ElementTree as ET
-from traceback import print_exc
 
 # Directory service constants
 XML_BACKEND = "twistedcaldav.directory.xmlfile.XMLDirectoryService"
@@ -55,31 +60,34 @@ def my_Configdict2xmlEtree(_dict):
     xml_dict = ET.Element('dict')
 
     for k, v in _dict.iteritems():
+        print "<> k/v", k, v
 
         # create the key element, and append it to the dict
         elem = ET.Element('key')
         elem.text = k
         xml_dict.append(elem)
 
+        # Elif because instance(True, Integer) = True
+
         # create the value element depending on type(value)
-        if isinstance(s, types.StringTypes):
+        if isinstance(v, types.StringTypes):
             elem_value = ET.Element('string')
             elem_value.text = v
 
-        if isinstance(v, types.BooleanType):
+        elif isinstance(v, types.BooleanType):
             if v:
                 elem_value = ET.Element('true')
             else:
                 elem_value = ET.Element('false')
 
-        if isinstance(v, types.IntType):
+        elif isinstance(v, types.IntType):
             elem_value = ET.Element('integer')
             elem_value.text = str(v)
 
-        if isinstance(v, types.NoneType):
+        elif isinstance(v, types.NoneType):
             elem_value = ET.Element('string')
 
-        if isinstance(v, ConfigDict) or isinstance(v, types.DictType):
+        elif isinstance(v, ConfigDict) or isinstance(v, types.DictType):
             elem_value = my_Configdict2xmlEtree(v)
 
         xml_dict.append(elem_value)
@@ -157,7 +165,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
         # create default directoryservice config for ldap and xml backends
         self.default_config = LicornConfigObject()
-
         self.default_config.ldap_directory = {
 
             'type': LDAP_BACKEND,
@@ -178,7 +185,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                     'nestedGroupsAttr': '',
                     'membersAttr': 'memberUid'
                 },
-                'uri': '{0}'.format(LMC.backends.openldap.uri),
+                'uri': 'ldap:///',
                 'tlsRequireCert': 'never',
                 'rdnSchema': {
                     'users': {
@@ -200,7 +207,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                     },
                     'guidAttr': 'entryUUID',
 
-                    'base': '{0}'.format(LMC.backends.openldap.base),
+                    'base': 'dc=meta-it,dc=local',
                     'groups': {
                         'emailSuffix': '',
                         'filter': '',
@@ -219,8 +226,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                 'tlsCACertDir': '',
                 'cacheTimeout': 30,
                 'credentials': {
-                    'dn': '{0}'.format(LMC.backends.openldap.rootbinddn),
-                    'password': '{0}'.format(LMC.backends.openldap.secret)
+                    'dn': 'cn=admin,dc=meta-it,dc=local',
+                    'password': 'metasecret'
                 },
                 'tlsCACertFile': '',
                 'authMethod': 'PAM'
@@ -229,7 +236,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
         self.default_config.xml_directory = {
             'type': 'twistedcaldav.directory.xmlfile.XMLDirectoryService',
             'params': {
-                'xmlFile': '{0}'.format(self.paths.accounts)
+                'xmlFile': '/etc/caldavd/accounts.xml'
             }
         }
 
