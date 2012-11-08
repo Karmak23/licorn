@@ -16,7 +16,7 @@
 				</thead>
 				<tbody>
 					{% if read_proxies|length == 0 %}
-						<tr class="no-data"><td><em>{{ _('No <strong>read</strong> proxy for the moment') }}</em></td></tr>
+						<tr class="no-data"><td><em>{{ _('No <strong>reader</strong> for the moment') }}</em></td></tr>
 					{% else %}
 						{% for rp in read_proxies %}
 							<tr class="proxy" data-login='{{ rp.record.shortNames[0] }}' data-proxy-type='read' id="readers_proxy_{{ rp.record.shortNames[0] }}">
@@ -37,7 +37,7 @@
 				<tbody>
 					{% if write_proxies|length == 0 %}
 						<tr class="no-data">
-							<td><em>{{ _('No <strong>write</strong> proxy for the moment') }}</em></td>
+							<td><em>{{ _('No <strong>writer</strong> for the moment') }}</em></td>
 						</tr>
 					{% else %}
 						{% for wp in write_proxies %}
@@ -65,7 +65,7 @@
 				<tbody>
 					{% if users_principals|length == 0 %}
 						<tr class="no-data">
-							<td><em>{{ _('No <strong>avalaible</strong> proxy for the moment') }}</em></td>
+							<td><em>{{ _('No <strong>avalaible</strong> calendar for the moment') }}</em></td>
 						</tr>
 					{% else %}
 						{% for up in users_principals %}

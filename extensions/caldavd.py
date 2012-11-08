@@ -10,38 +10,36 @@ Licorn extensions: caldavd - http://docs.licorn.org/extensions/caldavd.html
 :license: GNU GPL version 2
 
 """
-
+# usefull modules import
 import os
 import uuid
 import types
 import functools
 
-
+# licorn imports
 from licorn.foundations.styles import *
 from licorn.foundations.ltraces import *
-
-from traceback import print_exc
-import xml.etree.ElementTree as ET
-
 from licorn.foundations import logging, fsapi
 from licorn.foundations import readers, writers, events
 from licorn.foundations.workers import workers
-
 from licorn.foundations.base import ObjectSingleton, LicornConfigObject
 from licorn.foundations.constants import distros, services, svccmds, \
     priorities, filters
-
 from licorn.core import LMC
 from licorn.core.classes import only_if_enabled
-
 from licorn.extensions import ServiceExtension
+from licorn.foundations.events import LicornEvent
 
+# calendarserver internals
 from calendarserver.tools.principals import action_addProxy, getProxies, \
     action_removeProxy, principalForPrincipalID
 from calendarserver.tools.util import getDirectory, loadConfig, setupMemcached
 from twistedcaldav.config import config as caldav_config
 from twistedcaldav.config import ConfigDict
 
+# other imports
+import xml.etree.ElementTree as ET
+from traceback import print_exc
 
 # Directory service constants
 XML_BACKEND = "twistedcaldav.directory.xmlfile.XMLDirectoryService"
