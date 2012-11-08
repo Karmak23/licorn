@@ -1,20 +1,17 @@
 
-
-
 {%- extends 'modal.html' -%}
 
-    {%- block title -%}
-	    {%- if mode == 'new' -%}
-	    	<h3>{{ _('New group') }}</h3>
-	    {%- elif mode == 'edit' -%}
-	    	<h3>{{ _('Edit group') }} {{ '<span id="machine_hostname_{1}">{0}</span>'.format(group.name, group.gid) }}</h3>
-	    {%- elif mode == 'massiv' -%}
-	    	<h3>{{ _('Massive group edition') }}</h3>
-	    {%- endif -%}
-    {%- endblock -%}
+{%- block title -%}
+    {%- if mode == 'new' -%}
+    	<h3>{{ _('New group') }}</h3>
+    {%- elif mode == 'edit' -%}
+    	<h3>{{ _('Edit group') }} {{ '<span id="machine_hostname_{1}">{0}</span>'.format(group.name, group.gid) }}</h3>
+    {%- elif mode == 'massiv' -%}
+    	<h3>{{ _('Massive group edition') }}</h3>
+    {%- endif -%}
+{%- endblock -%}
 
-
-  {%- block body -%}
+{%- block body -%}
 
   	{% if form.errors and not form.non_field_errors() -%}
 	    <div class="error_div error_text">
@@ -38,32 +35,30 @@
 
 		{% csrf_token %}
 
-	{{ tabs }}
-
-
+		{{ tabs }}
 
 	</form>
 
 
-  {%- endblock -%}
-  {%- block footer -%}
-  <span class="row-fluid">
+{%- endblock -%}
 
-  	{% if mode == "new" %}
-	  	<div class="span7">
-	    	<input type='checkbox' id='keep_modal_open' style="float:left;">
-	    	<label for='keep_modal_open'>{{ _('Keep the modal open and  remember users relationships.') }}</label>
-	    </div>
-	    <div class="span5">
-	    	<!--<button type="button" id='clear_form' class="btn">{{ _("Clear form") }}</button>-->
-	    	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
-	    	<a href="#" class="btn btn-primary" id="save_group_button">{{ _('Add group') }}</a>
-	    </div>
-    {% else %}
-        <a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
-	{%endif%}
-  </span>
-  	
+{%- block footer -%}
+	<span class="row-fluid">
+
+	  	{% if mode == "new" %}
+		  	<div class="span7">
+		    	<input type='checkbox' id='keep_modal_open' style="float:left;">
+		    	<label for='keep_modal_open'>{{ _('Keep the modal open and  remember users relationships.') }}</label>
+		    </div>
+		    <div class="span5">
+		    	<!--<button type="button" id='clear_form' class="btn">{{ _("Clear form") }}</button>-->
+		    	<a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+		    	<a href="#" class="btn btn-primary" id="save_group_button">{{ _('Add group') }}</a>
+		    </div>
+	    {% else %}
+	        <a href="#" class="btn" data-dismiss="modal">{{ _('Fermer') }}</a>
+		{%endif%}
+  	</span>
 
     <style>
     	.my_popover{
@@ -71,137 +66,112 @@
     	}
     </style>
     <script type="text/javascript">
-	$(document).ready(function() {
-		
-		// .click_item are our user box, when click is triggered, 
-		// show the popover containing possible relationship
+		$(document).ready(function() {
 
-		setup_sort_items('.trigger_popover', $('.sort_item'), "user_login");
+			// .click_item are our user box, when click is triggered,
+			// show the popover containing possible relationship
 
-		// init the popover
-		$('.trigger_popover').each(function() {
+			setup_sort_items('.trigger_popover', $('.sort_item'), "user_login");
 
-			// display only relevant relationship (do not display the current one)
-			current_rel = $(this).data('rel')
-			$(this).find('.rel_'+current_rel).hide();
-			var popover_id = $(this).data('id')
+			// init the popover
+			$('.trigger_popover').each(function() {
 
-			// init tht popover
-			$(this).clickover({
-				title : 'relationship',
-				content  : function() { return $(this).find('.popover').html();},
-				html: true,
-				placement : 'top',
-				template: '<div class="popover my_popover" id="popover_'+popover_id+'"><div class="arrow"></div><div class="popover-inner"><div class="popover-content"><p></p></div></div></div>'
+				// display only relevant relationship (do not display the current one)
+				current_rel = $(this).data('rel')
+				$(this).find('.rel_'+current_rel).hide();
+				var popover_id = $(this).data('id')
 
-			}).click(function() {
+				// init tht popover
+				$(this).clickover({
+					title : 'relationship',
+					content  : function() { return $(this).find('.popover').html();},
+					html: true,
+					placement : 'top',
+					template: '<div class="popover my_popover" id="popover_'+popover_id+'"><div class="arrow"></div><div class="popover-inner"><div class="popover-content"><p></p></div></div></div>'
 
-				// on popover display, initialize instant_click, if 'edit' or 'massiv' mode
-				{% if mode == 'edit' or mode == 'massiv' %}
-					console.log('inti',popover_id, $("#popover_"+$(this).data('id')))
-					init_instant_click($("#popover_"+$(this).data('id')))
-				{% elif mode == 'new' %}
-					{# no instant apply, but give a visual feedback #}
-					$('#popover_'+$(this).data('id')+' .instant_click').click(function() {
-						update_relationship($(this).data('id'), null,  $(this).data('relid'))
-					});
-				{% endif -%}
+				}).click(function() {
+
+					// on popover display, initialize instant_click, if 'edit' or 'massiv' mode
+					{% if mode == 'edit' or mode == 'massiv' %}
+						console.log('inti',popover_id, $("#popover_"+$(this).data('id')))
+						init_instant_click($("#popover_"+$(this).data('id')))
+					{% elif mode == 'new' %}
+						{# no instant apply, but give a visual feedback #}
+						$('#popover_'+$(this).data('id')+' .instant_click').click(function() {
+							update_relationship($(this).data('id'), null,  $(this).data('relid'))
+						});
+					{% endif -%}
+				});
 			});
-		});
 
-		
+			{%- if mode == 'new' -%}
 
+				function post_form() {
+					var serialized_form = $('#licorn_form').serialize()
 
+					$.each($('form .trigger_popover'), function() {
 
-		
+						rel = $(this).attr('data-rel')
 
-		{%- if mode == 'new' -%}
-			
-			function post_form() {
-				var serialized_form = $('#licorn_form').serialize()
+						if (rel == "0") {
+							serialized_form += "&no_membership_users="+$(this).data('id')
+						}
+						else if (rel == "1") {
+							serialized_form += "&guest_users="+$(this).data('id')
+						}
+						else if (rel == "2") {
+							serialized_form += "&member_users="+$(this).data('id')
+						}
+						else if (rel == "3") {
+							serialized_form += "&resp_users="+$(this).data('id')
+						}
 
-				//console.log(serialized_form)
+					})
 
-				$.each($('form .trigger_popover'), function() {
-					
-					rel = $(this).attr('data-rel')
-					
-					if (rel == "0") {
-						serialized_form += "&no_membership_users="+$(this).data('id')
+					//console.log(serialized_form)
+					$.post("/groups/create/", serialized_form);
+
+					if ($('#keep_modal_open').is(':checked')) {
+						$('#id_name').val('');
+						$('#id_description').val('');
 					}
-					else if (rel == "1") {
-						serialized_form += "&guest_users="+$(this).data('id')
+					else {
+						$('#modal').modal('hide')
 					}
-					else if (rel == "2") {
-						serialized_form += "&member_users="+$(this).data('id')
+				};
+
+				$(document).unbind("keyup.setup_enter_post_form");
+				$(document).bind("keyup.setup_enter_post_form", function(e) {
+					if (e.keyCode == 13) { // enter
+						post_form();
 					}
-					else if (rel == "3") {
-						serialized_form += "&resp_users="+$(this).data('id')
-					}
-					
-				})
+				});
 
-				//console.log(serialized_form)
-				$.post("/groups/create/", serialized_form);
 
-				if ($('#keep_modal_open').is(':checked')) {
-					$('#id_name').val('');
-					$('#id_description').val('');
-				}
-				else {
-					$('#modal').modal('hide')
-				}
-			};
-
-			$(document).unbind("keyup.setup_enter_post_form");
-			$(document).bind("keyup.setup_enter_post_form", function(e) {
-				if (e.keyCode == 13) { // enter
+				// click save button
+				$('#save_group_button').click( function() {
+					$('#save_group_button').unbind('click');
 					post_form();
-				}
-			});
+				});
 
 
-			// click save button
-			$('#save_group_button').click( function() {
-				$('#save_group_button').unbind('click');
-				post_form();
-			});
-			
+				$('#modal').modal('hide');
 
-			$('#modal').modal('hide');
 
-			
-		{%- endif -%}
+			{%- endif -%}
 
-		$('#id_permissive').checkbox({
-	        'on_text': "{{ _('No') }}",
-	        'off_text' : "{{ _('Yes') }}",
-	        'wrapper' : "jquery_checkbox_wrapper"
-	    })
+			$('#id_permissive').checkbox({
+		        'on_text': "{{ _('No') }}",
+		        'off_text' : "{{ _('Yes') }}",
+		        'wrapper' : "jquery_checkbox_wrapper"
+		    })
 
-	    $('#delete_group_button').click( function() {
-				
+		    $('#delete_group_button').click( function() {
+
 				$('#groups_'+$(this).data('gid')).addClass(select_active_class)
 				$('#massive_delete').trigger('click');
 
 			});
-
-
-
-	});
-</script>
-
-
-
-    
-  {%- endblock -%}
-
-
-
-
-
-
-
-
-
-
+		});
+	</script>
+{%- endblock -%}

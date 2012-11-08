@@ -2,9 +2,6 @@
 
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext as _
-from licorn.foundations.styles import *
-from licorn.foundations.ltrace import *
-from licorn.foundations.ltraces import *
 
 from licorn.interfaces.wmi.libs import utils
 
@@ -24,16 +21,18 @@ def calendar_add_proxie_handler(request, event):
 
     if user is not None:
         yield utils.notify(
-            _("User {0} is now a {2} of {1}'s calendar".format(
-                proxy.login,
-                user.login,
-                "writer" if mode == 'write' else "reader")))
+            _("User <strong><em>{0}</strong></em> is now a {2} of "
+                "<strong><em>{1}</strong></em>'s calendar".format(
+                    proxy.login,
+                    user.login,
+                    "writer" if mode == 'write' else "reader")))
     else:
         yield utils.notify(
-            _("User {0} is now a {2} of {1}'s calendar".format(
-                proxy.login,
-                group.name,
-                "writer" if mode == 'write' else "reader")))
+            _("User <strong><em>{0}</strong></em> is now a {2} of "
+                "<strong><em>{1}</strong></em>'s calendar".format(
+                    proxy.login,
+                    group.name,
+                    "writer" if mode == 'write' else "reader")))
 
     # add the new proxy to the correct list
     yield utils.format_RPC_JS(
@@ -73,14 +72,16 @@ def calendar_del_proxie_handler(request, event):
 
     if user is not None:
         yield utils.notify(
-            _("User {0} is no more {2} of {1}'s calendar").format(
-                proxy.login, user.login,
-                "writer" if mode == 'write' else "reader"))
+            _("User <strong><em>{0}</strong></em> is no more {2} of "
+                "<strong><em>{1}</em></strong>'s calendar").format(
+                    proxy.login, user.login,
+                    "writer" if mode == 'write' else "reader"))
     else:
         yield utils.notify(
-            _("User {0} is no more {2} of {1}'s calendar").format(
-                proxy.login, group.name,
-                "writer" if mode == 'write' else "reader"))
+            _("User <strong><em>{0}</strong></em> is no more {2} of "
+                "<strong><em>{1}</strong></em>'s calendar").format(
+                    proxy.login, group.name,
+                    "writer" if mode == 'write' else "reader"))
 
     yield utils.format_RPC_JS(
         'remove_instance',

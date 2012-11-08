@@ -4,9 +4,8 @@
 {%- extends 'list.html' -%}
 
 {%- block title -%}
-	{{ _('My calendars') }}
+	{{ _('My calendars list') }}
 {%- endblock -%}
-
 
 {%- block list_title -%}
 	{{ _('Calendars') }}
@@ -29,10 +28,10 @@
 
 {%- block list_headers -%}
 	<th class='table_column_header centered' width="7%">{{ _('Type') }}</th>
-	<th class='table_column_header centered' width="7%">{{ _('Type') }}</th>
-	<th class='table_column_header'          width="12%">{{ _('Name') }}</th>
-	<th class='table_column_header'          width="12%">{{ _('Description') }}</th>
-	<th class='table_column_header'          width="50%">{{ _('URL') }}</th>
+	<th class='table_column_header centered' width="7%">{{ _('Permissions') }}</th>
+	<th class='table_column_header' width="12%">{{ _('Name') }}</th>
+	<th class='table_column_header' width="12%">{{ _('Description') }}</th>
+	<th class='table_column_header' width="50%">{{ _('URL') }}</th>
 {%- endblock -%}
 
 {%- block list_body -%}
@@ -49,30 +48,28 @@
 
 			text = $('<span></span>')
 
-			$('.copy_url').clickover({
-				content : function() { return $(text).html($(this).html().trim()); },
-				placement : 'bottom',
-				template: '<div class="popover my_popover"><div class="arrow"></div><div class="popover-inner"><div class="popover-content" ><p></p></div></div></div>',
-					}).click(function() {
-						//console.log('HERE', $('.popover-content:visible').last().find('span'))
-						fnSelect($('.popover-content:visible').last().find('span'))
-					});
-
+			$('.copy_url')
+				.clickover({
+					content : function() { return $(text).html($(this).html().trim()); },
+					placement : 'bottom',
+					template: '<div class="popover my_popover"><div class="arrow"></div><div class="popover-inner"><div class="popover-content" ><p></p></div></div></div>',
+				}).click(function() {
+					fnSelect($('.popover-content:visible').last().find('span'))
+				});
 		});
 
 		function fnSelect(obj) {
 			if (document.selection) {
-			var range = document.body.createTextRange();
+				var range = document.body.createTextRange();
 	 	        range.moveToElementText(obj);
-			range.select();
+				range.select();
 			}
 			else if (window.getSelection) {
-			var range = document.createRange();
-			range.selectNode(obj[0]);
-			window.getSelection().addRange(range);
+				var range = document.createRange();
+				range.selectNode(obj[0]);
+				window.getSelection().addRange(range);
 			}
 		}
-
 
 		function func_doubleclick_row(td) {
 			// what happens when a row has been double clicked,
@@ -87,7 +84,6 @@
 
 		// filters used to filter the table
 		var filters = { 'read' : true, 'write': true }
-		
 	</script>
 {%- endblock -%}
 

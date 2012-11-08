@@ -529,7 +529,7 @@ def get_user_template(request, mode, users):
 	new_users_tabs = utils.dynamic_users_tabs()
 	for key, value in new_users_tabs.iteritems():
 		for tab in value(users, mode):
-			tabs.append({'id' : tab['id'], 'sort': tab['sort'],
+			tabs.append({'id' : tab['id'],
 				 'title' : tab['title'], 'content': tab['content'], 'default': False })
 
 

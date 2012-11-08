@@ -157,6 +157,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
         # create default directoryservice config for ldap and xml backends
         self.default_config = LicornConfigObject()
+
         self.default_config.ldap_directory = {
 
             'type': LDAP_BACKEND,
@@ -177,7 +178,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                     'nestedGroupsAttr': '',
                     'membersAttr': 'memberUid'
                 },
-                'uri': 'ldap:///',
+                'uri': '{0}'.format(LMC.backends.openldap.uri),
                 'tlsRequireCert': 'never',
                 'rdnSchema': {
                     'users': {
@@ -199,7 +200,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                     },
                     'guidAttr': 'entryUUID',
 
-                    'base': 'dc=meta-it,dc=local',
+                    'base': '{0}'.format(LMC.backends.openldap.base),
                     'groups': {
                         'emailSuffix': '',
                         'filter': '',
@@ -218,8 +219,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                 'tlsCACertDir': '',
                 'cacheTimeout': 30,
                 'credentials': {
-                    'dn': 'cn=admin,dc=meta-it,dc=local',
-                    'password': 'metasecret'
+                    'dn': '{0}'.format(LMC.backends.openldap.rootbinddn),
+                    'password': '{0}'.format(LMC.backends.openldap.secret)
                 },
                 'tlsCACertFile': '',
                 'authMethod': 'PAM'
@@ -228,7 +229,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
         self.default_config.xml_directory = {
             'type': 'twistedcaldav.directory.xmlfile.XMLDirectoryService',
             'params': {
-                'xmlFile': '/etc/caldavd/accounts.xml'
+                'xmlFile': '{0}'.format(self.paths.accounts)
             }
         }
 
