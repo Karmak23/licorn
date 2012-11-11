@@ -80,8 +80,6 @@ def find_server_Linux(favorite, group):
 	""" Return the hostname (or IP, in some conditions) of our Licorn® server.
 		These are tried in turn:
 
-		- ``LICORN_SERVER`` environment variable (always takes precedence, with
-		  a message; this variable should be used for debug / development purposes only;
 		- `zeroconf` lookup; this the "standard" way of discovery our server.
 		- LAN dhcp server on distros where it is supported (currently Ubuntu and Debian).
 
@@ -89,20 +87,36 @@ def find_server_Linux(favorite, group):
 			formated like `LMC.configuration.system_uuid` (no dashes).
 		:param group: an LXC cpuset. This is an undocumented feature. please do
 			not use outside of debugging / testing environments.
+
+		.. note:: If ``settings.experimental.enabled = True``, the ``LICORN_SERVER``
+		  environment variable will be used preferedly if it exists; this
+		  variable should be used for debug / development purposes only; You
+		  can manually an IP address (or hostname) of any Licorn® server you
+		  choose.
+
+		.. versionchanged:: since 1.7, the ``LICORN_SERVER`` is used only if
+			experimental features are enabled, because it should never be used
+			in production. Before 1.7, it always had precedence; but the
+			`CLIENT` mode where it is used was not in production state. This
+			decision was made after the 1.6 release, which explains why this
+			has only been done in 1.7.
 	"""
 
-	env_server = os.getenv('LICORN_SERVER', None)
+	from _settings import settings
 
-	if env_server:
-		logging.notice(_(u'Using environment variable value {0} for our '
-			u'server; unset {1} if you prefer automatic detection.').format(
-				stylize(ST_IMPORTANT, env_server),
-				stylize(ST_NAME, 'LICORN_SERVER')))
+	if settings.experimental.enabled:
+		env_server = os.getenv('LICORN_SERVER', None)
 
-		if ':' in env_server:
-			return env_server.split(':')
+		if env_server:
+			logging.notice(_(u'Using environment variable value {0} for our '
+				u'server; unset {1} if you prefer automatic detection.').format(
+					stylize(ST_IMPORTANT, env_server),
+					stylize(ST_NAME, 'LICORN_SERVER')))
 
-		return env_server, None
+			if ':' in env_server:
+				return env_server.split(':')
+
+			return env_server, None
 
 	return find_zeroconf_server_Linux(favorite, group)
 

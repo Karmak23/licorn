@@ -787,6 +787,8 @@ class CoreFSUnitObject(object):
 				# because we set uid and gid to -1, and this implies the need to
 				# access to the path lstat() in ACLRule.check_dir().
 				if os.path.exists(self.homeDirectory):
+					home_created = False
+
 					if initial:
 						need_watches = True
 
@@ -807,12 +809,15 @@ class CoreFSUnitObject(object):
 								directory_type, stylize(ST_PATH, self.homeDirectory)))
 
 						need_watches = True
+						home_created = True
 					else:
 						raise exceptions.LicornCheckError(_(u'Directory %s '
 							u'does not exist but is mandatory. Check aborted.')
 								% stylize(ST_PATH, self.homeDirectory))
 
-				if skel_to_apply is not None and hasattr(self, 'apply_skel'):
+				if (initial and home_created) and (
+						skel_to_apply is not None
+						and hasattr(self, 'apply_skel')):
 					self.apply_skel(skel_to_apply)
 
 				if need_watches:

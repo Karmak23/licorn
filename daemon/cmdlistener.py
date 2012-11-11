@@ -65,8 +65,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	# object for details about port numbers.
 	pyro_port = None
 
-	#: The main server IP address. Can be overidden by the environment variable
-	#: :envvar:`LICORN_SERVER` to help debugging the daemon.
+	#: The main server IP address. Will be filled at instanciation.
 	server = None
 
 	#: A list of other server IP addresses, gathered from the client thread
