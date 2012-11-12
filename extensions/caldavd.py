@@ -50,6 +50,8 @@ from twistedcaldav.config import ConfigDict
 XML_BACKEND = "twistedcaldav.directory.xmlfile.XMLDirectoryService"
 LDAP_BACKEND = "twistedcaldav.directory.ldapdirectory.LdapDirectoryService"
 
+# default users calendar password
+# Used when create a calendar for an already existing user
 GENERIC_PWD = "calendar_user"
 
 
@@ -60,14 +62,13 @@ def my_Configdict2xmlEtree(_dict):
     xml_dict = ET.Element('dict')
 
     for k, v in _dict.iteritems():
-        print "<> k/v", k, v
-
         # create the key element, and append it to the dict
         elem = ET.Element('key')
         elem.text = k
         xml_dict.append(elem)
 
-        # Elif because instance(True, Integer) = True
+        # NOTE : PEP8 say : use isinstance() instead of type()
+        # But be carrefull, instance(True, types.Integer) = True
 
         # create the value element depending on type(value)
         if isinstance(v, types.StringTypes):
@@ -120,9 +121,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
             -> if licornd's backend is SHADOW:
                 - users and resources are stored in xml files
-
-            - users relationship with groups are managed by calendarserver
-
 
 
         .. versionadded:: 1.2.4
@@ -373,7 +371,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
                 self.group_post_add(group=group)
 
-        self.service(svccmds.RELOAD)
+        #self.service(svccmds.RELOAD)
         self.setup_calendarserver_environement()
 
         for u in LMC.users.select(filters.STANDARD):
@@ -683,7 +681,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
         resource = self.__create_xml_element('resource', uid, guid, name)
 
-        if resource:
+        if resource is not None:
             return True
         else:
             return False
