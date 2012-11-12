@@ -162,8 +162,8 @@ def notice(mesg, to_listener=True, to_local=True):
 
 	if to_local and options.verbose >= verbose.NOTICE:
 		with output_lock:
-			sys.stdout.write(text_message)
-			#sys.stdout.flush()
+			sys.stderr.write(text_message)
+			#sys.stderr.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_1, ' ! {0}', mesg)
 def info(mesg, to_listener=True, to_local=True):
@@ -177,8 +177,8 @@ def info(mesg, to_listener=True, to_local=True):
 
 	if to_local and options.verbose >= verbose.INFO:
 		with output_lock:
-			sys.stdout.write(text_message)
-			#sys.stdout.flush()
+			sys.stderr.write(text_message)
+			#sys.stderr.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_2, ' * {0}', mesg)
 def progress(mesg, to_listener=True, to_local=True):
@@ -192,8 +192,8 @@ def progress(mesg, to_listener=True, to_local=True):
 
 	if to_local and options.verbose >= verbose.PROGRESS:
 		with output_lock:
-			sys.stdout.write(text_message)
-			#sys.stdout.flush()
+			sys.stderr.write(text_message)
+			#sys.stderr.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_3, ' > {0}', mesg)
 
@@ -212,8 +212,8 @@ def raw_message(mesg, to_listener=True, to_local=True):
 
 	if to_local:
 		with output_lock:
-			sys.stdout.write(mesg)
-			#sys.stdout.flush()
+			sys.stderr.write(mesg)
+			#sys.stderr.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_3, ' > {0}', mesg)
 
