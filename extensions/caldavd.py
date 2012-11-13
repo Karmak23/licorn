@@ -11,6 +11,10 @@ Licorn extensions: caldavd - http://docs.licorn.org/extensions/caldavd.html
 
 """
 
+###############################################################################
+# extensions.caldavd imports
+###############################################################################
+
 # import python modules
 import os
 import uuid
@@ -47,6 +51,10 @@ LDAP_BACKEND = "twistedcaldav.directory.ldapdirectory.LdapDirectoryService"
 # default users calendar password
 # Used when create a calendar for an already existing user
 GENERIC_PWD = "calendar_user"
+
+###############################################################################
+# Helpers
+###############################################################################
 
 
 def my_Configdict2xmlEtree(_dict):
@@ -104,6 +112,10 @@ def only_if_backend_openldap_is_not_enabled(func):
     return decorated
 
 
+###############################################################################
+# CaldavdExtension class
+###############################################################################
+
 class CaldavdExtension(ObjectSingleton, ServiceExtension):
     """ Handles Apple Calendar Server configuration and service.
 
@@ -116,6 +128,12 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
             -> if licornd's backend is SHADOW:
                 - users and resources are stored in xml files
 
+        How to use ?
+            -> nothing to do, calendars are automaticaly created for each
+            groups and users if they are stored in the right backend.
+
+            -> groups members can automaticaly read or write into group's
+            calendar (guests=read-only; members/responsibles=read-write)
 
         .. versionadded:: 1.2.4
         .. versionmodified:: 1.7. Rework the extension to handle calendarserver
@@ -158,9 +176,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
         # create default directoryservice config for ldap and xml backends
         self.default_config = LicornConfigObject()
         self.default_config.ldap_directory = {
-
             'type': LDAP_BACKEND,
-
             'params': {
                 'tls': False,
                 'restrictToGroup': '',
