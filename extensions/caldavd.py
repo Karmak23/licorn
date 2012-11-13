@@ -11,40 +11,34 @@ Licorn extensions: caldavd - http://docs.licorn.org/extensions/caldavd.html
 
 """
 
+# import python modules
 import os
 import uuid
 import types
 import functools
 
-
-from licorn.foundations.styles import *
-from licorn.foundations.ltraces import *
-
-
-from licorn.foundations.events    import LicornEvent
-
+# import caldavd internals
 from traceback import print_exc
 import xml.etree.ElementTree as ET
-
-from licorn.foundations import logging, fsapi
-from licorn.foundations import readers, writers, events
-from licorn.foundations.workers import workers
-
-from licorn.foundations.base import ObjectSingleton, LicornConfigObject
-from licorn.foundations.constants import distros, services, svccmds, \
-    priorities, filters
-
-from licorn.core import LMC
-from licorn.core.classes import only_if_enabled
-
-from licorn.extensions import ServiceExtension
-
 from calendarserver.tools.principals import action_addProxy, getProxies, \
     action_removeProxy, principalForPrincipalID
 from calendarserver.tools.util import getDirectory, loadConfig, setupMemcached
 from twistedcaldav.config import config as caldav_config
 from twistedcaldav.config import ConfigDict
 
+# import from licorn
+from licorn.foundations.styles import *
+from licorn.foundations.ltraces import *
+from licorn.foundations.events import LicornEvent
+from licorn.foundations import logging, fsapi
+from licorn.foundations import readers, writers, events
+from licorn.foundations.workers import workers
+from licorn.foundations.base import ObjectSingleton, LicornConfigObject
+from licorn.foundations.constants import distros, services, svccmds, \
+    priorities, filters
+from licorn.core.classes import only_if_enabled
+from licorn.core import LMC
+from licorn.extensions import ServiceExtension
 
 # Directory service constants
 XML_BACKEND = "twistedcaldav.directory.xmlfile.XMLDirectoryService"
@@ -1123,7 +1117,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                                 stylize(ST_PATH, user.login),
                                 stylize(ST_PATH, group_resource_principal)))
 
-                self.service(svccmds.RESTART)
+                #self.service(svccmds.RESTART)
+                self.setup_calendarserver_environement()
 
             proxies = getProxies(group_resource_principal)
             proxies.addCallback(__add_user_group, group, user)
