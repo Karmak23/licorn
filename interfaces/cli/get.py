@@ -27,16 +27,14 @@ def __get_master_object(opts):
 
 	else:
 		return LMC.rwi
-
-
 def get_events(opts, args, listener):
 
 	master_object = __get_master_object(opts)
 
-	if opts.monitor:
-		if opts.facilities is None:
-			opts.facilities = 'std'
+	if opts.facilities is None:
+		opts.facilities = 'std'
 
+	if opts.monitor:
 		monitor_id     = master_object.register_monitor(opts.facilities)
 		cli_interactor = CliInteractor(listener)
 
@@ -49,6 +47,7 @@ def get_events(opts, args, listener):
 				# Relying on the "finally" clause isn't sufficient.
 				cli_interactor.quit_interactor()
 				raise
+
 		finally:
 			try:
 				master_object.unregister_monitor(monitor_id)
@@ -73,7 +72,7 @@ def get_status(opts, args, listener):
 					# TODO: hlstr.to_seconds(opts.monitor_time)
 					monitor_time_stop = time.time() + opts.monitor_time
 
-			count = 1
+			count      = 1
 			stop_count = 0
 
 			while not stop_event.is_set():
@@ -207,8 +206,9 @@ def get_inside(opts, args, listener):
 
 			if is_tty:
 				sys.ps1 = u'licornd> '
-				banner  =_(u'Licorn® {0} version {2} role {1}, Python {3} on {4}').format(
-										*master_object.console_informations())
+				banner  = _(u'Licorn® {0} version {2} role {1}, '
+								u'Python {3} on {4}').format(
+									*master_object.console_informations())
 
 			else:
 				sys.ps1 = u''
@@ -219,7 +219,7 @@ def get_inside(opts, args, listener):
 			succeeded = True
 
 		except:
-			logging.exception('Error running the remote console!')
+			logging.exception(_(u'Error running the remote console'))
 
 	finally:
 		# save the history file locally before stopping the console,
@@ -230,7 +230,7 @@ def get_inside(opts, args, listener):
 				readline.write_history_file(history_file)
 
 			except:
-				logging.exception(_(u'unable to write history file!'))
+				logging.exception(_(u'Unable to write history file'))
 
 		try:
 			master_object.console_stop()
