@@ -16,7 +16,7 @@ import sys, os, stat, posix1e, re, gc, types, weakref
 from contextlib import nested
 from operator   import attrgetter
 
-from licorn.foundations           import logging, exceptions
+from licorn.foundations           import logging, exceptions, settings
 from licorn.foundations           import fsapi, pyutils, hlstr, events
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
