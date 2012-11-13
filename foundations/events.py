@@ -423,9 +423,44 @@ def scan_object(objekt, meth_handler, meth_callback):
 			elif hasattr(attribute, 'is_handler'):
 				meth_handler(attribute.__name__, attribute)
 def collect_object(objekt):
-	return scan_object(objekt, register_handler, register_callback)
+	""" Collect all events handlers and callbacks on the given objekt (which
+		must be set, not ``None``).
+
+		This function is called internally by :func:`collect`, and is not
+		meant to be called directly because it doesn't do any checking on
+		the object, which is is left to the caller.
+	"""
+
+	must_collect = False
+	try:
+		must_collect = not objekt._events_handlers_collected_
+
+	except AttributeError:
+		pass
+
+	if must_collect:
+		objekt._events_handlers_collected_ = True
+		return scan_object(objekt, register_handler, register_callback)
 def uncollect_object(objekt):
-	return scan_object(objekt, unregister_handler, unregister_callback)
+	""" Uncollect (un-register) all events handlers and callbacks of the given
+		objekt (which must be set, not ``None``).
+
+		This function is called internally by :func:`uncollect`, and is not
+		meant to be called directly because it doesn't do any checking on
+		the object, which is is left to the caller.
+	"""
+
+	must_uncollect = False
+
+	try:
+		must_uncollect = objekt._events_handlers_collected_
+
+	except AttributeError:
+		pass
+
+	if must_uncollect:
+		objekt._events_handlers_collected_ = False
+		return scan_object(objekt, unregister_handler, unregister_callback)
 def collect(on_object=None):
 	""" Collect events handlers and callbacks on a given object.
 		Used to dynamically collect them when we add / remove
