@@ -11,7 +11,7 @@ Licorn WMI3 calendar dynamics
 from django.template.loader import render_to_string
 
 # licorn imports
-from licorn.foundations import cache
+from licorn.foundations import cache, exceptions
 from licorn.core import LMC
 from licorn.interfaces.wmi.libs import utils
 from licorn.interfaces.wmi.users.views import generate_tab_content
@@ -81,7 +81,7 @@ def dynamic_users_tab(users, mode):
         try:
             # openLDAP may not be installed
             ldap_backend = LMC.backends.guess_one('openldap')
-        except KeyError:
+        except exceptions.DoesntExistException:
             ldap_backend = None
 
         # first, we need to check that the user could have a calendar

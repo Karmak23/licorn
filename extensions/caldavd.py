@@ -360,7 +360,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
         try:
             # openLDAP may not be installed
             ldap_backend = LMC.backends.guess_one('openldap')
-        except KeyError:
+        except exceptions.DoesntExistException:
             ldap_backend = None
 
         # if current licorn backend is LDAP and caldav backend is not LDAP,
