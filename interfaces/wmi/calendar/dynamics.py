@@ -40,7 +40,7 @@ def dynamic_sidebar(request):
         try:
             # openLDAP may not be installed
             ldap_backend = LMC.backends.guess_one('openldap')
-        except KeyError:
+        except exceptions.DoesntExistException:
             ldap_backend = None
 
         # first, we need to check that the user could have a calendar
