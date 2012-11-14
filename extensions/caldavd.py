@@ -381,6 +381,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
             # check if already existing STD users have a calendar.
             for user in LMC.users.select(filters.STANDARD):
                 if not self.check_if_element_has_calendar('users', user.login):
+                    print ">> no calendar yet"
                     self.user_post_add(user=user, password=GENERIC_PWD)
 
         for group in LMC.groups.select(filters.STANDARD):
