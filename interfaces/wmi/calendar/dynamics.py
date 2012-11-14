@@ -59,8 +59,6 @@ def dynamic_sidebar(request):
 
 def get_users_principals(do_not_include):
 
-    print ">>get_users_principals",  do_not_include
-
     up = []
 
     for u in LMC.users.select(filters.STANDARD):
@@ -85,8 +83,6 @@ def dynamic_users_tab(users, mode):
             ldap_backend = LMC.backends.guess_one('openldap')
         except KeyError:
             ldap_backend = None
-
-        print "><((> ", user, user.backend, LMC.extensions.caldavd.calendarserver_backend
 
         # first, we need to check that the user could have a calendar
         # (is he/she stored in the same backend than caldav ?)
@@ -118,7 +114,8 @@ def dynamic_users_tab(users, mode):
                     'write_proxies': write_proxies,
                     'users_principals': get_users_principals(
                         do_not_include=do_not_include),
-                    'base_url_action': "/calendar/users/" + str(user.uidNumber),
+                    'base_url_action': "/calendar/users/" +
+                    str(user.uidNumber),
                 }
             )
 
