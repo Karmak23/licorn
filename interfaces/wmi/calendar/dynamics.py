@@ -16,6 +16,7 @@ from licorn.core import LMC
 from licorn.interfaces.wmi.libs import utils
 from licorn.interfaces.wmi.users.views import generate_tab_content
 from licorn.foundations.constants import filters
+from licorn.extensions.caldavd import LDAP_BACKEND, XML_BACKEND
 
 # calendarserver internals
 from calendarserver.tools.principals import principalForPrincipalID, getProxies
@@ -33,7 +34,25 @@ def enabled():
 
 def dynamic_sidebar(request):
     if enabled():
-        return render_to_string('calendar/parts/sidebar.html', {})
+
+        # check licorn backends
+        shadow_backend = LMC.backends.guess_one('shadow')
+        try:
+            # openLDAP may not be installed
+            ldap_backend = LMC.backends.guess_one('openldap')
+        except KeyError:
+            ldap_backend = None
+
+        # first, we need to check that the user could have a calendar
+        # (is he/she stored in the same backend than caldav ?)
+        user = LMC.users.guess_one(request.user.username)
+        if (user.backend.name == shadow_backend.name and
+            LMC.extensions.caldavd.calendarserver_backend == XML_BACKEND) or \
+            (ldap_backend is not None and
+                user.backend.name == ldap_backend.name and
+                LMC.extensions.caldavd.calendarserver_backend == LDAP_BACKEND):
+
+            return render_to_string('calendar/parts/sidebar.html', {})
 
     return ''
 
@@ -59,40 +78,59 @@ def dynamic_users_tab(users, mode):
 
         user = users[0]
 
-        # get user principal
-        principal_user = principalForPrincipalID('users:' + user.login)
-        # get its proxies
-        proxies = utils.my_deferred_blocker(getProxies(principal_user))
+        # check licorn backends
+        shadow_backend = LMC.backends.guess_one('shadow')
+        try:
+            # openLDAP may not be installed
+            ldap_backend = LMC.backends.guess_one('openldap')
+        except KeyError:
+            ldap_backend = None
 
-        read_proxies = [principalForPrincipalID(p) for p in proxies[0]]
-        write_proxies = [principalForPrincipalID(p) for p in proxies[1]]
+        print "><((> ", user, user.backend, LMC.extensions.caldavd.calendarserver_backend
 
-        do_not_include = [user.login]
-        for t in [str(p).split(')')[1] for p in read_proxies]:
-            do_not_include.append(t)
+        # first, we need to check that the user could have a calendar
+        # (is he/she stored in the same backend than caldav ?)
+        if (user.backend.name == shadow_backend.name and
+            LMC.extensions.caldavd.calendarserver_backend == XML_BACKEND) or \
+            (ldap_backend is not None and
+                user.backend.name == ldap_backend.name and
+                LMC.extensions.caldavd.calendarserver_backend == LDAP_BACKEND):
 
-        for t in [str(p).split(')')[1] for p in write_proxies]:
-            do_not_include.append(t)
+            # get user principal
+            principal_user = principalForPrincipalID('users:' + user.login)
+            # get its proxies
+            proxies = utils.my_deferred_blocker(getProxies(principal_user))
 
-        content = render_to_string(
-            '/calendar/parts/user_calendar_content.html', {
-                'user': user,
-                'read_proxies': read_proxies,
-                'write_proxies': write_proxies,
-                'users_principals': get_users_principals(
-                    do_not_include=do_not_include),
-                'base_url_action': "/calendar/users/" + str(user.uidNumber),
-            }
-        )
+            read_proxies = [principalForPrincipalID(p) for p in proxies[0]]
+            write_proxies = [principalForPrincipalID(p) for p in proxies[1]]
 
-        return [
-            {
-                'id': 'calendar',
-                'title': 'Calendar options',
-                'content': generate_tab_content('calendar', content)
-            }
-        ]
+            do_not_include = [user.login]
+            for t in [str(p).split(')')[1] for p in read_proxies]:
+                do_not_include.append(t)
 
+            for t in [str(p).split(')')[1] for p in write_proxies]:
+                do_not_include.append(t)
+
+            content = render_to_string(
+                '/calendar/parts/user_calendar_content.html', {
+                    'user': user,
+                    'read_proxies': read_proxies,
+                    'write_proxies': write_proxies,
+                    'users_principals': get_users_principals(
+                        do_not_include=do_not_include),
+                    'base_url_action': "/calendar/users/" + str(user.uidNumber),
+                }
+            )
+
+            return [
+                {
+                    'id': 'calendar',
+                    'title': 'Calendar options',
+                    'content': generate_tab_content('calendar', content)
+                }
+            ]
+        else:
+            return []
     else:
         return []
 
