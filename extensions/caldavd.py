@@ -109,7 +109,7 @@ def only_if_backend_openldap_is_not_enabled(func):
             if not LMC.backends.guess_one('openldap').enabled:
                 return func(self, *args, **kwargs)
         except exceptions.DoesntExistException:
-            return decorated
+            return func(self, *args, **kwargs)
 
     return decorated
 
