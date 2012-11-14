@@ -175,72 +175,82 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 
         # create default directoryservice config for ldap and xml backends
         self.default_config = LicornConfigObject()
-        self.default_config.ldap_directory = {
-            'type': LDAP_BACKEND,
-            'params': {
-                'tls': False,
-                'restrictToGroup': '',
-                'resourceSchema': {
-                    'autoScheduleEnabledValue': 'yes',
-                    'resourceInfoAttr': '',
-                    'readOnlyProxyAttr': '',
-                    'proxyAttr': '',
-                    'autoScheduleAttr': ''
-                },
-                'restrictEnabledRecords': False,
-                'groupSchema': {
-                    'memberIdAttr': '',
-                    'nestedGroupsAttr': '',
-                    'membersAttr': 'memberUid'
-                },
-                'uri': '{0}'.format(LMC.backends.openldap.uri),
-                'tlsRequireCert': 'never',
-                'rdnSchema': {
-                    'users': {
-                        'emailSuffix': '',
-                        'attr': 'uid',
-                        'calendarEnabledAttr': '',
-                        'mapping': {
-                            'recordName': 'cn',
-                            'lastName': 'sn',
-                            'fullName': 'gecos',
-                            'emailAddresses': 'mail',
-                            'firstName': 'givenName'
+
+        try:
+            # openLDAP may not be installed
+            ldap_backend = LMC.backends.guess_one('openldap')
+        except KeyError:
+            ldap_backend = None
+
+        if ldap_backend is not None:
+            self.default_config.ldap_directory = {
+                'type': LDAP_BACKEND,
+                'params': {
+                    'tls': False,
+                    'restrictToGroup': '',
+                    'resourceSchema': {
+                        'autoScheduleEnabledValue': 'yes',
+                        'resourceInfoAttr': '',
+                        'readOnlyProxyAttr': '',
+                        'proxyAttr': '',
+                        'autoScheduleAttr': ''
+                    },
+                    'restrictEnabledRecords': False,
+                    'groupSchema': {
+                        'memberIdAttr': '',
+                        'nestedGroupsAttr': '',
+                        'membersAttr': 'memberUid'
+                    },
+                    'uri': '{0}'.format(LMC.backends.openldap.uri),
+                    'tlsRequireCert': 'never',
+                    'rdnSchema': {
+                        'users': {
+                            'emailSuffix': '',
+                            'attr': 'uid',
+                            'calendarEnabledAttr': '',
+                            'mapping': {
+                                'recordName': 'cn',
+                                'lastName': 'sn',
+                                'fullName': 'gecos',
+                                'emailAddresses': 'mail',
+                                'firstName': 'givenName'
+                            },
+                            'filter': '',
+                            'calendarEnabledValue': 'yes',
+                            'loginEnabledAttr': '',
+                            'rdn': 'ou=People',
+                            'loginEnabledValue': 'yes'
                         },
-                        'filter': '',
-                        'calendarEnabledValue': 'yes',
-                        'loginEnabledAttr': '',
-                        'rdn': 'ou=People',
-                        'loginEnabledValue': 'yes'
-                    },
-                    'guidAttr': 'entryUUID',
+                        'guidAttr': 'entryUUID',
 
-                    'base': '{0}'.format(LMC.backends.openldap.base),
-                    'groups': {
-                        'emailSuffix': '',
-                        'filter': '',
-                        'rdn': 'ou=Groups',
-                        'attr': 'cn',
-                        'mapping': {
-                            'recordName': 'cn',
-                            'lastName': 'sn',
-                            'fullName': 'cn',
-                            'emailAddresses': 'mail',
-                            'firstName': 'givenName'
-                        }
-                    },
+                        'base': '{0}'.format(LMC.backends.openldap.base),
+                        'groups': {
+                            'emailSuffix': '',
+                            'filter': '',
+                            'rdn': 'ou=Groups',
+                            'attr': 'cn',
+                            'mapping': {
+                                'recordName': 'cn',
+                                'lastName': 'sn',
+                                'fullName': 'cn',
+                                'emailAddresses': 'mail',
+                                'firstName': 'givenName'
+                            }
+                        },
 
-                },
-                'tlsCACertDir': '',
-                'cacheTimeout': 30,
-                'credentials': {
-                    'dn': '{0}'.format(LMC.backends.openldap.rootbinddn),
-                    'password': '{0}'.format(LMC.backends.openldap.secret)
-                },
-                'tlsCACertFile': '',
-                'authMethod': 'PAM'
+                    },
+                    'tlsCACertDir': '',
+                    'cacheTimeout': 30,
+                    'credentials': {
+                        'dn': '{0}'.format(LMC.backends.openldap.rootbinddn),
+                        'password': '{0}'.format(LMC.backends.openldap.secret)
+                    },
+                    'tlsCACertFile': '',
+                    'authMethod': 'PAM'
+                }
             }
-        }
+        else:
+            self.default_config.ldap_directory = None
         self.default_config.xml_directory = {
             'type': 'twistedcaldav.directory.xmlfile.XMLDirectoryService',
             'params': {
