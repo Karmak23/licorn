@@ -37,6 +37,8 @@ def home(request):
 
     r, w = get_user_proxies(wmi_user)
 
+    w.append(principalForPrincipalID('users:' + wmi_user.login))
+
     calendars = []
 
     for principal in r:
@@ -55,8 +57,6 @@ def home(request):
             'url': get_calendar_URL(principal),
             'desc': principal.record.fullName
         })
-
-    print "CALENDARSSSSZ", calendars
 
     return render(request, 'calendar/index.html', {'calendars': calendars})
 
