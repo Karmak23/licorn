@@ -34,8 +34,7 @@ from twistedcaldav.config import ConfigDict
 from licorn.foundations.styles import *
 from licorn.foundations.ltraces import *
 from licorn.foundations.events import LicornEvent
-from licorn.foundations import logging, fsapi
-from licorn.foundations import readers, writers, events
+from licorn.foundations import logging, fsapi, readers, writers, events, exceptions
 from licorn.foundations.workers import workers
 from licorn.foundations.base import ObjectSingleton, LicornConfigObject
 from licorn.foundations.constants import distros, services, svccmds, \
@@ -179,7 +178,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
         try:
             # openLDAP may not be installed
             ldap_backend = LMC.backends.guess_one('openldap')
-        except KeyError:
+        except exceptions.DoesntExistException:
             ldap_backend = None
 
         if ldap_backend is not None:
