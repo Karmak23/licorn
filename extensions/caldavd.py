@@ -193,7 +193,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                     'nestedGroupsAttr': '',
                     'membersAttr': 'memberUid'
                 },
-                'uri': 'ldap:///',
+                'uri': '{0}'.format(LMC.backends.openldap.uri),
                 'tlsRequireCert': 'never',
                 'rdnSchema': {
                     'users': {
@@ -215,7 +215,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                     },
                     'guidAttr': 'entryUUID',
 
-                    'base': 'dc=meta-it,dc=local',
+                    'base': '{0}'.format(LMC.backends.openldap.base),
                     'groups': {
                         'emailSuffix': '',
                         'filter': '',
@@ -234,8 +234,8 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                 'tlsCACertDir': '',
                 'cacheTimeout': 30,
                 'credentials': {
-                    'dn': 'cn=admin,dc=meta-it,dc=local',
-                    'password': 'metasecret'
+                    'dn': '{0}'.format(LMC.backends.openldap.rootbinddn),
+                    'password': '{0}'.format(LMC.backends.openldap.secret)
                 },
                 'tlsCACertFile': '',
                 'authMethod': 'PAM'
@@ -244,7 +244,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
         self.default_config.xml_directory = {
             'type': 'twistedcaldav.directory.xmlfile.XMLDirectoryService',
             'params': {
-                'xmlFile': '/etc/caldavd/accounts.xml'
+                'xmlFile': '{0}'.format(self.paths.accounts)
             }
         }
 
@@ -379,13 +379,14 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                     group.backend.name == ldap_backend.name and
                     self.calendarserver_backend == LDAP_BACKEND):
 
+                print ">> group_post_add"
                 self.group_post_add(group=group)
 
         #self.service(svccmds.RELOAD)
         self.setup_calendarserver_environement()
 
         for u in LMC.users.select(filters.STANDARD):
-
+            print "<> each user"
             # if the user is in the same backend than calendarserver
             if (u.backend.name == shadow_backend.name and
                 self.calendarserver_backend == XML_BACKEND) or \
@@ -394,9 +395,17 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                     self.calendarserver_backend == LDAP_BACKEND):
 
                 for g in u.groups:
-                    if not g.is_system or g.is_guest or g.is_responsible:
+                    # same story, check group backend
+                    print "in user groups"
+                    if (group.backend == shadow_backend and
+                        self.calendarserver_backend == XML_BACKEND) or \
+                        (ldap_backend is not None and
+                            group.backend.name == ldap_backend.name and
+                            self.calendarserver_backend == LDAP_BACKEND):
 
-                        self.group_post_add_user(user=u, group=g)
+                        if not g.is_system or g.is_guest or g.is_responsible:
+
+                            self.group_post_add_user(user=u, group=g)
 
     def check_if_element_has_calendar(self, _type, element):
         """ Return True is element ``element`` of type ``type`` has already
@@ -1072,14 +1081,15 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
         else:
             std_group = group
 
-        # If group has just been added into the system,
-        # we need to reload calendarserver environement in order to find the
-        # ressource
-        self.setup_calendarserver_environement()
-
         group_resource_principal = principalForPrincipalID(
             'resources:resource_' + std_group.name)
+        if group_resource_principal is None:
+            # If group has just been added into the system,
+            # we need to reload calendarserver environement in order to find the
+            # ressource
+            self.setup_calendarserver_environement()
 
+        # if group resource still not found, it doesn't exist
         if group_resource_principal is None:
             logging.warning2('{0}: cannot find principal for {1}'.format(
                 stylize(ST_NAME, self.name),
@@ -1134,7 +1144,7 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
                                 stylize(ST_PATH, group_resource_principal)))
 
                 #self.service(svccmds.RESTART)
-                self.setup_calendarserver_environement()
+                #self.setup_calendarserver_environement()
 
             proxies = getProxies(group_resource_principal)
             proxies.addCallback(__add_user_group, group, user)
