@@ -122,7 +122,7 @@ def dynamic_users_tab(users, mode):
             return [
                 {
                     'id': 'calendar',
-                    'title': 'Calendar options',
+                    'title': 'Calendar',
                     'content': generate_tab_content('calendar', content)
                 }
             ]
@@ -168,7 +168,7 @@ def dynamic_groups_tab(groups, mode):
         return [
             {
                 'id': 'calendar',
-                'title': 'Calendar options',
+                'title': 'Calendar',
                 'content': generate_tab_content('calendar', content)
             }
         ]
