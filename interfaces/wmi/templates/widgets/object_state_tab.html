@@ -1,0 +1,148 @@
+
+<script language="javascript" type="text/javascript" src="/media/js/licorn_form.js"></script>
+
+<span class="row-fluid">
+    <span class="span12">
+        {% block first_part_header %}
+            <h4>First part header</h4>
+        {% endblock %}
+    </span>
+    <div class="row-fluid">
+        <span class="span12">
+            {% block first_part_help_text %}
+            {% endblock %}
+        </span>
+    </div>
+    <div class="row-fluid">
+    {% block first_part %}
+       
+    {% endblock %}
+    </div>
+    <!--<div class="row-fluid">
+        {% block first_part_content %}
+             <span class="span6">
+            <table class="table read_proxies" id="model_readers_proxy_table" style="margin-top:0 !important;">
+                <thead>
+                    <th>{{ _('Reader(s)') }}</th>
+                    <th></th>
+                </thead>
+                <tbody>
+                    {% if read_proxies|length == 0 %}
+                        <tr class="no-data"><td><em>{{ _('No <strong>reader</strong> for the moment') }}</em></td></tr>
+                    {% else %}
+                        {% for rp in read_proxies %}
+                            <tr class="proxy" data-login='{{ rp.record.shortNames[0] }}' data-proxy-type='read' id="readers_proxy_{{ rp.record.shortNames[0] }}">
+                                <td>{{ rp }}</td>
+                                <td class='centered'><img src="/media/images/14x14/mass_del.png"></td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </span>
+        <span class="span6">
+            <table class="table write_proxies" id="model_writers_proxy_table" style="margin-top:0 !important;">
+                <thead>
+                    <th>{{ _('Writer(s)') }}</th>
+                    <th></th>
+                </thead>
+                <tbody>
+                    {% if write_proxies|length == 0 %}
+                        <tr class="no-data">
+                            <td><em>{{ _('No <strong>writer</strong> for the moment') }}</em></td>
+                        </tr>
+                    {% else %}
+                        {% for wp in write_proxies %}
+                        <tr class='proxy' data-login='{{ wp.record.shortNames[0] }}' data-proxy-type='write' id="writers_proxy_{{ wp.record.shortNames[0] }}">
+                            <td>{{ wp }}</td>
+                            <td class='centered'><img src="/media/images/14x14/mass_del.png"></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </span>
+        {% endblock %}
+    </div>-->
+</span>
+<span class="row-fluid">
+    <span class="span12">
+        {% block second_part_header %}
+            <h4>{{ avalaible_items['title'] }}</h4>
+        {% endblock %}
+    </span>
+    <div class="row-fluid">
+        <span class="span12 avalaible_items">
+                {% if avalaible_items['list']|length == 0 %}
+                    {{ avalaible_items['no_data_text'] }}
+                {% else %}
+                    {% block second_part_content %}
+                    
+                    {% endblock %}
+                {% endif %}
+                <!--<table class="table avalaible_proxies" id="model_avalaible_proxies_table" style="margin-top:0 !important;">
+                    <thead>
+                        <th>{{ _('Add a reader/writer on the calendar') }}</th>
+                        <th></th>
+                    </thead>
+                    <tbody>
+                        {% if users_principals|length == 0 %}
+                            <tr class="no-data">
+                                <td><em>{{ _('No <strong>avalaible</strong> calendar for the moment') }}</em></td>
+                            </tr>
+                        {% else %}
+                            {% for up in users_principals %}
+                                <tr class="proxy" id="avalaible_proxies_{{ up.record.shortNames[0] }}">
+                                    <td>{{ up }}</td>
+                                    <td class='centered'>
+                                        <img src="/media/images/14x14/mass_add.png">
+                                        <div class="popover">
+                                            <div class="row-fluid">
+                                                <div class="span6">
+                                                    <span class="btn btn-primary" onClick='add_proxy("{{ up.record.shortNames[0] }}", "read");' data-dismiss='clickover'>{{ _('Reader') }}</span>
+                                                </div>
+                                                <div class="span6">
+                                                    <span class="btn btn-success" onClick='add_proxy("{{ up.record.shortNames[0] }}", "write");' data-dismiss='clickover'>{{ _('Writer') }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tobody>
+                </table>-->
+        </span>
+    </div>
+<span>
+    {% block javascript_block %}
+    {% endblock %}
+<script language="javascript" type="text/javascript">
+
+    $(document).ready(function() {
+
+        // setup avalaible items popover
+        setup_avalaible_items_popovers()
+        
+        
+    });
+        function setup_avalaible_items_popovers(obj) {
+            if (obj == null) {
+                obj = $('.avalaible_item')
+            }
+
+            obj.clickover({
+                content: function() { return $(this).find('.popover').html(); },
+                html:true,
+                placement: 'top',
+                template: '<div class="popover"><div class="arrow"></div><div><div class="popover-content"><p></p></div></div></div>',
+                onShown: function(e) {
+                    // initialize click instant apply
+                    init_instant_click($(".instant_click:visible").parent());
+                }
+            });
+        }
+
+
+    
+</script>

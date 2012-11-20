@@ -109,6 +109,48 @@ def dynamic_users_tab(users, mode):
 
             content = render_to_string(
                 '/calendar/parts/user_calendar_content.html', {
+                    'first_part_columns': [ 
+                        {
+                            'title' : 'Readers',
+                            'no_data_text': _('No <strong>reader</strong> for the moment.'),
+                            'lines': read_proxies,
+                            'id': "model_readers_proxy_table",
+                            'class': "read_proxies",
+                            'type' : "read"
+                        },
+                        {
+                            'title' : 'Writers',
+                            'no_data_text': _('No <strong>writer</strong> for the moment.'),
+                            'lines': write_proxies,
+                            'id': "model_writers_proxy_table",
+                            'class': "write_proxies",
+                            'type' : "write"
+                        } ],
+                    'avalaible_items': {
+                        'title' : _('Manage permissions'),
+                        'no_data_text':  _('No <strong>user avalaible</strong> for the moment.'),
+                        'list': get_users_principals(
+                            do_not_include=do_not_include),
+                        'states': [
+                            {
+                                'title': "Reader",
+                                'class': "btn-success",
+                                'base_url_action': "/calendar/users/"+str(user.uidNumber)+"/add/{0}/read"
+                            },
+                            {
+                                'title': "Writer",
+                                'class': "btn-primary",
+                                'base_url_action': "/calendar/users/"+str(user.uidNumber)+"/add/{0}/write"
+                            }
+                        ]
+                    },
+                    'user': user,
+                    'base_url_action': "/calendar/users/" +
+                        str(user.uidNumber),
+                })
+
+            """content = render_to_string(
+                '/calendar/parts/user_calendar_content.html', {
                     'user': user,
                     'read_proxies': read_proxies,
                     'write_proxies': write_proxies,
@@ -117,7 +159,7 @@ def dynamic_users_tab(users, mode):
                     'base_url_action': "/calendar/users/" +
                     str(user.uidNumber),
                 }
-            )
+            )"""
 
             return [
                 {

@@ -440,12 +440,12 @@ def get_user_template(request, mode, users):
 
 	_dict = {}
 
-
+	"""
 	groups_lists = [
 		{
 			'list_name'    : 'bstandard',
 			'list_content' : ''.join([render_to_string('/users/parts/group_membership.html', {
-				'users' : users,
+				groups_lists'users' : users,
 				'group' : g
 				}) for g in pyutils.alphanum_sort(LMC.groups.select(filters.STANDARD), key= 'name')])
 		}
@@ -471,7 +471,7 @@ def get_user_template(request, mode, users):
 					}) for g in pyutils.alphanum_sort(LMC.groups.select(filters.SYSTEM), key='name') if not g.is_helper])
 			}
 		)
-
+	"""
 
 	# TABs 
 

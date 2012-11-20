@@ -1,0 +1,15 @@
+
+
+    {% for item in avalaible_items['list'] %}
+        <span class="btn avalaible_item" id="avalaible_proxies_{{ item.record.shortNames[0] }}">
+            {{item}}
+            <span class="popover">
+                <div class="row-fluid">
+                    {% set column_state_size = 12 / avalaible_items['states']|length %}
+                    {% for state in avalaible_items['states'] %}
+                        <span class="span{{column_state_size|floatformat}} btn {{ state['class'] }} instant_click" data-instant-url="{{ state['base_url_action'].format(item.record.shortNames[0]) }}" data-dismiss="clickover"> {{ state['title'] }} </span>
+                    {% endfor %}
+                </div>
+            </span>
+        </span>
+    {% endfor %}

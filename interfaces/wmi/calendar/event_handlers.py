@@ -5,6 +5,8 @@ from django.utils.translation import ugettext as _
 
 from licorn.interfaces.wmi.libs import utils
 
+from calendarserver.tools.principals import principalForPrincipalID
+
 
 def calendar_add_proxie_handler(request, event):
 
@@ -97,8 +99,24 @@ def calendar_del_proxie_handler(request, event):
         'update_instance',
         'avalaible_proxies',
         proxy.login,
-        render_to_string('/calendar/parts/table_row.html', {
-            'proxy': proxy,
+        render_to_string('/calendar/parts/user_button.html', {
+            'avalaible_items': {
+                        'title' : _('Manage permissions'),
+                        'no_data_text':  _('No <strong>user avalaible</strong> for the moment.'),
+                        'list': [ principalForPrincipalID("users:"+proxy.login) ],
+                        'states': [
+                            {
+                                'title': "Reader",
+                                'class': "btn-success",
+                                'base_url_action': "/calendar/users/"+str(proxy.uidNumber)+"/add/{0}/read"
+                            },
+                            {
+                                'title': "Writer",
+                                'class': "btn-primary",
+                                'base_url_action': "/calendar/users/"+str(proxy.uidNumber)+"/add/{0}/write"
+                            }
+                        ]
+                    },
             'mode': mode,
             'avalaible_list': True,
         }),

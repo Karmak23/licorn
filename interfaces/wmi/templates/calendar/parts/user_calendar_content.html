@@ -1,5 +1,125 @@
-{% extends 'calendar/parts/calendar_content.html' %}
+{% extends 'widgets/object_state_tab.html' %}
 
-{% block calendar_tab_line %}
+
+
+{% block first_part_header %}
+    <h4>Permissions</h4>
+{% endblock %}
+
+{% block first_part_help_text %}
 	{{ _("The calendar of user <strong>{0}</strong> is readable/writable by:").format(user.login) }}
 {% endblock %}
+
+{% block first_part %}
+    {% set column_container_size = 12 / first_part_columns|length %}
+    {% for column in first_part_columns %}
+        <span class="span{{column_container_size|floatformat}}">
+            <table class="table {{ column['class'] }}" id="{{ column['id'] }}" style="margin-top:0 !important;">
+                <thead>
+                    <th>{{ column['title'] }}</th>
+                    <th></th>
+                </thead>
+                <tbody>
+                    {% if column['lines']|length == 0 %}
+                        <tr class="no-data">
+                            <td>
+                                {{ column['no_data_text'] }}
+                            </td>
+                        </tr>
+                    {% else %}
+                        {% for line in column['lines'] %}
+                            {% with col = column %}
+                                {% include '/calendar/parts/line_template.html' %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </span>
+    {% endfor %}
+
+
+
+
+{% endblock %}
+
+
+{% block second_part_content %}
+    <div id="model_avalaible_proxies_table">
+        {% include 'calendar/parts/user_button.html' %}
+    </div>
+{% endblock %}
+
+
+
+{% block javascript_block %}
+
+<script language="javascript" type="text/javascript">
+
+    $(document).ready(function() {
+        console.log('YOYOO')
+      $.each($('.read_proxies tr.proxy'), function() {
+            console.log('icicicici')
+            setup_img_anim($(this));
+            init_delete_click($(this).find('img'));
+        })
+        $.each($('.write_proxies tr.proxy'), function() {
+            setup_img_anim($(this));
+            init_delete_click($(this).find('img'));
+        })
+    });
+
+
+    function setup_img_anim(tr) {
+        tr.find('img').hide();
+        tr.hover(function() {
+            //in
+            $(this).find('img').show();
+        }, function() {
+            //out
+            $(this).find('img').hide();
+        })
+    }
+
+    function init_delete_click(img) {
+        img.click(function() {
+            row = $(this).parent().parent()
+            url_to_get = '{{ base_url_action }}/del/' + row.data('login') + '/' + row.data('proxy-type')
+            console.log(url_to_get)
+            $.get(url_to_get);
+        })
+    }
+
+    function init_add_click(img) {
+        $(img).clickover({
+                title : 'relationship',
+                content  : function() { return $(this).parent().find('.popover').html(); },
+                html: true,
+                placement : 'top',
+                template: '<div class="popover my_popover"><div class="arrow"></div><div class="popover-inner"><div class="popover-content"><p></p></div></div></div>'
+
+            })
+    }
+
+    function add_proxy(who, type) {
+        $.get('{{ base_url_action }}'+'/add/' + who + '/' + type);
+    }
+    function del_proxy(who, type) {
+        $.get('{{ base_url_action }}'+'/del/' + who + '/' + type);
+    }
+
+    function setup_calendar_row(list_name, row, old) {
+        setup_img_anim(row)
+        init_delete_click($(row).find('img'))
+        row.show()
+    }
+    function setup_avalaible_proxies(list_name, row, old) {
+        setup_avalaible_items_popovers(row.find('.avalaible_item'))
+        row.show()
+    }
+</script>
+
+
+
+{% endblock %}
+

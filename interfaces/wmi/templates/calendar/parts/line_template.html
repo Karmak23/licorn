@@ -1,0 +1,11 @@
+
+{% if col['type'] == 'read' %}
+    {% set ident = 'readers_proxy_'+ line.record.shortNames[0] %}
+{% else %}
+    {% set ident = 'writers_proxy_'+ line.record.shortNames[0] %}
+{% endif %}
+<tr class="proxy instant_click" data-login='{{ line.record.shortNames[0] }}' data-proxy-type='{{ col["type"]}}' id="{{ ident }}">
+    <td>{{ line }}</td>
+    <td class='centered'><img src="/media/images/14x14/mass_del.png"></td>
+</tr>
+

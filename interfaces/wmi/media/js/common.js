@@ -3,7 +3,7 @@ var page_cleaner_interval;
 function remove_instance(model, iid, no_item_display) {
 	table = $('#model_' + model + '_table');
 	old   = $('#' + model + '_' + iid);
-	console.log(">> remove_instance", table, old)
+	console.log(">> remove_instance", table, old, iid)
 	old.addClass('to-remove');
 	old.hide();
 	old.remove();
@@ -49,7 +49,8 @@ function update_instance(model, iid, new_html, action_func) {
 
 		// we've got a new challenger, insert it at the end.
 		last = table.find('tr:last');
-		last.after(new_);
+		//last.after(new_);
+		table.append(new_)
 
 		if (last.hasClass('no-data')) {
 			// we previously had no data in the table.
