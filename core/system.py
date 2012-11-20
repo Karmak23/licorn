@@ -183,8 +183,10 @@ class SystemController(ObjectSingleton, NamedObject, ListenerObject, Pyro.core.O
 		return systype
 	def updates_available(self, full=False, *args, **kwargs):
 		up, sec = apt.apt_do_check()
+
 		if full:
 			return up, sec
+
 		return (up or sec)
 	def security_updates(self, *args, **kwargs):
 		return apt.apt_do_check()[1]
