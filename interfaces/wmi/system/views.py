@@ -122,6 +122,12 @@ def main(request, *args, **kwargs):
 		cpus, cpu_model                = __cpu_infos()
 		status_messages, info_messages = __gather_wmi_messages(request)
 
+		# 
+		try:
+			my_machine = LMC.machines.select(None, myself=True)[0]
+		except IndexError:
+			# I cannot find my machine
+			my_machine = None
 		_dict.update({
 				'status_messages'       : status_messages,
 				'main_content_template' : 'system/index_main.html',
@@ -132,7 +138,7 @@ def main(request, *args, **kwargs):
 				'avg_loads'             : collectors.avg_loads(),
 				'connected'             : collectors.connected_users(),
 				'sub_content_template'  : 'system/index_sub.html',
-				'machine'               : LMC.machines.select(None, myself=True)[0]
+				'machine'               : my_machine
 		})
 
 	else:
