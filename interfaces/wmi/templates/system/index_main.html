@@ -21,7 +21,9 @@
 
 	{{ informations[0] }}
 	
-	<span style="float:right;">{{ updates_status(machine, big=True) }}</span>
+	{% if machine != None %}
+		<span style="float:right;">{{ updates_status(machine, big=True) }}</span>
+	{% endif %}
 
 	<p>{{ _('Licorn® Server <strong>{0}</strong>, {1} {2} (version&nbsp;{3}).').format(
 			config('network.hostname'),
