@@ -47,14 +47,16 @@ def scan(request, *args, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	LMC.machines.scan_network()
-	return HttpResponse('Processing network scan')
 
+	return HttpResponse('IN PROGRESS')
 
+@staff_only
 def edit(request, mid, *args, **kwargs):
 	""" machine edit view.  """
 
 	# we need to sort the form_blocks dict to display headers in order
 	sorted_blocks = OrderedDict({})
+
 	for k in sorted(machine_form_blocks.iterkeys()):
 		sorted_blocks.update({ k: machine_form_blocks[k]})
 
@@ -76,28 +78,31 @@ def edit(request, mid, *args, **kwargs):
 			'edit_html'  : render_to_string('machines/edit.html', edit_dict)
 		})
 
-
-
-
 	return HttpResponse()
 
+@staff_only
 def upgrade(request, mid, software_upgrades, *args, **kwargs):
 	""" upgrade one machine defined by its mid """
 	try:
-		LMC.machines.guess_one(mid).do_upgrade(raise_exception=True, software_upgrades=software_upgrades)
+		LMC.machines.guess_one(mid).do_upgrade(raise_exception=True,
+											software_upgrades=software_upgrades)
+
 	except exceptions.LicornWebCommandException, e:
 		wmi_event_app.queue(request).put(utils.notify(str(e)))
 
 	return HttpResponse("OK")
 
+@staff_only
 def shutdown(request, mid, *args, **kwargs):
 	try:
 		LMC.machines.guess_one(mid).shutdown(raise_exception=True)
+
 	except exceptions.LicornWebCommandException, e:
 		wmi_event_app.queue(request).put(utils.notify(str(e)))
 
 	return HttpResponse("OK")
 
+# no @staff_only, it's just a template generator.
 def massive_select_template(request, action_name, mids, *args, **kwargs):
 	return HttpResponse(
 		render_to_string('machines/parts/massive_{0}.html'.format(action_name),
@@ -105,22 +110,26 @@ def massive_select_template(request, action_name, mids, *args, **kwargs):
 				'machines' : [ LMC.machines.guess_one(m) for m in mids.split(',') ],
 		}))
 
+@staff_only
 def massive(request, action_name, mids, value, *args, **kwargs):
 	for mid in mids.split(','):
 		if action_name == 'upgrade':
 			software_upgrades = bool(value)
 			upgrade(request, mid, software_upgrades)
+
 		elif action_name == 'shutdown':
 			shutdown(request, mid)
+
 	return HttpResponse('OK')
 
+@staff_only
 def instant_edit(request, mid, part, value, *args, **kwargs):
 	""" instant edit function """
 	machine = LMC.machines.guess_one(mid)
+
 	if part == 'hostname':
 		machine.hostname = value
 		return HttpResponse(value)
-
 
 def hotkeys_help(request):
 	return render(request, '/machines/parts/hotkeys_help.html')
