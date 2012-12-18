@@ -188,9 +188,9 @@ class SimpleShare(PicklableObject):
 
 				# This is very basic, but sufficient for now.
 				os.chown(self.uploads_directory,
-							self.__coreobj.uidNumber
-								if hasattr(self.__coreobj, 'uidNumber') else 0,
-							self.__coreobj.gidNumber)
+							self.coreobj.uidNumber
+								if hasattr(self.coreobj, 'uidNumber') else 0,
+							self.coreobj.gidNumber)
 
 			except (OSError, IOError), e:
 				if e.errno != errno.EEXIST:
