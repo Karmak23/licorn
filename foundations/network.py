@@ -286,7 +286,7 @@ def find_first_local_ip_address_Linux():
 
 	interfaces = []
 	for range_min, range_max in ((0, 3), (3, 10)):
-		for iface_name in ('eth', 'wlan', 'ath', 'br'):
+		for iface_name in ('eth', 'wlan', 'ath', 'br', 'lxcbr'):
 			interfaces.extend([ '%s%s' % (iface_name, x) for x in range(
 				range_min, range_max) ])
 
