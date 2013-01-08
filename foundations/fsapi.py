@@ -12,7 +12,7 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import sys, os, posix1e, time, shutil, errno, re, types
+import sys, os, locale, posix1e, time, shutil, errno, re, types
 from stat import *
 
 # ================================================= Licorn® foundations imports
@@ -31,6 +31,7 @@ from base      import Enumeration
 from ltrace    import *
 from ltraces   import *
 from styles    import *
+from constants import distros
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
@@ -937,6 +938,37 @@ def check_utf8_filename(path, batch=False, auto_answer=None, full_display=True):
 		else:
 			raise exceptions.LicornCheckError(_(u'File {0} has an invalid utf8 '
 				u'filename, it must be renamed before beiing checked further.'))
+def get_filesystem_encoding():
+	""" This function will ensure we have a proper filename encoding. This can
+		be tricky in some situations (see #952), eg even on Ubuntu where
+		everything is UTF-8, the Python function returns the weird
+		'ANSI_X3.4-1968' instead of ``None``. This is totally erroneous and we
+		have to circumvent this.
+	"""
+		enc = sys.getfilesystemencoding()
+
+		# BEGIN real-world-experience workarounds…
+
+		if enc == 'ANSI_X3.4-1968':
+			if locale.getlocale() == (None, None):
+
+				try:
+					if LMC.configuration.distro in (distros.LICORN, distros.UBUNTU,
+												distros.DEBIAN):
+						# On Ubuntu Debian, and thus Licorn®, utf-8 is the
+						# default, whatever false default value Python is
+						# trying to feed us.
+						return 'utf-8'
+
+				except AttributeError:
+					# LMC.configuration is not yet initialized. 'utf-8' is our
+					# wisest choice given the current conditions, even if we
+					# are not yet confident on the host distro.
+					return 'utf-8'
+
+		# END real-world-experience workarounds…
+
+		return enc
 def __raise_or_return(pretty_path, batch, auto_answer):
 	""" Exceptions should not be re-raised in batch mode, or if the user
 		wants to continue despite them.
@@ -1004,7 +1036,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False, check_symlinks=Fals
 	# Taken from /usr/lib/python2.7/test/test_support.py, to try to avoid #902.
 	# Please don't use 'ascii' as fallback, this is a very bad choice on any
 	# modern system, where all users files are encoded as utf-8 (#952).
-	path = path.encode(sys.getfilesystemencoding() or 'utf-8')
+	path = path.encode(get_filesystem_encoding())
 
 	pretty_path = stylize(ST_PATH, path)
 
