@@ -945,30 +945,30 @@ def get_filesystem_encoding():
 		'ANSI_X3.4-1968' instead of ``None``. This is totally erroneous and we
 		have to circumvent this.
 	"""
-		enc = sys.getfilesystemencoding()
+	enc = sys.getfilesystemencoding()
 
-		# BEGIN real-world-experience workarounds…
+	# BEGIN real-world-experience workarounds…
 
-		if enc == 'ANSI_X3.4-1968':
-			if locale.getlocale() == (None, None):
+	if enc == 'ANSI_X3.4-1968':
+		if locale.getlocale() == (None, None):
 
-				try:
-					if LMC.configuration.distro in (distros.LICORN, distros.UBUNTU,
-												distros.DEBIAN):
-						# On Ubuntu Debian, and thus Licorn®, utf-8 is the
-						# default, whatever false default value Python is
-						# trying to feed us.
-						return 'utf-8'
-
-				except AttributeError:
-					# LMC.configuration is not yet initialized. 'utf-8' is our
-					# wisest choice given the current conditions, even if we
-					# are not yet confident on the host distro.
+			try:
+				if LMC.configuration.distro in (distros.LICORN, distros.UBUNTU,
+											distros.DEBIAN):
+					# On Ubuntu Debian, and thus Licorn®, utf-8 is the
+					# default, whatever false default value Python is
+					# trying to feed us.
 					return 'utf-8'
 
-		# END real-world-experience workarounds…
+			except AttributeError:
+				# LMC.configuration is not yet initialized. 'utf-8' is our
+				# wisest choice given the current conditions, even if we
+				# are not yet confident on the host distro.
+				return 'utf-8'
 
-		return enc
+	# END real-world-experience workarounds…
+
+	return enc
 def __raise_or_return(pretty_path, batch, auto_answer):
 	""" Exceptions should not be re-raised in batch mode, or if the user
 		wants to continue despite them.
