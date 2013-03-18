@@ -57,10 +57,10 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
     @property
     def afp_version(self):
 
-        afp_output  = process.execute((self.path_daemon, '-v'))
+        afp_output = process.execute((self.path_daemon, '-v'))[0]
 
         try:
-            return afp_output[1].splitlines()[0].split()[1]
+            return afp_output.splitlines()[0].split()[1]
 
         except:
             logging.exception('BOUH!')
