@@ -139,7 +139,8 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
                 logging.notice(_(u'{0}: removed unwanted configuration entry '
                                  u'{1} in {2}.').format(
                                      self.pretty_name,
-                                     stylize(ST_COMMENT, line),
+                                     # Strip the ending newline upon display.
+                                     stylize(ST_COMMENT, line[:-1]),
                                      stylize(ST_PATH,
                                              self.path_apple_volumes_default)))
                 continue
