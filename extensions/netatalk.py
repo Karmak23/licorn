@@ -134,6 +134,8 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
             offender = re.match(r'{0}/(?P<name>[^/]+)\s+'.format(
                                 LMC.configuration.groups.base_path), line)
 
+            logging.info('offender: %s' % (offender and offender.group('name') or ''))
+
             if offender and offender.group('name') not in LMC.groups.keys():
                 # TODO: if not logging.ask_for_repair(_('Wipe bad entry?')):
                 need_rewrite = True
