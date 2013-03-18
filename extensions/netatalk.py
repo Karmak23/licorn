@@ -15,7 +15,7 @@ from licorn.foundations           import logging, events, settings
 from licorn.foundations           import process, platform
 from licorn.foundations.styles    import (stylize,
                                           ST_PATH, ST_NAME, ST_UGID,
-                                          ST_OK)
+                                          ST_OK, ST_COMMENT)
 from licorn.foundations.base      import ObjectSingleton
 from licorn.foundations.classes   import ConfigFile
 from licorn.foundations.constants import services, svccmds
@@ -63,7 +63,6 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
             return afp_output.splitlines()[0].split()[1]
 
         except:
-            logging.exception('BOUH!')
             return '<unknown>'
 
     @property
@@ -137,14 +136,19 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
             if offender and offender.group('name') not in LMC.groups.names:
                 # TODO: if not logging.ask_for_repair(_('Wipe bad entry?')):
                 need_rewrite = True
+                logging.notice(_(u'{0}: removed unwanted configuration entry '
+                                 u'{1} in {2}.').format(
+                                     self.pretty_name,
+                                     stylize(ST_COMMENT, line),
+                                     stylize(ST_PATH,
+                                             self.path_apple_volumes_default)))
                 continue
 
             new_data += line
 
         if need_rewrite:
-            #with open(self.path_apple_volumes_default, 'w') as f:
-            #    f.write(new_data)
-            logging.info('rewrite %s' % new_data)
+            with open(self.path_apple_volumes_default, 'w') as f:
+                f.write(new_data)
 
         if need_reload or need_rewrite:
             self.service(svccmds.RELOAD)
@@ -204,6 +208,13 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
                         'allow:@{2},@{1},@rsp-{1}\n'.format(
                         group.homeDirectory, group.name,
                         settings.defaults.admin_group))
+
+            logging.notice(_(u'{0}: added missing configuration entry '
+                             u'for group {1} in {2}.').format(
+                                 self.pretty_name,
+                                 stylize(ST_NAME, group.name),
+                                 stylize(ST_PATH,
+                                         self.path_apple_volumes_default)))
 
             if with_reload:
                 self.service(svccmds.RELOAD)
