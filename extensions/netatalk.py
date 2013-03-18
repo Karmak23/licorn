@@ -11,7 +11,7 @@ Licorn extensions: netatalk - http://docs.licorn.org/extensions/netatalk.html
 import os
 import re
 
-from licorn.foundations           import logging, events
+from licorn.foundations           import logging, events, settings
 from licorn.foundations           import process, platform
 from licorn.foundations.styles    import (stylize,
                                           ST_PATH, ST_NAME, ST_UGID,
@@ -134,8 +134,6 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
             offender = re.match(r'{0}/(?P<name>[^/]+)\s+'.format(
                                 LMC.configuration.groups.base_path), line)
 
-            print '>>', offender and offender.group('name') or ''
-
             if offender and offender.group('name') not in LMC.groups.keys():
                 # TODO: if not logging.ask_for_repair(_('Wipe bad entry?')):
                 need_rewrite = True
@@ -202,8 +200,10 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
 
         if need_rewrite:
             with open(self.path_apple_volumes_default, 'a') as f:
-                f.write('{0} "{1}" cnidscheme:dbd allow:@{1},@rsp-{1}\n'.format(
-                        group.homeDirectory, group.name))
+                f.write('{0} "{1}" cnidscheme:dbd '
+                        'allow:@{2},@{1},@rsp-{1}\n'.format(
+                        group.homeDirectory, group.name,
+                        settings.defaults.admin_group))
 
             if with_reload:
                 self.service(svccmds.RELOAD)
