@@ -117,7 +117,8 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
         need_reload = False
 
         for group in LMC.groups:
-            if self.__add_group_conf(group, with_reload=False):
+            if group.is_standard and self.__add_group_conf(group,
+                                                           with_reload=False):
                 need_reload = True
 
         new_data = ''
@@ -210,13 +211,25 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
     @events.handler_method
     @only_if_enabled
     def group_post_add(self, *args, **kwargs):
-        """ Add the new group configuration and reload the service. """
+        """ Add the new group configuration and reload the service. Only for
+            standard groups. """
 
-        return self.__add_group_conf(kwargs.pop('group'))
+        group = kwargs.pop('group')
+
+        if group.is_system:
+            return
+
+        return self.__add_group_conf(group)
 
     @events.handler_method
     @only_if_enabled
     def group_pre_del(self, *args, **kwargs):
-        """ Remove the group configuration and reload the service. """
+        """ Remove the group configuration and reload the service. Only for
+            standard groups. """
 
-        return self.__del_group_conf(kwargs.pop('group'))
+        group = kwargs.pop('group')
+
+        if group.is_system:
+            return
+
+        return self.__del_group_conf(group)
