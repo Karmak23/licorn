@@ -130,10 +130,10 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
             # /home/groups/Time_Machine/Machine1 is valid, even if
             # “ Time_Machine ” is not a group. The purpose is to
             # keep Time Machine entries; did you guess it?
-            offender = re.match(r'{0}/([^/]+)\s+'.format(
+            offender = re.match(r'{0}/(?P<name>[^/]+)\s+'.format(
                                 LMC.configuration.groups.base_path), line)
 
-            if offender.groups[0] not in LMC.groups.keys():
+            if offender.group('name') not in LMC.groups.keys():
                 # TODO: if not logging.ask_for_repair(_('Wipe bad entry?')):
                 need_rewrite = True
                 continue
