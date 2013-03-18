@@ -55,6 +55,18 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
         return u'/etc/netatalk/afpd.conf'
 
     @property
+    def afp_version(self):
+
+        afp_output  = process.execute((self.path_daemon, '-v'))
+
+        try:
+            return afp_output[1].splitlines()[0].split()[1]
+
+        except:
+            logging.exception('BOUH!')
+            return '<unknown>'
+
+    @property
     def path_apple_volumes_default(self):
 
         return u'/etc/netatalk/AppleVolumes.default'
@@ -84,13 +96,10 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
         if not self.running(self.paths.pid_file):
             self.service(svccmds.START)
 
-        afp_output  = process.execute((self.path_daemon, '-v'))
-        afp_version = afp_output[1].splitlines()[0].split()[1]
-
         logging.info(_(u'{0}: extension available on top of {1} version '
                      u'{2}, service currently {3}.').format(self.pretty_name,
                      stylize(ST_NAME, 'afpd'),
-                     stylize(ST_UGID, afp_version),
+                     stylize(ST_UGID, self.afp_version),
                      stylize(ST_OK, _('enabled'))))
 
         # return must_be_running
