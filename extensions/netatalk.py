@@ -202,7 +202,7 @@ class NetatalkExtension(ObjectSingleton, ServiceExtension):
 
         if need_rewrite:
             with open(self.path_apple_volumes_default, 'a') as f:
-                f.write('{0} "{1}" cnidscheme:dbd allow:@{1},@rsp-{1}'.format(
+                f.write('{0} "{1}" cnidscheme:dbd allow:@{1},@rsp-{1}\n'.format(
                         group.homeDirectory, group.name))
 
             if with_reload:
