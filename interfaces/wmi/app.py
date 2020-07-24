@@ -278,7 +278,7 @@ class WmiOperatorThread(LicornThread):
 			wmi_event_app.queues[request.session.session_key] = utils.notify(str(e))
 class WmiEventApplication(ObjectSingleton):
 	""" The "thing" that centralizes all background operations in the WMI. It
-		is manupulated by licorn threads and via Django views. It holds "slave"
+		is manupulated by licorn threads and via Django views. It holds "subordinate"
 		(wmi-only) threads too, and is the central place to start and stop them.
 
 		* via its event-collector, it receives all `Events` going via the daemon.

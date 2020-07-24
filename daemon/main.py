@@ -560,17 +560,17 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		rusage   = resource.getrusage(resource.RUSAGE_SELF)
 		pagesize = resource.getpagesize()
 
-		master_locks  = []
-		master_locked = []
+		main_locks  = []
+		main_locked = []
 
 		sub_locks  = []
 		sub_locked = []
 
 		for controller in LMC:
 			if hasattr(controller, 'is_locked'):
-				master_locks.append(controller.name)
+				main_locks.append(controller.name)
 				if controller.is_locked():
-					master_locked.append(controller.name)
+					main_locked.append(controller.name)
 
 			try:
 				with controller.lock:
@@ -645,8 +645,8 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				nb_threads=_thcount(),
 				nb_controllers=stylize(ST_UGID, len(LMC)),
 				nb_queues=stylize(ST_UGID, len(workers.queues)),
-				nb_locked=stylize(ST_IMPORTANT, len(master_locked)),
-				nb_locks=stylize(ST_UGID, len(master_locks)),
+				nb_locked=stylize(ST_IMPORTANT, len(main_locked)),
+				nb_locks=stylize(ST_UGID, len(main_locks)),
 				sub_locked=stylize(ST_IMPORTANT, len(sub_locked)),
 				sub_locks=stylize(ST_UGID, len(sub_locks)),
 				ru_utime=rusage.ru_utime, #format_time_delta(int(rusage.ru_utime), long=False),
@@ -657,9 +657,9 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				mem_stk=float(rusage.ru_isrss * pagesize) / (1024.0*1024.0)
 				)
 
-			if len(master_locked) > 0:
+			if len(main_locked) > 0:
 				data += _(u'Mlocks:  %s\n') % u', '.join(stylize(ST_IMPORTANT, x)
-														for x in master_locked)
+														for x in main_locked)
 
 			if len(sub_locked) > 0:
 				data += _(u'Ulocks:  %s\n') % u', '.join(stylize(ST_IMPORTANT, x)
@@ -704,8 +704,8 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				uptime=time.time() - dstart_time,
 				nb_threads=active_count(),
 				nb_controllers=len(LMC),
-				mlocks=master_locks,
-				mlocked=master_locked,
+				mlocks=main_locks,
+				mlocked=main_locked,
 				slocks=sub_locks,
 				slocked=sub_locked,
 				ru_utime=rusage.ru_utime, #format_time_delta(int(rusage.ru_utime), long=False),

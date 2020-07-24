@@ -30,7 +30,7 @@ from licorn.core.classes          import CoreController, CoreStoredObject
 def not_myself(func):
 	@functools.wraps(func)
 	def wrap(self, *a, **kw):
-		if self.myself or self.master_machine:
+		if self.myself or self.main_machine:
 			return
 		else:
 			return func(self, *a, **kw)
@@ -202,14 +202,14 @@ class Machine(CoreStoredObject, SharedResource):
 		self.system = system
 
 		self.linked_machines = linked_machines if linked_machines else []
-		self.master_machine  = None
+		self.main_machine  = None
 
 		# a shortcut to avoid testing everytime
 		# if the current object is local or not.
 		self.myself = myself
 
 		for machine in self.linked_machines:
-			machine.master_machine = self
+			machine.main_machine = self
 
 		self.linked_users  = linked_users  if linked_users  else []
 		self.linked_groups = linked_groups if linked_groups else []
@@ -254,7 +254,7 @@ class Machine(CoreStoredObject, SharedResource):
 		if isinstance(licorn_object, Machine):
 
 			self.linked_machines.append(licorn_object)
-			licorn_object.master_machine = self
+			licorn_object.main_machine = self
 
 			# avoid talking to myself via the network, if applicable.
 			licorn_object.myself = self.myself
@@ -499,7 +499,7 @@ class Machine(CoreStoredObject, SharedResource):
 				remote_ifaces.remove(self.mid)
 				for iface in remote_ifaces:
 					if iface in self.controller.keys():
-						if not self.master_machine:
+						if not self.main_machine:
 							self.add_link(self.controller[iface])
 						#else:
 						#	print '>>nothing done'
@@ -508,22 +508,22 @@ class Machine(CoreStoredObject, SharedResource):
 						#print '>> creating', iface, 'on next loop'
 						#
 						# when the second machine will have been created,
-						# the pyroize() phase will reconcile master/slave
+						# the pyroize() phase will reconcile main/subordinate
 						# again. Next service loop.
 						workers.service_enqueue(priorities.HIGH,
 									self.controller.add_machine, mid=iface)
 	def pyro_shutdown(self):
 		""" WIPE the system attribute and mark the machine as shutting down.
-			DO the same for all linked machines if we are the master. Don't
+			DO the same for all linked machines if we are the main. Don't
 			do anything if we are not.
 		"""
 
 		caller = current_thread().name
 
-		if self.master_machine:
+		if self.main_machine:
 			assert ltrace(TRACE_MACHINES, '%s: not doing pyro_shutdown on self '
-				'(%s), we are slave of %s.' (caller, self.ip,
-					self.master_machine.ip))
+				'(%s), we are subordinate of %s.' (caller, self.ip,
+					self.main_machine.ip))
 			return
 
 		logging.notice(_(u'{0}: {1} at {2}.').format(caller,
@@ -548,7 +548,7 @@ class Machine(CoreStoredObject, SharedResource):
 		#print '>> pyro_goodbye_from', remote_ifaces, 'to', self.ip
 		caller = current_thread().name
 
-		if self.master_machine:
+		if self.main_machine:
 			return
 
 		try:
@@ -611,9 +611,9 @@ class Machine(CoreStoredObject, SharedResource):
 			if system is not None:
 				self.system = system
 
-			# we don't update informations for slaves,
-			# they get updated by masters.
-			if self.master_machine:
+			# we don't update informations for subordinates,
+			# they get updated by mains.
+			if self.main_machine:
 				return
 
 			if self.system is None:
@@ -641,7 +641,7 @@ class Machine(CoreStoredObject, SharedResource):
 
 					self.pyro_deduplicate()
 
-					if self.master_machine:
+					if self.main_machine:
 						return
 
 					logging.notice(_(u'{0}: {1} at {2}.').format(caller,
@@ -1043,7 +1043,7 @@ class MachinesController(DictSingleton, CoreController):
 
 		for machine in self:
 			if machine.system and not (
-							machine.master_machine or machine.myself):
+							machine.main_machine or machine.myself):
 				assert ltrace(TRACE_MACHINES,
 									'| annouce_shutdown() to %s' % machine.ip)
 				workers.service_enqueue(priorities.HIGH,
@@ -1087,7 +1087,7 @@ class MachinesController(DictSingleton, CoreController):
 
 				def keep_status(machine, status=None):
 					if machine.status == status \
-							and machine.master_machine is None:
+							and machine.main_machine is None:
 						filtered_machines.append(machine)
 
 				if None == filter_string:

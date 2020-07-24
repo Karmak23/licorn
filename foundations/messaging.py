@@ -189,7 +189,7 @@ class ListenerObject(object):
 		# The monitor_lock avoids collisions on listener.verbose
 		# modifications while a flood of messages are beiing sent
 		# on the wire. Having a per-thread lock avoids locking
-		# the master `options.monitor_lock` from the client side
+		# the main `options.monitor_lock` from the client side
 		# when only one monitor changes its verbose level. This
 		# is more fine grained.
 		t.monitor_lock = RLock()

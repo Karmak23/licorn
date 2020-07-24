@@ -634,7 +634,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 		#: a collection of RLocks for multi-thread safety.
 		self.locks = MixedDictObject(name='module_locks')
 
-		#: a global, kind of "master" lock.
+		#: a global, kind of "main" lock.
 		self.locks._global = RLock()
 
 		#: A list of compatible modules. See :ref:`modules` for details

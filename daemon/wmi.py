@@ -59,7 +59,7 @@ class WebManagementInterface(BaseLicornThread):
 		# environment to load.
 		#
 		# The wmi_event_app must be loaded here in MainThread, because it will
-		# setup a signal handler (to reconnect to master `licornd`).
+		# setup a signal handler (to reconnect to main `licornd`).
 		#
 		# And all this can't be done before because we need to be root to
 		# access logs and other restricted resources. To be root, we need to

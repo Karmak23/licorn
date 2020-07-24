@@ -1112,14 +1112,14 @@ def add_profile_parse_arguments(app):
 	profile.add_option("--name", '--profile-name', '--profile',
 		action="store", type="string", dest="name", default=None,
 		help=_(u"The profile's name (ie: « Administrator », « Power user », "
-			u"« Webmaster », « Guest »). It must conform to {0} word. {1}.").format(
+			u"« Webmain », « Guest »). It must conform to {0} word. {1}.").format(
 				stylize(ST_COMMENT, hlstr.regex['profile_name']),
 				stylize(ST_IMPORTANT, _(u"It is required"))))
 
 	profile.add_option('-g', "--group", '--profile-group',
 		action="store", type="string", dest="group", default=None,
 		help=_(u"Group name (or GID) identifying the profile on the system "
-			u"(ie: «administrators», «power-users», «webmasters», «guests»). "
+			u"(ie: «administrators», «power-users», «webmains», «guests»). "
 			u"It should be a plural world and will become a system group. %s.")
 				% stylize(ST_IMPORTANT, _(u"It is required")))
 

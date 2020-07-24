@@ -14,9 +14,9 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 
-from licorn.core import LicornMasterController, LMC
+from licorn.core import LicornMainController, LMC
 
-ServerLMC = LicornMasterController(master=False)
+ServerLMC = LicornMainController(main=False)
 
 def client_hello():
 
@@ -72,7 +72,7 @@ def server_reconnect(remote_interfaces):
 	from licorn.daemon.cmdlistener import LicornPyroValidator
 
 	if remote_interfaces == LicornPyroValidator.server_addresses:
-		ServerLMC = LicornMasterController(master=False)
+		ServerLMC = LicornMainController(main=False)
 		logging.notice('%s: %s to Licorn® server %s.' % (
 			current_thread().name,
 			stylize(ST_OK, 'Successfully reconnected'),

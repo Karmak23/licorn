@@ -141,8 +141,8 @@ def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 										for d in day.split(',')]),
 								'{0}:{1}'.format(hour, minute), m))))
 
-				if mach.master_machine is not None:
-					machines_to_shutdown.append(mach.master_machine.mid)
+				if mach.main_machine is not None:
+					machines_to_shutdown.append(mach.main_machine.mid)
 
 				else:
 					machines_to_shutdown.append(mach.mid)

@@ -461,7 +461,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		if self.distro == distros.UBUNTU:
 			# postfix is chrooted on Ubuntu Dapper.
-			if os.path.exists("/var/spool/postfix/pid/master.pid"):
+			if os.path.exists("/var/spool/postfix/pid/main.pid"):
 				self.mta = servers.MTA_POSTFIX
 				return
 		else:
@@ -1592,7 +1592,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# dans /etc/hosts, la série de tests sur eth0 aurait pu marcher grâce
 		# à ça et donc rien ne dit que la conf DNS est OK…
 	def CheckMailboxConfigIntegrity(self, batch=False, auto_answer=None):
-		"""Verify "slaves" configuration files are OK, else repair them."""
+		"""Verify "subordinates" configuration files are OK, else repair them."""
 
 		"""
 			if mailbox:

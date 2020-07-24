@@ -20,7 +20,7 @@ from licorn.foundations.constants import roles
 from licorn.interfaces.cli        import LicornCliApplication, CliInteractor
 from licorn.core                  import LMC
 
-def __get_master_object(opts):
+def __get_main_object(opts):
 	if settings.role != roles.SERVER:
 		# On CLIENTS, rwi is remote, system is local. See core.LMC.connect()
 		return LMC.rwi if opts.remote else LMC.system
@@ -31,13 +31,13 @@ def __get_master_object(opts):
 
 def get_events(opts, args, listener):
 
-	master_object = __get_master_object(opts)
+	main_object = __get_main_object(opts)
 
 	if opts.monitor:
 		if opts.facilities is None:
 			opts.facilities = 'std'
 
-		monitor_id     = master_object.register_monitor(opts.facilities)
+		monitor_id     = main_object.register_monitor(opts.facilities)
 		cli_interactor = CliInteractor(listener)
 
 		try:
@@ -51,19 +51,19 @@ def get_events(opts, args, listener):
 				raise
 		finally:
 			try:
-				master_object.unregister_monitor(monitor_id)
+				main_object.unregister_monitor(monitor_id)
 
 			except Pyro.errors.ConnectionClosedError:
 				# the connection has been closed by the server side.
 				pass
 
 	else:
-		master_object.get_events_list(opts, args)
+		main_object.get_events_list(opts, args)
 def get_events_reconnect(opts, args, listener):
-	__get_master_object(opts).register_monitor(opts.facilities)
+	__get_main_object(opts).register_monitor(opts.facilities)
 def get_status(opts, args, listener):
 
-	master_object = __get_master_object(opts)
+	main_object = __get_main_object(opts)
 
 	if opts.monitor:
 		def get_status_thread(opts, args, opts_lock, stop_event, quit_func):
@@ -79,7 +79,7 @@ def get_status(opts, args, listener):
 			while not stop_event.is_set():
 				with opts_lock:
 					try:
-						master_object.get_daemon_status(opts, args)
+						main_object.get_daemon_status(opts, args)
 
 					except Pyro.errors.ConnectionClosedError:
 						# wait a little before exiting, in case the daemon
@@ -135,13 +135,13 @@ def get_status(opts, args, listener):
 		opts.clear_terminal = False
 
 		try:
-			master_object.get_daemon_status(opts, args)
+			main_object.get_daemon_status(opts, args)
 
 		except:
 			logging.exception(_(u'Could not obtain daemon status'))
 def get_inside(opts, args, listener):
 
-	master_object = __get_master_object(opts)
+	main_object = __get_main_object(opts)
 
 	import code
 
@@ -160,13 +160,13 @@ def get_inside(opts, args, listener):
 					return '	'
 				return None
 
-			return master_object.console_complete(phrase, state)
+			return main_object.console_complete(phrase, state)
 		def runsource(self, source, filename=None, symbol="single"):
 
 			if filename is None:
 				filename = "<licorn_remote_console>"
 
-			more, output = master_object.console_runsource(source, filename)
+			more, output = main_object.console_runsource(source, filename)
 
 			if output:
 				self.write(output)
@@ -203,12 +203,12 @@ def get_inside(opts, args, listener):
 		try:
 			is_tty = sys.stdin.isatty()
 
-			master_object.console_start(is_tty=is_tty)
+			main_object.console_start(is_tty=is_tty)
 
 			if is_tty:
 				sys.ps1 = u'licornd> '
 				banner  =_(u'Licorn® {0} version {2} role {1}, Python {3} on {4}').format(
-										*master_object.console_informations())
+										*main_object.console_informations())
 
 			else:
 				sys.ps1 = u''
@@ -233,7 +233,7 @@ def get_inside(opts, args, listener):
 				logging.exception(_(u'unable to write history file!'))
 
 		try:
-			master_object.console_stop()
+			main_object.console_stop()
 
 		except Pyro.errors.ConnectionClosedError:
 			pass

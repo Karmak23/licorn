@@ -65,9 +65,9 @@ def stop_message_thread():
 	except:
 		logging.notice(_(u'OK. We\'re running now!'))
 
-class LicornMasterController(MixedDictObject):
-	""" The master container of all Licorn® system objects. It handles
-		initialization of all of them. Can be considered as a master global
+class LicornMainController(MixedDictObject):
+	""" The main container of all Licorn® system objects. It handles
+		initialization of all of them. Can be considered as a main global
 		object, permitting easy access to all others (which are thread-safe).
 
 		The LMC is not thread-safe per-se, because it doesn't need to. Its
@@ -86,7 +86,7 @@ class LicornMasterController(MixedDictObject):
 
 	#: names of attributes not stored in the :class:`dict` part of the
 	#: :class:`MixedDictObject`, but as *real* attributes of the current
-	#: :class:`LicornMasterController` instance.
+	#: :class:`LicornMainController` instance.
 	_licorn_protected_attrs = (
 			MixedDictObject._licorn_protected_attrs
 			+ [ 'locks', 'licornd' ]
@@ -102,28 +102,28 @@ class LicornMasterController(MixedDictObject):
 		#		'the daemon here!'))
 		self.__licornd = licornd
 	def __init__(self, *args, **kwargs):
-		""" Default name of :class:`LicornMasterController` is "LMC" because it
+		""" Default name of :class:`LicornMainController` is "LMC" because it
 			is meant to be only one LMC.
 
-			:param master: set to ``True`` when creating the first LMC instance,
+			:param main: set to ``True`` when creating the first LMC instance,
 				else ``False``. This will permit reusing already loaded
 				controllers in helper LMCs (only used in CLIENT mode as of now).
 		"""
 
 		licornd = kwargs.pop('licornd', None)
-		master  = kwargs.pop('master', True)
+		main  = kwargs.pop('main', True)
 
-		if master:
-			super(LicornMasterController, self).__init__(name='LMC')
+		if main:
+			super(LicornMainController, self).__init__(name='LMC')
 
 		else:
-			super(LicornMasterController, self).__init__(name='HelperLMC')
+			super(LicornMainController, self).__init__(name='HelperLMC')
 
 		self.__licornd = licornd
 
 		assert ltrace_func(TRACE_CORE)
 
-		self._master = master
+		self._main = main
 
 		self._connect_lock = RLock()
 		self._connections  = 0
@@ -138,10 +138,10 @@ class LicornMasterController(MixedDictObject):
 			              during configuration initialization should be
 			              corrected automatically (default: ``False``).
 		"""
-		if LicornMasterController._init_conf_full:
+		if LicornMainController._init_conf_full:
 			return
 
-		if self._master:
+		if self._main:
 
 			try:
 				from configuration import LicornConfiguration
@@ -153,7 +153,7 @@ class LicornMasterController(MixedDictObject):
 
 			self.configuration.load(batch=batch)
 
-			LicornMasterController._init_conf_full = True
+			LicornMainController._init_conf_full = True
 
 		else:
 			self.configuration = LMC.configuration
@@ -207,8 +207,8 @@ class LicornMasterController(MixedDictObject):
 								extensions. Stored as `self._ServerLMC`.
 		"""
 
-		assert not LicornMasterController._init_client
-		assert LicornMasterController._init_first_pass
+		assert not LicornMainController._init_client
+		assert LicornMainController._init_first_pass
 
 		self._ServerLMC = ServerLMC
 
@@ -222,7 +222,7 @@ class LicornMasterController(MixedDictObject):
 															client_only=True))
 
 		self.__init_common()
-		LicornMasterController._init_client = True
+		LicornMainController._init_client = True
 	def __init_first_pass(self):
 		""" Load backends, users and groups.
 
@@ -237,9 +237,9 @@ class LicornMasterController(MixedDictObject):
 
 		"""
 
-		assert LicornMasterController._init_conf_full
+		assert LicornMainController._init_conf_full
 
-		if self._master:
+		if self._main:
 
 			# Initialize backends prior to controllers, because
 			# controllers need backends to populate themselves.
@@ -297,7 +297,7 @@ class LicornMasterController(MixedDictObject):
 				self.users    = LMC.users
 				self.groups   = LMC.groups
 
-		LicornMasterController._init_first_pass = True
+		LicornMainController._init_first_pass = True
 
 		LicornEvent('lmc_initialized').emit(priorities.HIGH)
 	def __init_common(self):
@@ -388,7 +388,7 @@ class LicornMasterController(MixedDictObject):
 			the RWI proxy is always accessible via :obj:`LMC.rwi`; but this
 			makes easier to write the following code in CLI tools::
 
-				LMC = LicornMasterController()
+				LMC = LicornMainController()
 				RWI = LMC.connect()
 				...
 
@@ -403,7 +403,7 @@ class LicornMasterController(MixedDictObject):
 
 			if self._connections > 1:
 				# someone already connected us, just return the current
-				# connected master object.
+				# connected main object.
 				return self.rwi
 
 			# The “real” LMC, local, in CLIENT and SERVER.
@@ -419,7 +419,7 @@ class LicornMasterController(MixedDictObject):
 				# It will be auto-resolved later in the method.
 				rwi_pyroloc = None
 
-				if not self._master:
+				if not self._main:
 					# In CLIENTs, there can be an helper LMC (the “ServerLMC”),
 					# Which connects remotely too, to access SERVER attributes
 					# easily from the CLIENT.
@@ -448,7 +448,7 @@ class LicornMasterController(MixedDictObject):
 			# message, if we can't connect fast enough.
 			start_message_thread()
 
-			#print '>> SYSTEM', sys_pyroloc, 'LMC', self.name, self._master
+			#print '>> SYSTEM', sys_pyroloc, 'LMC', self.name, self._main
 			self.system = Pyro.core.getAttrProxyForURI(sys_pyroloc + '/system')
 
 			# Set a timeout for establishing the connection.
@@ -536,7 +536,7 @@ class LicornMasterController(MixedDictObject):
 
 
 			if rwi_pyroloc is None:
-				if self._master:
+				if self._main:
 					host, port = self.system.server()
 
 				else:
@@ -548,7 +548,7 @@ class LicornMasterController(MixedDictObject):
 
 				rwi_pyroloc = 'PYROLOC://{0}:{1}'.format(host, port)
 
-			#print '>>    RWI', rwi_pyroloc, 'LMC', self.name, self._master
+			#print '>>    RWI', rwi_pyroloc, 'LMC', self.name, self._main
 			self.rwi = Pyro.core.getAttrProxyForURI(rwi_pyroloc + '/rwi')
 
 			if settings.role != roles.CLIENT:
@@ -604,6 +604,6 @@ class LicornMasterController(MixedDictObject):
 	def backend_disabled(self, *args, **kwargs):
 		self.reload_controllers_backends()
 
-LMC = LicornMasterController()
+LMC = LicornMainController()
 
 __all__ = ('LMC', )

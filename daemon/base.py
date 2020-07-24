@@ -567,7 +567,7 @@ class LicornBaseDaemon:
 				logging.notice(_(u'{0}: running initial checks in the '
 												u'foreground.').format(self))
 		return opts, args
-	def clean_sys_argv(self, for_slaves=False):
+	def clean_sys_argv(self, for_subordinates=False):
 		""" Remove from current command-line arguments the one that we can't keep
 			when the current process needs to restart, most notably `--wake-pid1``,
 			``--wake-pid2`` and all their variants. """
@@ -591,7 +591,7 @@ class LicornBaseDaemon:
 			else:
 				args.append(arg)
 
-		if for_slaves:
+		if for_subordinates:
 			for arg in ("-W", "--no-wmi", ):
 				try:
 					args.remove(arg)

@@ -139,7 +139,7 @@ class LockedController(SelectableController):
 
 		# Create lock holder objects for the current LockedController
 		# and all CoreUnitObjects stored inside us. The giant_lock is hidden,
-		# in case we iter*() the master lock object, for it to return only the
+		# in case we iter*() the main lock object, for it to return only the
 		# UnitObject locks.
 		self.lock = RLock()
 
@@ -252,7 +252,7 @@ class CoreController(LockedController):
 		""" load extensions if possible. This could not be possible if the
 			controller is :meth:`reload` ing during the CLIENT-daemon first
 			launch of its method
-			:meth:`~licorn.core.LicornMasterController.init_client_first_pass`.
+			:meth:`~licorn.core.LicornMainController.init_client_first_pass`.
 		"""
 
 		assert ltrace_func(self._trace_name)

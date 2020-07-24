@@ -88,7 +88,7 @@ TRACE_SIMPLESHARING = _ltrace_level(0x0000000001000000000000000, 'simplesharing'
 
 
 TRACE_DAEMON        = _ltrace_level(0x00000ffff0000000000000000, 'daemon')
-TRACE_MASTER        = _ltrace_level(0x0000000010000000000000000, 'master')
+TRACE_MASTER        = _ltrace_level(0x0000000010000000000000000, 'main')
 TRACE_INOTIFIER     = _ltrace_level(0x0000000020000000000000000, 'inotifier')
 TRACE_ACLCHECKER    = _ltrace_level(0x0000000040000000000000000, 'aclchecker')
 # TRACE_CACHE has been temporarily moved to foundations
